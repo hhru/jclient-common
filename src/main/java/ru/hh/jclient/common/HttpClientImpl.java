@@ -1,36 +1,34 @@
 package ru.hh.jclient.common;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import ru.hh.jclient.common.exception.ClientRequestException;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 
-class HttpRequestExecutor {
+class HttpClientImpl extends HttpClient {
 
-  private AsyncHttpClient http;
-  private HttpClient context;
-
-  HttpRequestExecutor(AsyncHttpClient http, HttpClient context) {
-    this.http = http;
-    this.context = context;
+  HttpClientImpl(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, RequestBuilder requestBuilder) {
+    super(http, contextSupplier, hostsWithSession, requestBuilder);
   }
 
-  public <T> CompletableFuture<T> request(HttpClient context) {
-    Request request = context
-        .getRequestBuilder()
-        .setHeaders(context.getContext().getHeaders().asMap())
-        .addHeader("Content-type", context.getReturnType().getMediaType().toString())
+  <T> CompletableFuture<T> executeRequest() {
+    Request request = getRequestBuilder()
+        .setHeaders(getContext().getHeaders().asMap())
+        .addHeader("Content-type", getReturnType().getMediaType().toString())
         .build();
-    return request(request).thenApply(context.getReturnType().converterFunction(context));
+    return request(request).thenApply(getReturnType().converterFunction(this));
   }
 
   private CompletableFuture<Response> request(Request request) {
     CompletableFuture<Response> promise = new CompletableFuture<>();
     try {
-      http.executeRequest(request, new CompletionHandler(promise));
+      getHttp().executeRequest(request, new CompletionHandler(promise));
     }
     catch (IOException e) {
       promise.completeExceptionally(e);

@@ -7,7 +7,7 @@ import javax.xml.bind.JAXBContext;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.RequestBuilder;
 
-public class HttpClient {
+public abstract class HttpClient {
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
@@ -24,22 +24,24 @@ public class HttpClient {
     this.requestBuilder = requestBuilder;
   }
 
-  private HttpRequestExecutor getExecutor() {
-    return new HttpRequestExecutor(http, this);
-  }
-
   public <T> CompletableFuture<T> returnXml(JAXBContext context) {
     this.returnType = HttpRequestReturnType.XML;
     this.jaxbContext = context;
-    return getExecutor().request(this);
+    return executeRequest();
   }
 
   public <T> CompletableFuture<T> returnEmpty() {
     this.returnType = HttpRequestReturnType.EMPTY;
-    return getExecutor().request(this);
+    return executeRequest();
   }
 
-  public Set<String> getHostsWithSession() {
+  abstract <T> CompletableFuture<T> executeRequest();
+
+  AsyncHttpClient getHttp() {
+    return http;
+  }
+
+  Set<String> getHostsWithSession() {
     return hostsWithSession;
   }
 
