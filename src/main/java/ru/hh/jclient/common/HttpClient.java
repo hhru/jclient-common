@@ -5,23 +5,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import javax.xml.bind.JAXBContext;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Request;
 
 public abstract class HttpClient {
+
+  public static final String HEADER_DEBUG = "X-Hh-Debug";
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
   private HttpRequestContext context;
 
-  private RequestBuilder requestBuilder;
+  private Request request;
   private HttpRequestReturnType returnType;
   private JAXBContext jaxbContext;
 
-  HttpClient(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, RequestBuilder requestBuilder) {
+  HttpClient(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, Request request) {
     this.http = http;
     this.context = contextSupplier.get();
     this.hostsWithSession = hostsWithSession;
-    this.requestBuilder = requestBuilder;
+    this.request = request;
   }
 
   public <T> CompletableFuture<T> returnXml(JAXBContext context) {
@@ -49,8 +51,8 @@ public abstract class HttpClient {
     return context;
   }
 
-  RequestBuilder getRequestBuilder() {
-    return requestBuilder;
+  Request getRequest() {
+    return request;
   }
 
   HttpRequestReturnType getReturnType() {

@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.RequestBuilder;
+import com.ning.http.client.Request;
 
 public class HttpClientBuilder {
 
@@ -19,8 +19,8 @@ public class HttpClientBuilder {
     this.contextSupplier = contextSupplier;
   }
 
-  public HttpClient with(RequestBuilder builder) {
-    return new HttpClientImpl(http, contextSupplier, hostsWithSession, builder);
+  public HttpClient with(Request request) {
+    return new HttpClientImpl(http, contextSupplier, hostsWithSession, request);
   }
 
 }
