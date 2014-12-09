@@ -28,11 +28,18 @@ public abstract class HttpClient {
   private ObjectMapper objectMapper;
   private Class<?> jsonClass;
 
+  private boolean readOnlyReplica;
+
   HttpClient(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, Request request) {
     this.http = http;
     this.context = contextSupplier.get();
     this.hostsWithSession = hostsWithSession;
     this.request = request;
+  }
+
+  public HttpClient readOnly() {
+    this.readOnlyReplica = true;
+    return this;
   }
 
   public <T> CompletableFuture<T> returnXml(JAXBContext context) {
@@ -95,6 +102,10 @@ public abstract class HttpClient {
 
   Class<?> getJsonClass() {
     return jsonClass;
+  }
+
+  boolean useReadOnlyReplica() {
+    return readOnlyReplica;
   }
 
 }

@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import static com.google.common.collect.ImmutableSet.of;
+import static java.lang.Boolean.TRUE;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -15,6 +16,8 @@ import com.ning.http.client.Response;
 
 class HttpClientImpl extends HttpClient {
 
+  private static final String PARAM_READ_ONLY_REPLICA = "replicaOnlyRq";
+
   private static final Set<String> PASS_THROUGH_HEADERS = of(HEADER_REQUEST_ID, HEADER_REAL_IP, HEADER_AUTH, HEADER_SESSION, HEADER_DEBUG);
 
   HttpClientImpl(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, Request request) {
@@ -24,6 +27,9 @@ class HttpClientImpl extends HttpClient {
   <T> CompletableFuture<T> executeRequest() {
     RequestBuilder builder = new RequestBuilder(getRequest());
     addHeaders(builder);
+    if (useReadOnlyReplica()) {
+      builder.addQueryParameter(PARAM_READ_ONLY_REPLICA, TRUE.toString());
+    }
 
     Request request = builder.build();
     return request(request).thenApply(getReturnType().converterFunction(this));
