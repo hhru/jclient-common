@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import ru.hh.jclient.common.exception.ClientRequestException;
+import ru.hh.jclient.common.exception.ClientResponseException;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -15,9 +15,7 @@ import com.ning.http.client.Response;
 
 class HttpClientImpl extends HttpClient {
 
-  private static final String HEADER_SESSION = "Hh-Proto-Session";
-  private static final String HEADER_AUTH = "Authorization";
-  private static final Set<String> PASS_THROUGH_HEADERS = of("X-Request-Id", "X-Real-IP", HEADER_AUTH, HEADER_SESSION, HEADER_DEBUG);
+  private static final Set<String> PASS_THROUGH_HEADERS = of(HEADER_REQUEST_ID, HEADER_REAL_IP, HEADER_AUTH, HEADER_SESSION, HEADER_DEBUG);
 
   HttpClientImpl(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, Request request) {
     super(http, contextSupplier, hostsWithSession, request);
@@ -79,7 +77,7 @@ class HttpClientImpl extends HttpClient {
     public Response onCompleted(Response response) throws Exception {
       // TODO add proper processing of >=400 status codes
       if (response.getStatusCode() >= 400) {
-        throw new ClientRequestException(response);
+        throw new ClientResponseException(response);
       }
       promise.complete(response);
       return response;

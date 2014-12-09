@@ -2,11 +2,11 @@ package ru.hh.jclient.common.exception;
 
 import com.ning.http.client.Response;
 
-public class ClientRequestException extends RuntimeException {
+public class ClientResponseException extends RuntimeException {
 
   private Response response;
 
-  public ClientRequestException(Response response) {
+  public ClientResponseException(Response response) {
     this.response = response;
   }
 
