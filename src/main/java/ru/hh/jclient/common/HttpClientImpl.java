@@ -2,7 +2,6 @@ package ru.hh.jclient.common;
 
 import static com.google.common.collect.ImmutableSet.of;
 import static java.lang.Boolean.TRUE;
-import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -28,7 +27,7 @@ class HttpClientImpl extends HttpClient {
     RequestBuilder builder = new RequestBuilder(getRequest());
     addHeaders(builder);
     if (useReadOnlyReplica()) {
-      builder.addQueryParameter(PARAM_READ_ONLY_REPLICA, TRUE.toString());
+      builder.addQueryParam(PARAM_READ_ONLY_REPLICA, TRUE.toString());
     }
 
     Request request = builder.build();
@@ -62,12 +61,7 @@ class HttpClientImpl extends HttpClient {
 
   private CompletableFuture<Response> request(Request request) {
     CompletableFuture<Response> promise = new CompletableFuture<>();
-    try {
-      getHttp().executeRequest(request, new CompletionHandler(promise));
-    }
-    catch (IOException e) {
-      promise.completeExceptionally(e);
-    }
+    getHttp().executeRequest(request, new CompletionHandler(promise));
     return promise;
   }
 
