@@ -20,6 +20,7 @@ public abstract class HttpClient {
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
   private HttpRequestContext context;
+  private HttpRequestInfo info;
 
   private Request request;
   private HttpRequestReturnType returnType;
@@ -30,15 +31,18 @@ public abstract class HttpClient {
 
   private boolean readOnlyReplica;
 
-  HttpClient(AsyncHttpClient http, Supplier<HttpRequestContext> contextSupplier, Set<String> hostsWithSession, Request request) {
+  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpRequestContext> contextSupplier,
+      Supplier<HttpRequestInfo> infoSupplier) {
     this.http = http;
-    this.context = contextSupplier.get();
-    this.hostsWithSession = hostsWithSession;
     this.request = request;
+    this.hostsWithSession = hostsWithSession;
+    this.context = contextSupplier.get();
+    this.info = infoSupplier.get();
   }
 
   public HttpClient readOnly() {
     this.readOnlyReplica = true;
+    this.info.addLabel("RO");
     return this;
   }
 
@@ -72,6 +76,10 @@ public abstract class HttpClient {
     return http;
   }
 
+  Request getRequest() {
+    return request;
+  }
+
   Set<String> getHostsWithSession() {
     return hostsWithSession;
   }
@@ -80,8 +88,8 @@ public abstract class HttpClient {
     return context;
   }
 
-  Request getRequest() {
-    return request;
+  HttpRequestInfo getInfo() {
+    return info;
   }
 
   HttpRequestReturnType getReturnType() {
