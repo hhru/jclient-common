@@ -1,9 +1,8 @@
 package ru.hh.jclient.common;
 
-import static ru.hh.jclient.common.HttpClient.HEADER_DEBUG;
+import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import com.google.common.collect.HashMultimap;
 
 public class HttpRequestContext {
@@ -16,12 +15,8 @@ public class HttpRequestContext {
   }
 
   public void setHeaders(Map<String, List<String>> headers) {
-    for (Entry<String, List<String>> entry : headers.entrySet()) {
-      this.headers.putAll(entry.getKey(), entry.getValue());
-    }
-    if (headers.containsKey(HEADER_DEBUG) && headers.get(HEADER_DEBUG).size() == 1 && headers.get(HEADER_DEBUG).get(0).toLowerCase() == "true") {
-      this.debugMode = true;
-    }
+    headers.entrySet().forEach(e -> this.headers.putAll(e.getKey(), e.getValue()));
+    this.debugMode = isInDebugMode(headers);
   }
 
   public HashMultimap<String, String> getHeaders() {
