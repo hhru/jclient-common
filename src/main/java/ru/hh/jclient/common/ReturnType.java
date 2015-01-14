@@ -7,7 +7,7 @@ import java.util.function.Function;
 import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 
-enum HttpRequestReturnType {
+enum ReturnType {
   
   XML(MediaType.XML_UTF_8) {
     @SuppressWarnings("unchecked")
@@ -81,7 +81,7 @@ enum HttpRequestReturnType {
   
   private MediaType mediaType;
 
-  private HttpRequestReturnType(MediaType mediaType) {
+  private ReturnType(MediaType mediaType) {
     this.mediaType = mediaType;
   }
   

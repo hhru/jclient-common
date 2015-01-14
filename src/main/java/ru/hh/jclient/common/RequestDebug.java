@@ -3,7 +3,7 @@ package ru.hh.jclient.common;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
 
-public interface HttpRequestInfo {
+public interface RequestDebug {
   void onRequest(Request request);
 
   default Response onResponseReceived(Response response) {

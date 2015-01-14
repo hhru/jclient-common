@@ -13,11 +13,13 @@ public abstract class HttpClient {
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
-  private HttpRequestContext context;
-  private HttpRequestInfo info;
+  private HttpClientContext context;
+  private RequestDebug debug;
 
   private Request request;
-  private HttpRequestReturnType returnType;
+
+  // tools for response parsing
+  private ReturnType returnType;
   private JAXBContext jaxbContext;
   private Class<? extends GeneratedMessage> protobufClass;
   private ObjectMapper objectMapper;
@@ -25,46 +27,49 @@ public abstract class HttpClient {
 
   private boolean readOnlyReplica;
 
-  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpRequestContext> contextSupplier,
-      Supplier<HttpRequestInfo> infoSupplier) {
+  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
     this.context = contextSupplier.get();
-    this.info = infoSupplier.get();
+    this.debug = this.context.getDebugSupplier().get();
   }
 
   public HttpClient readOnly() {
     this.readOnlyReplica = true;
-    this.info.addLabel("RO");
+    this.debug.addLabel("RO");
     return this;
   }
 
+  // parsing response
+
   public <T> CompletableFuture<T> returnXml(JAXBContext context) {
-    this.returnType = HttpRequestReturnType.XML;
+    this.returnType = ReturnType.XML;
     this.jaxbContext = context;
     return executeRequest();
   }
 
   public <T> CompletableFuture<T> returnJson(ObjectMapper mapper, Class<?> jsonClass) {
-    this.returnType = HttpRequestReturnType.JSON;
+    this.returnType = ReturnType.JSON;
     this.objectMapper = mapper;
     this.jsonClass = jsonClass;
     return executeRequest();
   }
 
   public <T> CompletableFuture<T> returnProtobuf(Class<? extends GeneratedMessage> protobufClass) {
-    this.returnType = HttpRequestReturnType.PROTOBUF;
+    this.returnType = ReturnType.PROTOBUF;
     this.protobufClass = protobufClass;
     return executeRequest();
   }
 
   public <T> CompletableFuture<T> returnEmpty() {
-    this.returnType = HttpRequestReturnType.EMPTY;
+    this.returnType = ReturnType.EMPTY;
     return executeRequest();
   }
 
   abstract <T> CompletableFuture<T> executeRequest();
+
+  // getters for tools
 
   AsyncHttpClient getHttp() {
     return http;
@@ -78,15 +83,21 @@ public abstract class HttpClient {
     return hostsWithSession;
   }
 
-  HttpRequestContext getContext() {
+  HttpClientContext getContext() {
     return context;
   }
 
-  HttpRequestInfo getInfo() {
-    return info;
+  RequestDebug getDebug() {
+    return debug;
   }
 
-  HttpRequestReturnType getReturnType() {
+  boolean useReadOnlyReplica() {
+    return readOnlyReplica;
+  }
+
+  // getters for response generation tools
+
+  ReturnType getReturnType() {
     return returnType;
   }
 
@@ -106,8 +117,5 @@ public abstract class HttpClient {
     return jsonClass;
   }
 
-  boolean useReadOnlyReplica() {
-    return readOnlyReplica;
-  }
 
 }

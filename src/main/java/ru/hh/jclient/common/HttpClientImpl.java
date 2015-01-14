@@ -24,9 +24,8 @@ class HttpClientImpl extends HttpClient {
 
   private static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
 
-  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpRequestContext> contextSupplier,
-      Supplier<HttpRequestInfo> infoSupplier) {
-    super(http, request, hostsWithSession, contextSupplier, infoSupplier);
+  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
+    super(http, request, hostsWithSession, contextSupplier);
   }
 
   <T> CompletableFuture<T> executeRequest() {
@@ -37,8 +36,8 @@ class HttpClientImpl extends HttpClient {
     }
 
     Request request = builder.build();
-    CompletableFuture<T> future = request(request).thenApply(getInfo()::onResponseReceived).thenApply(getReturnType().converterFunction(this));
-    return future.thenApply(getInfo()::onProcessingFinished);
+    CompletableFuture<T> future = request(request).thenApply(getDebug()::onResponseReceived).thenApply(getReturnType().converterFunction(this));
+    return future.thenApply(getDebug()::onProcessingFinished);
   }
 
   private void addHeaders(RequestBuilder requestBuilder) {
@@ -68,7 +67,7 @@ class HttpClientImpl extends HttpClient {
 
   private CompletableFuture<Response> request(Request request) {
     CompletableFuture<Response> promise = new CompletableFuture<>();
-    getInfo().onRequest(request);
+    getDebug().onRequest(request);
     getHttp().executeRequest(request, new CompletionHandler(promise));
     return promise;
   }

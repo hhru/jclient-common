@@ -11,19 +11,16 @@ public class HttpClientBuilder {
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
-  private Supplier<HttpRequestContext> contextSupplier;
-  private Supplier<HttpRequestInfo> infoSupplier;
+  private Supplier<HttpClientContext> contextSupplier;
 
-  public HttpClientBuilder(AsyncHttpClient http, Collection<String> hostsWithSession, Supplier<HttpRequestContext> contextSupplier,
-      Supplier<HttpRequestInfo> infoSupplier) {
+  public HttpClientBuilder(AsyncHttpClient http, Collection<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
     this.http = http;
     this.hostsWithSession = new HashSet<>(hostsWithSession);
     this.contextSupplier = contextSupplier;
-    this.infoSupplier = infoSupplier;
   }
 
   public HttpClient with(Request request) {
-    return new HttpClientImpl(http, request, hostsWithSession, contextSupplier, infoSupplier);
+    return new HttpClientImpl(http, request, hostsWithSession, contextSupplier);
   }
 
 }
