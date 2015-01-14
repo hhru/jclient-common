@@ -1,7 +1,12 @@
 package ru.hh.jclient.common;
 
 import static com.google.common.collect.ImmutableSet.of;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.lang.Boolean.TRUE;
+import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
+import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
+import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -17,7 +22,7 @@ class HttpClientImpl extends HttpClient {
 
   private static final String PARAM_READ_ONLY_REPLICA = "replicaOnlyRq";
 
-  private static final Set<String> PASS_THROUGH_HEADERS = of(HEADER_REQUEST_ID, HEADER_REAL_IP, HEADER_AUTH, HEADER_SESSION, HEADER_DEBUG);
+  private static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
 
   HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpRequestContext> contextSupplier,
       Supplier<HttpRequestInfo> infoSupplier) {
@@ -49,13 +54,13 @@ class HttpClientImpl extends HttpClient {
 
     // remove hh-session header if host does not need it
     if (getHostsWithSession().stream().noneMatch(h -> getRequest().getUrl().startsWith(h))) {
-      headers.remove(HEADER_SESSION);
+      headers.remove(HH_PROTO_SESSION);
     }
 
     // remove debug/auth headers if debug is not enabled
     if (!getContext().isDebugMode()) {
-      headers.remove(HEADER_DEBUG);
-      headers.remove(HEADER_AUTH);
+      headers.remove(X_HH_DEBUG);
+      headers.remove(AUTHORIZATION);
     }
 
     requestBuilder.setHeaders(headers);
