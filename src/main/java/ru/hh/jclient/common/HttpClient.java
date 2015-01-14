@@ -16,6 +16,7 @@ public abstract class HttpClient {
   public static final String HEADER_AUTH = "Authorization";
   public static final String HEADER_REQUEST_ID = "X-Request-Id";
   public static final String HEADER_REAL_IP = "X-Real-IP";
+  public static final String HEADER_COOKIE = "Cookie";
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
