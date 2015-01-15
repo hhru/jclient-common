@@ -1,10 +1,11 @@
 package ru.hh.jclient.common;
 
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
 
 public interface RequestDebug {
-  void onRequest(Request request);
+  void onRequest(AsyncHttpClientConfig config, Request request);
 
   default Response onResponseReceived(Response response) {
     onResponse(response);

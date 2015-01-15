@@ -62,6 +62,11 @@ public abstract class HttpClient {
     return executeRequest();
   }
 
+  public <T> CompletableFuture<T> returnText() {
+    this.returnType = ReturnType.TEXT;
+    return executeRequest();
+  }
+
   public <T> CompletableFuture<T> returnEmpty() {
     this.returnType = ReturnType.EMPTY;
     return executeRequest();

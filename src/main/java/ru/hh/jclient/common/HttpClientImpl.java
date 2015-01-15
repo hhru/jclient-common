@@ -67,7 +67,7 @@ class HttpClientImpl extends HttpClient {
 
   private CompletableFuture<Response> request(Request request) {
     CompletableFuture<Response> promise = new CompletableFuture<>();
-    getDebug().onRequest(request);
+    getDebug().onRequest(getHttp().getConfig(), request);
     getHttp().executeRequest(request, new CompletionHandler(promise));
     return promise;
   }

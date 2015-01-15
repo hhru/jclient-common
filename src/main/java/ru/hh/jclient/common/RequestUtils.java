@@ -33,11 +33,8 @@ public class RequestUtils {
       return defaultValue;
     }
     List<String> values = headers.get(headerName);
-    if (values.size() > 1) {
-      if (warnIfMultiple) {
-        log.warn("Unexpected multiple values for header {}: {}", headerName, Joiner.on(',').useForNull("null").join(values));
-      }
-      return defaultValue;
+    if (values.size() > 1 && warnIfMultiple) {
+      log.warn("Unexpected multiple values for header {}: {}", headerName, Joiner.on(',').useForNull("null").join(values));
     }
     return values.get(0);
   }
