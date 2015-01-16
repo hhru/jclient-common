@@ -14,6 +14,10 @@ public interface RequestDebug {
 
   void onResponse(Response response);
 
+  void onClientProblem(Throwable t);
+
+  void onConvertorProblem(RuntimeException e);
+
   default <T> T onProcessingFinished(T t) {
     onProcessingFinished();
     return t;

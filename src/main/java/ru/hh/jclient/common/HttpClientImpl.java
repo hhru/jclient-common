@@ -36,8 +36,19 @@ class HttpClientImpl extends HttpClient {
     }
 
     Request request = builder.build();
-    CompletableFuture<T> future = request(request).thenApply(getDebug()::onResponseReceived).thenApply(getReturnType().converterFunction(this));
-    return future.thenApply(getDebug()::onProcessingFinished);
+    CompletableFuture<T> future = request(request).thenApply(r -> {
+      try {
+        return getReturnType().<T> converterFunction(this).apply(r);
+      }
+      catch (RuntimeException e) {
+        getDebug().onConvertorProblem(e);
+        throw e;
+      }
+      finally {
+        getDebug().onProcessingFinished();
+      }
+    });
+    return future;
   }
 
   private void addHeaders(RequestBuilder requestBuilder) {
@@ -68,23 +79,27 @@ class HttpClientImpl extends HttpClient {
   private CompletableFuture<Response> request(Request request) {
     CompletableFuture<Response> promise = new CompletableFuture<>();
     getDebug().onRequest(getHttp().getConfig(), request);
-    getHttp().executeRequest(request, new CompletionHandler(promise));
+    getHttp().executeRequest(request, new CompletionHandler(promise, getDebug()));
     return promise;
   }
 
   private static class CompletionHandler extends AsyncCompletionHandler<Response> {
 
     private CompletableFuture<Response> promise;
+    private RequestDebug requestDebug;
 
-    public CompletionHandler(CompletableFuture<Response> promise) {
+    public CompletionHandler(CompletableFuture<Response> promise, RequestDebug requestDebug) {
       this.promise = promise;
+      this.requestDebug = requestDebug;
     }
 
     @Override
     public Response onCompleted(Response response) throws Exception {
+      requestDebug.onResponse(response);
       // TODO add proper processing of >=400 status codes
       if (response.getStatusCode() >= 400) {
-        throw new ClientResponseException(response);
+        requestDebug.onProcessingFinished();
+        promise.completeExceptionally(new ClientResponseException(response));
       }
       promise.complete(response);
       return response;
@@ -92,8 +107,9 @@ class HttpClientImpl extends HttpClient {
 
     @Override
     public void onThrowable(Throwable t) {
+      requestDebug.onClientProblem(t);
+      requestDebug.onProcessingFinished();
       promise.completeExceptionally(t);
-      super.onThrowable(t);
     }
   }
 }
