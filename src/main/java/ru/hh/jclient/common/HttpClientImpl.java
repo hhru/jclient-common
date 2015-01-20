@@ -41,7 +41,7 @@ class HttpClientImpl extends HttpClient {
         return getReturnType().<T> converterFunction(this).apply(r);
       }
       catch (RuntimeException e) {
-        getDebug().onConvertorProblem(e);
+        getDebug().onConverterProblem(e);
         throw e;
       }
       finally {
