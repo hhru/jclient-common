@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
@@ -79,7 +80,7 @@ class HttpClientImpl extends HttpClient {
   private CompletableFuture<Response> request(Request request) {
     CompletableFuture<Response> promise = new CompletableFuture<>();
     getDebug().onRequest(getHttp().getConfig(), request);
-    getHttp().executeRequest(request, new CompletionHandler(promise, getDebug()));
+    getHttp().executeRequest(request, new CompletionHandler(promise, getDebug(), getHttp().getConfig()));
     return promise;
   }
 
@@ -87,15 +88,17 @@ class HttpClientImpl extends HttpClient {
 
     private CompletableFuture<Response> promise;
     private RequestDebug requestDebug;
+    private AsyncHttpClientConfig config;
 
-    public CompletionHandler(CompletableFuture<Response> promise, RequestDebug requestDebug) {
+    public CompletionHandler(CompletableFuture<Response> promise, RequestDebug requestDebug, AsyncHttpClientConfig config) {
       this.promise = promise;
       this.requestDebug = requestDebug;
+      this.config = config;
     }
 
     @Override
     public Response onCompleted(Response response) throws Exception {
-      requestDebug.onResponse(response);
+      response = requestDebug.onResponse(config, response);
       // TODO add proper processing of >=400 status codes
       if (response.getStatusCode() >= 400) {
         requestDebug.onProcessingFinished();

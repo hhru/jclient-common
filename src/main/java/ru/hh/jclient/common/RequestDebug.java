@@ -7,21 +7,11 @@ import com.ning.http.client.Response;
 public interface RequestDebug {
   void onRequest(AsyncHttpClientConfig config, Request request);
 
-  default Response onResponseReceived(Response response) {
-    onResponse(response);
-    return response;
-  }
-
-  void onResponse(Response response);
+  Response onResponse(AsyncHttpClientConfig config, Response response);
 
   void onClientProblem(Throwable t);
 
   void onConverterProblem(RuntimeException e);
-
-  default <T> T onProcessingFinished(T t) {
-    onProcessingFinished();
-    return t;
-  }
 
   void onProcessingFinished();
 
