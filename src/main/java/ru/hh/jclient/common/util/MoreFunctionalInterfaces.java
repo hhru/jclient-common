@@ -2,11 +2,12 @@ package ru.hh.jclient.common.util;
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class MoreFunctionalInterfaces {
   
   /**
-   * Same as {@link Consumer} but {@link #accept(Object)} throws exception.
+   * Same as {@link Consumer} but {@link #accept(Object)} throws an exception.
    */
   @FunctionalInterface
   public interface ThrowableConsumer<T, E extends Exception> {
@@ -36,6 +37,9 @@ public class MoreFunctionalInterfaces {
     }
   }
 
+  /**
+   * Same as {@link Supplier} but {@link #get()} throws an exception.
+   */
   @FunctionalInterface
   public interface ThrowableSupplier<T, E extends Exception> {
     /**
