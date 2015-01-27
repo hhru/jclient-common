@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.function.Function;
+import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 
@@ -18,7 +19,7 @@ enum ReturnType {
           return (T) context.getJaxbContext().createUnmarshaller().unmarshal(r.getResponseBodyAsStream());
         }
         catch (Exception e) {
-          throw new RuntimeException(e);
+          throw new ResponseConverterException(e);
         }
       };
       return function;
@@ -34,7 +35,7 @@ enum ReturnType {
           return t;
         }
         catch (IOException e) {
-          throw new RuntimeException(e);
+          throw new ResponseConverterException(e);
         }
       };
       return function;
@@ -50,7 +51,7 @@ enum ReturnType {
           return (T) parseFromMethod.invoke(null, r.getResponseBodyAsStream());
         }
         catch (Exception e) {
-          throw new RuntimeException(e);
+          throw new ResponseConverterException(e);
         }
       };
       return function;
@@ -65,7 +66,7 @@ enum ReturnType {
           return (T) r.getResponseBody("UTF-8");
         }
         catch (IOException e) {
-          throw new RuntimeException(e);
+          throw new ResponseConverterException(e);
         }
       };
       return function;
