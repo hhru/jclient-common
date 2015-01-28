@@ -1,9 +1,13 @@
 package ru.hh.jclient.common;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+
 import javax.xml.bind.JAXBContext;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.AsyncHttpClient;
@@ -45,20 +49,20 @@ public abstract class HttpClient {
 
   public <T> CompletableFuture<T> returnXml(JAXBContext context) {
     this.returnType = ReturnType.XML;
-    this.jaxbContext = context;
+    this.jaxbContext = requireNonNull(context, "context must not be null");
     return executeRequest();
   }
 
   public <T> CompletableFuture<T> returnJson(ObjectMapper mapper, Class<?> jsonClass) {
     this.returnType = ReturnType.JSON;
-    this.objectMapper = mapper;
-    this.jsonClass = jsonClass;
+    this.objectMapper = requireNonNull(mapper, "mapper must not be null");
+    this.jsonClass = requireNonNull(jsonClass, "jsonClass must not be null");
     return executeRequest();
   }
 
   public <T> CompletableFuture<T> returnProtobuf(Class<? extends GeneratedMessage> protobufClass) {
     this.returnType = ReturnType.PROTOBUF;
-    this.protobufClass = protobufClass;
+    this.protobufClass = requireNonNull(protobufClass, "protobufClass must not be null");
     return executeRequest();
   }
 
@@ -121,6 +125,4 @@ public abstract class HttpClient {
   Class<?> getJsonClass() {
     return jsonClass;
   }
-
-
 }

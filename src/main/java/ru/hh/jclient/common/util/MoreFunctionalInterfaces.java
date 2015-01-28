@@ -70,7 +70,7 @@ public class MoreFunctionalInterfaces {
    * Same as {@link Function} but {@link #apply(Object)} throws an exception.
    */
   @FunctionalInterface
-  public interface FallableFunction<T, R, E extends Throwable> {
+  public interface FailableFunction<T, R, E extends Throwable> {
 
     /**
      * Applies this function to the given argument.
@@ -95,7 +95,7 @@ public class MoreFunctionalInterfaces {
      *
      * @see #andThen(Function)
      */
-    default <V> FallableFunction<V, R, E> compose(FallableFunction<? super V, ? extends T, E> before) {
+    default <V> FailableFunction<V, R, E> compose(FailableFunction<? super V, ? extends T, E> before) {
       Objects.requireNonNull(before);
       return (V v) -> apply(before.apply(v));
     }
@@ -114,7 +114,7 @@ public class MoreFunctionalInterfaces {
      *
      * @see #compose(Function)
      */
-    default <V> FallableFunction<T, V, E> andThen(FallableFunction<? super R, ? extends V, E> after) {
+    default <V> FailableFunction<T, V, E> andThen(FailableFunction<? super R, ? extends V, E> after) {
       Objects.requireNonNull(after);
       return (T t) -> after.apply(apply(t));
     }
@@ -126,7 +126,7 @@ public class MoreFunctionalInterfaces {
      *          the type of the input and output objects to the function
      * @return a function that always returns its input argument
      */
-    static <T, E extends Throwable> FallableFunction<T, T, E> identity() {
+    static <T, E extends Throwable> FailableFunction<T, T, E> identity() {
       return t -> t;
     }
   }
@@ -135,7 +135,7 @@ public class MoreFunctionalInterfaces {
    * {@inheritDoc}
    */
   @FunctionalInterface
-  public interface ThrowableFunction<T, R> extends FallableFunction<T, R, Throwable> {
+  public interface ThrowableFunction<T, R> extends FailableFunction<T, R, Throwable> {
   }
 
 }

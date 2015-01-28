@@ -7,10 +7,14 @@ import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
+
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+
 import ru.hh.jclient.common.exception.ClientResponseException;
+import ru.hh.jclient.common.exception.ResponseConverterException;
+
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -41,9 +45,10 @@ class HttpClientImpl extends HttpClient {
       try {
         return getReturnType().<T> converterFunction(this).apply(r);
       }
-      catch (RuntimeException e) {
-        getDebug().onConverterProblem(e);
-        throw e;
+      catch (Exception e) {
+        ResponseConverterException rce = new ResponseConverterException(e);
+        getDebug().onConverterProblem(rce);
+        throw rce;
       }
       finally {
         getDebug().onProcessingFinished();
