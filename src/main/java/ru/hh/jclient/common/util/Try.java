@@ -1,8 +1,9 @@
 package ru.hh.jclient.common.util;
 
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.function.Function;
+
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.ThrowableConsumer;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.ThrowableFunction;
 
 public class Try<V> {
 
@@ -56,7 +57,7 @@ public class Try<V> {
   }
 
   @SuppressWarnings("unchecked")
-  public <B> Try<B> map(Function<V, B> mappingFunction) {
+  public <B> Try<B> map(ThrowableFunction<V, B> mappingFunction) {
     if (isSuccess()) {
       try {
         return success(mappingFunction.apply(get()));
@@ -69,7 +70,7 @@ public class Try<V> {
   }
 
   @SuppressWarnings("unchecked")
-  public <B> Try<B> map(Function<V, B> mappingFunction, Consumer<V> finalizer) {
+  public <B> Try<B> map(ThrowableFunction<V, B> mappingFunction, ThrowableConsumer<V> finalizer) {
     if (isSuccess()) {
       try {
         return success(mappingFunction.apply(get()));

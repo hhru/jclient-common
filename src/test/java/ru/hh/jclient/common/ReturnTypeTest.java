@@ -18,7 +18,7 @@ import com.ning.http.client.Response;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.XmlTest;
-import ru.hh.jclient.common.util.MoreFunctionalInterfaces.ThrowableConsumer;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableConsumer;
 
 public class ReturnTypeTest {
 
@@ -132,7 +132,7 @@ public class ReturnTypeTest {
     return function.apply(response);
   }
 
-  private InputStream write(ThrowableConsumer<OutputStream, Exception> consumer) throws Exception {
+  private InputStream write(FailableConsumer<OutputStream, Exception> consumer) throws Exception {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     consumer.accept(out);
     return new ByteArrayInputStream(out.toByteArray());
