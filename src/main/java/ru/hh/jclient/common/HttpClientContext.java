@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +14,9 @@ public class HttpClientContext {
   private Supplier<RequestDebug> debugSupplier;
 
   public HttpClientContext(Map<String, List<String>> headers, Supplier<RequestDebug> debugSupplier) {
-    headers.entrySet().forEach(e -> this.headers.putAll(e.getKey(), e.getValue()));
+    requireNonNull(headers, "headers must not be null").entrySet().forEach(e -> this.headers.putAll(e.getKey(), e.getValue()));
     this.debugMode = isInDebugMode(headers);
-    this.debugSupplier = debugSupplier;
+    this.debugSupplier = requireNonNull(debugSupplier, "debugSupplier must not be null");
   }
 
   public HashMultimap<String, String> getHeaders() {

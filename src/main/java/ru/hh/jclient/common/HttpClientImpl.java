@@ -89,7 +89,7 @@ class HttpClientImpl extends HttpClient {
     return promise;
   }
 
-  private static class CompletionHandler extends AsyncCompletionHandler<Response> {
+  static class CompletionHandler extends AsyncCompletionHandler<Response> {
 
     private CompletableFuture<Response> promise;
     private RequestDebug requestDebug;
