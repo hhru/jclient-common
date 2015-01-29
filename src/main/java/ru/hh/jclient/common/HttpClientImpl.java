@@ -3,10 +3,12 @@ package ru.hh.jclient.common;
 import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.lang.Boolean.TRUE;
+import static java.util.function.Function.identity;
 import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
+import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -31,7 +33,7 @@ class HttpClientImpl extends HttpClient {
     super(http, request, hostsWithSession, contextSupplier);
   }
 
-  <T> CompletableFuture<T> executeRequest() {
+  <T> CompletableFuture<ResponseWrapper<T>> executeRequest() {
     RequestBuilder builder = new RequestBuilder(getRequest());
     addHeaders(builder);
     if (useReadOnlyReplica()) {
@@ -39,7 +41,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     Request request = builder.build();
-    CompletableFuture<T> future = request(request).thenApply(r -> {
+    CompletableFuture<ResponseWrapper<T>> future = request(request).thenApply(r -> {
       try {
         return getReturnType().<T> converterFunction(this).apply(r);
       }
@@ -57,14 +59,12 @@ class HttpClientImpl extends HttpClient {
 
   private void addHeaders(RequestBuilder requestBuilder) {
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
-    PASS_THROUGH_HEADERS
+    FluentCaseInsensitiveStringsMap headers = PASS_THROUGH_HEADERS
         .stream()
-        .map(String::toLowerCase)
         .filter(getContext().getHeaders()::containsKey)
-        .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
+        .collect(toFluentCaseInsensitiveStringsMap(identity(), h -> getContext().getHeaders().get(h)));
 
-    headers.putAll(getRequest().getHeaders());
+    headers.addAll(getRequest().getHeaders());
 
     // remove hh-session header if host does not need it
     if (getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(h -> getRequest().getUri().getHost().equals(h))) {
@@ -106,8 +106,11 @@ class HttpClientImpl extends HttpClient {
       if (response.getStatusCode() >= 400) {
         requestDebug.onProcessingFinished();
         promise.completeExceptionally(new ClientResponseException(response));
+        // do not report to debug because it is only about bad response status
       }
-      promise.complete(response);
+      else {
+        promise.complete(response);
+      }
       return response;
     }
 

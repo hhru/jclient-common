@@ -2,24 +2,21 @@ package ru.hh.jclient.common;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.UnmarshalException;
-
 import org.junit.Test;
 import org.mockito.Mockito;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.Response;
-
 import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.XmlTest;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableConsumer;
@@ -108,15 +105,23 @@ public class ReturnTypeTest {
   @Test
   public void testPlain() throws Exception {
     String testData = "some data с кириллицей";
+    testPlain(testData, StandardCharsets.UTF_8);
+    testPlain(testData, Charset.forName("Cp1251"));
+  }
 
+  private void testPlain(String testData, Charset charset) throws Exception {
+    byte[] data = testData.getBytes(charset);
     HttpClient httpClient = mock(HttpClient.class);
+    when(httpClient.getCharset()).thenReturn(charset);
 
     Response response = mock(Response.class);
-    when(response.getResponseBody("UTF-8")).thenReturn(testData);
+    when(response.getResponseBody(isA(String.class))).then(iom -> {
+      String charsetName = iom.getArgumentAt(0, String.class);
+      return new String(data, Charset.forName(charsetName));
+    });
 
-    FailableFunction<Response, String, Exception> function = ReturnType.TEXT.converterFunction(httpClient);
-    String testDataOutput = function.apply(response);
-
+    FailableFunction<Response, ResponseWrapper<String>, Exception> function = ReturnType.TEXT.converterFunction(httpClient);
+    String testDataOutput = function.apply(response).get();
     assertEquals(testData, testDataOutput);
   }
 
@@ -125,16 +130,16 @@ public class ReturnTypeTest {
     HttpClient httpClient = mock(HttpClient.class);
     Response response = mock(Response.class);
 
-    FailableFunction<Response, String, Exception> function = ReturnType.EMPTY.converterFunction(httpClient);
-    assertNull(function.apply(response));
+    FailableFunction<Response, ResponseWrapper<Void>, Exception> function = ReturnType.EMPTY.converterFunction(httpClient);
+    assertNull(function.apply(response).get());
   }
 
   private <T> T convertBinary(InputStream in, HttpClient httpClient, ReturnType returnType) throws Exception {
     Response response = mock(Response.class);
     when(response.getResponseBodyAsStream()).thenReturn(in);
 
-    FailableFunction<Response, T, Exception> function = returnType.converterFunction(httpClient);
-    return function.apply(response);
+    FailableFunction<Response, ResponseWrapper<T>, Exception> function = returnType.converterFunction(httpClient);
+    return function.apply(response).get();
   }
 
   private InputStream write(FailableConsumer<OutputStream, Exception> consumer) throws Exception {

@@ -3,59 +3,48 @@ package ru.hh.jclient.common;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 
 enum ReturnType {
   
-  XML(MediaType.XML_UTF_8) {
+  XML {
     @SuppressWarnings("unchecked")
     @Override
-    <T> FailableFunction<Response, T, Exception> converterFunction(HttpClient context) {
-      return r -> (T) context.getJaxbContext().createUnmarshaller().unmarshal(r.getResponseBodyAsStream());
+    <T> FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(HttpClient context) {
+      return r -> new ResponseWrapper<T>((T) context.getJaxbContext().createUnmarshaller().unmarshal(r.getResponseBodyAsStream()), r);
     }
   },
-  JSON(MediaType.JSON_UTF_8) {
+  JSON {
     @SuppressWarnings("unchecked")
     @Override
-    <T> FailableFunction<Response, T, Exception> converterFunction(HttpClient context) {
-      return r -> (T) context.getObjectMapper().readValue(r.getResponseBodyAsStream(), context.getJsonClass());
+    <T> FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(HttpClient context) {
+      return r -> new ResponseWrapper<T>((T) context.getObjectMapper().readValue(r.getResponseBodyAsStream(), context.getJsonClass()), r);
     }
   },
-  PROTOBUF(MediaType.PROTOBUF) {
+  PROTOBUF {
     @SuppressWarnings("unchecked")
     @Override
-    <T> FailableFunction<Response, T, Exception> converterFunction(HttpClient context) {
+    <T> FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(HttpClient context) {
       return r -> {
         Method parseFromMethod = context.getProtobufClass().getMethod("parseFrom", InputStream.class);
-        return (T) parseFromMethod.invoke(null, r.getResponseBodyAsStream());
+        return new ResponseWrapper<T>((T) parseFromMethod.invoke(null, r.getResponseBodyAsStream()), r);
       };
     }
   },
-  TEXT(MediaType.PLAIN_TEXT_UTF_8) {
-    @SuppressWarnings({ "unchecked", "unused" })
+  TEXT {
+    @SuppressWarnings("unchecked")
     @Override
-    <T> FailableFunction<Response, T, Exception> converterFunction(HttpClient context) {
-      return r -> (T) r.getResponseBody("UTF-8");
+    <T> FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(HttpClient context) {
+      return r -> new ResponseWrapper<T>((T) r.getResponseBody(context.getCharset().name()), r);
     }
   },
-  EMPTY(MediaType.PLAIN_TEXT_UTF_8) {
+  EMPTY {
     @SuppressWarnings("unused")
     @Override
-    <T> FailableFunction<Response, T, Exception> converterFunction(HttpClient context) {
-      return r -> null;
+    <T> FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(HttpClient context) {
+      return r -> new ResponseWrapper<T>(null, r);
     }
   };
   
-  private MediaType mediaType;
-
-  private ReturnType(MediaType mediaType) {
-    this.mediaType = mediaType;
-  }
-  
-  public MediaType getMediaType() {
-    return mediaType;
-  }
-
-  abstract <T> FailableFunction<Response, T, Exception> converterFunction(HttpClient context);
+  abstract <T> FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(HttpClient context);
 }
