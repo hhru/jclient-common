@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
 import com.google.common.base.Joiner;
@@ -26,6 +27,8 @@ public class RequestUtils {
   }
 
   public static Optional<String> getSingleHeader(Map<String, List<String>> headers, String headerName, boolean warnIfMultiple) {
+    requireNonNull(headers, "headers must not be null");
+    requireNonNull(headerName, "headerName must not be null");
     if (!headers.containsKey(headerName)) {
       return Optional.empty();
     }

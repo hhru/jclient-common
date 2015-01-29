@@ -25,9 +25,9 @@ import com.ning.http.client.Response;
 
 class HttpClientImpl extends HttpClient {
 
-  private static final String PARAM_READ_ONLY_REPLICA = "replicaOnlyRq";
+  static final String PARAM_READ_ONLY_REPLICA = "replicaOnlyRq";
 
-  private static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
+  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
 
   HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
     super(http, request, hostsWithSession, contextSupplier);
