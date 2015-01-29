@@ -1,7 +1,10 @@
 package ru.hh.jclient.common;
 
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,15 +13,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+
 import org.junit.Test;
+
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlTest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
@@ -208,6 +215,31 @@ public class HttpClientTest {
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader1")); // all those headers won't be accepted, as they are not in allowed list
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader2")); // all those headers won't be accepted, as they are not in allowed list
     assertTrue(actualRequest.get().getHeaders().containsKey("someheader"));
+  }
+
+  @Test
+  public void testDebug() throws IOException, InterruptedException, ExecutionException {
+    Request request = new RequestBuilder("GET")
+        .setUrl("http://localhost/empty")
+        .addHeader(X_HH_DEBUG, "true")
+        .addHeader(AUTHORIZATION, "someauth")
+        .build();
+
+    // debug is off, those headers will be removed
+    Supplier<Request> actualRequest = withEmptyContext().mockRequest(new byte[0]);
+    assertFalse(httpClientContext.isDebugMode());
+    http.with(request).returnEmpty().get();
+    assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
+    assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
+
+    // debug is on, headers are passed
+    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
+    headers.add(X_HH_DEBUG, "true");
+    actualRequest = withContext(headers).mockRequest(new byte[0]);
+    assertTrue(httpClientContext.isDebugMode());
+    http.with(request).returnEmpty().get();
+    assertTrue(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
+    assertTrue(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
   }
 
   @Test
