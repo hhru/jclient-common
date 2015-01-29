@@ -225,7 +225,7 @@ public class HttpClientTest {
         .addHeader(AUTHORIZATION, "someauth")
         .build();
 
-    // debug is off, those headers will be removed
+    // debug is off, headers will be removed
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(new byte[0]);
     assertFalse(httpClientContext.isDebugMode());
     http.with(request).returnEmpty().get();
@@ -252,7 +252,7 @@ public class HttpClientTest {
     http.with(request).returnEmpty().get();
     assertTrue(actualRequest.get().getHeaders().containsKey(HttpHeaders.HH_PROTO_SESSION));
 
-    request = new RequestBuilder("GET").setUrl("http://someotherhost/empty").build();
+    request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
     http.with(request).returnEmpty().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(HttpHeaders.HH_PROTO_SESSION));
   }
@@ -278,7 +278,7 @@ public class HttpClientTest {
       handler.onThrowable(new TestException());
       return null;
     });
-    http = new HttpClientBuilder(httpClient, ImmutableSet.of("localhost"), () -> httpClientContext);
+    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), () -> httpClientContext);
 
     withEmptyContext();
 

@@ -7,14 +7,11 @@ import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
-
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
-
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -22,6 +19,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.uri.Uri;
 
 class HttpClientImpl extends HttpClient {
 
@@ -69,7 +67,7 @@ class HttpClientImpl extends HttpClient {
     headers.putAll(getRequest().getHeaders());
 
     // remove hh-session header if host does not need it
-    if (getHostsWithSession().stream().noneMatch(h -> getRequest().getUrl().startsWith(h))) {
+    if (getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(h -> getRequest().getUri().getHost().equals(h))) {
       headers.remove(HH_PROTO_SESSION);
     }
 
