@@ -106,7 +106,7 @@ public class HttpClientTest {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest("test тест");
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
-    String text = http.with(request).returnText().get();
+    String text = http.with(request).expectPlainText().request().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
     assertTrue(debug.called(REQUEST, RESPONSE, FINISHED));
@@ -117,7 +117,7 @@ public class HttpClientTest {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest("test тест".getBytes(Charset.forName("Cp1251")));
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
-    String text = http.with(request).returnText(Charset.forName("Cp1251")).get();
+    String text = http.with(request).expectPlainText(Charset.forName("Cp1251")).request().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
     assertTrue(debug.called(REQUEST, RESPONSE, FINISHED));
@@ -132,7 +132,7 @@ public class HttpClientTest {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(out.toByteArray());
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    ResponseWrapper<XmlTest> testOutputWrapper = http.with(request).<XmlTest> returnWrappedJson(objectMapper, XmlTest.class).get();
+    ResponseWrapper<XmlTest> testOutputWrapper = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).wrappedRequest().get();
     XmlTest testOutput = testOutputWrapper.get();
     assertEquals(test.name, testOutput.name);
     assertNotNull(testOutputWrapper.getResponse());
@@ -148,7 +148,7 @@ public class HttpClientTest {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(out.toByteArray());
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    XmlTest testOutput = http.with(request).<XmlTest> returnXml(context).get();
+    XmlTest testOutput = http.with(request).expectXml(context, XmlTest.class).request().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -159,7 +159,7 @@ public class HttpClientTest {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).<XmlTest> returnXml(JAXBContext.newInstance(XmlTest.class)).get();
+      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).request().get();
     }
     catch (ExecutionException e) {
       assertTrue(debug.called(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED));
@@ -176,7 +176,7 @@ public class HttpClientTest {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(out.toByteArray());
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    XmlTest testOutput = http.with(request).<XmlTest> returnJson(objectMapper, XmlTest.class).get();
+    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).request().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -187,7 +187,7 @@ public class HttpClientTest {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     try {
-      http.with(request).<XmlTest> returnJson(new ObjectMapper(), XmlTest.class).get();
+      http.with(request).<XmlTest> expectJson(new ObjectMapper(), XmlTest.class).request().get();
     }
     catch (ExecutionException e) {
       throw e.getCause();
@@ -203,7 +203,7 @@ public class HttpClientTest {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(out.toByteArray());
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
-    ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> returnProtobuf(ProtobufTestMessage.class).get();
+    ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).request().get();
     assertEquals(test.getIdsList(), testOutput.getIdsList());
     assertEqualRequests(request, actualRequest.get());
   }
@@ -214,7 +214,7 @@ public class HttpClientTest {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
     try {
-      http.with(request).<ProtobufTestMessage> returnProtobuf(ProtobufTestMessage.class).get();
+      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).request().get();
     }
     catch (ExecutionException e) {
       throw e.getCause();
@@ -225,7 +225,7 @@ public class HttpClientTest {
   public void testEmpty() throws IOException, InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(new byte[0]);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    Object testOutput = http.with(request).returnEmpty().get();
+    Object testOutput = http.with(request).expectEmpty().request().get();
     assertNull(testOutput);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -234,7 +234,7 @@ public class HttpClientTest {
   public void testReadOnly() throws IOException, InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(new byte[0]);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    Object testOutput = http.with(request).readOnly().returnEmpty().get();
+    Object testOutput = http.with(request).readOnly().expectEmpty().request().get();
     assertNull(testOutput);
     assertTrue(actualRequest.get().getUrl().indexOf(HttpClientImpl.PARAM_READ_ONLY_REPLICA) > -1);
     assertTrue(debug.called(REQUEST, RESPONSE, LABEL, FINISHED));
@@ -250,7 +250,7 @@ public class HttpClientTest {
 
     Supplier<Request> actualRequest = withContext(headers).mockRequest(new byte[0]);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
-    http.with(request).returnEmpty().get();
+    http.with(request).expectEmpty().request().get();
     // all those headers won't be accepted, as they come from global request and are not in allowed list
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader1"));
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader2"));
@@ -271,7 +271,7 @@ public class HttpClientTest {
     // debug is off, headers will be removed
     Supplier<Request> actualRequest = withEmptyContext().mockRequest(new byte[0]);
     assertFalse(httpClientContext.isDebugMode());
-    http.with(request).returnEmpty().get();
+    http.with(request).expectEmpty().request().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
     assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
 
@@ -280,7 +280,7 @@ public class HttpClientTest {
     headers.add(X_HH_DEBUG, "true");
     actualRequest = withContext(headers).mockRequest(new byte[0]);
     assertTrue(httpClientContext.isDebugMode());
-    http.with(request).returnEmpty().get();
+    http.with(request).expectEmpty().request().get();
     assertEquals(actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG), "true");
     assertEquals(actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION), "someauth");
   }
@@ -292,11 +292,11 @@ public class HttpClientTest {
 
     Supplier<Request> actualRequest = withContext(headers).mockRequest(new byte[0]);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    http.with(request).returnEmpty().get();
+    http.with(request).expectEmpty().request().get();
     assertEquals(actualRequest.get().getHeaders().getFirstValue(HttpHeaders.HH_PROTO_SESSION), "somesession");
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
-    http.with(request).returnEmpty().get();
+    http.with(request).expectEmpty().request().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(HttpHeaders.HH_PROTO_SESSION));
   }
 
@@ -305,7 +305,7 @@ public class HttpClientTest {
     withEmptyContext().mockRequest(403);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     try {
-      http.with(request).returnEmpty().get();
+      http.with(request).expectEmpty().request().get();
     }
     catch (ExecutionException e) {
       // exception about bad response status, not reported to debug, so no CLIENT_PROBLEM here
@@ -329,7 +329,7 @@ public class HttpClientTest {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).<ProtobufTestMessage> returnProtobuf(ProtobufTestMessage.class).get();
+      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).request().get();
     }
     catch (ExecutionException e) {
       assertTrue(debug.called(REQUEST, CLIENT_PROBLEM, FINISHED));

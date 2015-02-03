@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -33,7 +34,7 @@ class HttpClientImpl extends HttpClient {
     super(http, request, hostsWithSession, contextSupplier);
   }
 
-  <T> CompletableFuture<ResponseWrapper<T>> executeRequest() {
+  <T> CompletableFuture<ResponseWrapper<T>> executeRequest(FailableFunction<Response, ResponseWrapper<T>, Exception> converter) {
     RequestBuilder builder = new RequestBuilder(getRequest());
     addHeaders(builder);
     if (useReadOnlyReplica()) {
@@ -43,7 +44,7 @@ class HttpClientImpl extends HttpClient {
     Request request = builder.build();
     CompletableFuture<ResponseWrapper<T>> future = request(request).thenApply(r -> {
       try {
-        return getReturnType().<T> converterFunction(this).apply(r);
+        return converter.apply(r);
       }
       catch (Exception e) {
         ResponseConverterException rce = new ResponseConverterException(e);
