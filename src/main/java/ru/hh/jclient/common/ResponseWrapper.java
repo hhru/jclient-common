@@ -7,7 +7,7 @@ public class ResponseWrapper<T> {
   private T value;
   private Response response;
 
-  public ResponseWrapper(T value, Response response) {
+  ResponseWrapper(T value, Response response) {
     this.value = value;
     this.response = response;
   }

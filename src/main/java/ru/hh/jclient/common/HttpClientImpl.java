@@ -12,9 +12,6 @@ import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveSt
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import ru.hh.jclient.common.exception.ClientResponseException;
-import ru.hh.jclient.common.exception.ResponseConverterException;
-import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -34,7 +31,7 @@ class HttpClientImpl extends HttpClient {
     super(http, request, hostsWithSession, contextSupplier);
   }
 
-  <T> CompletableFuture<ResponseWrapper<T>> executeRequest(FailableFunction<Response, ResponseWrapper<T>, Exception> converter) {
+  CompletableFuture<Response> executeRequest() {
     RequestBuilder builder = new RequestBuilder(getRequest());
     addHeaders(builder);
     if (useReadOnlyReplica()) {
@@ -42,20 +39,10 @@ class HttpClientImpl extends HttpClient {
     }
 
     Request request = builder.build();
-    CompletableFuture<ResponseWrapper<T>> future = request(request).thenApply(r -> {
-      try {
-        return converter.apply(r);
-      }
-      catch (Exception e) {
-        ResponseConverterException rce = new ResponseConverterException(e);
-        getDebug().onConverterProblem(rce);
-        throw rce;
-      }
-      finally {
-        getDebug().onProcessingFinished();
-      }
-    });
-    return future;
+    CompletableFuture<Response> promise = new CompletableFuture<>();
+    getDebug().onRequest(getHttp().getConfig(), request);
+    getHttp().executeRequest(request, new CompletionHandler(promise, getDebug(), getHttp().getConfig()));
+    return promise;
   }
 
   private void addHeaders(RequestBuilder requestBuilder) {
@@ -81,13 +68,6 @@ class HttpClientImpl extends HttpClient {
     requestBuilder.setHeaders(headers);
   }
 
-  private CompletableFuture<Response> request(Request request) {
-    CompletableFuture<Response> promise = new CompletableFuture<>();
-    getDebug().onRequest(getHttp().getConfig(), request);
-    getHttp().executeRequest(request, new CompletionHandler(promise, getDebug(), getHttp().getConfig()));
-    return promise;
-  }
-
   static class CompletionHandler extends AsyncCompletionHandler<Response> {
 
     private CompletableFuture<Response> promise;
@@ -103,15 +83,8 @@ class HttpClientImpl extends HttpClient {
     @Override
     public Response onCompleted(Response response) throws Exception {
       response = requestDebug.onResponse(config, response);
-      // TODO add proper processing of >=400 status codes
-      if (response.getStatusCode() >= 400) {
-        requestDebug.onProcessingFinished();
-        promise.completeExceptionally(new ClientResponseException(response));
-        // do not report to debug because it is only about bad response status
-      }
-      else {
-        promise.complete(response);
-      }
+      promise.complete(response);
+      // TODO requestDebug.onProcessingFinished(); maybe should be here?
       return response;
     }
 

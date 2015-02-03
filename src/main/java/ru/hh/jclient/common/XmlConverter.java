@@ -4,14 +4,13 @@ import javax.xml.bind.JAXBContext;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.ning.http.client.Response;
 
-public class XmlProcessor<T> extends AbstractProcessor<T> {
+public class XmlConverter<T> extends AbstractConverter<T> {
 
   private JAXBContext context;
   @SuppressWarnings("unused")
   private Class<T> xmlClass;
 
-  public XmlProcessor(HttpClient httpClient, JAXBContext context, Class<T> xmlClass) {
-    super(httpClient);
+  public XmlConverter(JAXBContext context, Class<T> xmlClass) {
     this.context = context;
     this.xmlClass = xmlClass;
   }

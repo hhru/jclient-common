@@ -5,13 +5,12 @@ import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ning.http.client.Response;
 
-public class JsonProcessor<T> extends AbstractProcessor<T> {
+public class JsonConverter<T> extends AbstractConverter<T> {
 
   private ObjectMapper objectMapper;
   private Class<T> jsonClass;
 
-  public JsonProcessor(HttpClient httpClient, ObjectMapper objectMapper, Class<T> jsonClass) {
-    super(httpClient);
+  JsonConverter(ObjectMapper objectMapper, Class<T> jsonClass) {
     this.objectMapper = requireNonNull(objectMapper, "mapper must not be null");
     this.jsonClass = requireNonNull(jsonClass, "jsonClass must not be null");
   }

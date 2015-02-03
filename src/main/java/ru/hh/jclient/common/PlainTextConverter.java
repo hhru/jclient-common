@@ -5,17 +5,16 @@ import java.nio.charset.Charset;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.ning.http.client.Response;
 
-public class PlainTextProcessor extends AbstractProcessor<String> {
+public class PlainTextConverter extends AbstractConverter<String> {
 
   private Charset charset;
 
-  public PlainTextProcessor(HttpClient httpClient, Charset charset) {
-    super(httpClient);
+  public PlainTextConverter(Charset charset) {
     this.charset = charset;
   }
 
-  public PlainTextProcessor(HttpClient httpClient) {
-    this(httpClient, UTF_8);
+  public PlainTextConverter() {
+    this(UTF_8);
   }
 
   @Override

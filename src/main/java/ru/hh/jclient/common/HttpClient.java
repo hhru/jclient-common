@@ -3,9 +3,11 @@ package ru.hh.jclient.common;
 import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
+
 import javax.xml.bind.JAXBContext;
-import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.AsyncHttpClient;
@@ -13,6 +15,8 @@ import com.ning.http.client.Request;
 import com.ning.http.client.Response;
 
 public abstract class HttpClient {
+
+  static final Function<Response, Boolean> OK_RESPONSE = r -> r.getStatusCode() < 400;
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
@@ -22,7 +26,6 @@ public abstract class HttpClient {
   private Request request;
 
   // tools for response parsing
-  private ReturnType returnType;
   private JAXBContext jaxbContext;
   private Class<? extends GeneratedMessage> protobufClass;
   private ObjectMapper objectMapper;
@@ -47,31 +50,31 @@ public abstract class HttpClient {
 
   // parsing response
 
-  public <T> AbstractProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
-    return new XmlProcessor<>(this, context, xmlClass);
+  public <T> ResponseProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
+    return new ResponseProcessor<T>(this, new XmlConverter<>(context, xmlClass));
   }
 
-  public <T> AbstractProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
-    return new JsonProcessor<>(this, mapper, jsonClass);
+  public <T> ResponseProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
+    return new ResponseProcessor<T>(this, new JsonConverter<>(mapper, jsonClass));
   }
 
-  public <T extends GeneratedMessage> AbstractProcessor<T> expectProtobuf(Class<T> protobufClass) {
-    return new ProtobufProcessor<>(this, protobufClass);
+  public <T extends GeneratedMessage> ResponseProcessor<T> expectProtobuf(Class<T> protobufClass) {
+    return new ResponseProcessor<T>(this, new ProtobufConverter<>(protobufClass));
   }
 
-  public AbstractProcessor<String> expectPlainText() {
-    return new PlainTextProcessor(this);
+  public ResponseProcessor<String> expectPlainText() {
+    return new ResponseProcessor<String>(this, new PlainTextConverter());
   }
 
-  public AbstractProcessor<String> expectPlainText(Charset charset) {
-    return new PlainTextProcessor(this, charset);
+  public ResponseProcessor<String> expectPlainText(Charset charset) {
+    return new ResponseProcessor<String>(this, new PlainTextConverter(charset));
   }
 
-  public AbstractProcessor<Void> expectEmpty() {
-    return new VoidProcessor(this);
+  public ResponseProcessor<Void> expectEmpty() {
+    return new ResponseProcessor<Void>(this, new VoidConverter());
   }
 
-  abstract <T> CompletableFuture<ResponseWrapper<T>> executeRequest(FailableFunction<Response, ResponseWrapper<T>, Exception> converter);
+  abstract CompletableFuture<Response> executeRequest();
 
   // getters for tools
 
@@ -100,10 +103,6 @@ public abstract class HttpClient {
   }
 
   // getters for response generation tools
-
-  ReturnType getReturnType() {
-    return returnType;
-  }
 
   JAXBContext getJaxbContext() {
     return jaxbContext;

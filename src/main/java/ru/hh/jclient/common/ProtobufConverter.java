@@ -6,12 +6,11 @@ import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.Response;
 
-public class ProtobufProcessor<T extends GeneratedMessage> extends AbstractProcessor<T> {
+public class ProtobufConverter<T extends GeneratedMessage> extends AbstractConverter<T> {
 
   private Class<T> protobufClass;
 
-  public ProtobufProcessor(HttpClient httpClient, Class<T> protobufClass) {
-    super(httpClient);
+  public ProtobufConverter(Class<T> protobufClass) {
     this.protobufClass = protobufClass;
   }
 
