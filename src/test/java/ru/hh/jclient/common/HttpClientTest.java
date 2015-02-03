@@ -72,7 +72,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray());
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    ResponseWrapper<XmlTest> testOutputWrapper = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).wrappedRequest().get();
+    ResponseWrapper<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).wrappedRequest().get();
     XmlTest testOutput = testOutputWrapper.get();
     assertEquals(test.name, testOutput.name);
     assertNotNull(testOutputWrapper.getResponse());
