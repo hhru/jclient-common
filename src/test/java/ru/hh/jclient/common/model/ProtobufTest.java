@@ -3,17 +3,25 @@
 
 package ru.hh.jclient.common.model;
 
-@SuppressWarnings("unused")
 public final class ProtobufTest {
   private ProtobufTest() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
+  public interface ProtobufTestMessageOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated int32 ids = 1;
+    java.util.List<java.lang.Integer> getIdsList();
+    int getIdsCount();
+    int getIds(int index);
+  }
   public static final class ProtobufTestMessage extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements ProtobufTestMessageOrBuilder {
     // Use ProtobufTestMessage.newBuilder() to construct.
-    private ProtobufTestMessage() {
-      initFields();
+    private ProtobufTestMessage(Builder builder) {
+      super(builder);
     }
     private ProtobufTestMessage(boolean noInit) {}
     
@@ -38,27 +46,35 @@ public final class ProtobufTest {
     
     // repeated int32 ids = 1;
     public static final int IDS_FIELD_NUMBER = 1;
-    private java.util.List<java.lang.Integer> ids_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.Integer> getIdsList() {
+    private java.util.List<java.lang.Integer> ids_;
+    public java.util.List<java.lang.Integer>
+        getIdsList() {
       return ids_;
     }
-    public int getIdsCount() { return ids_.size(); }
+    public int getIdsCount() {
+      return ids_.size();
+    }
     public int getIds(int index) {
       return ids_.get(index);
     }
     
     private void initFields() {
+      ids_ = java.util.Collections.emptyList();;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      for (int element : getIdsList()) {
-        output.writeInt32(1, element);
+      for (int i = 0; i < ids_.size(); i++) {
+        output.writeInt32(1, ids_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -71,9 +87,9 @@ public final class ProtobufTest {
       size = 0;
       {
         int dataSize = 0;
-        for (int element : getIdsList()) {
+        for (int i = 0; i < ids_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(element);
+            .computeInt32SizeNoTag(ids_.get(i));
         }
         size += dataSize;
         size += 1 * getIdsList().size();
@@ -81,6 +97,13 @@ public final class ProtobufTest {
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage parseFrom(
@@ -157,34 +180,51 @@ public final class ProtobufTest {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage result;
-      
-      // Construct using ru.hh.jclient.common.ProtobufTest.ProtobufTestMessage.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessageOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return ru.hh.jclient.common.model.ProtobufTest.internal_static_ProtobufTestMessage_descriptor;
       }
       
-      protected ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return ru.hh.jclient.common.model.ProtobufTest.internal_static_ProtobufTestMessage_fieldAccessorTable;
+      }
+      
+      // Construct using ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage();
+        super.clear();
+        ids_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -196,37 +236,34 @@ public final class ProtobufTest {
         return ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage build() {
-        if (result != null && !isInitialized()) {
+        ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage result = new ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage(this);
+        int from_bitField0_ = bitField0_;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          ids_ = java.util.Collections.unmodifiableList(ids_);
+          bitField0_ = (bitField0_ & ~0x00000001);
         }
-        if (result.ids_ != java.util.Collections.EMPTY_LIST) {
-          result.ids_ =
-            java.util.Collections.unmodifiableList(result.ids_);
-        }
-        ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage returnMe = result;
-        result = null;
-        return returnMe;
+        result.ids_ = ids_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -241,13 +278,21 @@ public final class ProtobufTest {
       public Builder mergeFrom(ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage other) {
         if (other == ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage.getDefaultInstance()) return this;
         if (!other.ids_.isEmpty()) {
-          if (result.ids_.isEmpty()) {
-            result.ids_ = new java.util.ArrayList<java.lang.Integer>();
+          if (ids_.isEmpty()) {
+            ids_ = other.ids_;
+            bitField0_ = (bitField0_ & ~0x00000001);
+          } else {
+            ensureIdsIsMutable();
+            ids_.addAll(other.ids_);
           }
-          result.ids_.addAll(other.ids_);
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        return true;
       }
       
       public Builder mergeFrom(
@@ -262,17 +307,20 @@ public final class ProtobufTest {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 8: {
-              addIds(input.readInt32());
+              ensureIdsIsMutable();
+              ids_.add(input.readInt32());
               break;
             }
             case 10: {
@@ -288,38 +336,50 @@ public final class ProtobufTest {
         }
       }
       
+      private int bitField0_;
       
       // repeated int32 ids = 1;
-      public java.util.List<java.lang.Integer> getIdsList() {
-        return java.util.Collections.unmodifiableList(result.ids_);
+      private java.util.List<java.lang.Integer> ids_ = java.util.Collections.emptyList();;
+      private void ensureIdsIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          ids_ = new java.util.ArrayList<java.lang.Integer>(ids_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      public java.util.List<java.lang.Integer>
+          getIdsList() {
+        return java.util.Collections.unmodifiableList(ids_);
       }
       public int getIdsCount() {
-        return result.getIdsCount();
+        return ids_.size();
       }
       public int getIds(int index) {
-        return result.getIds(index);
+        return ids_.get(index);
       }
-      public Builder setIds(int index, int value) {
-        result.ids_.set(index, value);
+      public Builder setIds(
+          int index, int value) {
+        ensureIdsIsMutable();
+        ids_.set(index, value);
+        onChanged();
         return this;
       }
       public Builder addIds(int value) {
-        if (result.ids_.isEmpty()) {
-          result.ids_ = new java.util.ArrayList<java.lang.Integer>();
-        }
-        result.ids_.add(value);
+        ensureIdsIsMutable();
+        ids_.add(value);
+        onChanged();
         return this;
       }
       public Builder addAllIds(
           java.lang.Iterable<? extends java.lang.Integer> values) {
-        if (result.ids_.isEmpty()) {
-          result.ids_ = new java.util.ArrayList<java.lang.Integer>();
-        }
-        super.addAll(values, result.ids_);
+        ensureIdsIsMutable();
+        super.addAll(values, ids_);
+        onChanged();
         return this;
       }
       public Builder clearIds() {
-        result.ids_ = java.util.Collections.emptyList();
+        ids_ = java.util.Collections.emptyList();;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
         return this;
       }
       
@@ -328,7 +388,6 @@ public final class ProtobufTest {
     
     static {
       defaultInstance = new ProtobufTestMessage(true);
-      ru.hh.jclient.common.model.ProtobufTest.internalForceInit();
       defaultInstance.initFields();
     }
     
@@ -350,8 +409,8 @@ public final class ProtobufTest {
   static {
     java.lang.String[] descriptorData = {
       "\n\023protobuf_test.proto\"\"\n\023ProtobufTestMes" +
-      "sage\022\013\n\003ids\030\001 \003(\005B\034\n\032ru.hh.jlogic.exampl" +
-      "e.model"
+      "sage\022\013\n\003ids\030\001 \003(\005B\034\n\032ru.hh.jclient.commo" +
+      "n.model"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -374,8 +433,6 @@ public final class ProtobufTest {
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
   }
-  
-  public static void internalForceInit() {}
   
   // @@protoc_insertion_point(outer_class_scope)
 }
