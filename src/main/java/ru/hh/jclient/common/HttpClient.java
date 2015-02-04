@@ -5,10 +5,15 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import javax.xml.bind.JAXBContext;
-
+import ru.hh.jclient.common.converter.JsonConverter;
+import ru.hh.jclient.common.converter.PlainTextConverter;
+import ru.hh.jclient.common.converter.ProtobufConverter;
+import ru.hh.jclient.common.converter.TypeConverter;
+import ru.hh.jclient.common.converter.VoidConverter;
+import ru.hh.jclient.common.converter.XmlConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Range;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
@@ -16,7 +21,8 @@ import com.ning.http.client.Response;
 
 public abstract class HttpClient {
 
-  static final Function<Response, Boolean> OK_RESPONSE = r -> r.getStatusCode() < 400;
+  public static final Range<Integer> OK_RANGE = Range.atMost(399);
+  public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
@@ -24,13 +30,6 @@ public abstract class HttpClient {
   private RequestDebug debug;
 
   private Request request;
-
-  // tools for response parsing
-  private JAXBContext jaxbContext;
-  private Class<? extends GeneratedMessage> protobufClass;
-  private ObjectMapper objectMapper;
-  private Class<?> jsonClass;
-  private Charset charset;
 
   private boolean readOnlyReplica;
 
@@ -42,6 +41,9 @@ public abstract class HttpClient {
     this.debug = this.context.getDebugSupplier().get();
   }
 
+  /**
+   * Marks request as "read only". Adds corresponding GET attribute to request url.
+   */
   public HttpClient readOnly() {
     this.readOnlyReplica = true;
     this.debug.addLabel("RO");
@@ -50,28 +52,74 @@ public abstract class HttpClient {
 
   // parsing response
 
+  /**
+   * Specifies that the type of result must be XML.
+   * 
+   * @param context JAXB context used to parse response
+   * @param xmlClass type of result
+   */
   public <T> ResponseProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
     return new ResponseProcessor<T>(this, new XmlConverter<>(context, xmlClass));
   }
 
+  /**
+   * Specifies that the type of result must be JSON.
+   * 
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonClass type of result
+   */
   public <T> ResponseProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
     return new ResponseProcessor<T>(this, new JsonConverter<>(mapper, jsonClass));
   }
 
+  /**
+   * Specifies that the type of result must be PROTOBUF.
+   * 
+   * @param protobufClass type of result
+   */
   public <T extends GeneratedMessage> ResponseProcessor<T> expectProtobuf(Class<T> protobufClass) {
     return new ResponseProcessor<T>(this, new ProtobufConverter<>(protobufClass));
   }
 
+  /**
+   * Specifies that the type of result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
+   */
   public ResponseProcessor<String> expectPlainText() {
     return new ResponseProcessor<String>(this, new PlainTextConverter());
   }
 
+  /**
+   * Specifies that the type of result must be plain text.
+   * 
+   * @param charset used to decode response
+   */
   public ResponseProcessor<String> expectPlainText(Charset charset) {
     return new ResponseProcessor<String>(this, new PlainTextConverter(charset));
   }
 
+  /**
+   * Specifies that the result must not be parsed.
+   */
   public ResponseProcessor<Void> expectEmpty() {
     return new ResponseProcessor<Void>(this, new VoidConverter());
+  }
+
+  /**
+   * Specifies the converter for the result.
+   * 
+   * @param converter used to convert response to expected result
+   */
+  public <T> ResponseProcessor<T> expect(TypeConverter<T> converter) {
+    return new ResponseProcessor<T>(this, converter);
+  }
+
+  /**
+   * Returns unconverted, raw response. Avoid using this method, use "converter" methods instead.
+   * 
+   * @return response
+   */
+  public CompletableFuture<Response> request() {
+    return executeRequest();
   }
 
   abstract CompletableFuture<Response> executeRequest();
@@ -100,27 +148,5 @@ public abstract class HttpClient {
 
   boolean useReadOnlyReplica() {
     return readOnlyReplica;
-  }
-
-  // getters for response generation tools
-
-  JAXBContext getJaxbContext() {
-    return jaxbContext;
-  }
-
-  Class<? extends GeneratedMessage> getProtobufClass() {
-    return protobufClass;
-  }
-
-  ObjectMapper getObjectMapper() {
-    return objectMapper;
-  }
-
-  Class<?> getJsonClass() {
-    return jsonClass;
-  }
-
-  Charset getCharset() {
-    return charset;
   }
 }
