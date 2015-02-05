@@ -10,6 +10,11 @@ public class ClientResponseException extends RuntimeException {
     this.response = response;
   }
 
+  public ClientResponseException(Response response, String message) {
+    super(message);
+    this.response = response;
+  }
+
   public Response getResponse() {
     return response;
   }

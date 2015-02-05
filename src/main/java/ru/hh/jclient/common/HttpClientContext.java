@@ -16,7 +16,7 @@ public class HttpClientContext {
   private Supplier<RequestDebug> debugSupplier;
 
   public HttpClientContext(Map<String, List<String>> headers, Supplier<RequestDebug> debugSupplier) {
-    headers = requireNonNull(headers, "headers must not be null")
+    this.headers = requireNonNull(headers, "headers must not be null")
         .entrySet()
         .stream()
         .collect(toFluentCaseInsensitiveStringsMap(Entry::getKey, Entry::getValue));

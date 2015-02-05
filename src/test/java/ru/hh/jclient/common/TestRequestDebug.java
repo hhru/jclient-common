@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,8 +27,10 @@ public class TestRequestDebug implements RequestDebug {
     return calls;
   }
 
-  public boolean called(Call... calls) {
-    return this.calls.containsAll(Arrays.asList(calls)) && this.calls.size() == calls.length;
+  public TestRequestDebug assertCalled(Call... calls) {
+    assertEquals(this.calls, new HashSet<>(Arrays.asList(calls)));
+    reset();
+    return this;
   }
 
   public void reset() {

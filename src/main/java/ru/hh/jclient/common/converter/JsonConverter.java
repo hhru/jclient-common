@@ -1,12 +1,15 @@
 package ru.hh.jclient.common.converter;
 
+import static com.google.common.collect.ImmutableSet.of;
 import static java.util.Objects.requireNonNull;
+import java.util.Collection;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 
-public class JsonConverter<T> implements TypeConverter<T> {
+public class JsonConverter<T> extends SingleTypeConverter<T> {
 
   private ObjectMapper objectMapper;
   private Class<T> jsonClass;
@@ -19,6 +22,11 @@ public class JsonConverter<T> implements TypeConverter<T> {
   @Override
   public FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction() {
     return r -> new ResponseWrapper<>(objectMapper.readValue(r.getResponseBodyAsStream(), jsonClass), r);
+  }
+
+  @Override
+  public Collection<MediaType> getMediaTypes() {
+    return of(MediaType.JSON_UTF_8.withoutParameters());
   }
 
 }

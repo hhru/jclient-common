@@ -2,9 +2,7 @@ package ru.hh.jclient.common;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
+import static org.mockito.Mockito.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -12,10 +10,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
-
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
@@ -34,28 +32,34 @@ public class HttpClientTestBase {
   }
 
   protected HttpClientTestBase withContext(Map<String, List<String>> headers) {
-    httpClientContext = new HttpClientContext(headers, () -> new TestRequestDebug());
+    httpClientContext = new HttpClientContext(headers, () -> debug);
     return this;
   }
 
-  protected Supplier<Request> okRequest(String text) throws IOException {
-    return request(text, 200);
+  protected Supplier<Request> okRequest(String text, MediaType contentType) throws IOException {
+    return request(text, contentType, 200);
   }
 
-  protected Supplier<Request> request(String text, int status) throws IOException {
+  protected Supplier<Request> request(String text, MediaType contentType, int status) throws IOException {
     Response response = mock(Response.class);
     when(response.getStatusCode()).thenReturn(status);
+    if (contentType != null) {
+      when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
+    }
     when(response.getResponseBody(isA(String.class))).thenReturn(text);
     return request(response);
   }
 
-  protected Supplier<Request> okRequest(byte[] data) throws IOException {
-    return request(data, 200);
+  protected Supplier<Request> okRequest(byte[] data, MediaType contentType) throws IOException {
+    return request(data, contentType, 200);
   }
 
-  protected Supplier<Request> request(byte[] data, int status) throws IOException {
+  protected Supplier<Request> request(byte[] data, MediaType contentType, int status) throws IOException {
     Response response = mock(Response.class);
     when(response.getStatusCode()).thenReturn(status);
+    if (contentType != null) {
+      when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
+    }
     when(response.getResponseBodyAsStream()).thenReturn(new ByteArrayInputStream(data));
     when(response.getResponseBodyAsBytes()).thenReturn(data);
     when(response.getResponseBody(isA(String.class))).then(iom -> {
@@ -65,9 +69,12 @@ public class HttpClientTestBase {
     return request(response);
   }
 
-  protected Supplier<Request> request(int status) {
+  protected Supplier<Request> request(MediaType contentType, int status) {
     Response response = mock(Response.class);
     when(response.getStatusCode()).thenReturn(status);
+    if (contentType != null) {
+      when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
+    }
     return request(response);
   }
 

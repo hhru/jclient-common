@@ -19,6 +19,7 @@ public class ResponseProcessor<T> {
 
   private HttpClient httpClient;
   private TypeConverter<T> converter;
+  private boolean ignoreContentType;
 
   ResponseProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
@@ -31,6 +32,18 @@ public class ResponseProcessor<T> {
 
   TypeConverter<T> getConverter() {
     return converter;
+  }
+
+  /**
+   * Specifies that "Content-Type" header must be ignored when converting response.
+   */
+  public ResponseProcessor<T> ignoreContentType() {
+    this.ignoreContentType = true;
+    return this;
+  }
+
+  boolean isIgnoreContentType() {
+    return ignoreContentType;
   }
 
   /**
@@ -80,7 +93,10 @@ public class ResponseProcessor<T> {
 
   private ResponseWrapper<T> wrap(Response response) {
     try {
-      return converter.converterFunction().apply(response);
+      return converter.converterFunction(ignoreContentType).apply(response);
+    }
+    catch (ClientResponseException e) {
+      throw e;
     }
     catch (Exception e) {
       ResponseConverterException rce = new ResponseConverterException("Failed to convert response", e);

@@ -3,12 +3,15 @@ package ru.hh.jclient.common.converter;
 import static java.util.Objects.requireNonNull;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.Response;
 
-public class ProtobufConverter<T extends GeneratedMessage> implements TypeConverter<T> {
+public class ProtobufConverter<T extends GeneratedMessage> extends SingleTypeConverter<T> {
 
   private Class<T> protobufClass;
 
@@ -25,4 +28,8 @@ public class ProtobufConverter<T extends GeneratedMessage> implements TypeConver
     };
   }
 
+  @Override
+  public Collection<MediaType> getMediaTypes() {
+    return ImmutableSet.of(MediaType.PROTOBUF.withoutParameters(), MediaType.parse("application/x-protobuf"));
+  }
 }
