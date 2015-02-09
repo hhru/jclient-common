@@ -23,13 +23,14 @@ public class ResponseWrapper<T> {
 
   /**
    * Returns result of conversion.
-   * 
-   * @return result
    */
   public Optional<T> get() {
     return value;
   }
 
+  /**
+   * Returns response object.
+   */
   public Response getResponse() {
     return response;
   }

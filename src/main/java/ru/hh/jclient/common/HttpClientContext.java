@@ -9,12 +9,22 @@ import java.util.Map.Entry;
 import java.util.function.Supplier;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
+/**
+ * Context of global (incoming) request, that is going to spawn local (outgoing) request using
+ * {@link HttpClientBuilder#with(com.ning.http.client.Request)}.
+ */
 public class HttpClientContext {
 
   private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
   private boolean debugMode;
   private Supplier<RequestDebug> debugSupplier;
 
+  /**
+   * Creates context.
+   * 
+   * @param headers headers of global request. Some of them can be used by the local request.
+   * @param debugSupplier supplier of object used to gather debug information
+   */
   public HttpClientContext(Map<String, List<String>> headers, Supplier<RequestDebug> debugSupplier) {
     this.headers = requireNonNull(headers, "headers must not be null")
         .entrySet()
