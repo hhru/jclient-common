@@ -21,7 +21,7 @@ public class HttpClientBuilder {
   }
 
   /**
-   * Provides request to be executed.
+   * Specifies request to be executed. This is a starting point of request execution chain.
    * 
    * @param request to execute
    */
