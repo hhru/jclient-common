@@ -19,7 +19,6 @@ public class ResponseProcessor<T> {
 
   private HttpClient httpClient;
   private TypeConverter<T> converter;
-  private boolean ignoreContentType;
 
   ResponseProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
@@ -35,18 +34,6 @@ public class ResponseProcessor<T> {
   }
 
   /**
-   * Specifies that "Content-Type" header must be ignored when converting response.
-   */
-  public ResponseProcessor<T> ignoreContentType() {
-    this.ignoreContentType = true;
-    return this;
-  }
-
-  boolean isIgnoreContentType() {
-    return ignoreContentType;
-  }
-
-  /**
    * Returns expected result or throws {@link ClientResponseException}.
    * 
    * @return expected result
@@ -54,13 +41,13 @@ public class ResponseProcessor<T> {
    * @throws ResponseConverterException if converter failed to process response
    */
   public CompletableFuture<T> request() {
-    return httpClient.request().thenApply(this::wrapOrThrow).thenApply(ResponseWrapper::get);
+    return httpClient.request().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
   }
 
   /**
-   * Returns wrapper with response object and result (null if status code is not in {@link HttpClient#OK_RANGE}).
+   * Returns wrapper with response object and result (empty if status code is not in {@link HttpClient#OK_RANGE}).
    * 
-   * @return {@link ResponseWrapper} with expected result (or null) and response object
+   * @return {@link ResponseWrapper} with expected result (possibly empty) and response object
    * @throws ResponseConverterException if converter failed to process response
    */
   public CompletableFuture<ResponseWrapper<T>> wrappedRequest() {
@@ -93,7 +80,7 @@ public class ResponseProcessor<T> {
 
   private ResponseWrapper<T> wrap(Response response) {
     try {
-      return converter.converterFunction(ignoreContentType).apply(response);
+      return converter.converterFunction().apply(response);
     }
     catch (ClientResponseException e) {
       throw e;

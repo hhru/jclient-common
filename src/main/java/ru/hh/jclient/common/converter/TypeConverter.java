@@ -11,6 +11,6 @@ import com.ning.http.client.Response;
  */
 public interface TypeConverter<T> {
 
-  FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction(boolean ignoreContentType);
+  FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction();
 
 }

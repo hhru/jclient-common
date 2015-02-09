@@ -11,15 +11,20 @@ import static org.mockito.Mockito.*;
 import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
 import static ru.hh.jclient.common.TestRequestDebug.Call.*;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.NoContentTypeException;
@@ -29,6 +34,7 @@ import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
@@ -76,8 +82,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     ResponseWrapper<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).wrappedRequest().get();
-    XmlTest testOutput = testOutputWrapper.get();
-    assertEquals(test.name, testOutput.name);
+    Optional<XmlTest> testOutput = testOutputWrapper.get();
+    assertEquals(test.name, testOutput.get().name);
     assertNotNull(testOutputWrapper.getResponse());
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);

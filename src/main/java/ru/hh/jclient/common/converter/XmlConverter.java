@@ -26,7 +26,7 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction() {
+  public FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction() {
     return r -> new ResponseWrapper<>((T) context.createUnmarshaller().unmarshal(r.getResponseBodyAsStream()), r);
   }
 

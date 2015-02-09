@@ -20,7 +20,7 @@ public class JsonConverter<T> extends SingleTypeConverter<T> {
   }
 
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction() {
+  public FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction() {
     return r -> new ResponseWrapper<>(objectMapper.readValue(r.getResponseBodyAsStream(), jsonClass), r);
   }
 

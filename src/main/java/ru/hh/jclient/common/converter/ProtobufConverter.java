@@ -21,7 +21,7 @@ public class ProtobufConverter<T extends GeneratedMessage> extends SingleTypeCon
 
   @SuppressWarnings("unchecked")
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction() {
+  public FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction() {
     return r -> {
       Method parseFromMethod = protobufClass.getMethod("parseFrom", InputStream.class);
       return new ResponseWrapper<>((T) parseFromMethod.invoke(null, r.getResponseBodyAsStream()), r);

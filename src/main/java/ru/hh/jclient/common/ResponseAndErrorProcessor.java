@@ -14,20 +14,11 @@ public class ResponseAndErrorProcessor<T, E> {
 
   private ResponseProcessor<T> responseProcessor;
   private TypeConverter<E> errorConverter;
-  private boolean ignoreContentType;
   private Range<Integer> errorsRange = Range.greaterThan(OK_RANGE.upperEndpoint());
 
   ResponseAndErrorProcessor(ResponseProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
     this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
     this.errorConverter = requireNonNull(errorConverter, "errorConverter must not be null");
-  }
-
-  /**
-   * Specifies that "Content-Type" header must be ignored when converting ERROR response.
-   */
-  public ResponseAndErrorProcessor<T, E> ignoreContentType() {
-    this.ignoreContentType = true;
-    return this;
   }
 
   /**
@@ -75,7 +66,7 @@ public class ResponseAndErrorProcessor<T, E> {
     Optional<E> errorValue;
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
-        value = Optional.of(responseProcessor.getConverter().converterFunction(responseProcessor.isIgnoreContentType()).apply(response).get());
+        value = responseProcessor.getConverter().converterFunction().apply(response).get();
         errorValue = Optional.empty();
       }
       else {
@@ -99,7 +90,7 @@ public class ResponseAndErrorProcessor<T, E> {
 
   private Optional<E> parseError(Response response) throws Exception {
     if (errorsRange.contains(response.getStatusCode())) {
-      return Optional.of(errorConverter.converterFunction(ignoreContentType).apply(response).get());
+      return errorConverter.converterFunction().apply(response).get();
     }
     return Optional.empty();
   }

@@ -14,7 +14,7 @@ public class VoidConverter extends SingleTypeConverter<Void> {
   private static final Set<MediaType> MEDIA_TYPES = of(ANY_TYPE);
 
   @Override
-  public FailableFunction<Response, ResponseWrapper<Void>, Exception> converterFunction() {
+  public FailableFunction<Response, ResponseWrapper<Void>, Exception> singleTypeConverterFunction() {
     return r -> new ResponseWrapper<>(null, r);
   }
 

@@ -28,7 +28,7 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
   }
 
   @Override
-  public FailableFunction<Response, ResponseWrapper<String>, Exception> converterFunction() {
+  public FailableFunction<Response, ResponseWrapper<String>, Exception> singleTypeConverterFunction() {
     return r -> new ResponseWrapper<>(r.getResponseBody(charset.name()), r);
   }
 
