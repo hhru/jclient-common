@@ -58,8 +58,8 @@ public abstract class HttpClient {
    * @param context JAXB context used to parse response
    * @param xmlClass type of result
    */
-  public <T> ResponseProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
-    return new ResponseProcessor<T>(this, new XmlConverter<>(context, xmlClass));
+  public <T> ResultProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
+    return new ResultProcessor<T>(this, new XmlConverter<>(context, xmlClass));
   }
 
   /**
@@ -68,8 +68,8 @@ public abstract class HttpClient {
    * @param mapper Jackson mapper used to parse response
    * @param jsonClass type of result
    */
-  public <T> ResponseProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
-    return new ResponseProcessor<T>(this, new JsonConverter<>(mapper, jsonClass));
+  public <T> ResultProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
+    return new ResultProcessor<T>(this, new JsonConverter<>(mapper, jsonClass));
   }
 
   /**
@@ -77,15 +77,15 @@ public abstract class HttpClient {
    * 
    * @param protobufClass type of result
    */
-  public <T extends GeneratedMessage> ResponseProcessor<T> expectProtobuf(Class<T> protobufClass) {
-    return new ResponseProcessor<T>(this, new ProtobufConverter<>(protobufClass));
+  public <T extends GeneratedMessage> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
+    return new ResultProcessor<T>(this, new ProtobufConverter<>(protobufClass));
   }
 
   /**
    * Specifies that the type of result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
    */
-  public ResponseProcessor<String> expectPlainText() {
-    return new ResponseProcessor<String>(this, new PlainTextConverter());
+  public ResultProcessor<String> expectPlainText() {
+    return new ResultProcessor<String>(this, new PlainTextConverter());
   }
 
   /**
@@ -93,15 +93,15 @@ public abstract class HttpClient {
    * 
    * @param charset used to decode response
    */
-  public ResponseProcessor<String> expectPlainText(Charset charset) {
-    return new ResponseProcessor<String>(this, new PlainTextConverter(charset));
+  public ResultProcessor<String> expectPlainText(Charset charset) {
+    return new ResultProcessor<String>(this, new PlainTextConverter(charset));
   }
 
   /**
    * Specifies that the result must not be parsed.
    */
-  public ResponseProcessor<Void> expectEmpty() {
-    return new ResponseProcessor<Void>(this, new VoidConverter());
+  public ResultProcessor<Void> expectEmpty() {
+    return new ResultProcessor<Void>(this, new VoidConverter());
   }
 
   /**
@@ -109,8 +109,8 @@ public abstract class HttpClient {
    * 
    * @param converter used to convert response to expected result
    */
-  public <T> ResponseProcessor<T> expect(TypeConverter<T> converter) {
-    return new ResponseProcessor<T>(this, converter);
+  public <T> ResultProcessor<T> expect(TypeConverter<T> converter) {
+    return new ResultProcessor<T>(this, converter);
   }
 
   /**

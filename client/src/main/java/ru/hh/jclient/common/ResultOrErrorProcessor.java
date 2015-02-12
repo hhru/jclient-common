@@ -10,13 +10,13 @@ import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.google.common.collect.Range;
 import com.ning.http.client.Response;
 
-public class ResponseAndErrorProcessor<T, E> {
+public class ResultOrErrorProcessor<T, E> {
 
-  private ResponseProcessor<T> responseProcessor;
+  private ResultProcessor<T> responseProcessor;
   private TypeConverter<E> errorConverter;
   private Range<Integer> errorsRange = Range.greaterThan(OK_RANGE.upperEndpoint());
 
-  ResponseAndErrorProcessor(ResponseProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
+  ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
     this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
     this.errorConverter = requireNonNull(errorConverter, "errorConverter must not be null");
   }
@@ -26,7 +26,7 @@ public class ResponseAndErrorProcessor<T, E> {
    * 
    * @param status HTTP status code that converter will be used for
    */
-  public ResponseAndErrorProcessor<T, E> forStatus(int status) {
+  public ResultOrErrorProcessor<T, E> forStatus(int status) {
     return forStatus(Range.singleton(status));
   }
 
@@ -35,7 +35,7 @@ public class ResponseAndErrorProcessor<T, E> {
    * 
    * @param status HTTP status codes that converter will be used for
    */
-  public ResponseAndErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
+  public ResultOrErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
     if (OK_RANGE.isConnected(statusCodes)) {
       throw new IllegalArgumentException(String.format("Statuses %s are intersect with non-error statuses", statusCodes.toString()));
     }
@@ -44,7 +44,7 @@ public class ResponseAndErrorProcessor<T, E> {
   }
 
   /**
-   * Returns wrapper consisting of:
+   * Returns future containing wrapper that consists of:
    * <ul>
    * <li>expected result, if HTTP status code is in {@link HttpClient#OK_RANGE}, otherwise {@link Optional#empty()}</li>
    * <li>error result, if HTTP status code is NOT in {@link HttpClient#OK_RANGE}, otherwise {@link Optional#empty()}</li>
@@ -54,14 +54,32 @@ public class ResponseAndErrorProcessor<T, E> {
    * By default ERROR result will be parsed if HTTP status code is not in {@link HttpClient#OK_RANGE}. More specific range can be specified using
    * {@link #forStatus(Range)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
    * 
-   * @return {@link ResponseAndErrorWrapper} object with results of response processing
+   * @return {@link ResultOrErrorWithResponse} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter
    */
-  public CompletableFuture<ResponseAndErrorWrapper<T, E>> request() {
+  public CompletableFuture<ResultOrErrorWithResponse<T, E>> resultWithResponse() {
     return responseProcessor.getHttpClient().request().thenApply(this::wrapResponseAndError);
   }
 
-  private ResponseAndErrorWrapper<T, E> wrapResponseAndError(Response response) {
+  /**
+   * Returns future containing wrapper that consists of:
+   * <ul>
+   * <li>expected result, if HTTP status code is in {@link HttpClient#OK_RANGE}, otherwise {@link Optional#empty()}</li>
+   * <li>error result, if HTTP status code is NOT in {@link HttpClient#OK_RANGE}, otherwise {@link Optional#empty()}</li>
+   * <li>response status code</li>
+   * </ul>
+   * 
+   * By default ERROR result will be parsed if HTTP status code is not in {@link HttpClient#OK_RANGE}. More specific range can be specified using
+   * {@link #forStatus(Range)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
+   * 
+   * @return {@link ResultOrErrorWithStatus} object with results of response processing
+   * @throws ResponseConverterException if failed to process response with either normal or error converter
+   */
+  public CompletableFuture<ResultOrErrorWithStatus<T, E>> resultWithStatus() {
+    return resultWithResponse().thenApply(ResultOrErrorWithResponse::hideResponse);
+  }
+
+  private ResultOrErrorWithResponse<T, E> wrapResponseAndError(Response response) {
     Optional<T> value;
     Optional<E> errorValue;
     try {
@@ -73,7 +91,7 @@ public class ResponseAndErrorProcessor<T, E> {
         value = Optional.empty();
         errorValue = parseError(response);
       }
-      return new ResponseAndErrorWrapper<T, E>(value, errorValue, response);
+      return new ResultOrErrorWithResponse<T, E>(value, errorValue, response);
     }
     catch (ClientResponseException e) {
       throw e;

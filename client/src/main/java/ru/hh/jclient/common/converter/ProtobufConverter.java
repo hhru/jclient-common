@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import ru.hh.jclient.common.ResponseWrapper;
+import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
@@ -21,10 +21,10 @@ public class ProtobufConverter<T extends GeneratedMessage> extends SingleTypeCon
 
   @SuppressWarnings("unchecked")
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction() {
+  public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
     return r -> {
       Method parseFromMethod = protobufClass.getMethod("parseFrom", InputStream.class);
-      return new ResponseWrapper<>((T) parseFromMethod.invoke(null, r.getResponseBodyAsStream()), r);
+      return new ResultWithResponse<>((T) parseFromMethod.invoke(null, r.getResponseBodyAsStream()), r);
     };
   }
 

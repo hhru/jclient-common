@@ -15,12 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessage;
 import com.ning.http.client.Response;
 
-public class ResponseProcessor<T> {
+public class ResultProcessor<T> {
 
   private HttpClient httpClient;
   private TypeConverter<T> converter;
 
-  ResponseProcessor(HttpClient httpClient, TypeConverter<T> converter) {
+  ResultProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
     this.converter = requireNonNull(converter, "converter must not be null");
   }
@@ -34,27 +34,37 @@ public class ResponseProcessor<T> {
   }
 
   /**
-   * Returns expected result or throws {@link ClientResponseException}.
+   * Returns future containing expected result or {@link ClientResponseException}.
    * 
    * @return expected result
    * @throws ClientResponseException if status code is not in {@link HttpClient#OK_RANGE}
    * @throws ResponseConverterException if converter failed to process response
    */
-  public CompletableFuture<T> request() {
+  public CompletableFuture<T> result() {
     return httpClient.request().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
   }
 
   /**
-   * Returns wrapper with response object and result (empty if status code is not in {@link HttpClient#OK_RANGE}).
+   * Returns future containing wrapper with response object and result (empty if status code is not in {@link HttpClient#OK_RANGE}).
    * 
-   * @return {@link ResponseWrapper} with expected result (possibly empty) and response object
+   * @return {@link ResultWithResponse} with expected result (possibly empty) and response object
    * @throws ResponseConverterException if converter failed to process response
    */
-  public CompletableFuture<ResponseWrapper<T>> wrappedRequest() {
+  public CompletableFuture<ResultWithResponse<T>> resultWithResponse() {
     return httpClient.request().thenApply(this::wrapOrNull);
   }
 
-  private ResponseWrapper<T> wrapOrThrow(Response response) {
+  /**
+   * Returns future containing wrapper with response status code and result (empty if status code is not in {@link HttpClient#OK_RANGE}).
+   * 
+   * @return {@link ResultWithStatus} with expected result (possibly empty) and response status code
+   * @throws ResponseConverterException if converter failed to process response
+   */
+  public CompletableFuture<ResultWithStatus<T>> resultWithStatus() {
+    return resultWithResponse().thenApply(ResultWithResponse::hideResponse);
+  }
+
+  private ResultWithResponse<T> wrapOrThrow(Response response) {
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
         return wrap(response);
@@ -66,19 +76,19 @@ public class ResponseProcessor<T> {
     }
   }
 
-  private ResponseWrapper<T> wrapOrNull(Response response) {
+  private ResultWithResponse<T> wrapOrNull(Response response) {
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
         return wrap(response);
       }
-      return new ResponseWrapper<T>(null, response);
+      return new ResultWithResponse<T>(null, response);
     }
     finally {
       httpClient.getDebug().onProcessingFinished();
     }
   }
 
-  private ResponseWrapper<T> wrap(Response response) {
+  private ResultWithResponse<T> wrap(Response response) {
     try {
       return converter.converterFunction().apply(response);
     }
@@ -98,8 +108,8 @@ public class ResponseProcessor<T> {
    * @param context JAXB context used to parse response
    * @param xmlClass type of ERROR result
    */
-  public <E> ResponseAndErrorProcessor<T, E> orXmlError(JAXBContext context, Class<E> xmlClass) {
-    return new ResponseAndErrorProcessor<T, E>(this, new XmlConverter<>(context, xmlClass));
+  public <E> ResultOrErrorProcessor<T, E> orXmlError(JAXBContext context, Class<E> xmlClass) {
+    return new ResultOrErrorProcessor<T, E>(this, new XmlConverter<>(context, xmlClass));
   }
 
   /**
@@ -108,8 +118,8 @@ public class ResponseProcessor<T> {
    * @param mapper Jackson mapper used to parse response
    * @param jsonClass type of ERROR result
    */
-  public <E> ResponseAndErrorProcessor<T, E> orJsonError(ObjectMapper mapper, Class<E> jsonClass) {
-    return new ResponseAndErrorProcessor<T, E>(this, new JsonConverter<>(mapper, jsonClass));
+  public <E> ResultOrErrorProcessor<T, E> orJsonError(ObjectMapper mapper, Class<E> jsonClass) {
+    return new ResultOrErrorProcessor<T, E>(this, new JsonConverter<>(mapper, jsonClass));
   }
 
   /**
@@ -117,15 +127,15 @@ public class ResponseProcessor<T> {
    * 
    * @param protobufClass type of ERROR result
    */
-  public <E extends GeneratedMessage> ResponseAndErrorProcessor<T, E> orProtobufError(Class<E> protobufClass) {
-    return new ResponseAndErrorProcessor<T, E>(this, new ProtobufConverter<>(protobufClass));
+  public <E extends GeneratedMessage> ResultOrErrorProcessor<T, E> orProtobufError(Class<E> protobufClass) {
+    return new ResultOrErrorProcessor<T, E>(this, new ProtobufConverter<>(protobufClass));
   }
 
   /**
    * Specifies that the type of ERROR result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
    */
-  public ResponseAndErrorProcessor<T, String> orPlainTextError() {
-    return new ResponseAndErrorProcessor<T, String>(this, new PlainTextConverter());
+  public ResultOrErrorProcessor<T, String> orPlainTextError() {
+    return new ResultOrErrorProcessor<T, String>(this, new PlainTextConverter());
   }
 
   /**
@@ -133,8 +143,8 @@ public class ResponseProcessor<T> {
    * 
    * @param charset used to decode response
    */
-  public ResponseAndErrorProcessor<T, String> orPlainTextError(Charset charset) {
-    return new ResponseAndErrorProcessor<T, String>(this, new PlainTextConverter(charset));
+  public ResultOrErrorProcessor<T, String> orPlainTextError(Charset charset) {
+    return new ResultOrErrorProcessor<T, String>(this, new PlainTextConverter(charset));
   }
 
   /**
@@ -142,7 +152,7 @@ public class ResponseProcessor<T> {
    * 
    * @param converter used to convert response to expected ERROR result
    */
-  public <E> ResponseAndErrorProcessor<T, E> orError(TypeConverter<E> converter) {
-    return new ResponseAndErrorProcessor<T, E>(this, converter);
+  public <E> ResultOrErrorProcessor<T, E> orError(TypeConverter<E> converter) {
+    return new ResultOrErrorProcessor<T, E>(this, converter);
   }
 }

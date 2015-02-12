@@ -3,7 +3,7 @@ package ru.hh.jclient.common.converter;
 import static com.google.common.collect.ImmutableSet.of;
 import static java.util.Objects.requireNonNull;
 import java.util.Collection;
-import ru.hh.jclient.common.ResponseWrapper;
+import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.MediaType;
@@ -20,8 +20,8 @@ public class JsonConverter<T> extends SingleTypeConverter<T> {
   }
 
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction() {
-    return r -> new ResponseWrapper<>(objectMapper.readValue(r.getResponseBodyAsStream(), jsonClass), r);
+  public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
+    return r -> new ResultWithResponse<>(objectMapper.readValue(r.getResponseBodyAsStream(), jsonClass), r);
   }
 
   @Override

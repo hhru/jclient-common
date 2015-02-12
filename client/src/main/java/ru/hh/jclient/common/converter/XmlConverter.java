@@ -6,14 +6,14 @@ import static java.util.Objects.requireNonNull;
 import java.util.Collection;
 import java.util.Set;
 import javax.xml.bind.JAXBContext;
-import ru.hh.jclient.common.ResponseWrapper;
+import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 
 public class XmlConverter<T> extends SingleTypeConverter<T> {
 
-  private static final Set<MediaType> MEDIA_TYPES = of(XML_UTF_8.withoutParameters());
+  private static final Set<MediaType> MEDIA_TYPES = of(XML_UTF_8.withoutParameters(), MediaType.APPLICATION_XML_UTF_8.withoutParameters());
 
   private JAXBContext context;
   @SuppressWarnings("unused")
@@ -26,8 +26,8 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction() {
-    return r -> new ResponseWrapper<>((T) context.createUnmarshaller().unmarshal(r.getResponseBodyAsStream()), r);
+  public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
+    return r -> new ResultWithResponse<>((T) context.createUnmarshaller().unmarshal(r.getResponseBodyAsStream()), r);
   }
 
   @Override

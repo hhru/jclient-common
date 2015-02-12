@@ -1,7 +1,7 @@
 package ru.hh.jclient.common.converter;
 
 import java.util.Collection;
-import ru.hh.jclient.common.ResponseWrapper;
+import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
@@ -28,10 +28,10 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
    * 
    * @return converter function
    */
-  public abstract FailableFunction<Response, ResponseWrapper<T>, Exception> singleTypeConverterFunction();
+  public abstract FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction();
 
   @Override
-  public FailableFunction<Response, ResponseWrapper<T>, Exception> converterFunction() {
+  public FailableFunction<Response, ResultWithResponse<T>, Exception> converterFunction() {
     FailableFunction<Response, Response, Exception> checkFunction = this::checkContentType;
     return checkFunction.andThen(singleTypeConverterFunction());
   }

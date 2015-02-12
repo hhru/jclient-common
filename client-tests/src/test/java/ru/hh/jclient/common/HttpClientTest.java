@@ -54,7 +54,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест", PLAIN_TEXT_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
-    String text = http.with(request).expectPlainText().request().get();
+    String text = http.with(request).expectPlainText().result().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -66,7 +66,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест".getBytes(charset), PLAIN_TEXT_UTF_8.withCharset(charset));
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
-    String text = http.with(request).expectPlainText(charset).request().get();
+    String text = http.with(request).expectPlainText(charset).result().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -81,7 +81,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    ResponseWrapper<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).wrappedRequest().get();
+    ResultWithResponse<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).resultWithResponse().get();
     Optional<XmlTest> testOutput = testOutputWrapper.get();
     assertEquals(test.name, testOutput.get().name);
     assertNotNull(testOutputWrapper.getResponse());
@@ -95,7 +95,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).request().get();
+      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -109,7 +109,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).request().get();
+      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -126,7 +126,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    XmlTest testOutput = http.with(request).expectXml(context, XmlTest.class).request().get();
+    XmlTest testOutput = http.with(request).expectXml(context, XmlTest.class).result().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -138,7 +138,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).request().get();
+      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -155,7 +155,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).request().get();
+    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -166,7 +166,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     try {
-      http.with(request).<XmlTest> expectJson(new ObjectMapper(), XmlTest.class).request().get();
+      http.with(request).<XmlTest> expectJson(new ObjectMapper(), XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -183,7 +183,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), PROTOBUF);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
-    ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).request().get();
+    ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
     assertEquals(test.getIdsList(), testOutput.getIdsList());
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -195,7 +195,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
     try {
-      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).request().get();
+      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -207,7 +207,7 @@ public class HttpClientTest extends HttpClientTestBase {
   public void testEmpty() throws IOException, InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    Object testOutput = http.with(request).expectEmpty().request().get();
+    Object testOutput = http.with(request).expectEmpty().result().get();
     assertNull(testOutput);
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -217,7 +217,7 @@ public class HttpClientTest extends HttpClientTestBase {
   public void testReadOnly() throws IOException, InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    Object testOutput = http.with(request).readOnly().expectEmpty().request().get();
+    Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
     assertTrue(actualRequest.get().getUrl().indexOf(HttpClientImpl.PARAM_READ_ONLY_REPLICA) > -1);
     debug.assertCalled(REQUEST, RESPONSE, LABEL, FINISHED);
@@ -233,7 +233,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
-    http.with(request).expectEmpty().request().get();
+    http.with(request).expectEmpty().result().get();
     // all those headers won't be accepted, as they come from global request and are not in allowed list
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader1"));
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader2"));
@@ -255,7 +255,7 @@ public class HttpClientTest extends HttpClientTestBase {
     // debug is off, headers will be removed
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertFalse(httpClientContext.isDebugMode());
-    http.with(request).expectEmpty().request().get();
+    http.with(request).expectEmpty().result().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
     assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -265,7 +265,7 @@ public class HttpClientTest extends HttpClientTestBase {
     headers.add(X_HH_DEBUG, "true");
     actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
-    http.with(request).expectEmpty().request().get();
+    http.with(request).expectEmpty().result().get();
     assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -278,12 +278,12 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    http.with(request).expectEmpty().request().get();
+    http.with(request).expectEmpty().result().get();
     assertEquals("somesession", actualRequest.get().getHeaders().getFirstValue(HttpHeaders.HH_PROTO_SESSION));
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
-    http.with(request).expectEmpty().request().get();
+    http.with(request).expectEmpty().result().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(HttpHeaders.HH_PROTO_SESSION));
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
   }
@@ -293,7 +293,7 @@ public class HttpClientTest extends HttpClientTestBase {
     withEmptyContext().request(ANY_VIDEO_TYPE, 403);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     try {
-      http.with(request).expectEmpty().request().get();
+      http.with(request).expectEmpty().result().get();
     }
     catch (ExecutionException e) {
       // exception about bad response status, not reported to debug, so no CLIENT_PROBLEM here
@@ -317,7 +317,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).request().get();
+      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, CLIENT_PROBLEM, FINISHED);
@@ -337,11 +337,11 @@ public class HttpClientTest extends HttpClientTestBase {
 
     // with default range (>399)
     Supplier<Request> actualRequest = withEmptyContext().request(out.toByteArray(), XML_UTF_8, 400);
-    ResponseAndErrorWrapper<XmlTest, XmlError> response = http
+    ResultOrErrorWithResponse<XmlTest, XmlError> response = http
         .with(request)
         .expectJson(objectMapper, XmlTest.class)
         .orXmlError(context, XmlError.class)
-        .request()
+        .resultWithResponse()
         .get();
     assertFalse(response.get().isPresent());
     assertTrue(response.getError().isPresent());
@@ -353,7 +353,7 @@ public class HttpClientTest extends HttpClientTestBase {
     // and specific range
     actualRequest = withEmptyContext().request(out.toByteArray(), XML_UTF_8, 800);
 
-    response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(800).request().get();
+    response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(800).resultWithResponse().get();
     assertFalse(response.get().isPresent());
     assertTrue(response.getError().isPresent());
     assertEquals(error.message, response.getError().get().message);
@@ -363,7 +363,7 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, FINISHED);
 
     // and when range is missed
-    response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(500).request().get();
+    response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(500).resultWithResponse().get();
     assertFalse(response.get().isPresent());
     assertFalse(response.getError().isPresent());
     assertNotNull(response.getResponse());
@@ -381,7 +381,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    ResponseAndErrorWrapper<XmlTest, String> response = http.with(request).expectXml(context, XmlTest.class).orPlainTextError().request().get();
+    ResultOrErrorWithResponse<XmlTest, String> response = http.with(request).expectXml(context, XmlTest.class).orPlainTextError().resultWithResponse().get();
     assertTrue(response.get().isPresent());
     assertFalse(response.getError().isPresent());
     assertEquals(test.name, response.get().get().name);

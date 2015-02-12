@@ -21,26 +21,26 @@ import com.ning.http.client.Response;
 
 public class HttpClientTestBase {
 
-  protected static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
-  protected static HttpClientBuilder http;
-  protected static HttpClientContext httpClientContext;
-  protected static TestRequestDebug debug = new TestRequestDebug();
+  public static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
+  public static HttpClientBuilder http;
+  public static HttpClientContext httpClientContext;
+  public static TestRequestDebug debug = new TestRequestDebug();
 
-  protected HttpClientTestBase withEmptyContext() {
+  public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.<String, List<String>> emptyMap(), () -> debug);
     return this;
   }
 
-  protected HttpClientTestBase withContext(Map<String, List<String>> headers) {
+  public HttpClientTestBase withContext(Map<String, List<String>> headers) {
     httpClientContext = new HttpClientContext(headers, () -> debug);
     return this;
   }
 
-  protected Supplier<Request> okRequest(String text, MediaType contentType) throws IOException {
+  public Supplier<Request> okRequest(String text, MediaType contentType) throws IOException {
     return request(text, contentType, 200);
   }
 
-  protected Supplier<Request> request(String text, MediaType contentType, int status) throws IOException {
+  public Supplier<Request> request(String text, MediaType contentType, int status) throws IOException {
     Response response = mock(Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
@@ -50,11 +50,11 @@ public class HttpClientTestBase {
     return request(response);
   }
 
-  protected Supplier<Request> okRequest(byte[] data, MediaType contentType) throws IOException {
+  public Supplier<Request> okRequest(byte[] data, MediaType contentType) throws IOException {
     return request(data, contentType, 200);
   }
 
-  protected Supplier<Request> request(byte[] data, MediaType contentType, int status) throws IOException {
+  public Supplier<Request> request(byte[] data, MediaType contentType, int status) throws IOException {
     Response response = mock(Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
@@ -69,7 +69,7 @@ public class HttpClientTestBase {
     return request(response);
   }
 
-  protected Supplier<Request> request(MediaType contentType, int status) {
+  public Supplier<Request> request(MediaType contentType, int status) {
     Response response = mock(Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
@@ -78,7 +78,7 @@ public class HttpClientTestBase {
     return request(response);
   }
 
-  protected Supplier<Request> request(Response response) {
+  public Supplier<Request> request(Response response) {
     Request[] request = new Request[1];
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
@@ -92,7 +92,7 @@ public class HttpClientTestBase {
     return () -> request[0];
   }
 
-  protected void assertEqualRequests(Request request1, Request request2) {
+  public void assertEqualRequests(Request request1, Request request2) {
     assertEquals(request1.getUrl(), request2.getUrl());
     assertEquals(request1.getMethod(), request2.getMethod());
     assertEquals(request1.getHeaders(), request2.getHeaders());
