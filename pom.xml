@@ -43,7 +43,7 @@
         <dependency>
             <groupId>com.ning</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>1.9.8</version>
+            <version>1.9.9</version>
         </dependency>
 
         <!-- Protobuf -->
