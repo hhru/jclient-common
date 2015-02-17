@@ -2,8 +2,11 @@ package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
@@ -27,6 +30,13 @@ public class HttpClientBuilder {
    */
   public HttpClient with(Request request) {
     return new HttpClientImpl(http, requireNonNull(request, "request must not be null"), hostsWithSession, contextSupplier);
+  }
+
+  /**
+   * @return returns immutable copy of headers contained within global (incoming) request
+   */
+  public Map<String, List<String>> getHeaders() {
+    return ImmutableMap.copyOf(contextSupplier.get().getHeaders());
   }
 
 }
