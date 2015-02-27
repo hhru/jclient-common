@@ -1,17 +1,5 @@
 package ru.hh.jclient.common;
 
-import static com.google.common.collect.ImmutableSet.of;
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static java.lang.Boolean.TRUE;
-import static java.util.function.Function.identity;
-import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
-import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
-import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
-import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
-import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -20,12 +8,29 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.uri.Uri;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.util.MDCCopy;
+import static com.google.common.collect.ImmutableSet.of;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static java.lang.Boolean.TRUE;
+import static java.util.function.Function.identity;
+import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
+import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
+import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
+import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
 
 class HttpClientImpl extends HttpClient {
 
   static final String PARAM_READ_ONLY_REPLICA = "replicaOnlyRq";
 
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
+
+  private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
   HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
     super(http, request, hostsWithSession, contextSupplier);
@@ -41,7 +46,8 @@ class HttpClientImpl extends HttpClient {
     Request request = builder.build();
     CompletableFuture<Response> promise = new CompletableFuture<>();
     getDebug().onRequest(getHttp().getConfig(), request);
-    getHttp().executeRequest(request, new CompletionHandler(promise, getDebug(), getHttp().getConfig()));
+    log.info("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
+    getHttp().executeRequest(request, new CompletionHandler(promise, request, getDebug(), getHttp().getConfig()));
     return promise;
   }
 
@@ -70,12 +76,16 @@ class HttpClientImpl extends HttpClient {
 
   static class CompletionHandler extends AsyncCompletionHandler<Response> {
 
+    private MDCCopy mdcCopy;
     private CompletableFuture<Response> promise;
+    private Request request;
     private RequestDebug requestDebug;
     private AsyncHttpClientConfig config;
 
-    public CompletionHandler(CompletableFuture<Response> promise, RequestDebug requestDebug, AsyncHttpClientConfig config) {
+    public CompletionHandler(CompletableFuture<Response> promise, Request request, RequestDebug requestDebug, AsyncHttpClientConfig config) {
+      this.mdcCopy = MDCCopy.capture();
       this.promise = promise;
+      this.request = request;
       this.requestDebug = requestDebug;
       this.config = config;
     }
@@ -83,6 +93,7 @@ class HttpClientImpl extends HttpClient {
     @Override
     public Response onCompleted(Response response) throws Exception {
       response = requestDebug.onResponse(config, response);
+      mdcCopy.doInContext( () -> log.info("ASYNC_HTTP_RESPONSE: completed {} {}", request.getMethod(), request.getUri()) );
       promise.complete(response);
       // TODO requestDebug.onProcessingFinished(); maybe should be here?
       return response;
@@ -92,6 +103,7 @@ class HttpClientImpl extends HttpClient {
     public void onThrowable(Throwable t) {
       requestDebug.onClientProblem(t);
       requestDebug.onProcessingFinished();
+      mdcCopy.doInContext(() -> log.info("ASYNC_HTTP_ERROR: client error on {} {}", request.getMethod(), request.getUri()));
       promise.completeExceptionally(t);
     }
   }
