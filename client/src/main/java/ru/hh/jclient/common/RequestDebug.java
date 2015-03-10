@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
+import java.util.Optional;
 import ru.hh.jclient.common.exception.ResponseConverterException;
-
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
@@ -14,13 +14,20 @@ public interface RequestDebug {
   /**
    * Called before start of the request
    */
-  void onRequest(AsyncHttpClientConfig config, Request request);
+  void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity);
 
   /**
    * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
    * purposes.
    */
   Response onResponse(AsyncHttpClientConfig config, Response response);
+
+  /**
+   * Called once response is successfully converted.
+   * 
+   * @param result result of response conversion
+   */
+  void onResponseConverted(Optional<?> result);
 
   /**
    * Called on the problem raised by underlying http client.

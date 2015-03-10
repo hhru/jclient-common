@@ -90,7 +90,9 @@ public class ResultProcessor<T> {
 
   private ResultWithResponse<T> wrap(Response response) {
     try {
-      return converter.converterFunction().apply(response);
+      ResultWithResponse<T> result = converter.converterFunction().apply(response);
+      httpClient.getDebug().onResponseConverted(result.get());
+      return result;
     }
     catch (ClientResponseException e) {
       throw e;

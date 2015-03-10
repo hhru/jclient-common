@@ -57,7 +57,7 @@ public class HttpClientTest extends HttpClientTestBase {
     String text = http.with(request).expectPlainText().result().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -69,7 +69,7 @@ public class HttpClientTest extends HttpClientTestBase {
     String text = http.with(request).expectPlainText(charset).result().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -86,7 +86,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(test.name, testOutput.get().name);
     assertNotNull(testOutputWrapper.getResponse());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = NoContentTypeException.class)
@@ -129,7 +129,7 @@ public class HttpClientTest extends HttpClientTestBase {
     XmlTest testOutput = http.with(request).expectXml(context, XmlTest.class).result().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ResponseConverterException.class)
@@ -186,7 +186,7 @@ public class HttpClientTest extends HttpClientTestBase {
     ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
     assertEquals(test.getIdsList(), testOutput.getIdsList());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ResponseConverterException.class)
@@ -210,7 +210,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Object testOutput = http.with(request).expectEmpty().result().get();
     assertNull(testOutput);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -220,7 +220,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
     assertTrue(actualRequest.get().getUrl().indexOf(HttpClientImpl.PARAM_READ_ONLY_REPLICA) > -1);
-    debug.assertCalled(REQUEST, RESPONSE, LABEL, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
   }
 
   @Test
@@ -241,7 +241,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals("111", actualRequest.get().getHeaders().getFirstValue(X_REQUEST_ID));
     // this header is accepted since it comes from local request
     assertEquals("somevalue", actualRequest.get().getHeaders().getFirstValue("someheader"));
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -258,7 +258,7 @@ public class HttpClientTest extends HttpClientTestBase {
     http.with(request).expectEmpty().result().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
     assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // debug is on, headers are passed
     FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
@@ -268,7 +268,7 @@ public class HttpClientTest extends HttpClientTestBase {
     http.with(request).expectEmpty().result().get();
     assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -280,12 +280,12 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectEmpty().result().get();
     assertEquals("somesession", actualRequest.get().getHeaders().getFirstValue(HttpHeaders.HH_PROTO_SESSION));
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
     http.with(request).expectEmpty().result().get();
     assertFalse(actualRequest.get().getHeaders().containsKey(HttpHeaders.HH_PROTO_SESSION));
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ClientResponseException.class)
@@ -348,7 +348,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(error.message, response.getError().get().message);
     assertNotNull(response.getResponse());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and specific range
     actualRequest = withEmptyContext().request(out.toByteArray(), XML_UTF_8, 800);
@@ -360,7 +360,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertNotNull(response.getResponse());
     assertEquals(800, response.getResponse().getStatusCode());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and when range is missed
     response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(500).resultWithResponse().get();
@@ -369,7 +369,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertNotNull(response.getResponse());
     assertEquals(800, response.getResponse().getStatusCode());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -387,7 +387,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(test.name, response.get().get().name);
     assertNotNull(response.getResponse());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   private static class TestException extends Exception {

@@ -86,10 +86,14 @@ public class ResultOrErrorProcessor<T, E> {
       if (HttpClient.OK_RESPONSE.apply(response)) {
         value = responseProcessor.getConverter().converterFunction().apply(response).get();
         errorValue = Optional.empty();
+
+        responseProcessor.getHttpClient().getDebug().onResponseConverted(value);
       }
       else {
         value = Optional.empty();
         errorValue = parseError(response);
+
+        responseProcessor.getHttpClient().getDebug().onResponseConverted(errorValue);
       }
       return new ResultOrErrorWithResponse<T, E>(value, errorValue, response);
     }

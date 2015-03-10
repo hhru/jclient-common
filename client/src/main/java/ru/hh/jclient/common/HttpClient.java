@@ -1,6 +1,8 @@
 package ru.hh.jclient.common;
 
 import java.nio.charset.Charset;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -14,9 +16,12 @@ import ru.hh.jclient.common.converter.VoidConverter;
 import ru.hh.jclient.common.converter.XmlConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
+import com.google.common.net.HttpHeaders;
 import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.MessageLite;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
+import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 
 public abstract class HttpClient {
@@ -28,6 +33,8 @@ public abstract class HttpClient {
   private Set<String> hostsWithSession;
   private HttpClientContext context;
   private RequestDebug debug;
+
+  protected Optional<?> requestBodyEntity = Optional.empty();
 
   private Request request;
 
@@ -47,6 +54,22 @@ public abstract class HttpClient {
   public HttpClient readOnly() {
     this.readOnlyReplica = true;
     this.debug.addLabel("RO");
+    return this;
+  }
+  
+  /**
+   * Convenience method that sets protobuf object as request body as well as corresponding "Content-type" header. Provided object will be used in
+   * debug output of request in debug mode.
+   * 
+   * @param body protobuf object to send in request
+   */
+  public HttpClient withProtobufBody(MessageLite body) {
+    Objects.requireNonNull(body, "body must not be null");
+    this.requestBodyEntity = Optional.of(body);
+    RequestBuilder builder = new RequestBuilder(request);
+    builder.setBody(body.toByteArray());
+    builder.addHeader(HttpHeaders.CONTENT_TYPE, "application/x-protobuf");
+    request = builder.build();
     return this;
   }
 

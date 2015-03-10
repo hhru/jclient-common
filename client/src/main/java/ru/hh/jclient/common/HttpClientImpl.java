@@ -48,7 +48,7 @@ class HttpClientImpl extends HttpClient {
 
     Request request = builder.build();
     CompletableFuture<Response> promise = new CompletableFuture<>();
-    getDebug().onRequest(getHttp().getConfig(), request);
+    getDebug().onRequest(getHttp().getConfig(), request, requestBodyEntity);
     log.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
     getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), getHttp().getConfig()));
     return promise;

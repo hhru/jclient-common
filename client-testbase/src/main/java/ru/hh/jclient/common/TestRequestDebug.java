@@ -3,6 +3,7 @@ package ru.hh.jclient.common;
 import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -15,6 +16,7 @@ public class TestRequestDebug implements RequestDebug {
   public enum Call {
     REQUEST,
     RESPONSE,
+    RESPONSE_CONVERTED,
     CLIENT_PROBLEM,
     CONVERTER_PROBLEM,
     FINISHED,
@@ -39,7 +41,7 @@ public class TestRequestDebug implements RequestDebug {
 
 
   @Override
-  public void onRequest(AsyncHttpClientConfig config, Request request) {
+  public void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity) {
     calls.add(Call.REQUEST);
   }
 
@@ -47,6 +49,11 @@ public class TestRequestDebug implements RequestDebug {
   public Response onResponse(AsyncHttpClientConfig config, Response response) {
     calls.add(Call.RESPONSE);
     return response;
+  }
+
+  @Override
+  public void onResponseConverted(Optional<?> result) {
+    calls.add(Call.RESPONSE_CONVERTED);
   }
 
   @Override
