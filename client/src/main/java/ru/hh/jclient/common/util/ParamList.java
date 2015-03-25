@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.util;
 
 import com.google.common.base.Joiner;
+import static com.google.common.base.Preconditions.checkArgument;
 import com.ning.http.client.Param;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,7 +16,6 @@ public class ParamList {
       addCollection(k, (Collection) v);
     } else
       addSingle(k, v);
-
   }
 
   public void add(String k, int v) {
@@ -24,6 +24,13 @@ public class ParamList {
 
   public void add(String k, long v) {
     addSingle(k, String.valueOf(v));
+  }
+
+  public void addPairs(Object... pairs) {
+    checkArgument(pairs.length % 2 == 0, "pairs should have event amount of items");
+    for (int i = 0; i < pairs.length; i += 2) {
+      addSingle(pairs[i].toString(), pairs[i + 1]);
+    }
   }
 
   public List<Param> getList() {
