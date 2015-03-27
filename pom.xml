@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
 
     <name>jclient-common-parent</name>
-    <version>0.1.8-SNAPSHOT</version>
+    <version>0.1.8</version>
 
     <modules>
         <module>client</module>
@@ -218,6 +218,6 @@
     <scm>
         <connection>scm:git:git@github.com:hhru/jclient-common.git</connection>
         <developerConnection>scm:git:git@github.com:hhru/jclient-common.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>jclient-common-parent-0.1.8</tag>
     </scm>
 </project>
