@@ -39,6 +39,7 @@ class HttpClientImpl extends HttpClient {
     super(http, request, hostsWithSession, contextSupplier);
   }
 
+  @Override
   CompletableFuture<Response> executeRequest() {
     RequestBuilder builder = new RequestBuilder(getRequest());
     addHeaders(builder);
@@ -56,7 +57,7 @@ class HttpClientImpl extends HttpClient {
 
   private void addHeaders(RequestBuilder requestBuilder) {
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
-    FluentCaseInsensitiveStringsMap headers = PASS_THROUGH_HEADERS
+    FluentCaseInsensitiveStringsMap headers = isExternal() ? new FluentCaseInsensitiveStringsMap() : PASS_THROUGH_HEADERS
         .stream()
         .filter(getContext().getHeaders()::containsKey)
         .collect(toFluentCaseInsensitiveStringsMap(identity(), h -> getContext().getHeaders().get(h)));
@@ -64,12 +65,12 @@ class HttpClientImpl extends HttpClient {
     headers.addAll(getRequest().getHeaders());
 
     // remove hh-session header if host does not need it
-    if (getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(h -> getRequest().getUri().getHost().equals(h))) {
+    if (isNoSession() || getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(h -> getRequest().getUri().getHost().equals(h))) {
       headers.remove(HH_PROTO_SESSION);
     }
 
     // remove debug/auth headers if debug is not enabled
-    if (!getContext().isDebugMode()) {
+    if (isNoDebug() || !getContext().isDebugMode()) {
       headers.remove(X_HH_DEBUG);
       headers.remove(AUTHORIZATION);
     }

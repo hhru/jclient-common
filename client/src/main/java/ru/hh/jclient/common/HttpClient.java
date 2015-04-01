@@ -39,6 +39,9 @@ public abstract class HttpClient {
   private Request request;
 
   private boolean readOnlyReplica;
+  private boolean noSession;
+  private boolean noDebug;
+  private boolean externalRequest;
 
   HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
     this.http = http;
@@ -56,12 +59,40 @@ public abstract class HttpClient {
     this.debug.addLabel("RO");
     return this;
   }
-  
+
+  /**
+   * Forces client NOT to send {@link ru.hh.jclient.common.HttpHeaders#HH_PROTO_SESSION} header.
+   */
+  public HttpClient noSession() {
+    this.noSession = true;
+    this.debug.addLabel("NOSESSION");
+    return this;
+  }
+
+  /**
+   * Tells client the request will be performed to external resource. Client will not pass-through any of {@link HttpClientImpl#PASS_THROUGH_HEADERS}.
+   */
+  public HttpClient external() {
+    this.externalRequest = true;
+    this.debug.addLabel("EXTERNAL");
+    return this;
+  }
+
+  /**
+   * Forces client NOT to send {@link ru.hh.jclient.common.HttpHeaders#X_HH_DEBUG} header.
+   */
+  public HttpClient noDebug() {
+    this.noDebug = true;
+    this.debug.addLabel("NODEBUG");
+    return this;
+  }
+
   /**
    * Convenience method that sets protobuf object as request body as well as corresponding "Content-type" header. Provided object will be used in
    * debug output of request in debug mode.
-   * 
-   * @param body protobuf object to send in request
+   *
+   * @param body
+   *          protobuf object to send in request
    */
   public HttpClient withProtobufBody(MessageLite body) {
     Objects.requireNonNull(body, "body must not be null");
@@ -77,7 +108,7 @@ public abstract class HttpClient {
 
   /**
    * Specifies that the type of result must be XML.
-   * 
+   *
    * @param context JAXB context used to parse response
    * @param xmlClass type of result
    */
@@ -87,7 +118,7 @@ public abstract class HttpClient {
 
   /**
    * Specifies that the type of result must be JSON.
-   * 
+   *
    * @param mapper Jackson mapper used to parse response
    * @param jsonClass type of result
    */
@@ -97,7 +128,7 @@ public abstract class HttpClient {
 
   /**
    * Specifies that the type of result must be PROTOBUF.
-   * 
+   *
    * @param protobufClass type of result
    */
   public <T extends GeneratedMessage> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
@@ -113,7 +144,7 @@ public abstract class HttpClient {
 
   /**
    * Specifies that the type of result must be plain text.
-   * 
+   *
    * @param charset used to decode response
    */
   public ResultProcessor<String> expectPlainText(Charset charset) {
@@ -129,7 +160,7 @@ public abstract class HttpClient {
 
   /**
    * Specifies the converter for the result.
-   * 
+   *
    * @param converter used to convert response to expected result
    */
   public <T> ResultProcessor<T> expect(TypeConverter<T> converter) {
@@ -138,7 +169,7 @@ public abstract class HttpClient {
 
   /**
    * Returns unconverted, raw response. Avoid using this method, use "converter" methods instead.
-   * 
+   *
    * @return response
    */
   public CompletableFuture<Response> request() {
@@ -171,5 +202,17 @@ public abstract class HttpClient {
 
   boolean useReadOnlyReplica() {
     return readOnlyReplica;
+  }
+
+  boolean isExternal() {
+    return externalRequest;
+  }
+
+  boolean isNoSession() {
+    return noSession;
+  }
+
+  boolean isNoDebug() {
+    return noDebug;
   }
 }
