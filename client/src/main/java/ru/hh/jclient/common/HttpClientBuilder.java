@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
 
 public class HttpClientBuilder {
@@ -25,7 +25,7 @@ public class HttpClientBuilder {
 
   /**
    * Specifies request to be executed. This is a starting point of request execution chain.
-   * 
+   *
    * @param request to execute
    */
   public HttpClient with(Request request) {
@@ -33,10 +33,10 @@ public class HttpClientBuilder {
   }
 
   /**
-   * @return returns immutable copy of headers contained within global (incoming) request
+   * @return returns copy (within case insensitive map) of headers contained within global (incoming) request
    */
   public Map<String, List<String>> getHeaders() {
-    return ImmutableMap.copyOf(contextSupplier.get().getHeaders());
+    return new FluentCaseInsensitiveStringsMap(contextSupplier.get().getHeaders());
   }
 
 }
