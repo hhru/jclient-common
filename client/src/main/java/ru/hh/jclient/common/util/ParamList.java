@@ -6,6 +6,7 @@ import com.ning.http.client.Param;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public class ParamList {
 
@@ -33,6 +34,10 @@ public class ParamList {
     }
   }
 
+  public void add(Map.Entry<String, Object> entry) {
+    add(entry.getKey(), entry.getValue());
+  }
+
   public List<Param> getList() {
     return params;
   }
@@ -53,4 +58,8 @@ public class ParamList {
     return Joiner.on(',').join(collection);
   }
 
+  public ParamList merge(ParamList other) {
+    getList().addAll(other.getList());
+    return this;
+  }
 }
