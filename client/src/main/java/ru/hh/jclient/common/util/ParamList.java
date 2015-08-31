@@ -13,7 +13,7 @@ public class ParamList {
 
   public void add(String k, Object v) {
     if (v instanceof Collection) {
-      addCollection(k, (Collection) v);
+      addCollection(k, (Collection<?>) v);
     } else
       addSingle(k, v);
   }
@@ -43,7 +43,7 @@ public class ParamList {
     }
   }
 
-  private void addCollection(String k, Collection v) {
+  private void addCollection(String k, Collection<?> v) {
     if (v != null && !v.isEmpty()) {
       params.add(new Param(k, joinCollection(v)));
     }
