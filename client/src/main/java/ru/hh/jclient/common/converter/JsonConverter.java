@@ -11,7 +11,7 @@ import com.ning.http.client.Response;
 
 public class JsonConverter<T> extends SingleTypeConverter<T> {
 
-  private ObjectMapper objectMapper;
+  protected ObjectMapper objectMapper;
   private Class<T> jsonClass;
 
   public JsonConverter(ObjectMapper objectMapper, Class<T> jsonClass) {
@@ -19,8 +19,13 @@ public class JsonConverter<T> extends SingleTypeConverter<T> {
     this.jsonClass = requireNonNull(jsonClass, "jsonClass must not be null");
   }
 
+  protected JsonConverter(ObjectMapper objectMapper) {
+    this.objectMapper = requireNonNull(objectMapper, "objectMapper must not be null");
+  }
+
   @Override
   public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
+    requireNonNull(this.jsonClass, "jsonClass must not be null");
     return r -> new ResultWithResponse<>(objectMapper.readValue(r.getResponseBodyAsStream(), jsonClass), r);
   }
 

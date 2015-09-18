@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -8,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.xml.bind.JAXBContext;
+
+import ru.hh.jclient.common.converter.JsonCollectionConverter;
 import ru.hh.jclient.common.converter.JsonConverter;
 import ru.hh.jclient.common.converter.PlainTextConverter;
 import ru.hh.jclient.common.converter.ProtobufConverter;
@@ -113,7 +116,7 @@ public abstract class HttpClient {
    * @param xmlClass type of result
    */
   public <T> ResultProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
-    return new ResultProcessor<T>(this, new XmlConverter<>(context, xmlClass));
+    return new ResultProcessor<>(this, new XmlConverter<>(context, xmlClass));
   }
 
   /**
@@ -123,7 +126,17 @@ public abstract class HttpClient {
    * @param jsonClass type of result
    */
   public <T> ResultProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
-    return new ResultProcessor<T>(this, new JsonConverter<>(mapper, jsonClass));
+    return new ResultProcessor<>(this, new JsonConverter<>(mapper, jsonClass));
+  }
+
+  /**
+   * Specifies that the type of result must be a collection of JSON objects.
+   *
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonClass type of JSON object
+   */
+  public <E> ResultProcessor<Collection<E>> expectJsonCollection(ObjectMapper mapper, Class<E> jsonClass) {
+    return new ResultProcessor<>(this, new JsonCollectionConverter<>(mapper, jsonClass));
   }
 
   /**
@@ -132,14 +145,14 @@ public abstract class HttpClient {
    * @param protobufClass type of result
    */
   public <T extends GeneratedMessage> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
-    return new ResultProcessor<T>(this, new ProtobufConverter<>(protobufClass));
+    return new ResultProcessor<>(this, new ProtobufConverter<>(protobufClass));
   }
 
   /**
    * Specifies that the type of result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
    */
   public ResultProcessor<String> expectPlainText() {
-    return new ResultProcessor<String>(this, new PlainTextConverter());
+    return new ResultProcessor<>(this, new PlainTextConverter());
   }
 
   /**
@@ -148,7 +161,7 @@ public abstract class HttpClient {
    * @param charset used to decode response
    */
   public ResultProcessor<String> expectPlainText(Charset charset) {
-    return new ResultProcessor<String>(this, new PlainTextConverter(charset));
+    return new ResultProcessor<>(this, new PlainTextConverter(charset));
   }
 
   /**

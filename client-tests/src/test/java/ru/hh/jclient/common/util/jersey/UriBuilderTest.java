@@ -172,7 +172,7 @@ public class UriBuilderTest {
 
     Map<String, Object> map = new HashMap<String, Object>();
     map.put("x", new StringBuilder("x%yz"));
-    map.put("y", new StringBuffer("/path-absolute/%25test1"));
+    map.put("y", new StringBuilder("/path-absolute/%25test1"));
     map.put("z", new Object() {
       @Override
       public String toString() {
@@ -191,7 +191,7 @@ public class UriBuilderTest {
     String expected = "path-rootless%2Ftest2/x%25yz/%2Fpath-absolute%2F%2525test1/fred@example.com/x%25yz";
     Map<String, Object> map = new HashMap<String, Object>();
     map.put("x", new StringBuilder("x%yz"));
-    map.put("y", new StringBuffer("/path-absolute/%25test1"));
+    map.put("y", new StringBuilder("/path-absolute/%25test1"));
     map.put("z", new Object() {
       @Override
       public String toString() {
@@ -209,7 +209,7 @@ public class UriBuilderTest {
     String expected = "path-rootless/test2/x%25yz//path-absolute/test1/fred@example.com/x%25yz";
     Map<String, Object> map = new HashMap<String, Object>();
     map.put("x", new StringBuilder("x%yz"));
-    map.put("y", new StringBuffer("/path-absolute/test1"));
+    map.put("y", new StringBuilder("/path-absolute/test1"));
     map.put("z", new Object() {
       @Override
       public String toString() {
