@@ -15,6 +15,9 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -37,6 +40,7 @@ import ru.hh.jclient.common.model.XmlTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
@@ -157,6 +161,24 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
     assertEquals(test.name, testOutput.name);
+    assertEqualRequests(request, actualRequest.get());
+  }
+
+  @Test
+  public void testJsonCollection() throws IOException, InterruptedException, ExecutionException {
+    XmlTest test1 = new XmlTest("test тест1");
+    XmlTest test2 = new XmlTest("test тест2");
+    List<XmlTest> tests = Arrays.asList(test1, test2);
+    ObjectMapper objectMapper = new ObjectMapper();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    objectMapper.writeValue(out, tests);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), JSON_UTF_8);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
+    Collection<XmlTest> testOutput = http.with(request).<XmlTest> expectJsonCollection(objectMapper, XmlTest.class).result().get();
+    assertEquals(tests.size(), testOutput.size());
+    assertEquals(test1.name, Iterables.get(testOutput, 0).name);
+    assertEquals(test2.name, Iterables.get(testOutput, 1).name);
     assertEqualRequests(request, actualRequest.get());
   }
 

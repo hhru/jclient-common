@@ -2,29 +2,35 @@ package ru.hh.jclient.common.converter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 import ru.hh.jclient.common.ResultWithResponse;
-import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
-
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import java.util.Collection;
-
+import static com.google.common.collect.ImmutableSet.of;
 import static java.util.Objects.requireNonNull;
 
 
-public class JsonCollectionConverter<T> extends JsonConverter<Collection<T>> {
+public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T>> {
 
-  protected Class<T> jsonClass;
+  private ObjectMapper objectMapper;
+  private Class<T> jsonClass;
 
   public JsonCollectionConverter(ObjectMapper objectMapper, Class<T> jsonClass) {
-    super(objectMapper);
+    this.objectMapper = requireNonNull(objectMapper, "objectMapper must not be null");
     this.jsonClass = requireNonNull(jsonClass, "jsonClass must not be null");
   }
 
 
   @Override
-  public MoreFunctionalInterfaces.FailableFunction<Response, ResultWithResponse<Collection<T>>, Exception> singleTypeConverterFunction() {
+  public FailableFunction<Response, ResultWithResponse<Collection<T>>, Exception> singleTypeConverterFunction() {
     return r -> new ResultWithResponse<>(
-        objectMapper.readValue(r.getResponseBodyAsStream(), TypeFactory.defaultInstance()
-            .constructCollectionType(Collection.class, jsonClass)), r);
+        objectMapper.readValue(r.getResponseBodyAsStream(), TypeFactory.defaultInstance().constructCollectionType(Collection.class, jsonClass)),
+        r);
+  }
+
+  @Override
+  public Collection<MediaType> getMediaTypes() {
+    return of(MediaType.JSON_UTF_8.withoutParameters());
   }
 }

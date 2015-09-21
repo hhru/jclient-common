@@ -135,7 +135,7 @@ public abstract class HttpClient {
    * @param mapper Jackson mapper used to parse response
    * @param jsonClass type of JSON object
    */
-  public <E> ResultProcessor<Collection<E>> expectJsonCollection(ObjectMapper mapper, Class<E> jsonClass) {
+  public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, Class<T> jsonClass) {
     return new ResultProcessor<>(this, new JsonCollectionConverter<>(mapper, jsonClass));
   }
 

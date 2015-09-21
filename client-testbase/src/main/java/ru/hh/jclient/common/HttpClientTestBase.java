@@ -1,5 +1,9 @@
 package ru.hh.jclient.common;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
@@ -9,6 +13,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import com.google.common.collect.ImmutableSet;
@@ -96,6 +101,30 @@ public class HttpClientTestBase {
     assertEquals(request1.getUrl(), request2.getUrl());
     assertEquals(request1.getMethod(), request2.getMethod());
     assertEquals(request1.getHeaders(), request2.getHeaders());
+  }
+
+  public static <T> CompletableFuture<ResultWithStatus<T>> success(T value) {
+    return completedFuture(new ResultWithStatus<>(value, 200));
+  }
+
+  public static CompletableFuture<ResultWithStatus<Void>> noContent() {
+    return completedFuture(new ResultWithStatus<>(null, 204));
+  }
+
+  public static <T> CompletableFuture<ResultWithStatus<T>> error(int status) {
+    return completedFuture(new ResultWithStatus<>(null, status));
+  }
+
+  public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orErrorSuccess(T value) {
+    return completedFuture(new ResultOrErrorWithStatus<>(ofNullable(value), empty(), 200));
+  }
+
+  public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orErrorNoContent() {
+    return completedFuture(new ResultOrErrorWithStatus<>(empty(), empty(), 204));
+  }
+
+  public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orError(int status, E error) {
+    return completedFuture(new ResultOrErrorWithStatus<>(empty(), of(error), status));
   }
 
 }
