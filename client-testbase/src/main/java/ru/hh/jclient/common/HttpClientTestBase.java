@@ -29,7 +29,7 @@ public class HttpClientTestBase {
   public static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
   public static HttpClientBuilder http;
   public static HttpClientContext httpClientContext;
-  public static TestRequestDebug debug = new TestRequestDebug();
+  public static TestRequestDebug debug = new TestRequestDebug(true);
 
   public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.<String, List<String>> emptyMap(), () -> debug);

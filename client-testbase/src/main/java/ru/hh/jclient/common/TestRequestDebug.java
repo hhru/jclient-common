@@ -23,6 +23,25 @@ public class TestRequestDebug implements RequestDebug {
     LABEL
   }
 
+  public TestRequestDebug() {
+    this(false);
+  }
+
+  public TestRequestDebug(boolean recordCalls) {
+    if (recordCalls) {
+      calls = new HashSet<>();
+    }
+    else {
+      calls = new HashSet<Call>() {
+        @Override
+        public boolean add(Call e) {
+          return true;
+        }
+      };
+    }
+
+  }
+
   private Set<Call> calls = new HashSet<>();
 
   public Set<Call> getCalls() {

@@ -20,7 +20,6 @@
     </modules>
 
     <properties>
-        <jersey.version>2.13</jersey.version>
         <guice.version>4.0-beta5</guice.version>
         <jdk.version>1.8</jdk.version>
         <jdk>${env.JAVA_8_HOME}</jdk>
