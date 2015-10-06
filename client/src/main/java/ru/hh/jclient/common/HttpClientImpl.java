@@ -87,8 +87,9 @@ class HttpClientImpl extends HttpClient {
       requestBuilder.addQueryParam(READ_ONLY_REPLICA, TRUE.toString());
     }
 
-    // add debug param
+    // add both debug param and debug header (for backward compatibility)
     if (getContext().isDebugMode() && !isNoDebug()) {
+      requestBuilder.addHeader(X_HH_DEBUG, "true");
       requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
     }
   }

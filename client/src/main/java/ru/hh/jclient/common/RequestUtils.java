@@ -15,7 +15,7 @@ public class RequestUtils {
   private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
 
   /**
-   * Check if headers contain {@link HttpHeaders#X_HH_DEBUG} with value of 'true' and query params contain {@link HttpParams#DEBUG} param with any
+   * Check if headers contain {@link HttpHeaders#X_HH_DEBUG} with value of 'true' or query params contain {@link HttpParams#DEBUG} param with any
    * value.
    *
    * @param headers
@@ -26,7 +26,7 @@ public class RequestUtils {
   public static boolean isInDebugMode(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
     boolean hasDebugHeader = "true".equalsIgnoreCase(getSingleHeader(headers, X_HH_DEBUG).orElse("false"));
     boolean hasDebugParam = queryParams.containsKey(HttpParams.DEBUG);
-    return hasDebugHeader && hasDebugParam;
+    return hasDebugHeader || hasDebugParam;
   }
 
   /**

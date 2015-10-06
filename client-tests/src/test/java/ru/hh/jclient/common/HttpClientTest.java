@@ -280,10 +280,21 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
-    // debug is on, headers are passed
+    // debug is on via header, headers are passed
     FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
     headers.add(X_HH_DEBUG, "true");
     FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap();
+    actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    assertTrue(httpClientContext.isDebugMode());
+    http.with(request).expectEmpty().result().get();
+    assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
+    assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
+    assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+
+    // debug is on via query param, headers are passed
+    headers = new FluentCaseInsensitiveStringsMap();
+    queryParams = new FluentCaseInsensitiveStringsMap();
     queryParams.add(DEBUG, "123");
     actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
