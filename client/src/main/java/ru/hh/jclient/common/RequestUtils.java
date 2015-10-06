@@ -15,13 +15,18 @@ public class RequestUtils {
   private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
 
   /**
-   * Check if headers contain {@link HttpHeaders#X_HH_DEBUG} with value of 'true'.
+   * Check if headers contain {@link HttpHeaders#X_HH_DEBUG} with value of 'true' and query params contain {@link HttpParams#DEBUG} param with any
+   * value.
    *
    * @param headers
    *          ideally, case-insensitive map, otherwise keys must be lower-case, or header name must be equal to the key in map
+   * @param queryParams
+   *          map of query params
    */
-  public static boolean isInDebugMode(Map<String, List<String>> headers) {
-    return "true".equalsIgnoreCase(getSingleHeader(headers, X_HH_DEBUG).orElse("false"));
+  public static boolean isInDebugMode(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
+    boolean hasDebugHeader = "true".equalsIgnoreCase(getSingleHeader(headers, X_HH_DEBUG).orElse("false"));
+    boolean hasDebugParam = queryParams.containsKey(HttpParams.DEBUG);
+    return hasDebugHeader && hasDebugParam;
   }
 
   /**

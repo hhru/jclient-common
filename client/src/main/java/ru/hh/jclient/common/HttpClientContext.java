@@ -21,16 +21,16 @@ public class HttpClientContext {
 
   /**
    * Creates context.
-   * 
+   *
    * @param headers headers of global request. Some of them can be used by the local request.
    * @param debugSupplier supplier of object used to gather debug information
    */
-  public HttpClientContext(Map<String, List<String>> headers, Supplier<RequestDebug> debugSupplier) {
+  public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, Supplier<RequestDebug> debugSupplier) {
     this.headers = requireNonNull(headers, "headers must not be null")
         .entrySet()
         .stream()
         .collect(toFluentCaseInsensitiveStringsMap(Entry::getKey, Entry::getValue));
-    this.debugMode = isInDebugMode(headers);
+    this.debugMode = isInDebugMode(headers, queryParams);
     this.debugSupplier = requireNonNull(debugSupplier, "debugSupplier must not be null");
   }
 

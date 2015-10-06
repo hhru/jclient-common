@@ -31,8 +31,8 @@ public class HttpClientContextThreadLocalSupplier implements Supplier<HttpClient
    * Creates and stores new context using provided headers. This method should be called before any invocations of jclient implementation in the
    * current thread.
    */
-  public void addContext(Map<String, List<String>> headers) {
-    storage.set(new HttpClientContext(headers, requestDebugSupplier));
+  public void addContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
+    storage.set(new HttpClientContext(headers, queryParams, requestDebugSupplier));
   }
 
   /**

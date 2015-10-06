@@ -238,7 +238,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
-    assertTrue(actualRequest.get().getUrl().indexOf(HttpClientImpl.PARAM_READ_ONLY_REPLICA) > -1);
+    assertTrue(actualRequest.get().getUrl().indexOf(HttpParams.READ_ONLY_REPLICA) > -1);
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
   }
 

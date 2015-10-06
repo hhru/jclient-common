@@ -4,15 +4,18 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import com.ning.http.client.Param;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.uri.Uri;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.util.MDCCopy;
@@ -25,11 +28,10 @@ import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
 import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
+import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
 import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
 
 class HttpClientImpl extends HttpClient {
-
-  static final String PARAM_READ_ONLY_REPLICA = "replicaOnlyRq";
 
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
 
@@ -42,10 +44,7 @@ class HttpClientImpl extends HttpClient {
   @Override
   CompletableFuture<Response> executeRequest() {
     RequestBuilder builder = new RequestBuilder(getRequest());
-    addHeaders(builder);
-    if (useReadOnlyReplica()) {
-      builder.addQueryParam(PARAM_READ_ONLY_REPLICA, TRUE.toString());
-    }
+    addHeadersAndParams(builder);
 
     Request request = builder.build();
     CompletableFuture<Response> promise = new CompletableFuture<>();
@@ -55,7 +54,17 @@ class HttpClientImpl extends HttpClient {
     return promise;
   }
 
-  private void addHeaders(RequestBuilder requestBuilder) {
+  private void addHeadersAndParams(RequestBuilder requestBuilder) {
+    // add readonly param
+    if (useReadOnlyReplica()) {
+      requestBuilder.addQueryParam(READ_ONLY_REPLICA, TRUE.toString());
+    }
+
+    // add debug param
+    if (getContext().isDebugMode()) {
+      requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
+    }
+
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
     FluentCaseInsensitiveStringsMap headers = isExternal() ? new FluentCaseInsensitiveStringsMap() : PASS_THROUGH_HEADERS
         .stream()
@@ -73,6 +82,12 @@ class HttpClientImpl extends HttpClient {
     if (isNoDebug() || !getContext().isDebugMode()) {
       headers.remove(X_HH_DEBUG);
       headers.remove(AUTHORIZATION);
+      List<Param> params = getRequest()
+          .getQueryParams()
+          .stream()
+          .filter(param -> !param.getName().equals(HttpParams.DEBUG))
+          .collect(Collectors.toList());
+      requestBuilder.setQueryParams(params);
     }
 
     requestBuilder.setHeaders(headers);

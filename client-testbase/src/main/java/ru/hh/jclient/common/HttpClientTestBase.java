@@ -32,12 +32,12 @@ public class HttpClientTestBase {
   public static TestRequestDebug debug = new TestRequestDebug(true);
 
   public HttpClientTestBase withEmptyContext() {
-    httpClientContext = new HttpClientContext(Collections.<String, List<String>> emptyMap(), () -> debug);
+    httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), () -> debug);
     return this;
   }
 
   public HttpClientTestBase withContext(Map<String, List<String>> headers) {
-    httpClientContext = new HttpClientContext(headers, () -> debug);
+    httpClientContext = new HttpClientContext(headers, Collections.emptyMap(), () -> debug);
     return this;
   }
 
