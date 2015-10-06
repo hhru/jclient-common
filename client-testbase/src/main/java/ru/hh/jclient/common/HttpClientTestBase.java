@@ -41,6 +41,11 @@ public class HttpClientTestBase {
     return this;
   }
 
+  public HttpClientTestBase withContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
+    httpClientContext = new HttpClientContext(headers, queryParams, () -> debug);
+    return this;
+  }
+
   public Supplier<Request> okRequest(String text, MediaType contentType) throws IOException {
     return request(text, contentType, 200);
   }

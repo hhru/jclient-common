@@ -10,6 +10,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
+import static ru.hh.jclient.common.HttpParams.DEBUG;
 import static ru.hh.jclient.common.TestRequestDebug.Call.*;
 
 import java.io.ByteArrayOutputStream;
@@ -282,11 +283,14 @@ public class HttpClientTest extends HttpClientTestBase {
     // debug is on, headers are passed
     FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
     headers.add(X_HH_DEBUG, "true");
-    actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap();
+    queryParams.add(DEBUG, "123");
+    actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
     http.with(request).expectEmpty().result().get();
     assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
+    assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 

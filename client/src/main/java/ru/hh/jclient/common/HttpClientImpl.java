@@ -55,16 +55,6 @@ class HttpClientImpl extends HttpClient {
   }
 
   private void addHeadersAndParams(RequestBuilder requestBuilder) {
-    // add readonly param
-    if (useReadOnlyReplica()) {
-      requestBuilder.addQueryParam(READ_ONLY_REPLICA, TRUE.toString());
-    }
-
-    // add debug param
-    if (getContext().isDebugMode()) {
-      requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
-    }
-
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
     FluentCaseInsensitiveStringsMap headers = isExternal() ? new FluentCaseInsensitiveStringsMap() : PASS_THROUGH_HEADERS
         .stream()
@@ -91,6 +81,16 @@ class HttpClientImpl extends HttpClient {
     }
 
     requestBuilder.setHeaders(headers);
+
+    // add readonly param
+    if (useReadOnlyReplica()) {
+      requestBuilder.addQueryParam(READ_ONLY_REPLICA, TRUE.toString());
+    }
+
+    // add debug param
+    if (getContext().isDebugMode() && !isNoDebug()) {
+      requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
+    }
   }
 
   static class CompletionHandler extends AsyncCompletionHandler<Response> {
