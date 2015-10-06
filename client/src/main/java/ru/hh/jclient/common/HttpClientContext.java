@@ -23,6 +23,7 @@ public class HttpClientContext {
    * Creates context.
    *
    * @param headers headers of global request. Some of them can be used by the local request.
+   * @param queryParams query params of global request
    * @param debugSupplier supplier of object used to gather debug information
    */
   public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, Supplier<RequestDebug> debugSupplier) {
