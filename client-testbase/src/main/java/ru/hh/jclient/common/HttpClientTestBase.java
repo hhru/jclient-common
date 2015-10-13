@@ -46,13 +46,8 @@ public class HttpClientTestBase {
   }
 
   public Supplier<Request> request(String text, MediaType contentType, int status) throws IOException {
-    Response response = mock(Response.class);
-    when(response.getStatusCode()).thenReturn(status);
-    if (contentType != null) {
-      when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
-    }
-    when(response.getResponseBody(isA(String.class))).thenReturn(text);
-    return request(response);
+    final Charset charset = contentType.charset().isPresent() ? contentType.charset().get() : Charset.defaultCharset();
+    return request(text.getBytes(charset), contentType, status);
   }
 
   public Supplier<Request> okRequest(byte[] data, MediaType contentType) throws IOException {

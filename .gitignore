@@ -3,4 +3,5 @@
 /.settings
 /.classpath
 *.iml
-/.ideo
+*.ipr
+/.idea
