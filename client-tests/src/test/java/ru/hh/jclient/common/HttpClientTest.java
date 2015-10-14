@@ -152,15 +152,12 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testJson() throws IOException, InterruptedException, ExecutionException {
-    XmlTest test = new XmlTest("test тест");
-    ObjectMapper objectMapper = new ObjectMapper();
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    objectMapper.writeValue(out, test);
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), JSON_UTF_8);
+    String responseBody = "{\"name\":\"test тест\"}";
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
-    assertEquals(test.name, testOutput.name);
+    XmlTest testOutput = http.with(request).<XmlTest> expectJson(new ObjectMapper(), XmlTest.class).result().get();
+    assertEquals("test тест", testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
 
