@@ -264,45 +264,104 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test
-  public void testDebug() throws IOException, InterruptedException, ExecutionException {
+  @Test(expected = IllegalStateException.class)
+  public void testDebugManualHeaderWithNoDebug() throws IOException, InterruptedException, ExecutionException {
+    // situation when manually building request with debug header, it should be removed
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
         .addHeader(X_HH_DEBUG, "true")
         .addHeader(AUTHORIZATION, "someauth")
         .build();
 
-    // debug is off, headers will be removed
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertFalse(httpClientContext.isDebugMode());
     http.with(request).expectEmpty().result().get();
-    assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
-    assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION));
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testDebugManualParamWithNoDebug() throws IOException, InterruptedException, ExecutionException {
+    // situation when manually building request with debug param
+    Request request = new RequestBuilder("GET")
+        .setUrl("http://localhost/empty")
+        .addHeader(AUTHORIZATION, "someauth")
+        .addQueryParam(HttpParams.DEBUG, "123")
+        .build();
+
+    withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    assertFalse(httpClientContext.isDebugMode());
+    http.with(request).expectEmpty().result().get();
+  }
+
+  @Test
+  public void testDebug() throws IOException, InterruptedException, ExecutionException {
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+    Supplier<Request> actualRequest;
 
     // debug is on via header, headers are passed
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
-    headers.add(X_HH_DEBUG, "true");
+    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap().add(X_HH_DEBUG, "true").add(AUTHORIZATION, "someauth");
     FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap();
+
     actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
+
     http.with(request).expectEmpty().result().get();
+
     assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // debug is on via query param, headers are passed
-    headers = new FluentCaseInsensitiveStringsMap();
-    queryParams = new FluentCaseInsensitiveStringsMap();
-    queryParams.add(DEBUG, "123");
+    headers = new FluentCaseInsensitiveStringsMap().add(AUTHORIZATION, "someauth");
+    queryParams = new FluentCaseInsensitiveStringsMap().add(DEBUG, "123");
+
     actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
+
     http.with(request).expectEmpty().result().get();
+
     assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void testExternalRequestWithDebugOn() throws IOException, InterruptedException, ExecutionException {
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+
+    // debug is on but for 'external' but header / param should not be passed
+    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap().add(X_HH_DEBUG, "true").add(AUTHORIZATION, "someauth");
+    FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap().add(DEBUG, "123");
+
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    assertTrue(httpClientContext.isDebugMode());
+
+    http.with(request).external().expectEmpty().result().get();
+
+    assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
+    assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // not passed through but can be added manually to request if needed
+    assertTrue(actualRequest.get().getQueryParams().isEmpty());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
+  }
+
+  @Test
+  public void testNoDebugRequestWithDebugOn() throws IOException, InterruptedException, ExecutionException {
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+
+    // debug is on but for 'external' but header / param should not be passed
+    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap().add(X_HH_DEBUG, "true").add(AUTHORIZATION, "someauth");
+    FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap().add(DEBUG, "123");
+
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    assertTrue(httpClientContext.isDebugMode());
+
+    http.with(request).noDebug().expectEmpty().result().get();
+
+    assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
+    assertTrue(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // passed through because it might be auth not related to debug
+    assertTrue(actualRequest.get().getQueryParams().isEmpty());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
   }
 
   @Test

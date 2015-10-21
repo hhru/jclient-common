@@ -4,18 +4,15 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Param;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.uri.Uri;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.util.MDCCopy;
@@ -61,6 +58,11 @@ class HttpClientImpl extends HttpClient {
         .filter(getContext().getHeaders()::containsKey)
         .collect(toFluentCaseInsensitiveStringsMap(identity(), h -> getContext().getHeaders().get(h)));
 
+    // debug header is passed through by default, but should be removed before final check at the end if client specifies so
+    if (isNoDebug() || isExternal() || !getContext().isDebugMode()) {
+      headers.remove(X_HH_DEBUG);
+    }
+
     headers.addAll(getRequest().getHeaders());
 
     // remove hh-session header if host does not need it
@@ -68,29 +70,28 @@ class HttpClientImpl extends HttpClient {
       headers.remove(HH_PROTO_SESSION);
     }
 
-    // remove debug/auth headers if debug is not enabled
-    if (isNoDebug() || !getContext().isDebugMode()) {
-      headers.remove(X_HH_DEBUG);
-      headers.remove(AUTHORIZATION);
-      List<Param> params = getRequest()
-          .getQueryParams()
-          .stream()
-          .filter(param -> !param.getName().equals(HttpParams.DEBUG))
-          .collect(Collectors.toList());
-      requestBuilder.setQueryParams(params);
-    }
-
     requestBuilder.setHeaders(headers);
 
     // add readonly param
-    if (useReadOnlyReplica()) {
+    if (useReadOnlyReplica() && !isExternal()) {
       requestBuilder.addQueryParam(READ_ONLY_REPLICA, TRUE.toString());
     }
 
     // add both debug param and debug header (for backward compatibility)
-    if (getContext().isDebugMode() && !isNoDebug()) {
+    if (getContext().isDebugMode() && !isNoDebug() && !isExternal()) {
       requestBuilder.addHeader(X_HH_DEBUG, "true");
       requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
+    }
+
+    // sanity check for debug header/param if debug is not enabled
+    if (isNoDebug() || isExternal() || !getContext().isDebugMode()) {
+      if (headers.containsKey(X_HH_DEBUG)) {
+        throw new IllegalStateException("Debug header in request when debug is disabled");
+      }
+
+      if (getRequest().getQueryParams().stream().anyMatch(param -> param.getName().equals(HttpParams.DEBUG))) {
+        throw new IllegalStateException("Debug param in request when debug is disabled");
+      }
     }
   }
 
