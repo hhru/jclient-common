@@ -31,32 +31,16 @@ public abstract class AbstractClient {
     return UriBuilder.fromPath(url(resourceMethodPath)).build(pathParams).toString();
   }
 
-  protected RequestBuilder get(String url) {
-    return build(HTTP_GET, url);
-  }
-
   protected RequestBuilder get(String url, Object... queryParams) {
     return build(HTTP_GET, url, queryParams);
-  }
-
-  protected RequestBuilder post(String url) {
-    return build(HTTP_POST, url);
   }
 
   protected RequestBuilder post(String url, Object... queryParams) {
     return build(HTTP_POST, url, queryParams);
   }
 
-  protected RequestBuilder put(String url) {
-    return build(HTTP_PUT, url);
-  }
-
   protected RequestBuilder put(String url, Object... queryParams) {
     return build(HTTP_PUT, url, queryParams);
-  }
-
-  protected RequestBuilder delete(String url) {
-    return build(HTTP_DELETE, url);
   }
 
   protected RequestBuilder delete(String url, Object... queryParams) {
