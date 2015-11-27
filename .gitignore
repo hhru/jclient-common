@@ -5,3 +5,6 @@
 *.iml
 *.ipr
 /.idea
+/client-utils/.settings
+/client-utils/.classpath
+/client-utils/.project

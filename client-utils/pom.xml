@@ -6,16 +6,8 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>jclient-common</artifactId>
+    <artifactId>jclient-common-utils</artifactId>
     <packaging>jar</packaging>
-
-    <dependencies>
-        <dependency>
-            <groupId>ru.hh.jclient-common</groupId>
-            <artifactId>jclient-common-utils</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
