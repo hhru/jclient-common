@@ -20,6 +20,7 @@ import ru.hh.jclient.common.converter.XmlConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
 import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.MessageLite;
 import com.ning.http.client.AsyncHttpClient;
@@ -38,6 +39,7 @@ public abstract class HttpClient {
   private RequestDebug debug;
 
   protected Optional<?> requestBodyEntity = Optional.empty();
+  protected Optional<Collection<MediaType>> expectedMediaTypes;
 
   private Request request;
 
@@ -116,7 +118,9 @@ public abstract class HttpClient {
    * @param xmlClass type of result
    */
   public <T> ResultProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
-    return new ResultProcessor<>(this, new XmlConverter<>(context, xmlClass));
+    TypeConverter<T> converter = new XmlConverter<>(context, xmlClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
   }
 
   /**
@@ -126,7 +130,9 @@ public abstract class HttpClient {
    * @param jsonClass type of result
    */
   public <T> ResultProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
-    return new ResultProcessor<>(this, new JsonConverter<>(mapper, jsonClass));
+    TypeConverter<T> converter = new JsonConverter<>(mapper, jsonClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
   }
 
   /**
@@ -136,7 +142,9 @@ public abstract class HttpClient {
    * @param jsonClass type of JSON object
    */
   public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, Class<T> jsonClass) {
-    return new ResultProcessor<>(this, new JsonCollectionConverter<>(mapper, jsonClass));
+    TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
   }
 
   /**
@@ -145,14 +153,18 @@ public abstract class HttpClient {
    * @param protobufClass type of result
    */
   public <T extends GeneratedMessage> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
-    return new ResultProcessor<>(this, new ProtobufConverter<>(protobufClass));
+    TypeConverter<T> converter = new ProtobufConverter<>(protobufClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
   }
 
   /**
    * Specifies that the type of result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
    */
   public ResultProcessor<String> expectPlainText() {
-    return new ResultProcessor<>(this, new PlainTextConverter());
+    TypeConverter<String> converter = new PlainTextConverter();
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
   }
 
   /**

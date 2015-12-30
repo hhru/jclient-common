@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.util.MDCCopy;
 import static com.google.common.collect.ImmutableSet.of;
+import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.lang.Boolean.TRUE;
 import static java.time.Instant.now;
@@ -69,8 +70,12 @@ class HttpClientImpl extends HttpClient {
     if (isNoSession() || getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(h -> getRequest().getUri().getHost().equals(h))) {
       headers.remove(HH_PROTO_SESSION);
     }
-
+    
     requestBuilder.setHeaders(headers);
+
+    if (!headers.containsKey(ACCEPT) && expectedMediaTypes.isPresent()) {
+      expectedMediaTypes.get().forEach(mt -> requestBuilder.addHeader(ACCEPT, mt.toString()));
+    }
 
     // add readonly param
     if (useReadOnlyReplica() && !isExternal()) {

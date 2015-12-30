@@ -33,7 +33,7 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
   }
 
   @Override
-  public Collection<MediaType> getMediaTypes() {
+  protected Collection<MediaType> getMediaTypes() {
     return ImmutableSet.of(MediaType.PLAIN_TEXT_UTF_8.withoutParameters().withCharset(charset));
   }
 }

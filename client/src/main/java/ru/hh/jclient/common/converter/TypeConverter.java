@@ -2,6 +2,11 @@ package ru.hh.jclient.common.converter;
 
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
+
+import java.util.Collection;
+import java.util.Optional;
+
+import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
 
 /**
@@ -12,5 +17,7 @@ import com.ning.http.client.Response;
 public interface TypeConverter<T> {
 
   FailableFunction<Response, ResultWithResponse<T>, Exception> converterFunction();
+
+  Optional<Collection<MediaType>> getSupportedMediaTypes();
 
 }

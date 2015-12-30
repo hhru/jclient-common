@@ -7,7 +7,6 @@ import com.ning.http.client.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import java.util.Collection;
-import static com.google.common.collect.ImmutableSet.of;
 import static java.util.Objects.requireNonNull;
 
 
@@ -30,7 +29,7 @@ public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T
   }
 
   @Override
-  public Collection<MediaType> getMediaTypes() {
-    return of(MediaType.JSON_UTF_8.withoutParameters());
+  protected Collection<MediaType> getMediaTypes() {
+    return JsonConverter.MEDIA_TYPES;
   }
 }
