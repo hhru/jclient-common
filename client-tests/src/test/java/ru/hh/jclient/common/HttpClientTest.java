@@ -39,6 +39,8 @@ import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -48,6 +50,13 @@ import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 
 public class HttpClientTest extends HttpClientTestBase {
+
+  private ObjectMapper objectMapper = new ObjectMapper();
+  private JAXBContext jaxbContext;
+
+  public HttpClientTest() throws JAXBException {
+    jaxbContext = JAXBContext.newInstance(XmlTest.class, XmlError.class);
+  }
 
   @Before
   public void before() {
@@ -80,10 +89,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testResponseWrapper() throws InterruptedException, ExecutionException, IOException, JAXBException {
     XmlTest test = new XmlTest("test тест");
-    ObjectMapper objectMapper = new ObjectMapper();
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    objectMapper.writeValue(out, test);
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(test), JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     ResultWithResponse<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).resultWithResponse().get();
@@ -100,7 +106,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).result().get();
+      http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -114,7 +120,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).result().get();
+      http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, FINISHED);
@@ -125,13 +131,10 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testXml() throws InterruptedException, ExecutionException, IOException, JAXBException {
     XmlTest test = new XmlTest("test тест");
-    JAXBContext context = JAXBContext.newInstance(XmlTest.class);
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    context.createMarshaller().marshal(test, out);
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), XML_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    XmlTest testOutput = http.with(request).expectXml(context, XmlTest.class).result().get();
+    XmlTest testOutput = http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
@@ -143,7 +146,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).expectXml(JAXBContext.newInstance(XmlTest.class), XmlTest.class).result().get();
+      http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -157,7 +160,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    XmlTest testOutput = http.with(request).<XmlTest> expectJson(new ObjectMapper(), XmlTest.class).result().get();
+    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
     assertEquals("test тест", testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -167,10 +170,7 @@ public class HttpClientTest extends HttpClientTestBase {
     XmlTest test1 = new XmlTest("test тест1");
     XmlTest test2 = new XmlTest("test тест2");
     List<XmlTest> tests = Arrays.asList(test1, test2);
-    ObjectMapper objectMapper = new ObjectMapper();
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    objectMapper.writeValue(out, tests);
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     Collection<XmlTest> testOutput = http.with(request).<XmlTest> expectJsonCollection(objectMapper, XmlTest.class).result().get();
@@ -186,7 +186,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     try {
-      http.with(request).<XmlTest> expectJson(new ObjectMapper(), XmlTest.class).result().get();
+      http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -421,19 +421,16 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testErrorXml() throws InterruptedException, ExecutionException, IOException, JAXBException {
     XmlError error = new XmlError("errror message тест");
-    JAXBContext context = JAXBContext.newInstance(XmlError.class);
-    ObjectMapper objectMapper = new ObjectMapper();
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    context.createMarshaller().marshal(error, out);
+    byte[] bytes = xmlBytes(error);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
 
     // with default range (>399)
-    Supplier<Request> actualRequest = withEmptyContext().request(out.toByteArray(), XML_UTF_8, 400);
+    Supplier<Request> actualRequest = withEmptyContext().request(bytes, XML_UTF_8, 400);
     ResultOrErrorWithResponse<XmlTest, XmlError> response = http
         .with(request)
         .expectJson(objectMapper, XmlTest.class)
-        .orXmlError(context, XmlError.class)
+        .orXmlError(jaxbContext, XmlError.class)
         .resultWithResponse()
         .get();
     assertFalse(response.get().isPresent());
@@ -444,9 +441,15 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and specific range
-    actualRequest = withEmptyContext().request(out.toByteArray(), XML_UTF_8, 800);
+    actualRequest = withEmptyContext().request(bytes, XML_UTF_8, 800);
 
-    response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(800).resultWithResponse().get();
+    response = http
+        .with(request)
+        .expectJson(objectMapper, XmlTest.class)
+        .orXmlError(jaxbContext, XmlError.class)
+        .forStatus(800)
+        .resultWithResponse()
+        .get();
     assertFalse(response.get().isPresent());
     assertTrue(response.getError().isPresent());
     assertEquals(error.message, response.getError().get().message);
@@ -456,7 +459,13 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and when range is missed
-    response = http.with(request).expectJson(objectMapper, XmlTest.class).orXmlError(context, XmlError.class).forStatus(500).resultWithResponse().get();
+    response = http
+        .with(request)
+        .expectJson(objectMapper, XmlTest.class)
+        .orXmlError(jaxbContext, XmlError.class)
+        .forStatus(500)
+        .resultWithResponse()
+        .get();
     assertFalse(response.get().isPresent());
     assertFalse(response.getError().isPresent());
     assertNotNull(response.getResponse());
@@ -468,13 +477,15 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testXmlWithNoError() throws InterruptedException, ExecutionException, IOException, JAXBException {
     XmlTest test = new XmlTest("test тест");
-    JAXBContext context = JAXBContext.newInstance(XmlTest.class);
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    context.createMarshaller().marshal(test, out);
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), XML_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    ResultOrErrorWithResponse<XmlTest, String> response = http.with(request).expectXml(context, XmlTest.class).orPlainTextError().resultWithResponse().get();
+    ResultOrErrorWithResponse<XmlTest, String> response = http
+        .with(request)
+        .expectXml(jaxbContext, XmlTest.class)
+        .orPlainTextError()
+        .resultWithResponse()
+        .get();
     assertTrue(response.get().isPresent());
     assertFalse(response.getError().isPresent());
     assertEquals(test.name, response.get().get().name);
@@ -483,7 +494,42 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
+  @Test
+  public void testAcceptHeaderBeingSet() throws InterruptedException, ExecutionException, IOException, JAXBException {
+    Supplier<Request> actualRequest;
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
+
+    ResultProcessor<?> resultProcessor;
+
+    actualRequest = withEmptyContext().okRequest("test тест", PLAIN_TEXT_UTF_8);
+    resultProcessor = http.with(request).expectPlainText();
+    resultProcessor.result().get();
+    assertProperAcceptHeader(resultProcessor, actualRequest.get());
+
+    actualRequest = withEmptyContext().okRequest(jsonBytes(new XmlTest("zxc")), JSON_UTF_8);
+    resultProcessor = http.with(request).expectJson(objectMapper, XmlTest.class);
+    resultProcessor.result().get();
+    assertProperAcceptHeader(resultProcessor, actualRequest.get());
+
+    actualRequest = withEmptyContext().okRequest(xmlBytes(new XmlTest("zxc")), XML_UTF_8);
+    resultProcessor = http.with(request).expectXml(jaxbContext, XmlTest.class);
+    resultProcessor.result().get();
+    assertProperAcceptHeader(resultProcessor, actualRequest.get());
+  }
+
   private static class TestException extends Exception {
+  }
+
+  private byte[] xmlBytes(Object object) throws JAXBException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    jaxbContext.createMarshaller().marshal(object, out);
+    return out.toByteArray();
+  }
+
+  private byte[] jsonBytes(Object object) throws JsonGenerationException, JsonMappingException, IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    objectMapper.writeValue(out, object);
+    return out.toByteArray();
   }
 
 }

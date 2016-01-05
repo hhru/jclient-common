@@ -1,20 +1,25 @@
 package ru.hh.jclient.common;
 
+import static com.google.common.net.HttpHeaders.ACCEPT;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HttpHeaders;
@@ -102,8 +107,19 @@ public class HttpClientTestBase {
     assertEquals(request1.getUrl(), request2.getUrl());
     assertEquals(request1.getMethod(), request2.getMethod());
     FluentCaseInsensitiveStringsMap headers2 = request2.getHeaders();
-    headers2.remove(HttpHeaders.ACCEPT);
+    headers2.remove(ACCEPT);
     assertEquals(request1.getHeaders(), headers2);
+  }
+
+  public void assertProperAcceptHeader(ResultProcessor<?> resultProcessor, Request actualRequest) {
+    if (!resultProcessor.getConverter().getSupportedMediaTypes().isPresent()) {
+      assertFalse(actualRequest.getHeaders().containsKey(ACCEPT));
+      return;
+    }
+
+    Collection<MediaType> mediaTypes = resultProcessor.getConverter().getSupportedMediaTypes().get();
+    mediaTypes.forEach(type -> assertTrue(actualRequest.getHeaders().get(ACCEPT).contains(type.toString())));
+    assertEquals(mediaTypes.size(), actualRequest.getHeaders().get(ACCEPT).size());
   }
 
   public static <T> CompletableFuture<ResultWithStatus<T>> success(T value) {
