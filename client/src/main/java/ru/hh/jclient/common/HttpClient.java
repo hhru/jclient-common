@@ -39,7 +39,7 @@ public abstract class HttpClient {
   private RequestDebug debug;
 
   protected Optional<?> requestBodyEntity = Optional.empty();
-  protected Optional<Collection<MediaType>> expectedMediaTypes;
+  protected Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
 
   private Request request;
 
