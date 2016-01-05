@@ -6,6 +6,7 @@ import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveSt
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Supplier;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
@@ -18,6 +19,7 @@ public class HttpClientContext {
   private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
   private boolean debugMode;
   private Supplier<RequestDebug> debugSupplier;
+  private Optional<String> requestId;
 
   /**
    * Creates context.
@@ -33,6 +35,7 @@ public class HttpClientContext {
         .collect(toFluentCaseInsensitiveStringsMap(Entry::getKey, Entry::getValue));
     this.debugMode = isInDebugMode(headers, queryParams);
     this.debugSupplier = requireNonNull(debugSupplier, "debugSupplier must not be null");
+    this.requestId = RequestUtils.getRequestId(headers);
   }
 
   public FluentCaseInsensitiveStringsMap getHeaders() {
@@ -45,5 +48,10 @@ public class HttpClientContext {
 
   public Supplier<RequestDebug> getDebugSupplier() {
     return debugSupplier;
+  }
+
+  @Override
+  public String toString() {
+    return "HttpClientContext for " + requestId.orElse("unknown") + " requestId (" + this.hashCode() + ")";
   }
 }

@@ -48,7 +48,7 @@ class HttpClientImpl extends HttpClient {
     CompletableFuture<Response> promise = new CompletableFuture<>();
     getDebug().onRequest(getHttp().getConfig(), request, requestBodyEntity);
     log.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), getHttp().getConfig()));
+    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), getContext(), getHttp().getConfig()));
     return promise;
   }
 
@@ -73,8 +73,8 @@ class HttpClientImpl extends HttpClient {
     
     requestBuilder.setHeaders(headers);
 
-    if (!headers.containsKey(ACCEPT) && expectedMediaTypes.isPresent()) {
-      expectedMediaTypes.get().forEach(mt -> requestBuilder.addHeader(ACCEPT, mt.toString()));
+    if (!headers.containsKey(ACCEPT) && getExpectedMediaTypes().isPresent()) {
+      getExpectedMediaTypes().get().forEach(mt -> requestBuilder.addHeader(ACCEPT, mt.toString()));
     }
 
     // add readonly param
@@ -108,14 +108,16 @@ class HttpClientImpl extends HttpClient {
     private Instant requestStart;
     private RequestDebug requestDebug;
     private AsyncHttpClientConfig config;
+    private HttpClientContext context;
 
     public CompletionHandler(CompletableFuture<Response> promise, Request request, Instant requestStart, RequestDebug requestDebug,
-                             AsyncHttpClientConfig config) {
+        HttpClientContext context, AsyncHttpClientConfig config) {
       this.requestStart = requestStart;
       this.mdcCopy = MDCCopy.capture();
       this.promise = promise;
       this.request = request;
       this.requestDebug = requestDebug;
+      this.context = context;
       this.config = config;
     }
 
@@ -126,8 +128,17 @@ class HttpClientImpl extends HttpClient {
       response = requestDebug.onResponse(config, response);
       mdcCopy.doInContext( () -> log.info("ASYNC_HTTP_RESPONSE: {} {} in {} ms on {} {}", responseStatusCode, responseStatusText,
         requestStart.until(now(), ChronoUnit.MILLIS), request.getMethod(), request.getUri()));
-      promise.complete(response);
-      // TODO requestDebug.onProcessingFinished(); maybe should be here?
+
+      // calling promise.complete() will block until anything that was chained to promise completes
+      // install context for current (ning) thread so chained tasks have context to run with
+      // remove context once the promise completes
+      try {
+        HttpClientContextThreadLocalSupplier.installContext(context);
+        promise.complete(response);
+      }
+      finally {
+        HttpClientContextThreadLocalSupplier.removeContext(context);
+      }
       return response;
     }
 
@@ -137,7 +148,17 @@ class HttpClientImpl extends HttpClient {
       requestDebug.onProcessingFinished();
       mdcCopy.doInContext(() -> log.warn("ASYNC_HTTP_ERROR: client error after {} ms on {} {}", requestStart.until(now(), ChronoUnit.MILLIS),
         request.getMethod(), request.getUri()));
-      promise.completeExceptionally(t);
+
+      // calling promise.completeExceptionally() will block until anything that was chained to promise completes
+      // install context for current (ning) thread so chained tasks have context to run with
+      // remove context once the promise completes
+      try {
+        HttpClientContextThreadLocalSupplier.installContext(context);
+        promise.completeExceptionally(t);
+      }
+      finally {
+        HttpClientContextThreadLocalSupplier.removeContext(context);
+      }
     }
   }
 }
