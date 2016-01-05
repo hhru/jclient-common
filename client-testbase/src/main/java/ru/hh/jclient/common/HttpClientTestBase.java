@@ -21,6 +21,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
 
@@ -100,7 +101,9 @@ public class HttpClientTestBase {
   public void assertEqualRequests(Request request1, Request request2) {
     assertEquals(request1.getUrl(), request2.getUrl());
     assertEquals(request1.getMethod(), request2.getMethod());
-    assertEquals(request1.getHeaders(), request2.getHeaders());
+    FluentCaseInsensitiveStringsMap headers2 = request2.getHeaders();
+    headers2.remove(HttpHeaders.ACCEPT);
+    assertEquals(request1.getHeaders(), headers2);
   }
 
   public static <T> CompletableFuture<ResultWithStatus<T>> success(T value) {
