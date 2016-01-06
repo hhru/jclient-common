@@ -56,26 +56,24 @@ public class HttpClientContextThreadLocalSupplier implements Supplier<HttpClient
    */
   static void installContext(HttpClientContext context) {
     if (storage.get() != null) {
-      LOG.warn("Replacing {} with {}", storage.get(), context);
+      LOG.warn("Unexpected context when installing. Replacing {} with {}", storage.get(), context);
     }
     storage.set(context);
   }
 
   /**
-   * Remove specified context. Does nothing if stored context is different.
+   * Remove specified context. Logs if existing context is different to provided one.
    * 
    * @param context
    *          context to remove
    */
   static void removeContext(HttpClientContext context) {
-    if (storage.get() == context) {
-      storage.remove();
+    if (storage.get() != context) {
+      LOG.warn("Unexpected context when removing {} - was {}", context, storage.get());
     }
-    else if (storage.get() != null) {
-      LOG.warn("Failed to remove {} - {} already in place", context, storage.get());
+    else if (storage.get() == null) {
+      LOG.warn("Unexpected context when removing {} - null", context);
     }
-    else {
-      LOG.warn("Failed to remove {} - context is already null", context);
-    }
+    storage.remove();
   }
 }
