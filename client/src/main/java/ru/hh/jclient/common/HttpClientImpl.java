@@ -146,8 +146,13 @@ class HttpClientImpl extends HttpClient {
     public void onThrowable(Throwable t) {
       requestDebug.onClientProblem(t);
       requestDebug.onProcessingFinished();
-      mdcCopy.doInContext(() -> log.warn("ASYNC_HTTP_ERROR: client error after {} ms on {} {}", requestStart.until(now(), ChronoUnit.MILLIS),
-        request.getMethod(), request.getUri()));
+      mdcCopy.doInContext(
+          () -> log.warn(
+              "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}",
+              requestStart.until(now(), ChronoUnit.MILLIS),
+              request.getMethod(),
+              request.getUri(),
+              t.getMessage()));
 
       // calling promise.completeExceptionally() will block until anything that was chained to promise completes
       // install context for current (ning) thread so chained tasks have context to run with
