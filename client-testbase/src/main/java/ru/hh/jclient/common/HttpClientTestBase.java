@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
+import ru.hh.jclient.common.util.storage.singleton.TransferableSingletonStorage;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
@@ -99,7 +100,7 @@ public class HttpClientTestBase {
       handler.onCompleted(response);
       return null;
     });
-    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), () -> httpClientContext);
+    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), () -> new TransferableSingletonStorage<>(httpClientContext));
     return () -> request[0];
   }
 

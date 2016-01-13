@@ -12,10 +12,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.util.MDCCopy;
+import ru.hh.jclient.common.util.storage.TransferUtils.PreparedTransfers;
+import ru.hh.jclient.common.util.storage.TransferableSupplier;
 import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
@@ -35,7 +36,7 @@ class HttpClientImpl extends HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
-  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
+  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, TransferableSupplier<HttpClientContext> contextSupplier) {
     super(http, request, hostsWithSession, contextSupplier);
   }
 
@@ -48,7 +49,8 @@ class HttpClientImpl extends HttpClient {
     CompletableFuture<Response> promise = new CompletableFuture<>();
     getDebug().onRequest(getHttp().getConfig(), request, requestBodyEntity);
     log.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), getContext(), getHttp().getConfig()));
+    PreparedTransfers contextTransfers = getContext().getContextTransfers().prepare();
+    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), contextTransfers, getHttp().getConfig()));
     return promise;
   }
 
@@ -70,7 +72,7 @@ class HttpClientImpl extends HttpClient {
     if (isNoSession() || getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(h -> getRequest().getUri().getHost().equals(h))) {
       headers.remove(HH_PROTO_SESSION);
     }
-    
+
     requestBuilder.setHeaders(headers);
 
     if (!headers.containsKey(ACCEPT) && getExpectedMediaTypes().isPresent()) {
@@ -84,7 +86,7 @@ class HttpClientImpl extends HttpClient {
 
     // add both debug param and debug header (for backward compatibility)
     if (getContext().isDebugMode() && !isNoDebug() && !isExternal()) {
-      requestBuilder.addHeader(X_HH_DEBUG, "true");
+      requestBuilder.setHeader(X_HH_DEBUG, "true");
       requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
     }
 
@@ -108,16 +110,21 @@ class HttpClientImpl extends HttpClient {
     private Instant requestStart;
     private RequestDebug requestDebug;
     private AsyncHttpClientConfig config;
-    private HttpClientContext context;
+    private PreparedTransfers contextTransfers;
 
-    public CompletionHandler(CompletableFuture<Response> promise, Request request, Instant requestStart, RequestDebug requestDebug,
-        HttpClientContext context, AsyncHttpClientConfig config) {
+    public CompletionHandler(
+        CompletableFuture<Response> promise,
+        Request request,
+        Instant requestStart,
+        RequestDebug requestDebug,
+        PreparedTransfers contextTransfers,
+        AsyncHttpClientConfig config) {
       this.requestStart = requestStart;
       this.mdcCopy = MDCCopy.capture();
       this.promise = promise;
       this.request = request;
       this.requestDebug = requestDebug;
-      this.context = context;
+      this.contextTransfers = contextTransfers;
       this.config = config;
     }
 
@@ -133,11 +140,11 @@ class HttpClientImpl extends HttpClient {
       // install context for current (ning) thread so chained tasks have context to run with
       // remove context once the promise completes
       try {
-        HttpClientContextThreadLocalSupplier.installContext(context);
+        contextTransfers.perform();
         promise.complete(response);
       }
       finally {
-        HttpClientContextThreadLocalSupplier.removeContext(context);
+        contextTransfers.rollback();
       }
       return response;
     }
@@ -158,11 +165,11 @@ class HttpClientImpl extends HttpClient {
       // install context for current (ning) thread so chained tasks have context to run with
       // remove context once the promise completes
       try {
-        HttpClientContextThreadLocalSupplier.installContext(context);
+        contextTransfers.perform();
         promise.completeExceptionally(t);
       }
       finally {
-        HttpClientContextThreadLocalSupplier.removeContext(context);
+        contextTransfers.rollback();
       }
     }
   }

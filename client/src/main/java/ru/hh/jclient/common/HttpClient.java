@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import javax.xml.bind.JAXBContext;
 
 import ru.hh.jclient.common.converter.JsonCollectionConverter;
@@ -17,6 +16,7 @@ import ru.hh.jclient.common.converter.ProtobufConverter;
 import ru.hh.jclient.common.converter.TypeConverter;
 import ru.hh.jclient.common.converter.VoidConverter;
 import ru.hh.jclient.common.converter.XmlConverter;
+import ru.hh.jclient.common.util.storage.TransferableSupplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
 import com.google.common.net.HttpHeaders;
@@ -48,11 +48,12 @@ public abstract class HttpClient {
   private boolean noDebug;
   private boolean externalRequest;
 
-  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Supplier<HttpClientContext> contextSupplier) {
+  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, TransferableSupplier<HttpClientContext> contextSupplier) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
     this.context = contextSupplier.get();
+    this.context.getContextTransfers().add(contextSupplier);
     this.debug = this.context.getDebugSupplier().get();
   }
 

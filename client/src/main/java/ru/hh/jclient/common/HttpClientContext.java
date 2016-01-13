@@ -1,14 +1,20 @@
 package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
+import ru.hh.jclient.common.util.storage.TransferUtils;
+import ru.hh.jclient.common.util.storage.TransferUtils.Transfers;
+import ru.hh.jclient.common.util.storage.TransferableSupplier;
 
 /**
  * Context of global (incoming) request, that is going to spawn local (outgoing) request using
@@ -20,6 +26,11 @@ public class HttpClientContext {
   private boolean debugMode;
   private Supplier<RequestDebug> debugSupplier;
   private Optional<String> requestId;
+  private Transfers contextTransfers;
+
+  public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, Supplier<RequestDebug> debugSupplier) {
+    this(headers, queryParams, debugSupplier, null);
+  }
 
   /**
    * Creates context.
@@ -28,7 +39,11 @@ public class HttpClientContext {
    * @param queryParams query params of global request
    * @param debugSupplier supplier of object used to gather debug information
    */
-  public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, Supplier<RequestDebug> debugSupplier) {
+  public HttpClientContext(
+      Map<String, List<String>> headers,
+      Map<String, List<String>> queryParams,
+      Supplier<RequestDebug> debugSupplier,
+      Collection<TransferableSupplier<?>> suppliers) {
     this.headers = requireNonNull(headers, "headers must not be null")
         .entrySet()
         .stream()
@@ -36,6 +51,7 @@ public class HttpClientContext {
     this.debugMode = isInDebugMode(headers, queryParams);
     this.debugSupplier = requireNonNull(debugSupplier, "debugSupplier must not be null");
     this.requestId = RequestUtils.getRequestId(headers);
+    this.contextTransfers = TransferUtils.build(ofNullable(suppliers).orElse(Collections.emptyList()));
   }
 
   public FluentCaseInsensitiveStringsMap getHeaders() {
@@ -48,6 +64,10 @@ public class HttpClientContext {
 
   public Supplier<RequestDebug> getDebugSupplier() {
     return debugSupplier;
+  }
+
+  public Transfers getContextTransfers() {
+    return contextTransfers;
   }
 
   @Override
