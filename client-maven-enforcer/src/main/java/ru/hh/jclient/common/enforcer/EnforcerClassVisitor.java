@@ -36,9 +36,16 @@ public class EnforcerClassVisitor extends ClassVisitor {
   @Override
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     MethodVisitor base = super.visitMethod(access, name, desc, signature, exceptions);
-    if (access != Opcodes.ACC_PUBLIC) {
+    if ((access & Opcodes.ACC_PUBLIC) != Opcodes.ACC_PUBLIC) {
       return base;
     }
+    if ((access & Opcodes.ACC_ABSTRACT) == Opcodes.ACC_ABSTRACT) {
+      return base;
+    }
+    if ((access & Opcodes.ACC_STATIC) == Opcodes.ACC_STATIC) {
+      return base;
+    }
+
     String returnType = Type.getReturnType(desc).getClassName();
     if (!returnType.equals(CompletableFuture.class.getName())) {
       return base;

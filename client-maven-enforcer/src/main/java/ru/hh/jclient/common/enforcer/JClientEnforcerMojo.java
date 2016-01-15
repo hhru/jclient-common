@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class JClientEnforcerMojo extends AbstractMojo {
     JavaProjectBuilder builder = prepareBuilder(sourceDirectory);
     Map<JavaAnnotation, Collection<String>> resourceAnnotations = findAndResolve(builder, JClient.class);
     Set<String> resourceAnnotationValues = resourceAnnotations.values().stream().flatMap(v -> v.stream()).collect(toSet());
-    
+
     builder = prepareBuilder(clientSourceDirectory);
     Map<JavaAnnotation, Collection<String>> clientAnnotations = findAndResolve(builder, JResource.class);
     Set<String> clientAnnotationValues = clientAnnotations.values().stream().flatMap(v -> v.stream()).collect(toSet());
@@ -65,13 +66,13 @@ public class JClientEnforcerMojo extends AbstractMojo {
     boolean resourcesInvalid = resourceAnnotations
         .entrySet()
         .stream()
-        .map(e -> checkValid(e.getKey(), e.getValue(), clientAnnotationValues, "is not referenced by any clients"))
+        .map(e -> checkValidOrReport(e.getKey(), e.getValue(), clientAnnotationValues, "is not referenced by any clients"))
         .collect(toSet())
         .contains(false);
     boolean clientsInvalid = clientAnnotations
         .entrySet()
         .stream()
-        .map(e -> checkValid(e.getKey(), e.getValue(), resourceAnnotationValues, "is not referenced by any resources"))
+        .map(e -> checkValidOrReport(e.getKey(), e.getValue(), resourceAnnotationValues, "is not referenced by any resources"))
         .collect(toSet())
         .contains(false);
 
@@ -80,11 +81,12 @@ public class JClientEnforcerMojo extends AbstractMojo {
     }
   }
 
-  private boolean checkValid(JavaAnnotation annotation, Collection<String> fields, Set<String> otherSide, String message) {
-    return !fields.stream().map(f -> checkFieldValid(annotation, f, otherSide, message)).collect(toSet()).contains(false);
+  private boolean checkValidOrReport(JavaAnnotation annotation, Collection<String> fields, Set<String> otherSide, String message) {
+    // need to report ALL fields so can't use anyMatch() etc
+    return !fields.stream().map(f -> checkFieldValidOrReport(annotation, f, otherSide, message)).collect(toSet()).contains(false);
   }
 
-  private Boolean checkFieldValid(JavaAnnotation annotation, String field, Set<String> otherSide, String message) {
+  private Boolean checkFieldValidOrReport(JavaAnnotation annotation, String field, Set<String> otherSide, String message) {
     if (otherSide.contains(field)) {
       return true;
     }
@@ -137,23 +139,44 @@ public class JClientEnforcerMojo extends AbstractMojo {
     else {
       names = Collections.singleton(value.getParameterValue().toString());
     }
-    
+
     // search fieldName in static imports
     return names.stream().map(n -> resolveSingleField(annotation, n)).collect(Collectors.toList());
   }
 
   private String resolveSingleField(JavaAnnotation annotation, String fieldName) {
     DefaultJavaAnnotation detailedAnnotation = (DefaultJavaAnnotation) annotation;
-    return ((DefaultJavaMethod) detailedAnnotation.getContext())
-        .getDeclaringClass()
-        .getSource()
-        .getImports()
-        .stream()
-        .filter(i -> i.startsWith("static "))
-        .filter(i -> i.endsWith("." + fieldName))
-        .map(i -> i.substring("static ".length()))
-        .findFirst()
-        .orElse(fieldName);
+    List<String> imports = ((DefaultJavaMethod) detailedAnnotation.getContext()).getDeclaringClass().getSource().getImports();
+
+    if (!fieldName.contains(".")) {
+      // static import, i.e.
+      //
+      // import static com.example.Paths.GET_ALL
+      // ...
+      // @JResource(GET_ALL)
+      return imports
+          .stream()
+          .filter(i -> i.startsWith("static "))
+          .filter(i -> i.endsWith("." + fieldName))
+          .map(i -> i.substring("static ".length()))
+          .findFirst()
+          .orElse(fieldName);
+    }
+
+    // regular import, i.e.
+    //
+    // import com.example.Paths;
+    // ...
+    // @JResource(Paths.GET_ALL)
+    // or
+    // @JResource(com.example.Paths.GET_ALL)
+    String constantName = fieldName.substring(fieldName.lastIndexOf('.') + 1);
+    String className = fieldName.substring(0, fieldName.lastIndexOf('.'));
+
+    Optional<String> importString = imports.stream().filter(i -> i.endsWith(className)).findFirst().map(i -> i + "." + constantName);
+
+    // return original on everything else
+    return importString.orElse(fieldName);
   }
 
   private static class AnnotationSearcher implements Searcher {
