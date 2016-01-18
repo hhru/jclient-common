@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.RequestDebug;
 import ru.hh.jclient.common.util.storage.TransferableSupplier;
-import ru.hh.jclient.common.util.storage.threadlocal.TransferableThreadLocalSupplier;
+import ru.hh.jclient.common.util.storage.TransferableThreadLocalSupplier;
 
 /**
  * Creates and removes {@link HttpClientContext} using ThreadLocal to store it.
@@ -21,7 +21,7 @@ public class HttpClientContextThreadLocalSupplier extends TransferableThreadLoca
   private static final Logger LOG = LoggerFactory.getLogger(HttpClientContextThreadLocalSupplier.class);
 
   @Override
-  public Logger getLog() {
+  public Logger getLogger() {
     return LOG;
   }
 

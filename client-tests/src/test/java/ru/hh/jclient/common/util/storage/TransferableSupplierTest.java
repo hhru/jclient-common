@@ -11,7 +11,6 @@ import org.junit.Test;
 import com.google.common.base.Throwables;
 import ru.hh.jclient.common.util.storage.TransferUtils.PreparedTransfers;
 import ru.hh.jclient.common.util.storage.TransferUtils.Transfers;
-import ru.hh.jclient.common.util.storage.threadlocal.TransferableThreadLocalSupplier;
 
 public class TransferableSupplierTest {
 
@@ -22,27 +21,26 @@ public class TransferableSupplierTest {
     Transfers transfers = TransferUtils.build(supplier);
 
     supplier.set(data);
-    PreparedTransfers preparedTransfers = transfers.prepare();
 
-    checkInThread(supplier, preparedTransfers, data, () -> {
-      checkInThread(supplier, preparedTransfers, data, null);
+    checkInThread(supplier, transfers, data, () -> {
+      checkInThread(supplier, transfers, data, null);
       return null;
     });
   }
 
-  private void checkInThread(TransferableSupplier<String> supplier, PreparedTransfers preparedTransfers, String data, Callable<Void> additionalStep)
+  private void checkInThread(TransferableSupplier<String> supplier, Transfers transfers, String data, Callable<Void> additionalStep)
       throws InterruptedException {
     AtomicBoolean emptyBefore = new AtomicBoolean();
     AtomicBoolean setCorrectly = new AtomicBoolean();
     AtomicBoolean emptyAfter = new AtomicBoolean();
     CountDownLatch latch = new CountDownLatch(1);
 
+    PreparedTransfers preparedTransfers = transfers.prepare();
+
     Thread thread = new Thread(() -> {
       emptyBefore.set(supplier.get() == null);
       preparedTransfers.perform();
       setCorrectly.set(data.equals(supplier.get()));
-      preparedTransfers.rollback();
-      emptyAfter.set(supplier.get() == null);
 
       if (additionalStep != null) {
         try {
@@ -52,6 +50,9 @@ public class TransferableSupplierTest {
           throw Throwables.propagate(e);
         }
       }
+
+      preparedTransfers.rollback();
+      emptyAfter.set(supplier.get() == null);
 
       latch.countDown();
     });

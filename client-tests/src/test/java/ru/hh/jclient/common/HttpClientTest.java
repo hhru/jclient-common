@@ -36,9 +36,9 @@ import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
 import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
+import ru.hh.jclient.common.util.storage.NonTransferableSupplier;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
-import ru.hh.jclient.common.util.storage.singleton.TransferableSingletonStorage;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -404,7 +404,7 @@ public class HttpClientTest extends HttpClientTestBase {
       handler.onThrowable(new TestException());
       return null;
     });
-    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), () -> new TransferableSingletonStorage<>(httpClientContext));
+    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), new NonTransferableSupplier<>(() -> httpClientContext));
 
     withEmptyContext();
 

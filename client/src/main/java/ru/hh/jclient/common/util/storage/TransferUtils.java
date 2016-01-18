@@ -1,9 +1,9 @@
 package ru.hh.jclient.common.util.storage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class TransferUtils {
@@ -25,56 +25,36 @@ public class TransferUtils {
 
   public static class PreparedTransfers {
 
-    protected List<Transfer<?>> transfers;
+    private Collection<PreparedTransfer> transfers;
 
-    protected PreparedTransfers(Collection<TransferableSupplier<?>> suppliers) {
-      transfers = suppliers.stream().map(s -> new Transfer<>(s)).collect(Collectors.toList());
+    protected PreparedTransfers(Collection<PreparedTransfer> transfers) {
+      this.transfers = transfers;
     }
 
     public void perform() {
-      transfers.forEach(Transfer::perform);
+      transfers.forEach(PreparedTransfer::performTransfer);
     }
 
     public void rollback() {
-      transfers.forEach(Transfer::rollback);
+      transfers.forEach(PreparedTransfer::rollbackTransfer);
     }
   }
 
-  public static class Transfers extends PreparedTransfers {
+  public static class Transfers {
+
+    protected Collection<TransferableSupplier<?>> suppliers;
 
     protected Transfers(Collection<TransferableSupplier<?>> suppliers) {
-      super(suppliers);
+      this.suppliers = new ArrayList<>(suppliers);
     }
 
     public void add(TransferableSupplier<?> supplier) {
-      transfers.add(new Transfer<>(supplier));
+      this.suppliers.add(supplier);
     }
 
     public PreparedTransfers prepare() {
-      transfers.forEach(Transfer::prepare);
-      return this;
+      return new PreparedTransfers(suppliers.stream().map(TransferableSupplier::prepareTransfer).collect(Collectors.toList()));
     }
 
-  }
-
-  private static class Transfer<T> {
-    public TransferableSupplier<T> supplier;
-    public T value;
-
-    public Transfer(TransferableSupplier<T> supplier) {
-      this.supplier = supplier;
-    }
-
-    public void prepare() {
-      value = supplier.get();
-    }
-
-    public void perform() {
-      supplier.set(value);
-    }
-
-    public void rollback() {
-      supplier.remove(value);
-    }
   }
 }

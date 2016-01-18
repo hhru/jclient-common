@@ -10,7 +10,6 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
 import ru.hh.jclient.common.util.storage.TransferableSupplier;
-import ru.hh.jclient.common.util.storage.threadlocal.TransferableThreadLocalSupplier;
 
 public class HttpClientBuilder {
 
