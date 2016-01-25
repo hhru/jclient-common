@@ -16,7 +16,8 @@ import ru.hh.jclient.common.converter.ProtobufConverter;
 import ru.hh.jclient.common.converter.TypeConverter;
 import ru.hh.jclient.common.converter.VoidConverter;
 import ru.hh.jclient.common.converter.XmlConverter;
-import ru.hh.jclient.common.util.storage.TransferableSupplier;
+import ru.hh.jclient.common.util.storage.Storage;
+import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
 import com.google.common.net.HttpHeaders;
@@ -36,6 +37,7 @@ public abstract class HttpClient {
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
   private HttpClientContext context;
+  private Storages storages;
   private RequestDebug debug;
 
   protected Optional<?> requestBodyEntity = Optional.empty();
@@ -48,12 +50,12 @@ public abstract class HttpClient {
   private boolean noDebug;
   private boolean externalRequest;
 
-  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, TransferableSupplier<HttpClientContext> contextSupplier) {
+  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
     this.context = contextSupplier.get();
-    this.context.getContextTransfers().add(contextSupplier);
+    this.storages = this.context.getStorages().copy().add(contextSupplier); //
     this.debug = this.context.getDebugSupplier().get();
   }
 
@@ -220,6 +222,10 @@ public abstract class HttpClient {
 
   HttpClientContext getContext() {
     return context;
+  }
+
+  Storages getStorages() {
+    return storages;
   }
 
   Optional<Collection<MediaType>> getExpectedMediaTypes() {

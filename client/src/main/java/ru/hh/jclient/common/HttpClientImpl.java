@@ -15,8 +15,8 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.util.MDCCopy;
-import ru.hh.jclient.common.util.storage.TransferUtils.PreparedTransfers;
-import ru.hh.jclient.common.util.storage.TransferableSupplier;
+import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
+import ru.hh.jclient.common.util.storage.Storage;
 import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
@@ -36,7 +36,7 @@ class HttpClientImpl extends HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
-  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, TransferableSupplier<HttpClientContext> contextSupplier) {
+  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
     super(http, request, hostsWithSession, contextSupplier);
   }
 
@@ -49,8 +49,8 @@ class HttpClientImpl extends HttpClient {
     CompletableFuture<Response> promise = new CompletableFuture<>();
     getDebug().onRequest(getHttp().getConfig(), request, requestBodyEntity);
     log.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-    PreparedTransfers contextTransfers = getContext().getContextTransfers().prepare();
-    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), contextTransfers, getHttp().getConfig()));
+    Transfers transfers = getStorages().prepare();
+    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), transfers, getHttp().getConfig()));
     return promise;
   }
 
@@ -110,14 +110,14 @@ class HttpClientImpl extends HttpClient {
     private Instant requestStart;
     private RequestDebug requestDebug;
     private AsyncHttpClientConfig config;
-    private PreparedTransfers contextTransfers;
+    private Transfers contextTransfers;
 
     public CompletionHandler(
         CompletableFuture<Response> promise,
         Request request,
         Instant requestStart,
         RequestDebug requestDebug,
-        PreparedTransfers contextTransfers,
+        Transfers contextTransfers,
         AsyncHttpClientConfig config) {
       this.requestStart = requestStart;
       this.mdcCopy = MDCCopy.capture();
@@ -137,8 +137,8 @@ class HttpClientImpl extends HttpClient {
         requestStart.until(now(), ChronoUnit.MILLIS), request.getMethod(), request.getUri()));
 
       // calling promise.complete() will block until anything that was chained to promise completes
-      // install context for current (ning) thread so chained tasks have context to run with
-      // remove context once the promise completes
+      // install context(s) for current (ning) thread so chained tasks have context to run with
+      // remove context(s) once the promise completes
       try {
         contextTransfers.perform();
         promise.complete(response);
@@ -162,8 +162,8 @@ class HttpClientImpl extends HttpClient {
               t.getMessage()));
 
       // calling promise.completeExceptionally() will block until anything that was chained to promise completes
-      // install context for current (ning) thread so chained tasks have context to run with
-      // remove context once the promise completes
+      // install context(s) for current (ning) thread so chained tasks have context to run with
+      // remove context(s) once the promise completes
       try {
         contextTransfers.perform();
         promise.completeExceptionally(t);
