@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.util.MDCCopy;
@@ -76,7 +77,7 @@ class HttpClientImpl extends HttpClient {
     requestBuilder.setHeaders(headers);
 
     if (!headers.containsKey(ACCEPT) && getExpectedMediaTypes().isPresent()) {
-      getExpectedMediaTypes().get().forEach(mt -> requestBuilder.addHeader(ACCEPT, mt.toString()));
+      requestBuilder.addHeader(ACCEPT, getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")));
     }
 
     // add readonly param
