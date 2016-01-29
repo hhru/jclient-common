@@ -7,6 +7,9 @@ import static java.util.Objects.requireNonNull;
 import java.util.Collection;
 import java.util.Set;
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.common.net.MediaType;
@@ -17,18 +20,20 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
   private static final Set<MediaType> MEDIA_TYPES = of(XML_UTF_8.withoutParameters(), APPLICATION_XML_UTF_8.withoutParameters());
 
   private JAXBContext context;
-  @SuppressWarnings("unused")
-  private Class<T> xmlClass; // / used to preserve T type when chaining
+  private Class<T> xmlClass;
 
   public XmlConverter(JAXBContext context, Class<T> xmlClass) {
     this.context = requireNonNull(context, "context must not be null");
     this.xmlClass = requireNonNull(xmlClass, "xmlClass must not be null");
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
-    return r -> new ResultWithResponse<>((T) context.createUnmarshaller().unmarshal(r.getResponseBodyAsStream()), r);
+    return r -> {
+      Source source = new StreamSource(r.getResponseBodyAsStream());
+      JAXBElement<T> root = context.createUnmarshaller().unmarshal(source, xmlClass);
+      return new ResultWithResponse<>(root.getValue(), r);
+    };
   }
 
   @Override
