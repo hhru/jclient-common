@@ -13,6 +13,7 @@ import static org.mockito.Mockito.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -119,8 +120,9 @@ public class HttpClientTestBase {
     }
 
     Collection<MediaType> mediaTypes = resultProcessor.getConverter().getSupportedMediaTypes().get();
-    mediaTypes.forEach(type -> assertTrue(actualRequest.getHeaders().get(ACCEPT).contains(type.toString())));
-    assertEquals(mediaTypes.size(), actualRequest.getHeaders().get(ACCEPT).size());
+    assertEquals(1, actualRequest.getHeaders().get(ACCEPT).size());
+    List<String> acceptTypes = Arrays.asList(actualRequest.getHeaders().get(ACCEPT).get(0).split(","));
+    mediaTypes.forEach(type -> assertTrue(acceptTypes.contains(type.toString())));
   }
 
   public static <T> CompletableFuture<ResultWithStatus<T>> success(T value) {
