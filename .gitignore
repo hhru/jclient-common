@@ -11,3 +11,6 @@
 /client-maven-enforcer/.project
 /client-maven-enforcer/.classpath
 /client-maven-enforcer/.settings
+/client-errors/.settings
+/client-errors/.classpath
+/client-errors/.project

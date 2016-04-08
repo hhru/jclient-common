@@ -15,6 +15,7 @@
 
     <modules>
         <module>client</module>
+        <module>client-errors</module>
         <module>client-testbase</module>
         <module>client-tests</module>
         <module>client-utils</module>		
