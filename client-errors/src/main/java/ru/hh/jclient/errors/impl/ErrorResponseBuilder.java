@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -51,7 +51,7 @@ public class ErrorResponseBuilder {
     return this;
   }
 
-  public WebApplicationException toException() {
+  public WebApplicationException toWebApplicationException() {
     ResponseBuilder builder = Response.status(status);
     entityCreator.ifPresent(ec -> builder.entity(ec.apply(message, status)));
     Response response = builder.build();

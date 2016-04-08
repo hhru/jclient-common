@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;

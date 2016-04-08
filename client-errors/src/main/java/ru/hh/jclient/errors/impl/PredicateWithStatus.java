@@ -1,9 +1,9 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl;
 
 import java.util.Optional;
 import java.util.function.Predicate;
 
-class PredicateWithStatus<T> {
+public class PredicateWithStatus<T> {
 
   private Predicate<T> predicate;
   private Optional<Integer> status;

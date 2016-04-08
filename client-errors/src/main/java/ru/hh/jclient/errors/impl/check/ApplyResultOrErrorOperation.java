@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl.check;
 
 import static java.util.Optional.empty;
 import java.util.List;
@@ -9,27 +9,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.OperationBase;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
-public class ErrorResultHandler<T, E> extends AbstractErrorHandlerBase<ErrorResultHandler<T, E>> {
+public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResultOrErrorOperation<T, E>> {
 
-  protected static final Logger logger = LoggerFactory.getLogger(ErrorResultHandler.class);
+  protected static final Logger logger = LoggerFactory.getLogger(ApplyResultOrErrorOperation.class);
 
   protected ResultOrErrorWithStatus<T, E> wrapper;
 
   protected Optional<List<PredicateWithStatus<E>>> predicates = empty();
   protected Optional<T> defaultValue = empty();
 
-  public ErrorResultHandler(ResultOrErrorWithStatus<T, E> wrapper, Optional<Integer> errorStatusCode, String errorMessage, Optional<T> defaultValue) {
+  public ApplyResultOrErrorOperation(
+      ResultOrErrorWithStatus<T, E> wrapper,
+      Optional<Integer> errorStatusCode,
+      String errorMessage,
+      List<PredicateWithStatus<E>> predicates,
+      Optional<T> defaultValue) {
     super(errorStatusCode, errorMessage);
     this.wrapper = wrapper;
     this.defaultValue = defaultValue;
-    this.errorStatusCode = AbstractErrorHandler.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty());
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  protected Class<ErrorResultHandler<T, E>> getDerivedClass() {
-    return (Class<ErrorResultHandler<T, E>>) getClass();
+    this.errorStatusCode = AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty());
+    this.predicates = Optional.ofNullable(predicates);
   }
 
   public ResultWithStatus<T> onAnyError() {
@@ -61,17 +63,9 @@ public class ErrorResultHandler<T, E> extends AbstractErrorHandlerBase<ErrorResu
   // chaining setter methods
 
   /**
-   * Sets predicates to be checked against returned result.
-   */
-  protected ErrorResultHandler<T, E> alsoFailOn(List<PredicateWithStatus<E>> predicates) {
-    this.predicates = Optional.ofNullable(predicates);
-    return this;
-  }
-
-  /**
    * Same as {@link #as(BiFunction)}} but accepts function that knows about Error instance for better error creation.
    */
-  public ErrorResultHandler<T, E> as(Function<E, BiFunction<String, Integer, Object>> errorEntityCreator) {
+  public ApplyResultOrErrorOperation<T, E> as(Function<E, BiFunction<String, Integer, Object>> errorEntityCreator) {
     return super.as(() -> errorEntityCreator.apply(wrapper.getError().get()));
   }
 

@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl.check;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,37 +6,34 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
 /**
  * Contains useful methods to handle error outcome of {@link CompletableFuture} with different jclient-common wrappers.
  */
-public class InvalidResultHandler<T> extends AbstractErrorHandler<T, InvalidResultHandler<T>> {
+public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOperation<T>> {
 
   // constructors
 
-  InvalidResultHandler(
-      ResultWithStatus<T> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
-      String errorMessage) {
-    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage);
-  }
-
-  InvalidResultHandler(
+  public ApplyResultOperation(
       ResultWithStatus<T> wrapper,
       Optional<Integer> errorStatusCode,
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
       String errorMessage,
-      Optional<T> defaultValue) {
-    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, defaultValue);
+      List<PredicateWithStatus<T>> predicates) {
+    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates);
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  protected Class<InvalidResultHandler<T>> getDerivedClass() {
-    return (Class<InvalidResultHandler<T>>) getClass();
+  public ApplyResultOperation(
+      ResultWithStatus<T> wrapper,
+      Optional<Integer> errorStatusCode,
+      Optional<List<Integer>> proxiedStatusCodes,
+      Optional<Function<Integer, Integer>> statusCodesConverter,
+      String errorMessage,
+      List<PredicateWithStatus<T>> predicates,
+      Optional<T> defaultValue) {
+    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, defaultValue);
   }
 
   // terminal operations

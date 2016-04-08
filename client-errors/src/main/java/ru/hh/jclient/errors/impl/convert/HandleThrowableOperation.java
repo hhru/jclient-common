@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl.convert;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -6,31 +6,26 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
 import javax.ws.rs.WebApplicationException;
 import com.google.common.base.Throwables;
+import ru.hh.jclient.errors.impl.OperationBase;
 
 /**
  * Contains useful methods to handle error outcome of {@link CompletableFuture} with different jclient-common wrappers.
  */
-public class ClientExceptionHandler<T> extends AbstractErrorHandlerBase<ClientExceptionHandler<T>> {
+public class HandleThrowableOperation<T> extends OperationBase<HandleThrowableOperation<T>> {
 
   private T result;
   private Throwable throwable;
 
-  ClientExceptionHandler(T result, Throwable exception, Integer errorStatusCode, String errorMessage) {
+  public HandleThrowableOperation(T result, Throwable exception, Integer errorStatusCode, String errorMessage) {
     super(Optional.of(errorStatusCode), errorMessage);
     this.result = result;
     this.throwable = exception;
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  protected Class<ClientExceptionHandler<T>> getDerivedClass() {
-    return (Class<ClientExceptionHandler<T>>) getClass();
-  }
-
   /**
-   * Convert exception to {@link WebApplicationException} with predefined status code. Please note that WebApplicationException will not be converted.
-   * If provided exception is wrapped in {@link CompletionException} it will be unwrapped. Unmatched exception will be re-thrown (runtime as-is,
-   * otherwise wrapped in runtime - see {@link Throwables#propagate(Throwable)}).
+   * Convert exception to {@link WebApplicationException} with predefined status code. If source exception is already instance of WAE it will not be
+   * converted. If provided exception is wrapped in {@link CompletionException} it will be unwrapped. Unmatched exception will be re-thrown (runtime
+   * as-is, otherwise wrapped in runtime - see {@link Throwables#propagate(Throwable)}).
    *
    * @param exceptionClasses
    *          exception classes to match against provided exception

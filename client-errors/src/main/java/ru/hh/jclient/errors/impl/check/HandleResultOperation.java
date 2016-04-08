@@ -1,26 +1,29 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl.check;
 
 import static java.util.Optional.empty;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
 /**
  * Contains useful methods to handle error outcome of {@link CompletableFuture} with different jclient-common wrappers.
  */
-public class IgnoreErrorHandler<T> extends AbstractErrorHandler<T, IgnoreErrorHandler<T>> {
+public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultOperation<T>> {
 
   private Throwable throwable;
   private Optional<Consumer<Throwable>> errorConsumer;
 
-  IgnoreErrorHandler(
+  public HandleResultOperation(
       ResultWithStatus<T> wrapper,
       Throwable throwable,
       String errorMessage,
+      List<PredicateWithStatus<T>> predicates,
       Optional<T> defaultValue,
       Optional<Consumer<Throwable>> errorConsumer) {
-    super(wrapper, empty(), empty(), empty(), errorMessage, defaultValue);
+    super(wrapper, empty(), empty(), empty(), errorMessage, predicates, defaultValue);
     this.throwable = throwable;
     this.errorConsumer = errorConsumer;
   }
@@ -30,18 +33,12 @@ public class IgnoreErrorHandler<T> extends AbstractErrorHandler<T, IgnoreErrorHa
     return true;
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  protected Class<IgnoreErrorHandler<T>> getDerivedClass() {
-    return (Class<IgnoreErrorHandler<T>>) getClass();
-  }
-
   /**
    * Returns Optional with default value (if specified) or empty if
    *
    * <ul>
    * <li>exception is not null</li>
-   * <li>result is incorrect according to {@link InvalidResultHandler#onAnyError()}</li>
+   * <li>result is incorrect according to {@link ApplyResultOperation#onAnyError()}</li>
    * </ul>
    *
    * otherwise returns Optional with unwrapped result.

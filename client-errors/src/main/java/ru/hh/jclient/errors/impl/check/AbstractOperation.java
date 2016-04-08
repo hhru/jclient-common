@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors;
+package ru.hh.jclient.errors.impl.check;
 
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import java.util.List;
@@ -7,10 +7,13 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.MoreErrors;
+import ru.hh.jclient.errors.impl.OperationBase;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
-public abstract class AbstractErrorHandler<T, H extends AbstractErrorHandler<T, H>> extends AbstractErrorHandlerBase<H> {
+public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> extends OperationBase<O> {
 
-  protected static final Logger logger = LoggerFactory.getLogger(AbstractErrorHandler.class);
+  protected static final Logger logger = LoggerFactory.getLogger(AbstractOperation.class);
 
   protected final ResultWithStatus<T> wrapper;
 
@@ -19,32 +22,32 @@ public abstract class AbstractErrorHandler<T, H extends AbstractErrorHandler<T, 
   protected Optional<List<Integer>> proxiedStatusCodes;
   protected Optional<Function<Integer, Integer>> statusCodesConverter;
 
-  protected AbstractErrorHandler(
-      ResultWithStatus<T> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
-      String errorMessage) {
-    super(errorStatusCode, errorMessage);
-    this.wrapper = wrapper;
-    this.proxiedStatusCodes = proxiedStatusCodes;
-    this.statusCodesConverter = statusCodesConverter;
-    this.errorStatusCode = getStatusCodeIfAbsent(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter);
-  }
-
-  protected AbstractErrorHandler(
+  protected AbstractOperation(
       ResultWithStatus<T> wrapper,
       Optional<Integer> errorStatusCode,
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
       String errorMessage,
-      Optional<T> defaultValue) {
-    this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage);
-    this.defaultValue = defaultValue;
+      List<PredicateWithStatus<T>> predicates) {
+    super(errorStatusCode, errorMessage);
+    this.wrapper = wrapper;
+    this.proxiedStatusCodes = proxiedStatusCodes;
+    this.statusCodesConverter = statusCodesConverter;
+    this.errorStatusCode = getStatusCodeIfAbsent(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter);
+    this.predicates = Optional.ofNullable(predicates);
   }
 
-  @Override
-  protected abstract Class<H> getDerivedClass();
+  protected AbstractOperation(
+      ResultWithStatus<T> wrapper,
+      Optional<Integer> errorStatusCode,
+      Optional<List<Integer>> proxiedStatusCodes,
+      Optional<Function<Integer, Integer>> statusCodesConverter,
+      String errorMessage,
+      List<PredicateWithStatus<T>> predicates,
+      Optional<T> defaultValue) {
+    this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates);
+    this.defaultValue = defaultValue;
+  }
 
   // internal terminal operation implementations
 
@@ -133,15 +136,5 @@ public abstract class AbstractErrorHandler<T, H extends AbstractErrorHandler<T, 
       errorStatusCode = Optional.of(converted);
     }
     return errorStatusCode;
-  }
-
-  // chaining setter methods
-
-  /**
-   * Sets predicates to be checked against returned result.
-   */
-  protected H alsoFailOn(List<PredicateWithStatus<T>> predicates) {
-    this.predicates = Optional.ofNullable(predicates);
-    return getDerivedClass().cast(this);
   }
 }

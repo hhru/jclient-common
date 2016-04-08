@@ -1,0 +1,70 @@
+package ru.hh.jclient.errors.impl.check;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import javax.ws.rs.core.Response.Status;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
+
+public abstract class AbstractOperationSelector<T, D extends AbstractOperationSelector<T, D>> {
+
+  protected String errorMessage;
+
+  public AbstractOperationSelector(String errorMessage) {
+    this.errorMessage = errorMessage;
+  }
+
+  protected List<PredicateWithStatus<T>> predicates = null;
+
+  private List<PredicateWithStatus<T>> predicates() {
+    if (predicates == null) {
+      predicates = new ArrayList<>();
+    }
+    return predicates;
+  }
+
+  /**
+   * Specifies predicate that will be checked against result. Failed predicate means result is INCORRECT. If called multiple times, resulting
+   * predicate will be built with {@link Predicate#or(Predicate)}.
+   *
+   * @param predicate
+   *          predicate to add
+   */
+  public D failIf(Predicate<T> predicate) {
+    return failIf(predicate, (Integer) null);
+  }
+
+  /**
+   * Specifies predicate that will be checked against result. Failed predicate means result is INCORRECT. If called multiple times, resulting
+   * predicate will be built with {@link Predicate#or(Predicate)}.
+   *
+   * @param predicate
+   *          predicate to add
+   * @param status
+   *          response status code to set in case predicate matched
+   *
+   */
+  public D failIf(Predicate<T> predicate, Integer status) {
+    predicates().add(new PredicateWithStatus<>(predicate, status));
+    return getSelf();
+  }
+
+  /**
+   * Specifies predicate that will be checked against result. Failed predicate means result is INCORRECT. If called multiple times, resulting
+   * predicate will be built with {@link Predicate#or(Predicate)}.
+   *
+   * @param predicate
+   *          predicate to add
+   * @param status
+   *          response status code to set in case predicate matched
+   *
+   */
+  public D failIf(Predicate<T> predicate, Status status) {
+    return failIf(predicate, status.getStatusCode());
+  }
+
+  @SuppressWarnings("unchecked")
+  protected D getSelf() {
+    return (D) this;
+  }
+}

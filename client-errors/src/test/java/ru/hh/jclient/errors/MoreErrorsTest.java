@@ -43,7 +43,7 @@ public class MoreErrorsTest {
   public void testAnyErrorsWithPredicate() {
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
     ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
-    MoreErrors.check(result, "error").alsoFailIf(predicate).THROW_BAD_GATEWAY().onAnyError();
+    MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onAnyError();
   }
 
   @Test(expected = WebApplicationException.class)
@@ -68,7 +68,7 @@ public class MoreErrorsTest {
     // predicate means nothing here
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
     result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
-    value = MoreErrors.check(result, "error").alsoFailIf(predicate).THROW_BAD_GATEWAY().onStatusCodeError();
+    value = MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onStatusCodeError();
     assertEquals(value.get(), "zxc");
 
     // empty means nothing here
@@ -83,7 +83,7 @@ public class MoreErrorsTest {
   public void testPredicateWithIncorrectValue() {
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
     ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
-    MoreErrors.check(result, "error").alsoFailIf(predicate).THROW_BAD_GATEWAY().onPredicate();
+    MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onPredicate();
   }
 
   @Test
@@ -94,12 +94,12 @@ public class MoreErrorsTest {
 
     // empty means nothing here
     result = new ResultWithStatus<String>(null, Response.Status.OK.getStatusCode());
-    value = MoreErrors.check(result, "error").alsoFailIf(predicate).THROW_BAD_GATEWAY().onPredicate();
+    value = MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onPredicate();
     assertFalse(value.isPresent());
 
     // status means nothing here
     result = new ResultWithStatus<String>("asd", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-    value = MoreErrors.check(result, "error").alsoFailIf(predicate).THROW_BAD_GATEWAY().onPredicate();
+    value = MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onPredicate();
     assertEquals(value.get(), "asd");
   }
 
@@ -114,7 +114,7 @@ public class MoreErrorsTest {
     // any error
     Predicate<String> predicate = s -> "zxc".equals(s); // zxc value means failure
     result = new ResultWithStatus<String>(null, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-    realValue = MoreErrors.check(result, "error").alsoFailIf(predicate).RETURN_DEFAULT("error").onAnyError();
+    realValue = MoreErrors.check(result, "error").failIf(predicate).RETURN_DEFAULT("error").onAnyError();
     assertEquals(realValue, "error");
 
     // status code
@@ -124,12 +124,12 @@ public class MoreErrorsTest {
 
     // empty
     result = new ResultWithStatus<String>(null, Response.Status.OK.getStatusCode());
-    realValue = MoreErrors.check(result, "error").alsoFailIf(predicate).RETURN_DEFAULT("error").onEmpty();
+    realValue = MoreErrors.check(result, "error").failIf(predicate).RETURN_DEFAULT("error").onEmpty();
     assertEquals(realValue, "error");
 
     // predicate
     result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
-    value = MoreErrors.check(result, "error").alsoFailIf(predicate).RETURN_DEFAULT("error").onPredicate();
+    value = MoreErrors.check(result, "error").failIf(predicate).RETURN_DEFAULT("error").onPredicate();
     assertEquals(value.get(), "error");
   }
 
@@ -154,12 +154,12 @@ public class MoreErrorsTest {
     Throwable exception = new FileNotFoundException(); // descendant of IOException
 
     // return result if there is no exception
-    String realResult = MoreErrors.convert(result, null, "error").THROW_GATEWAY_TIMEOUT().on(FileNotFoundException.class);
+    String realResult = MoreErrors.convertException(result, null, "error").THROW_GATEWAY_TIMEOUT().on(FileNotFoundException.class);
     assertEquals(realResult, result);
 
     // throw WAE with HTTP GATEWAY TIMEOUT for expected (one of) error exact class
     try {
-      MoreErrors.convert(result, exception, "error").THROW_GATEWAY_TIMEOUT().on(FileNotFoundException.class, IllegalArgumentException.class);
+      MoreErrors.convertException(result, exception, "error").THROW_GATEWAY_TIMEOUT().on(FileNotFoundException.class, IllegalArgumentException.class);
     }
     catch (Throwable t) {
       ensureExceptionConverted(t);
@@ -167,7 +167,7 @@ public class MoreErrorsTest {
 
     // throw WAE with HTTP GATEWAY TIMEOUT for expected error superclass
     try {
-      MoreErrors.convert(result, exception, "error").THROW_GATEWAY_TIMEOUT().on(IOException.class);
+      MoreErrors.convertException(result, exception, "error").THROW_GATEWAY_TIMEOUT().on(IOException.class);
     }
     catch (Throwable t) {
       ensureExceptionConverted(t);
@@ -175,7 +175,7 @@ public class MoreErrorsTest {
 
     // throw WAE with HTTP GATEWAY TIMEOUT for expected error superclass even if it is wrapped in CompletionException
     try {
-      MoreErrors.convert(result, new CompletionException(exception), "error").THROW_GATEWAY_TIMEOUT().on(IOException.class);
+      MoreErrors.convertException(result, new CompletionException(exception), "error").THROW_GATEWAY_TIMEOUT().on(IOException.class);
     }
     catch (Throwable t) {
       ensureExceptionConverted(t);
@@ -184,7 +184,7 @@ public class MoreErrorsTest {
     // throw original exception when specified exception class does not match
     try {
       Throwable otherException = new NullPointerException();
-      MoreErrors.convert(result, otherException, "error").THROW_GATEWAY_TIMEOUT().on(IOException.class, IllegalArgumentException.class);
+      MoreErrors.convertException(result, otherException, "error").THROW_GATEWAY_TIMEOUT().on(IOException.class, IllegalArgumentException.class);
     }
     catch (Throwable t) {
       assertEquals(t.getClass(), NullPointerException.class);
@@ -193,7 +193,7 @@ public class MoreErrorsTest {
     // throw unchanged webapplication exception even if we expect it
     try {
       WebApplicationException wae = new WebApplicationException(777);
-      MoreErrors.convert(result, new CompletionException(wae), "error").THROW_GATEWAY_TIMEOUT().on(WebApplicationException.class);
+      MoreErrors.convertException(result, new CompletionException(wae), "error").THROW_GATEWAY_TIMEOUT().on(WebApplicationException.class);
     }
     catch (Throwable t) {
       assertEquals(t.getClass(), WebApplicationException.class);
@@ -221,7 +221,7 @@ public class MoreErrorsTest {
 
     // response error
     result = new ResultWithStatus<String>(null, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-    realValue = MoreErrors.check(result, null, "error").alsoFailIf(s -> "zxc".equals(s)).IGNORE().onAnyError();
+    realValue = MoreErrors.check(result, null, "error").failIf(s -> "zxc".equals(s)).IGNORE().onAnyError();
     assertFalse(realValue.isPresent());
 
     // provided default value with exception
