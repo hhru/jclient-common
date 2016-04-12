@@ -47,7 +47,7 @@ public class ErrorResponseBuilder {
   }
 
   public ErrorResponseBuilder setCause(Throwable cause) {
-    this.cause = Optional.of(cause);
+    this.cause = Optional.ofNullable(cause);
     return this;
   }
 
