@@ -7,6 +7,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.function.BiFunction;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response.Status;
+import ru.hh.errors.common.AbstractErrors;
 import ru.hh.errors.common.Errors;
 import ru.hh.jclient.errors.impl.ErrorResponseBuilder;
 import ru.hh.jclient.errors.impl.OperationBase;
@@ -25,7 +26,7 @@ public class ErrorsFactory {
    *          error key
    */
   public static BiFunction<String, Integer, Object> error(Object key) {
-    return (s, i) -> Errors.of(i, key.toString(), s);
+    return (s, i) -> new Errors(i, key.toString(), s);
   }
 
   /**
@@ -48,8 +49,8 @@ public class ErrorsFactory {
    * @param errors
    *          errors container
    */
-  public static WebApplicationException error(Errors errors) {
-    return new ErrorResponseBuilder(null).setStatus(errors.code).setEntityCreator((s, i) -> errors).toWebApplicationException();
+  public static WebApplicationException error(AbstractErrors<?> errors) {
+    return new ErrorResponseBuilder(null).setStatus(errors.getCode()).setEntityCreator((s, i) -> errors).toWebApplicationException();
   }
 
   /**
