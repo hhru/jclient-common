@@ -14,6 +14,7 @@
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>ru.hh.errors</groupId>
