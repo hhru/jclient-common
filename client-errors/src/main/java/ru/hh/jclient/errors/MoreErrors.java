@@ -10,10 +10,6 @@ import ru.hh.jclient.errors.impl.convert.HandleThrowableOperationSelector;
 
 public class MoreErrors {
 
-  // jersey1 does not have those in Status enum
-  public static final int BAD_GATEWAY = 502;
-  public static final int GATEWAY_TIMEOUT = 504;
-
   /**
    * Checks result for errors. Compatible with methods of {@link CompletableFuture} like
    * {@link CompletableFuture#thenApply(java.util.function.Function)}.

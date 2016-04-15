@@ -1,6 +1,7 @@
 package ru.hh.jclient.errors;
 
 
+import static javax.ws.rs.core.Response.Status.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -10,11 +11,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.Predicate;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.RuntimeDelegate;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.HttpStatuses;
 import ru.hh.jclient.errors.jersey.RuntimeDelegateStub;
 
 public class MoreErrorsTest {
@@ -28,27 +29,38 @@ public class MoreErrorsTest {
 
   @Test
   public void testAnyErrorsWithOkStatus() {
-    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
     String value = MoreErrors.check(result, "error").THROW_BAD_GATEWAY().onAnyError();
     assertEquals(value, "zxc");
   }
 
   @Test(expected = WebApplicationException.class)
   public void testAnyErrorsWithNonOkStatus() {
-    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", INTERNAL_SERVER_ERROR.getStatusCode());
     MoreErrors.check(result, "error").THROW_BAD_GATEWAY().onAnyError();
   }
 
   @Test(expected = WebApplicationException.class)
   public void testAnyErrorsWithPredicate() {
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
-    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
     MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onAnyError();
+  }
+
+  @Test
+  public void testAnyErrorsWithPredicateAndStatus() {
+    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
+    try {
+      MoreErrors.check(result, "error").failIf(s -> s.equals("zxc"), NOT_FOUND).THROW_FORBIDDEN().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals(e.getResponse().getStatus(), NOT_FOUND.getStatusCode());
+    }
   }
 
   @Test(expected = WebApplicationException.class)
   public void testAnyErrorsWithEmpty() {
-    ResultWithStatus<String> result = new ResultWithStatus<String>(null, Response.Status.OK.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>(null, OK.getStatusCode());
     MoreErrors.check(result, "error").THROW_BAD_GATEWAY().onAnyError();
   }
 
@@ -56,7 +68,7 @@ public class MoreErrorsTest {
 
   @Test(expected = WebApplicationException.class)
   public void testStatusCodeErrorWithNonOkStatus() {
-    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", INTERNAL_SERVER_ERROR.getStatusCode());
     MoreErrors.check(result, "error").THROW_BAD_GATEWAY().onStatusCodeError();
   }
 
@@ -67,12 +79,12 @@ public class MoreErrorsTest {
 
     // predicate means nothing here
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
-    result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
+    result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onStatusCodeError();
     assertEquals(value.get(), "zxc");
 
     // empty means nothing here
-    result = new ResultWithStatus<String>(null, Response.Status.OK.getStatusCode());
+    result = new ResultWithStatus<String>(null, OK.getStatusCode());
     value = MoreErrors.check(result, "error").THROW_BAD_GATEWAY().onStatusCodeError();
     assertFalse(value.isPresent());
   }
@@ -82,7 +94,7 @@ public class MoreErrorsTest {
   @Test(expected = WebApplicationException.class)
   public void testPredicateWithIncorrectValue() {
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
-    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
     MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onPredicate();
   }
 
@@ -93,12 +105,12 @@ public class MoreErrorsTest {
     Optional<String> value;
 
     // empty means nothing here
-    result = new ResultWithStatus<String>(null, Response.Status.OK.getStatusCode());
+    result = new ResultWithStatus<String>(null, OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onPredicate();
     assertFalse(value.isPresent());
 
     // status means nothing here
-    result = new ResultWithStatus<String>("asd", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    result = new ResultWithStatus<String>("asd", INTERNAL_SERVER_ERROR.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).THROW_BAD_GATEWAY().onPredicate();
     assertEquals(value.get(), "asd");
   }
@@ -113,22 +125,22 @@ public class MoreErrorsTest {
 
     // any error
     Predicate<String> predicate = s -> "zxc".equals(s); // zxc value means failure
-    result = new ResultWithStatus<String>(null, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    result = new ResultWithStatus<String>(null, INTERNAL_SERVER_ERROR.getStatusCode());
     realValue = MoreErrors.check(result, "error").failIf(predicate).RETURN_DEFAULT("error").onAnyError();
     assertEquals(realValue, "error");
 
     // status code
-    result = new ResultWithStatus<String>(null, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    result = new ResultWithStatus<String>(null, INTERNAL_SERVER_ERROR.getStatusCode());
     value = MoreErrors.check(result, "error").RETURN_DEFAULT("error").onStatusCodeError();
     assertEquals(value.get(), "error");
 
     // empty
-    result = new ResultWithStatus<String>(null, Response.Status.OK.getStatusCode());
+    result = new ResultWithStatus<String>(null, OK.getStatusCode());
     realValue = MoreErrors.check(result, "error").failIf(predicate).RETURN_DEFAULT("error").onEmpty();
     assertEquals(realValue, "error");
 
     // predicate
-    result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
+    result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).RETURN_DEFAULT("error").onPredicate();
     assertEquals(value.get(), "error");
   }
@@ -137,12 +149,12 @@ public class MoreErrorsTest {
 
   @Test
   public void testServiceUnavailableNotProxied() {
-    ResultWithStatus<String> result = new ResultWithStatus<String>(null, Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
+    ResultWithStatus<String> result = new ResultWithStatus<String>(null, SERVICE_UNAVAILABLE.getStatusCode());
     try {
       MoreErrors.check(result, "error").PROXY_STATUS_CODE().onAnyError();
     }
     catch (WebApplicationException e) {
-      assertEquals(e.getResponse().getStatus(), MoreErrors.BAD_GATEWAY);
+      assertEquals(e.getResponse().getStatus(), HttpStatuses.BAD_GATEWAY);
     }
   }
 
@@ -205,7 +217,7 @@ public class MoreErrorsTest {
   private void ensureExceptionConverted(Throwable t) {
     assertTrue(t instanceof WebApplicationException);
     WebApplicationException wae = (WebApplicationException) t;
-    assertEquals(wae.getResponse().getStatus(), MoreErrors.GATEWAY_TIMEOUT);
+    assertEquals(wae.getResponse().getStatus(), HttpStatuses.GATEWAY_TIMEOUT);
   }
 
   // handle IGNORE
@@ -220,7 +232,7 @@ public class MoreErrorsTest {
     assertFalse(realValue.isPresent());
 
     // response error
-    result = new ResultWithStatus<String>(null, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    result = new ResultWithStatus<String>(null, INTERNAL_SERVER_ERROR.getStatusCode());
     realValue = MoreErrors.check(result, null, "error").failIf(s -> "zxc".equals(s)).IGNORE().onAnyError();
     assertFalse(realValue.isPresent());
 
@@ -230,16 +242,40 @@ public class MoreErrorsTest {
     assertEquals(realValue.get(), "asd");
 
     // provided default value with response error
-    result = new ResultWithStatus<String>("zxc", Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+    result = new ResultWithStatus<String>("zxc", INTERNAL_SERVER_ERROR.getStatusCode());
     realValue = MoreErrors.check(result, null, "error").RETURN_DEFAULT("asd").onAnyError();
     assertTrue(realValue.isPresent());
     assertEquals(realValue.get(), "asd");
 
     // success
-    result = new ResultWithStatus<String>("zxc", Response.Status.OK.getStatusCode());
+    result = new ResultWithStatus<String>("zxc", OK.getStatusCode());
     realValue = MoreErrors.check(result, null, "error").IGNORE().onAnyError();
     assertTrue(realValue.isPresent());
     assertEquals(realValue.get(), "zxc");
+  }
+
+  // proxying and converting status
+
+  @Test
+  public void testProxyStatus() {
+    ResultWithStatus<String> result = new ResultWithStatus<String>(null, BAD_REQUEST.getStatusCode());
+    try {
+      MoreErrors.check(result, "error").proxyOnly(BAD_REQUEST, NOT_FOUND).THROW_FORBIDDEN().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals(e.getResponse().getStatus(), BAD_REQUEST.getStatusCode());
+    }
+  }
+
+  @Test
+  public void testConvertAndProxyStatus() {
+    ResultWithStatus<String> result = new ResultWithStatus<String>(null, BAD_REQUEST.getStatusCode());
+    try {
+      MoreErrors.check(result, "error").convertAndProxy(BAD_REQUEST, CONFLICT).THROW_FORBIDDEN().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals(e.getResponse().getStatus(), CONFLICT.getStatusCode());
+    }
   }
 
 }

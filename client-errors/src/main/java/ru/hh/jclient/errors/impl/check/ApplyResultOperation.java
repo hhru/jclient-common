@@ -39,14 +39,18 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   // terminal operations
 
   /**
+   * <p>
    * Returns result or throws {@link WebApplicationException} with provided status code on any error including:
    * <ul>
    * <li>{@link ResultWithStatus#isSuccess()} is false</li>
-   * <li>predicate provided with {@link #alsoFailOn(java.util.function.Predicate)} says ResultWithStatus contains incorrect value</li>
+   * <li>predicate provided with {@link AbstractOperationSelector#failIf(java.util.function.Predicate)} says ResultWithStatus contains incorrect value
+   * </li>
    * <li>{@link ResultWithStatus#get()} contains {@link Optional#empty()}</li>
    * </ul>
-   *
+   * </p>
+   * <p>
    * If default value is specified, it will be returned instead of exception.
+   * </p>
    *
    * @throws WebApplicationException
    *           with provided status code and message in case of error (if default value is not specified)
@@ -57,10 +61,13 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   /**
+   * <p>
    * Returns result or throws {@link WebApplicationException} with provided status code if {@link ResultWithStatus#get()} contains
    * {@link Optional#empty()}.
-   *
+   * </p>
+   * <p>
    * If default value is specified, it will be returned instead of exception.
+   * </p>
    *
    * @throws WebApplicationException
    *           with provided status code and message in case of error (if default value is not specified)
@@ -71,10 +78,13 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   /**
+   * <p>
    * Returns result or throws {@link WebApplicationException} with provided status code on status code error - if {@link ResultWithStatus#isSuccess()}
    * is false.
-   *
+   * </p>
+   * <p>
    * If default value is specified, it will be returned instead of exception.
+   * </p>
    *
    * @throws WebApplicationException
    *           with provided status code and message in case of error (if default value is not specified)
@@ -85,9 +95,13 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   /**
-   * Returns result or throws {@link WebApplicationException} with provided status code if predicate fails.
-   *
+   * <p>
+   * Returns result or throws {@link WebApplicationException} with provided status code if predicate specified with
+   * {@link AbstractOperationSelector#failIf(java.util.function.Predicate)} returns 'true'.
+   * </p>
+   * <p>
    * If default value is specified, it will be returned instead of exception.
+   * </p>
    *
    * @throws WebApplicationException
    *           with provided status code and message in case of error (if default value is not specified)

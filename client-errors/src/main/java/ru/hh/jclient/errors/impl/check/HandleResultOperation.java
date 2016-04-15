@@ -34,7 +34,7 @@ public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultO
   }
 
   /**
-   * Returns Optional with default value (if specified) or empty if
+   * Returns Optional with default value (if specified) or empty if:
    *
    * <ul>
    * <li>exception is not null</li>

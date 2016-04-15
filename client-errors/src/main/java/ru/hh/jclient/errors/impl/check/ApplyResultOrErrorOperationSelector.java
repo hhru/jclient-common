@@ -8,7 +8,7 @@ import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
-import ru.hh.jclient.errors.MoreErrors;
+import ru.hh.jclient.errors.impl.HttpStatuses;
 
 public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperationSelector<E, ApplyResultOrErrorOperationSelector<T, E>> {
 
@@ -40,11 +40,11 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
   }
 
   public ApplyResultOrErrorOperation<T, E> THROW_BAD_GATEWAY() {
-    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(MoreErrors.BAD_GATEWAY), errorMessage, predicates, empty());
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(HttpStatuses.BAD_GATEWAY), errorMessage, predicates, empty());
   }
 
   public ApplyResultOrErrorOperation<T, E> THROW_GATEWAY_TIMEOUT() {
-    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(MoreErrors.GATEWAY_TIMEOUT), errorMessage, predicates, empty());
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(HttpStatuses.GATEWAY_TIMEOUT), errorMessage, predicates, empty());
   }
 
   public ApplyResultOrErrorOperation<T, E> THROW_INTERNAL_SERVER_ERROR() {

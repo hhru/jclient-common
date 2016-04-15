@@ -23,9 +23,17 @@ public class HandleThrowableOperation<T> extends OperationBase<HandleThrowableOp
   }
 
   /**
-   * Convert exception to {@link WebApplicationException} with predefined status code. If source exception is already instance of WAE it will not be
-   * converted. If provided exception is wrapped in {@link CompletionException} it will be unwrapped. Unmatched exception will be re-thrown (runtime
-   * as-is, otherwise wrapped in runtime - see {@link Throwables#propagate(Throwable)}).
+   * <p>
+   * Convert source exception to {@link WebApplicationException} with predefined status code if matched ({@link Class#isAssignableFrom(Class)}) to one
+   * of specified exception classes.
+   * </p>
+   * <p>
+   * If source exception is wrapped in {@link CompletionException} it will be unwrapped. If source exception is instance of WAE it will not be
+   * converted. Unmatched exception will be re-thrown using {@link Throwables#propagate(Throwable)}.
+   * </p>
+   * <p>
+   * If there is no exception, return result as-is.
+   * </p>
    *
    * @param exceptionClasses
    *          exception classes to match against provided exception
@@ -54,6 +62,18 @@ public class HandleThrowableOperation<T> extends OperationBase<HandleThrowableOp
     throw Throwables.propagate(throwable);
   }
 
+  /**
+   * <p>
+   * Convert source exception to {@link WebApplicationException} with predefined status code.
+   * </p>
+   * <p>
+   * If source exception is wrapped in {@link CompletionException} it will be unwrapped. If source exception is instance of WAE it will not be
+   * converted.
+   * </p>
+   * <p>
+   * If there is no exception, return result as-is.
+   * </p>
+   */
   public final T onAnyError() {
     return on(Throwable.class);
   }

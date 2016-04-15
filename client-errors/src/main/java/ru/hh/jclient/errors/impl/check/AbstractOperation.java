@@ -7,7 +7,7 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.MoreErrors;
+import ru.hh.jclient.errors.impl.HttpStatuses;
 import ru.hh.jclient.errors.impl.OperationBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
@@ -115,7 +115,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
     Optional<Integer> currentStatusCode = Optional
         .of(wrapper.getStatusCode())
         // replace 503 with 502 to avoid retries at intbal
-        .map(s -> s == SERVICE_UNAVAILABLE.getStatusCode() ? MoreErrors.BAD_GATEWAY : s);
+        .map(s -> s == SERVICE_UNAVAILABLE.getStatusCode() ? HttpStatuses.BAD_GATEWAY : s);
 
     if (!currentStatusCode.isPresent()) {
       return errorStatusCode;

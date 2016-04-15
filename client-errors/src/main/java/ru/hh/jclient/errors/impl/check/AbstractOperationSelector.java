@@ -24,8 +24,16 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
   }
 
   /**
-   * Specifies predicate that will be checked against result. Failed predicate means result is INCORRECT. If called multiple times, resulting
-   * predicate will be built with {@link Predicate#or(Predicate)}.
+   * <p>
+   * Specifies predicate that will be checked against the result. If predicate returns 'true', that means result is INCORRECT. If called multiple
+   * times, resulting predicate will be built with {@link Predicate#or(Predicate)}.
+   * </p>
+   * <code>
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived())</b>.THROW_FORBIDDEN().onAnyError();
+   * </code>
+   * <p>
+   * This will throw WAE with 403 status on any errors including case of archived vacancy.
+   * </p>
    *
    * @param predicate
    *          predicate to add
@@ -35,8 +43,16 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
   }
 
   /**
-   * Specifies predicate that will be checked against result. Failed predicate means result is INCORRECT. If called multiple times, resulting
-   * predicate will be built with {@link Predicate#or(Predicate)}.
+   * <p>
+   * Specifies predicate that will be checked against the result. If predicate returns 'true', that means result is INCORRECT. If called multiple
+   * times, resulting predicate will be built with {@link Predicate#or(Predicate)}.
+   * </p>
+   * <code>
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived(), 404)</b>.THROW_FORBIDDEN().onAnyError();
+   * </code>
+   * <p>
+   * This will throw WAE with 404 if predicate returns 'true', or 403 on any other errors.
+   * </p>
    *
    * @param predicate
    *          predicate to add
@@ -50,8 +66,16 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
   }
 
   /**
-   * Specifies predicate that will be checked against result. Failed predicate means result is INCORRECT. If called multiple times, resulting
-   * predicate will be built with {@link Predicate#or(Predicate)}.
+   * <p>
+   * Specifies predicate that will be checked against the result. If predicate returns 'true', that means result is INCORRECT. If called multiple
+   * times, resulting predicate will be built with {@link Predicate#or(Predicate)}.
+   * </p>
+   * <code>
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived(), Status.NOT_FOUND)</b>.THROW_FORBIDDEN().onAnyError();
+   * </code>
+   * <p>
+   * This will throw WAE with 404 if predicate returns 'true', or 403 on any other errors.
+   * </p>
    *
    * @param predicate
    *          predicate to add
