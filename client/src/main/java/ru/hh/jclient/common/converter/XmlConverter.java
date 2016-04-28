@@ -8,6 +8,8 @@ import java.util.Collection;
 import java.util.Set;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import ru.hh.jclient.common.ResultWithResponse;
@@ -18,6 +20,7 @@ import com.ning.http.client.Response;
 public class XmlConverter<T> extends SingleTypeConverter<T> {
 
   private static final Set<MediaType> MEDIA_TYPES = of(XML_UTF_8.withoutParameters(), APPLICATION_XML_UTF_8.withoutParameters());
+  private static final XMLInputFactory XML_INPUT_FACTORY = XMLInputFactory.newInstance();
 
   private JAXBContext context;
   private Class<T> xmlClass;
@@ -31,7 +34,8 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
   public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
     return r -> {
       Source source = new StreamSource(r.getResponseBodyAsStream());
-      JAXBElement<T> root = context.createUnmarshaller().unmarshal(source, xmlClass);
+      XMLStreamReader reader = XML_INPUT_FACTORY.createXMLStreamReader(source);
+      JAXBElement<T> root = context.createUnmarshaller().unmarshal(reader, xmlClass);
       return new ResultWithResponse<>(root.getValue(), r);
     };
   }
