@@ -5,6 +5,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import ru.hh.jclient.errors.ErrorsFactory;
 
 public abstract class OperationBase<OB extends OperationBase<OB>> {
 
@@ -48,6 +49,16 @@ public abstract class OperationBase<OB extends OperationBase<OB>> {
   public OB as(Supplier<BiFunction<String, Integer, Object>> errorEntityCreatorSupplier) {
     this.errorEntityCreatorSupplier = errorEntityCreatorSupplier;
     return getSelf();
+  }
+
+  /**
+   * Sets error entity created using {@link ErrorsFactory#error(Object)}.
+   *
+   * @param key
+   *          error key
+   */
+  public OB asError(Object key) {
+    return as(ErrorsFactory.error(key));
   }
 
   @SuppressWarnings("unchecked")
