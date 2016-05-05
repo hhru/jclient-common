@@ -11,8 +11,8 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
   private ResultWithStatus<T> resultWithStatus;
   private Throwable throwable;
 
-  public HandleResultOperationSelector(ResultWithStatus<T> resultWithStatus, Throwable throwable, String errorMessage) {
-    super(errorMessage);
+  public HandleResultOperationSelector(ResultWithStatus<T> resultWithStatus, Throwable throwable, String errorMessage, Object... params) {
+    super(errorMessage, params);
     this.resultWithStatus = resultWithStatus;
     this.throwable = throwable;
   }

@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import javax.ws.rs.core.Response.Status;
+import ru.hh.jclient.errors.impl.OperationSelectorBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
-public abstract class AbstractOperationSelector<T, D extends AbstractOperationSelector<T, D>> {
+public abstract class AbstractOperationSelector<T, D extends AbstractOperationSelector<T, D>> extends OperationSelectorBase {
 
-  protected String errorMessage;
-
-  public AbstractOperationSelector(String errorMessage) {
-    this.errorMessage = errorMessage;
+  public AbstractOperationSelector(String errorMessage, Object... params) {
+    super(errorMessage, params);
   }
 
   protected List<PredicateWithStatus<T>> predicates = null;

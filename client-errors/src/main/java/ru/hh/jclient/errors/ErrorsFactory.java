@@ -40,7 +40,7 @@ public class ErrorsFactory {
    *          error description
    */
   public static WebApplicationException error(int code, Object errorKey, String description, Throwable cause) {
-    return new ErrorResponseBuilder(description).setStatus(code).setEntityCreator(error(errorKey)).setCause(cause).toWebApplicationException();
+    return new ErrorResponseBuilder(() -> description).setStatus(code).setEntityCreator(error(errorKey)).setCause(cause).toWebApplicationException();
   }
 
   /**

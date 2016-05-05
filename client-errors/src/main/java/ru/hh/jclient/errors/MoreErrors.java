@@ -18,9 +18,11 @@ public class MoreErrors {
    *          result to check
    * @param errorMessage
    *          message to include in exception / log if error is detected
+   * @param errorMessageParams
+   *          if specified, used to format errorMessage using {@link String#format(String, Object...)}
    */
-  public static <T> ApplyResultOperationSelector<T> check(ResultWithStatus<T> resultWithStatus, String errorMessage) {
-    return new ApplyResultOperationSelector<>(resultWithStatus, errorMessage);
+  public static <T> ApplyResultOperationSelector<T> check(ResultWithStatus<T> resultWithStatus, String errorMessage, Object... errorMessageParams) {
+    return new ApplyResultOperationSelector<>(resultWithStatus, errorMessage, errorMessageParams);
   }
 
   /**
@@ -33,9 +35,15 @@ public class MoreErrors {
    *          throwable to check
    * @param errorMessage
    *          message to include in exception / log if error is detected
+   * @param errorMessageParams
+   *          if specified, used to format errorMessage using {@link String#format(String, Object...)}
    */
-  public static <T> HandleResultOperationSelector<T> check(ResultWithStatus<T> resultWithStatus, Throwable throwable, String errorMessage) {
-    return new HandleResultOperationSelector<>(resultWithStatus, throwable, errorMessage);
+  public static <T> HandleResultOperationSelector<T> check(
+      ResultWithStatus<T> resultWithStatus,
+      Throwable throwable,
+      String errorMessage,
+      Object... errorMessageParams) {
+    return new HandleResultOperationSelector<>(resultWithStatus, throwable, errorMessage, errorMessageParams);
   }
 
   /**
@@ -46,9 +54,14 @@ public class MoreErrors {
    *          result to check
    * @param errorMessage
    *          message to include in exception / log if error is detected
+   * @param errorMessageParams
+   *          if specified, used to format errorMessage using {@link String#format(String, Object...)}
    */
-  public static <T, E> ApplyResultOrErrorOperationSelector<T, E> checkError(ResultOrErrorWithStatus<T, E> resultOrErrorWithStatus, String errorMessage) {
-    return new ApplyResultOrErrorOperationSelector<>(resultOrErrorWithStatus, errorMessage);
+  public static <T, E> ApplyResultOrErrorOperationSelector<T, E> checkError(
+      ResultOrErrorWithStatus<T, E> resultOrErrorWithStatus,
+      String errorMessage,
+      Object... errorMessageParams) {
+    return new ApplyResultOrErrorOperationSelector<>(resultOrErrorWithStatus, errorMessage, errorMessageParams);
   }
 
   /**
@@ -61,8 +74,14 @@ public class MoreErrors {
    *          throwable to convert
    * @param errorMessage
    *          message to include in exception / log if error is detected
+   * @param errorMessageParams
+   *          if specified, used to format errorMessage using {@link String#format(String, Object...)}
    */
-  public static <T> HandleThrowableOperationSelector<T> convertException(T result, Throwable throwable, String errorMessage) {
-    return new HandleThrowableOperationSelector<>(result, throwable, errorMessage);
+  public static <T> HandleThrowableOperationSelector<T> convertException(
+      T result,
+      Throwable throwable,
+      String errorMessage,
+      Object... errorMessageParams) {
+    return new HandleThrowableOperationSelector<>(result, throwable, errorMessage, errorMessageParams);
   }
 }

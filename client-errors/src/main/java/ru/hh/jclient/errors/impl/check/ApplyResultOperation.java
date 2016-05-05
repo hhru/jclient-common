@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
@@ -20,7 +21,7 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
       Optional<Integer> errorStatusCode,
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
-      String errorMessage,
+      Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates) {
     super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates);
   }
@@ -30,7 +31,7 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
       Optional<Integer> errorStatusCode,
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
-      String errorMessage,
+      Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
       Optional<T> defaultValue) {
     super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, defaultValue);

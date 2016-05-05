@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
   public ApplyResultOrErrorOperation(
       ResultOrErrorWithStatus<T, E> wrapper,
       Optional<Integer> errorStatusCode,
-      String errorMessage,
+      Supplier<String> errorMessage,
       List<PredicateWithStatus<E>> predicates,
       Optional<T> defaultValue) {
     super(errorStatusCode, errorMessage);

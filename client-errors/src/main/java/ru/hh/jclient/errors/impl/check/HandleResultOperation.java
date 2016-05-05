@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
@@ -19,7 +20,7 @@ public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultO
   public HandleResultOperation(
       ResultWithStatus<T> wrapper,
       Throwable throwable,
-      String errorMessage,
+      Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
       Optional<T> defaultValue,
       Optional<Consumer<Throwable>> errorConsumer) {

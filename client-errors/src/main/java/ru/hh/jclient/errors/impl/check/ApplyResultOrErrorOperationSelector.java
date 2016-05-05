@@ -14,8 +14,8 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
 
   private ResultOrErrorWithStatus<T, E> resultOrErrorWithStatus;
 
-  public ApplyResultOrErrorOperationSelector(ResultOrErrorWithStatus<T, E> resultOrErrorWithStatus, String errorMessage) {
-    super(errorMessage);
+  public ApplyResultOrErrorOperationSelector(ResultOrErrorWithStatus<T, E> resultOrErrorWithStatus, String errorMessage, Object... params) {
+    super(errorMessage, params);
     this.resultOrErrorWithStatus = resultOrErrorWithStatus;
   }
 

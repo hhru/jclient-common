@@ -21,8 +21,8 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   private List<Integer> proxiedStatusCodes;
   private Function<Integer, Integer> statusCodesConverter;
 
-  public ApplyResultOperationSelector(ResultWithStatus<T> resultWithStatus, String errorMessage) {
-    super(errorMessage);
+  public ApplyResultOperationSelector(ResultWithStatus<T> resultWithStatus, String errorMessage, Object... params) {
+    super(errorMessage, params);
     this.resultWithStatus = resultWithStatus;
   }
 

@@ -4,6 +4,7 @@ import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.ResultWithStatus;
@@ -27,7 +28,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
       Optional<Integer> errorStatusCode,
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
-      String errorMessage,
+      Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates) {
     super(errorStatusCode, errorMessage);
     this.wrapper = wrapper;
@@ -42,7 +43,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
       Optional<Integer> errorStatusCode,
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
-      String errorMessage,
+      Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
       Optional<T> defaultValue) {
     this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates);

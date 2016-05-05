@@ -2,13 +2,14 @@ package ru.hh.jclient.errors.impl;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 public class ErrorResponseBuilder {
 
-  private String message;
+  private Supplier<String> message;
   private int status;
   private Optional<BiFunction<String, Integer, Object>> entityCreator = Optional.empty();
   private Optional<Throwable> cause = Optional.empty();
@@ -19,12 +20,12 @@ public class ErrorResponseBuilder {
    * @param message
    *          used for setting {@link Throwable#getMessage()} as well as passing it for entity creator. Can be null.
    */
-  public ErrorResponseBuilder(String message) {
+  public ErrorResponseBuilder(Supplier<String> message) {
     this.message = message;
   }
 
   public String getMessage() {
-    return message;
+    return message.get();
   }
 
   /**
@@ -42,7 +43,16 @@ public class ErrorResponseBuilder {
   }
 
   public ErrorResponseBuilder appendToMessage(String addition) {
-    this.message = this.message == null ? addition : this.message + " " + addition;
+    if (this.message == null) {
+      this.message = () -> addition;
+    }
+    else {
+      // if we're appending something then most likely full error message will be needed anyway so we can unwrap current supplier even if it is
+      // expensive
+      // also, calling this.message.get() in new supplier will lead to stack overflow
+      String currentMessage = this.message.get();
+      this.message = () -> currentMessage + " " + addition;
+    }
     return this;
   }
 
@@ -53,6 +63,7 @@ public class ErrorResponseBuilder {
 
   public WebApplicationException toWebApplicationException() {
     ResponseBuilder builder = Response.status(status);
+    String message = this.message == null ? null : this.message.get();
     entityCreator.ifPresent(ec -> builder.entity(ec.apply(message, status)));
     Response response = builder.build();
     CustomWebApplicationException exception = cause

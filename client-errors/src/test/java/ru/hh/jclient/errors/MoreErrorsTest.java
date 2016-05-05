@@ -233,7 +233,7 @@ public class MoreErrorsTest {
 
     // response error
     result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
-    realValue = MoreErrors.check(result, null, "error").failIf(s -> "zxc".equals(s)).IGNORE().onAnyError();
+    realValue = MoreErrors.check(result, (Throwable) null, "error").failIf(s -> "zxc".equals(s)).IGNORE().onAnyError();
     assertFalse(realValue.isPresent());
 
     // provided default value with exception
@@ -243,13 +243,13 @@ public class MoreErrorsTest {
 
     // provided default value with response error
     result = new ResultWithStatus<>("zxc", INTERNAL_SERVER_ERROR.getStatusCode());
-    realValue = MoreErrors.check(result, null, "error").RETURN_DEFAULT("asd").onAnyError();
+    realValue = MoreErrors.check(result, (Throwable) null, "error").RETURN_DEFAULT("asd").onAnyError();
     assertTrue(realValue.isPresent());
     assertEquals(realValue.get(), "asd");
 
     // success
     result = new ResultWithStatus<>("zxc", OK.getStatusCode());
-    realValue = MoreErrors.check(result, null, "error").IGNORE().onAnyError();
+    realValue = MoreErrors.check(result, (Throwable) null, "error").IGNORE().onAnyError();
     assertTrue(realValue.isPresent());
     assertEquals(realValue.get(), "zxc");
   }
@@ -275,6 +275,25 @@ public class MoreErrorsTest {
     }
     catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), CONFLICT.getStatusCode());
+    }
+  }
+
+  // parameterized error messages
+
+  @Test
+  public void testParameterizedErrorMessage() {
+    ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    try {
+      MoreErrors.check(result, "error %s", "custom").THROW_FORBIDDEN().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals("error custom status code is not OK", e.getMessage());
+    }
+    try {
+      MoreErrors.check(result, "error %s").THROW_FORBIDDEN().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals("error %s status code is not OK", e.getMessage());
     }
   }
 

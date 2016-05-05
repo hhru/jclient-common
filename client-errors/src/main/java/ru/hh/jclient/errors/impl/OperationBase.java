@@ -12,7 +12,7 @@ public abstract class OperationBase<OB extends OperationBase<OB>> {
   protected final ErrorResponseBuilder errorResponseBuilder;
   protected Supplier<BiFunction<String, Integer, Object>> errorEntityCreatorSupplier;
 
-  public OperationBase(Optional<Integer> errorStatusCode, String errorMessage) {
+  public OperationBase(Optional<Integer> errorStatusCode, Supplier<String> errorMessage) {
     this.errorStatusCode = errorStatusCode;
     this.errorResponseBuilder = new ErrorResponseBuilder(errorMessage);
   }

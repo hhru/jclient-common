@@ -2,17 +2,17 @@ package ru.hh.jclient.errors.impl.convert;
 
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import ru.hh.jclient.errors.impl.HttpStatuses;
+import ru.hh.jclient.errors.impl.OperationSelectorBase;
 
-public class HandleThrowableOperationSelector<T> {
+public class HandleThrowableOperationSelector<T> extends OperationSelectorBase {
 
   private T result;
   private Throwable throwable;
-  private String errorMessage;
 
-  public HandleThrowableOperationSelector(T result, Throwable throwable, String errorMessage) {
+  public HandleThrowableOperationSelector(T result, Throwable throwable, String errorMessage, Object... params) {
+    super(errorMessage, params);
     this.result = result;
     this.throwable = throwable;
-    this.errorMessage = errorMessage;
   }
 
   public HandleThrowableOperation<T> THROW_BAD_GATEWAY() {
