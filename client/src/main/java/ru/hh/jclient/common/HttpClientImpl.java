@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +38,15 @@ class HttpClientImpl extends HttpClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
-  HttpClientImpl(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
+  private final Executor callbackExecutor;
+
+  HttpClientImpl(AsyncHttpClient http,
+                 Request request,
+                 Set<String> hostsWithSession,
+                 Storage<HttpClientContext> contextSupplier,
+                 Executor callbackExecutor) {
     super(http, request, hostsWithSession, contextSupplier);
+    this.callbackExecutor = callbackExecutor;
   }
 
   @Override
@@ -51,7 +59,8 @@ class HttpClientImpl extends HttpClient {
     getDebug().onRequest(getHttp().getConfig(), request, requestBodyEntity);
     log.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
     Transfers transfers = getStorages().prepare();
-    getHttp().executeRequest(request, new CompletionHandler(promise, request, now(), getDebug(), transfers, getHttp().getConfig()));
+    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebug(), transfers, getHttp().getConfig(), callbackExecutor);
+    getHttp().executeRequest(request, handler);
     return promise;
   }
 
@@ -112,6 +121,7 @@ class HttpClientImpl extends HttpClient {
     private RequestDebug requestDebug;
     private AsyncHttpClientConfig config;
     private Transfers contextTransfers;
+    private final Executor callbackExecutor;
 
     public CompletionHandler(
         CompletableFuture<Response> promise,
@@ -119,7 +129,8 @@ class HttpClientImpl extends HttpClient {
         Instant requestStart,
         RequestDebug requestDebug,
         Transfers contextTransfers,
-        AsyncHttpClientConfig config) {
+        AsyncHttpClientConfig config,
+        Executor callbackExecutor) {
       this.requestStart = requestStart;
       this.mdcCopy = MDCCopy.capture();
       this.promise = promise;
@@ -127,27 +138,30 @@ class HttpClientImpl extends HttpClient {
       this.requestDebug = requestDebug;
       this.contextTransfers = contextTransfers;
       this.config = config;
+      this.callbackExecutor = callbackExecutor;
     }
 
     @Override
     public Response onCompleted(Response response) throws Exception {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
-      response = requestDebug.onResponse(config, response);
+      Response debuggedResponse = requestDebug.onResponse(config, response);
       mdcCopy.doInContext( () -> log.info("ASYNC_HTTP_RESPONSE: {} {} in {} ms on {} {}", responseStatusCode, responseStatusText,
         requestStart.until(now(), ChronoUnit.MILLIS), request.getMethod(), request.getUri()));
 
-      // calling promise.complete() will block until anything that was chained to promise completes
-      // install context(s) for current (ning) thread so chained tasks have context to run with
-      // remove context(s) once the promise completes
-      try {
-        contextTransfers.perform();
-        promise.complete(response);
-      }
-      finally {
-        contextTransfers.rollback();
-      }
-      return response;
+      // complete promise in a separate thread not to block ning thread
+      callbackExecutor.execute(() -> {
+        try {
+          // install context(s) for current (callback) thread so chained tasks have context to run with
+          contextTransfers.perform();
+          promise.complete(debuggedResponse);
+        } finally {
+          // remove context(s) once the promise completes
+          contextTransfers.rollback();
+        }
+      });
+
+      return debuggedResponse;
     }
 
     @Override
@@ -162,16 +176,17 @@ class HttpClientImpl extends HttpClient {
               request.getUri(),
               t.getMessage()));
 
-      // calling promise.completeExceptionally() will block until anything that was chained to promise completes
-      // install context(s) for current (ning) thread so chained tasks have context to run with
-      // remove context(s) once the promise completes
-      try {
-        contextTransfers.perform();
-        promise.completeExceptionally(t);
-      }
-      finally {
-        contextTransfers.rollback();
-      }
+      // complete promise in a separate thread not to block ning thread
+      callbackExecutor.execute(() -> {
+        try {
+          // install context(s) for current (callback) thread so chained tasks have context to run with
+          contextTransfers.perform();
+          promise.completeExceptionally(t);
+        } finally {
+          // remove context(s) once the promise completes
+          contextTransfers.rollback();
+        }
+      });
     }
   }
 }
