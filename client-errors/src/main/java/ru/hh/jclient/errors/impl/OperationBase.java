@@ -22,7 +22,7 @@ public abstract class OperationBase<OB extends OperationBase<OB>> {
     if (errorEntityCreatorSupplier != null) {
       this.errorResponseBuilder.setEntityCreator(errorEntityCreatorSupplier.get());
     }
-    return errorResponseBuilder.setStatus(errorStatusCode.get()).appendToMessage(cause).toWebApplicationException();
+    return errorResponseBuilder.setStatus(errorStatusCode.get()).appendToMessage("- " + cause).toWebApplicationException();
   }
 
   /**
