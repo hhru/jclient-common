@@ -25,6 +25,7 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.lang.Boolean.TRUE;
 import static java.time.Instant.now;
 import static java.util.function.Function.identity;
+import static ru.hh.jclient.common.HttpHeaders.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
 import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
@@ -34,7 +35,7 @@ import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveSt
 
 class HttpClientImpl extends HttpClient {
 
-  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG);
+  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION, X_HH_DEBUG, FRONTIK_DEBUG_AUTH);
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
 
