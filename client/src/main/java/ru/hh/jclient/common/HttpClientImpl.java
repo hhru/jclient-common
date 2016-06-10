@@ -177,8 +177,7 @@ class HttpClientImpl extends HttpClient {
               request.getUri(),
               t.getMessage()));
 
-      // complete promise in a separate thread not to block ning thread
-      callbackExecutor.execute(() -> {
+      Runnable completeExceptionallyTask = () -> {
         try {
           // install context(s) for current (callback) thread so chained tasks have context to run with
           contextTransfers.perform();
@@ -187,7 +186,16 @@ class HttpClientImpl extends HttpClient {
           // remove context(s) once the promise completes
           contextTransfers.rollback();
         }
-      });
+      };
+      try {
+        // complete promise in a separate thread not to block ning thread
+        callbackExecutor.execute(completeExceptionallyTask);
+      } catch (RuntimeException e) {
+        mdcCopy.doInContext(() ->
+          log.error("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString(), e)
+        );
+        completeExceptionallyTask.run();
+      }
     }
   }
 }
