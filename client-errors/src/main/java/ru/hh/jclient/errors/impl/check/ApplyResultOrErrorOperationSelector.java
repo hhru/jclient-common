@@ -5,6 +5,7 @@ import static java.util.Optional.of;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
@@ -57,6 +58,10 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
 
   public ApplyResultOrErrorOperation<T, E> THROW_FORBIDDEN() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(FORBIDDEN.getStatusCode()), errorMessage, predicates, empty());
+  }
+
+  public ApplyResultOrErrorOperation<T, E> THROW_NOT_FOUND() {
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(NOT_FOUND.getStatusCode()), errorMessage, predicates, empty());
   }
 
   /**

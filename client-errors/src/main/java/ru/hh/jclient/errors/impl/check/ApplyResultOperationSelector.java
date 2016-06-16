@@ -6,6 +6,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -132,6 +133,19 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(FORBIDDEN.getStatusCode()),
+        ofNullable(proxiedStatusCodes),
+        ofNullable(statusCodesConverter),
+        errorMessage,
+        predicates);
+  }
+
+  /**
+   * Uses {@link Status#NOT_FOUND} status code.
+   */
+  public ApplyResultOperation<T> THROW_NOT_FOUND() {
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        of(NOT_FOUND.getStatusCode()),
         ofNullable(proxiedStatusCodes),
         ofNullable(statusCodesConverter),
         errorMessage,
