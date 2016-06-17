@@ -4,6 +4,7 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
@@ -146,6 +147,19 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(NOT_FOUND.getStatusCode()),
+        ofNullable(proxiedStatusCodes),
+        ofNullable(statusCodesConverter),
+        errorMessage,
+        predicates);
+  }
+
+  /**
+   * Uses {@link Status#BAD_REQUEST} status code.
+   */
+  public ApplyResultOperation<T> THROW_BAD_REQUEST() {
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        of(BAD_REQUEST.getStatusCode()),
         ofNullable(proxiedStatusCodes),
         ofNullable(statusCodesConverter),
         errorMessage,

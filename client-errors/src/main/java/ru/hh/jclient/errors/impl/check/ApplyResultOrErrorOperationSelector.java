@@ -2,6 +2,7 @@ package ru.hh.jclient.errors.impl.check;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -62,6 +63,10 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
 
   public ApplyResultOrErrorOperation<T, E> THROW_NOT_FOUND() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(NOT_FOUND.getStatusCode()), errorMessage, predicates, empty());
+  }
+
+  public ApplyResultOrErrorOperation<T, E> THROW_BAD_REQUEST() {
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(BAD_REQUEST.getStatusCode()), errorMessage, predicates, empty());
   }
 
   /**
