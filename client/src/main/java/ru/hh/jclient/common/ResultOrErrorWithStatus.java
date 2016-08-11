@@ -31,6 +31,6 @@ public class ResultOrErrorWithStatus<T, E> extends ResultWithStatus<T> {
    */
   @Override
   public boolean isSuccess() {
-    return !errorValue.isPresent();
+    return super.isSuccess() && !errorValue.isPresent();
   }
 }
