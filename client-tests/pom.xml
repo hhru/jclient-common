@@ -38,7 +38,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <jvm>${jdk}/bin/java</jvm>
-                    <file.encoding>utf8</file.encoding>
+                    <argLine>-Dfile.encoding=${project.build.sourceEncoding}</argLine>
                 </configuration>
             </plugin>
         </plugins>
