@@ -433,6 +433,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .orXmlError(jaxbContext, XmlError.class)
         .resultWithResponse()
         .get();
+    assertFalse(response.isSuccess());
     assertFalse(response.get().isPresent());
     assertTrue(response.getError().isPresent());
     assertEquals(error.message, response.getError().get().message);
@@ -450,6 +451,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .forStatus(800)
         .resultWithResponse()
         .get();
+    assertFalse(response.isSuccess());
     assertFalse(response.get().isPresent());
     assertTrue(response.getError().isPresent());
     assertEquals(error.message, response.getError().get().message);
@@ -466,6 +468,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .forStatus(500)
         .resultWithResponse()
         .get();
+    assertFalse(response.isSuccess());
     assertFalse(response.get().isPresent());
     assertFalse(response.getError().isPresent());
     assertNotNull(response.getResponse());
