@@ -13,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -191,9 +192,13 @@ class HttpClientImpl extends HttpClient {
         // complete promise in a separate thread not to block ning thread
         callbackExecutor.execute(completeExceptionallyTask);
       } catch (RuntimeException e) {
-        mdcCopy.doInContext(() ->
-          log.error("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString(), e)
-        );
+        mdcCopy.doInContext(() -> {
+          if (e instanceof RejectedExecutionException) {
+            log.warn("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString());
+          } else {
+            log.error("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString(), e);
+          }
+        });
         completeExceptionallyTask.run();
       }
     }
