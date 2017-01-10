@@ -52,8 +52,28 @@ public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultO
       errorConsumer.ifPresent(c -> c.accept(throwable));
       return defaultValue;
     }
-    Optional<T> result = checkForAnyError();
-    return result;
+    return checkForAnyError();
+  }
+
+  /**
+   * Returns Optional with default value (if specified) or empty if:
+   *
+   * <ul>
+   * <li>exception is not null</li>
+   * <li>result is incorrect according to {@link ApplyResultOperation#onStatusCodeError()}</li>
+   * </ul>
+   *
+   * otherwise returns Optional with unwrapped result.
+   *
+   * @return
+   */
+  public Optional<T> onStatusCodeError() {
+    if (throwable != null) {
+      logger.warn("Exception happened but was intendedly ignored: {} ({})", throwable.toString(), errorResponseBuilder.getMessage());
+      errorConsumer.ifPresent(c -> c.accept(throwable));
+      return defaultValue;
+    }
+    return checkForStatusCodeError();
   }
 
 }

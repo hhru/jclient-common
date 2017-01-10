@@ -252,6 +252,12 @@ public class MoreErrorsTest {
     realValue = MoreErrors.check(result, (Throwable) null, "error").IGNORE().onAnyError();
     assertTrue(realValue.isPresent());
     assertEquals(realValue.get(), "zxc");
+
+    // provided default value with response error
+    result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
+    realValue = MoreErrors.check(result, (Throwable) null, "error").RETURN_DEFAULT("asd").onStatusCodeError();
+    assertTrue(realValue.isPresent());
+    assertEquals(realValue.get(), "asd");
   }
 
   // proxying and converting status
