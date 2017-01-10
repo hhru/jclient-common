@@ -24,40 +24,11 @@
 
     <properties>
         <jdk.version>1.8</jdk.version>
-        <jdk>${env.JAVA_8_HOME}</jdk>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4</version>
-                <executions>
-                    <execution>
-                        <id>enforce-property</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireProperty>
-                                    <property>env.JAVA_8_HOME</property>
-                                    <message>JAVA_8_HOME property is not set! It must be pointing to Java8 JDK home.</message>
-                                </requireProperty>
-                                <requireFilesExist>
-                                    <files>
-                                        <file>${env.JAVA_8_HOME}</file>
-                                    </files>
-                                    <message>jdk directory is not found!</message>
-                                </requireFilesExist>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -66,7 +37,6 @@
                     <compilerVersion>${jdk.version}</compilerVersion>
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
-                    <executable>${jdk}/bin/javac</executable>
                 </configuration>
             </plugin>
             <plugin>

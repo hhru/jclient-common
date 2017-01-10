@@ -10,7 +10,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <guice.version>4.0-beta5</guice.version>
         <jackson.version>2.6.3</jackson.version>
     </properties>
     
@@ -20,23 +19,12 @@
             <artifactId>jclient-common-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- Guice -->
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-servlet</artifactId>
-            <version>${guice.version}</version>
-        </dependency>
-
+        
         <!-- Async http client -->
         <dependency>
             <groupId>com.ning</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>1.9.31</version>
+            <version>1.9.40</version>
         </dependency>
 
         <!-- Protobuf -->
@@ -52,7 +40,7 @@
             <artifactId>jackson-annotations</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-
+       
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -82,12 +70,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>18.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>1.2.1</version>
         </dependency>
 
         <!-- Logging -->
