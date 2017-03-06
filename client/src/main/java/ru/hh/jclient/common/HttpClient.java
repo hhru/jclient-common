@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.xml.bind.JAXBContext;
 
+import ru.hh.jclient.common.converter.JavaSerializedConverter;
 import ru.hh.jclient.common.converter.JsonCollectionConverter;
 import ru.hh.jclient.common.converter.JsonConverter;
 import ru.hh.jclient.common.converter.PlainTextConverter;
@@ -157,6 +158,15 @@ public abstract class HttpClient {
    */
   public <T extends GeneratedMessage> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
     TypeConverter<T> converter = new ProtobufConverter<>(protobufClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
+  }
+
+  /**
+   * Specifies that the type of result must be serialized clazz or derivatives.
+   */
+  public <T> ResultProcessor<T> expectJavaSerialized(Class<T> clazz) {
+    TypeConverter<T> converter = new JavaSerializedConverter<T>(clazz);
     expectedMediaTypes = converter.getSupportedMediaTypes();
     return new ResultProcessor<>(this, converter);
   }
