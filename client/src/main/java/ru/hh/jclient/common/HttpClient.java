@@ -1,5 +1,8 @@
 package ru.hh.jclient.common;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Objects;
@@ -109,6 +112,31 @@ public abstract class HttpClient {
     RequestBuilder builder = new RequestBuilder(request);
     builder.setBody(body.toByteArray());
     builder.addHeader(HttpHeaders.CONTENT_TYPE, "application/x-protobuf");
+    request = builder.build();
+    return this;
+  }
+
+  /**
+   * Convenience method that sets java object as request body as well as corresponding "Content-type" header. Provided object will be used in
+   * debug output of request in debug mode.
+   *
+   * @param body
+   *          java object to send in request
+   */
+  public HttpClient withJavaObjectBody(Object body) {
+    Objects.requireNonNull(body, "body must not be null");
+    this.requestBodyEntity = Optional.of(body);
+    RequestBuilder builder = new RequestBuilder(request);
+    try (
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(byteOut);
+    ) {
+      out.writeObject(body);
+      builder.setBody(byteOut.toByteArray());
+    } catch (IOException e) {
+      throw new RuntimeException("failed to write java object", e);
+    }
+    builder.addHeader(HttpHeaders.CONTENT_TYPE, "application/x-java-serialized-object");
     request = builder.build();
     return this;
   }

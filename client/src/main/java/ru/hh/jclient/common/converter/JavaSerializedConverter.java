@@ -2,6 +2,7 @@ package ru.hh.jclient.common.converter;
 
 import com.google.common.net.MediaType;
 import com.ning.http.client.Response;
+import ru.hh.jclient.common.util.ClassesCache;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
@@ -53,7 +54,7 @@ public class JavaSerializedConverter<T> extends SingleTypeConverter<T> {
 
     @Override
     protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-      Class<?> resolvedClass = super.resolveClass(desc);
+      Class<?> resolvedClass = ClassesCache.resolveClass(desc);
       if (isRootClassResolved) {
         return resolvedClass;
       }
