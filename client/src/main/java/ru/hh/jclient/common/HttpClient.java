@@ -230,6 +230,7 @@ public abstract class HttpClient {
    * @param converter used to convert response to expected result
    */
   public <T> ResultProcessor<T> expect(TypeConverter<T> converter) {
+    expectedMediaTypes = converter.getSupportedMediaTypes();
     return new ResultProcessor<T>(this, converter);
   }
 
