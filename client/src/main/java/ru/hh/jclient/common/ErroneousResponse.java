@@ -13,13 +13,13 @@ import com.ning.http.client.uri.Uri;
 
 class ErroneousResponse implements Response {
 
-  private int statusCode;
-  private String statusText;
-  private Uri uri;
+  private final int statusCode;
+  private final String statusText;
+  private final Uri uri;
 
-  private final String EMPTY = "";
+  private static final String EMPTY = "";
 
-  public ErroneousResponse(int statusCode, String statusText, Uri uri) {
+  ErroneousResponse(int statusCode, String statusText, Uri uri) {
     this.statusCode = statusCode;
     this.statusText = statusText;
     this.uri = uri;
