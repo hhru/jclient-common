@@ -6,20 +6,31 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
+import com.google.common.net.MediaType;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
 import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.uri.Uri;
 
-class ErroneousResponse implements Response {
+/**
+ * This implementation of Response is returned in case when transport exception is mapped to status code. It is supposed to emulate intbal error
+ * response.
+ */
+class MappedTransportErrorResponse implements Response {
 
   private final int statusCode;
   private final String statusText;
   private final Uri uri;
 
-  private static final String EMPTY = "";
+  private static final String CONTENT_TYPE = MediaType.PLAIN_TEXT_UTF_8.withoutParameters().toString();
 
-  ErroneousResponse(int statusCode, String statusText, Uri uri) {
+  private static final FluentCaseInsensitiveStringsMap HEADERS = new FluentCaseInsensitiveStringsMap();
+
+  static {
+    HEADERS.add("Content-Type", CONTENT_TYPE);
+  }
+
+  MappedTransportErrorResponse(int statusCode, String statusText, Uri uri) {
     this.statusCode = statusCode;
     this.statusText = statusText;
     this.uri = uri;
@@ -37,12 +48,12 @@ class ErroneousResponse implements Response {
 
   @Override
   public byte[] getResponseBodyAsBytes() throws IOException {
-    return new byte[0];
+    return statusText.getBytes();
   }
 
   @Override
   public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
-    return ByteBuffer.allocate(0);
+    return ByteBuffer.wrap(getResponseBodyAsBytes());
   }
 
   @Override
@@ -50,27 +61,28 @@ class ErroneousResponse implements Response {
     return new ByteArrayInputStream(getResponseBodyAsBytes());
   }
 
-  @SuppressWarnings("unused")
   @Override
   public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-    return EMPTY;
+    String response = getResponseBody(charset);
+    return response.length() <= maxLength ? response : response.substring(0, maxLength);
   }
 
-  @SuppressWarnings("unused")
   @Override
   public String getResponseBody(String charset) throws IOException {
-    return EMPTY;
+    if (charset == null) {
+      return statusText;
+    }
+    return new String(statusText.getBytes(), charset);
   }
 
-  @SuppressWarnings("unused")
   @Override
   public String getResponseBodyExcerpt(int maxLength) throws IOException {
-    return EMPTY;
+    return getResponseBodyExcerpt(maxLength, null);
   }
 
   @Override
   public String getResponseBody() throws IOException {
-    return EMPTY;
+    return statusText;
   }
 
   @Override
@@ -80,24 +92,22 @@ class ErroneousResponse implements Response {
 
   @Override
   public String getContentType() {
-    return null;
+    return CONTENT_TYPE;
   }
 
-  @SuppressWarnings("unused")
   @Override
   public String getHeader(String name) {
-    return null;
+    return HEADERS.getFirstValue(name);
   }
 
-  @SuppressWarnings("unused")
   @Override
   public List<String> getHeaders(String name) {
-    return Collections.emptyList();
+    return HEADERS.get(name);
   }
 
   @Override
   public FluentCaseInsensitiveStringsMap getHeaders() {
-    return new FluentCaseInsensitiveStringsMap();
+    return HEADERS;
   }
 
   @Override
@@ -117,11 +127,11 @@ class ErroneousResponse implements Response {
 
   @Override
   public boolean hasResponseHeaders() {
-    return false;
+    return true;
   }
 
   @Override
   public boolean hasResponseBody() {
-    return false;
+    return true;
   }
 }
