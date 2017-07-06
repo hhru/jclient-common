@@ -159,11 +159,11 @@ class HttpClientImpl extends HttpClient {
       mdcCopy.doInContext(
           () -> log.warn(
               "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}{}",
-              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating",
               requestStart.until(now(), ChronoUnit.MILLIS),
               request.getMethod(),
               request.getUri(),
-              t.toString()));
+              t.toString(),
+              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
 
       if (response != null) {
         proceedWithResponse(response);
