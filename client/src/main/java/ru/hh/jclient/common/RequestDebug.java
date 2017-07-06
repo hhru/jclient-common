@@ -23,15 +23,6 @@ public interface RequestDebug {
   Response onResponse(AsyncHttpClientConfig config, Response response);
 
   /**
-   * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
-   * purposes.
-   *
-   * @param errorMessage
-   *          information about problem while handling response
-   */
-  Response onResponse(AsyncHttpClientConfig config, Response response, String errorMessage);
-
-  /**
    * Called once response is successfully converted.
    *
    * @param result result of response conversion
