@@ -10,6 +10,7 @@ import com.ning.http.client.Response;
 import com.ning.http.client.uri.Uri;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -150,23 +151,23 @@ class HttpClientImpl extends HttpClient {
       mdcCopy.doInContext( () -> log.info("ASYNC_HTTP_RESPONSE: {} {} in {} ms on {} {}", responseStatusCode, responseStatusText,
         requestStart.until(now(), ChronoUnit.MILLIS), request.getMethod(), request.getUri()));
 
-      return proceedWithResponse(response);
+      return proceedWithResponse(response, Optional.empty());
     }
 
     @Override
     public void onThrowable(Throwable t) {
-      Response response = ExceptionMapper.map(t, request.getUri());
+      Response response = TransportExceptionMapper.map(t, request.getUri());
       mdcCopy.doInContext(
           () -> log.warn(
-              "ASYNC_HTTP_ERROR: client error{}after {} ms on {} {}: {}",
-              response != null ? " (mapped to " + response.getStatusCode() + ", proceeding) " : " ",
+              "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}{}",
+              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating",
               requestStart.until(now(), ChronoUnit.MILLIS),
               request.getMethod(),
               request.getUri(),
-              t.getMessage()));
+              t.toString()));
 
       if (response != null) {
-        proceedWithResponse(response);
+        proceedWithResponse(response, Optional.of(response.getStatusText()));
         return;
       }
 
@@ -198,8 +199,10 @@ class HttpClientImpl extends HttpClient {
       }
     }
 
-    private Response proceedWithResponse(Response response) {
-      Response debuggedResponse = requestDebug.onResponse(config, response);
+    private Response proceedWithResponse(Response response, Optional<String> errorMessage) {
+      Response debuggedResponse = errorMessage
+          .map(m -> requestDebug.onResponse(config, response, m))
+          .orElseGet(() -> requestDebug.onResponse(config, response));
 
       // complete promise in a separate thread not to block ning thread
       callbackExecutor.execute(() -> {

@@ -71,6 +71,12 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
+  public Response onResponse(AsyncHttpClientConfig config, Response response, String errorMessage) {
+    calls.add(Call.RESPONSE);
+    return response;
+  }
+
+  @Override
   public void onResponseConverted(Optional<?> result) {
     calls.add(Call.RESPONSE_CONVERTED);
   }
