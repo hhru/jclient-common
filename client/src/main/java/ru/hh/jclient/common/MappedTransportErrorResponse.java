@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import com.google.common.net.MediaType;
@@ -72,7 +73,7 @@ class MappedTransportErrorResponse implements Response {
     if (charset == null) {
       return statusText;
     }
-    return new String(statusText.getBytes(), charset);
+    return new String(statusText.getBytes(), Charset.forName(charset));
   }
 
   @Override
