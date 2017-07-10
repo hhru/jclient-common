@@ -83,7 +83,7 @@ public class ResultProcessor<T> {
       if (HttpClient.OK_RESPONSE.apply(response)) {
         return wrap(response);
       }
-      return new ResultWithResponse<T>(null, response);
+      return new ResultWithResponse<>(null, response);
     }
     finally {
       httpClient.getDebug().onProcessingFinished();
@@ -113,7 +113,7 @@ public class ResultProcessor<T> {
    * @param xmlClass type of ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orXmlError(JAXBContext context, Class<E> xmlClass) {
-    return new ResultOrErrorProcessor<T, E>(this, new XmlConverter<>(context, xmlClass));
+    return new ResultOrErrorProcessor<>(this, new XmlConverter<>(context, xmlClass));
   }
 
   /**
@@ -123,7 +123,7 @@ public class ResultProcessor<T> {
    * @param jsonClass type of ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orJsonError(ObjectMapper mapper, Class<E> jsonClass) {
-    return new ResultOrErrorProcessor<T, E>(this, new JsonConverter<>(mapper, jsonClass));
+    return new ResultOrErrorProcessor<>(this, new JsonConverter<>(mapper, jsonClass));
   }
 
   /**
@@ -142,14 +142,14 @@ public class ResultProcessor<T> {
    * @param protobufClass type of ERROR result
    */
   public <E extends GeneratedMessage> ResultOrErrorProcessor<T, E> orProtobufError(Class<E> protobufClass) {
-    return new ResultOrErrorProcessor<T, E>(this, new ProtobufConverter<>(protobufClass));
+    return new ResultOrErrorProcessor<>(this, new ProtobufConverter<>(protobufClass));
   }
 
   /**
    * Specifies that the type of ERROR result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
    */
   public ResultOrErrorProcessor<T, String> orPlainTextError() {
-    return new ResultOrErrorProcessor<T, String>(this, new PlainTextConverter());
+    return new ResultOrErrorProcessor<>(this, new PlainTextConverter());
   }
 
   /**
@@ -158,7 +158,7 @@ public class ResultProcessor<T> {
    * @param charset used to decode response
    */
   public ResultOrErrorProcessor<T, String> orPlainTextError(Charset charset) {
-    return new ResultOrErrorProcessor<T, String>(this, new PlainTextConverter(charset));
+    return new ResultOrErrorProcessor<>(this, new PlainTextConverter(charset));
   }
 
   /**
@@ -167,6 +167,6 @@ public class ResultProcessor<T> {
    * @param converter used to convert response to expected ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orError(TypeConverter<E> converter) {
-    return new ResultOrErrorProcessor<T, E>(this, converter);
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 }
