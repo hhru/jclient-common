@@ -24,7 +24,7 @@ public interface RequestDebug {
 
   /**
    * Called once response is successfully converted.
-   * 
+   *
    * @param result result of response conversion
    */
   void onResponseConverted(Optional<?> result);

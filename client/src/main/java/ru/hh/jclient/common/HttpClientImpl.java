@@ -147,36 +147,31 @@ class HttpClientImpl extends HttpClient {
     public Response onCompleted(Response response) throws Exception {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
-      Response debuggedResponse = requestDebug.onResponse(config, response);
       mdcCopy.doInContext( () -> log.info("ASYNC_HTTP_RESPONSE: {} {} in {} ms on {} {}", responseStatusCode, responseStatusText,
         requestStart.until(now(), ChronoUnit.MILLIS), request.getMethod(), request.getUri()));
 
-      // complete promise in a separate thread not to block ning thread
-      callbackExecutor.execute(() -> {
-        try {
-          // install context(s) for current (callback) thread so chained tasks have context to run with
-          contextTransfers.perform();
-          promise.complete(debuggedResponse);
-        } finally {
-          // remove context(s) once the promise completes
-          contextTransfers.rollback();
-        }
-      });
-
-      return debuggedResponse;
+      return proceedWithResponse(response);
     }
 
     @Override
     public void onThrowable(Throwable t) {
-      requestDebug.onClientProblem(t);
-      requestDebug.onProcessingFinished();
+      Response response = TransportExceptionMapper.map(t, request.getUri());
       mdcCopy.doInContext(
           () -> log.warn(
-              "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}",
+              "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}{}",
               requestStart.until(now(), ChronoUnit.MILLIS),
               request.getMethod(),
               request.getUri(),
-              t.getMessage()));
+              t.toString(),
+              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
+
+      if (response != null) {
+        proceedWithResponse(response);
+        return;
+      }
+
+      requestDebug.onClientProblem(t);
+      requestDebug.onProcessingFinished();
 
       Runnable completeExceptionallyTask = () -> {
         try {
@@ -201,6 +196,25 @@ class HttpClientImpl extends HttpClient {
         });
         completeExceptionallyTask.run();
       }
+    }
+
+    private Response proceedWithResponse(Response response) {
+      Response debuggedResponse = requestDebug.onResponse(config, response);
+
+      // complete promise in a separate thread not to block ning thread
+      callbackExecutor.execute(() -> {
+        try {
+          // install context(s) for current (callback) thread so chained tasks have context to run with
+          contextTransfers.perform();
+          promise.complete(debuggedResponse);
+        }
+        finally {
+          // remove context(s) once the promise completes
+          contextTransfers.rollback();
+        }
+      });
+
+      return debuggedResponse;
     }
   }
 }
