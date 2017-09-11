@@ -1,6 +1,8 @@
 package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
+
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +14,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Request;
 import ru.hh.jclient.common.util.storage.Storage;
 
-public class HttpClientBuilder {
+public class HttpClientBuilder implements Closeable {
 
   private AsyncHttpClient http;
   private Set<String> hostsWithSession;
@@ -53,6 +55,14 @@ public class HttpClientBuilder {
    */
   public Map<String, List<String>> getHeaders() {
     return new FluentCaseInsensitiveStringsMap(contextSupplier.get().getHeaders());
+  }
+
+  /**
+   * Closes http client.
+   */
+  @Override
+  public void close() {
+    http.close();
   }
 
 }
