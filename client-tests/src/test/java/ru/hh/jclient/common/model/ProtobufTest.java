@@ -3,6 +3,8 @@
 
 package ru.hh.jclient.common.model;
 
+import com.google.protobuf.UnknownFieldSet;
+
 public final class ProtobufTest {
   private ProtobufTest() {}
   public static void registerAllExtensions(
@@ -98,7 +100,12 @@ public final class ProtobufTest {
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    @java.lang.Override
+    public UnknownFieldSet getUnknownFields() {
+      return UnknownFieldSet.newBuilder().build();
+    }
+
     private static final long serialVersionUID = 0L;
     @java.lang.Override
     protected java.lang.Object writeReplace()
