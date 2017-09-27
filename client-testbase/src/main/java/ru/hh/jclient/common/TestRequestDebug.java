@@ -1,10 +1,11 @@
 package ru.hh.jclient.common;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import java.util.Arrays;
-import java.util.HashSet;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Request;
@@ -16,6 +17,7 @@ public class TestRequestDebug implements RequestDebug {
   public enum Call {
     REQUEST,
     RESPONSE,
+    RETRY,
     RESPONSE_CONVERTED,
     CLIENT_PROBLEM,
     CONVERTER_PROBLEM,
@@ -23,33 +25,23 @@ public class TestRequestDebug implements RequestDebug {
     LABEL
   }
 
+  private final List<Call> calls = new ArrayList<>();
+  private final boolean recordCalls;
+
   public TestRequestDebug() {
     this(false);
   }
 
   public TestRequestDebug(boolean recordCalls) {
-    if (recordCalls) {
-      calls = new HashSet<>();
-    }
-    else {
-      calls = new HashSet<Call>() {
-        @Override
-        public boolean add(Call e) {
-          return true;
-        }
-      };
-    }
-
+    this.recordCalls = recordCalls;
   }
 
-  private Set<Call> calls = new HashSet<>();
-
-  public Set<Call> getCalls() {
+  public List<Call> getCalls() {
     return calls;
   }
 
-  public TestRequestDebug assertCalled(Call... calls) {
-    assertEquals(this.calls, new HashSet<>(Arrays.asList(calls)));
+  public TestRequestDebug assertCalled(Call... expectedCalls) {
+    assertEquals(asList(expectedCalls), this.calls);
     reset();
     return this;
   }
@@ -58,41 +50,50 @@ public class TestRequestDebug implements RequestDebug {
     calls.clear();
   }
 
-
   @Override
   public void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity) {
-    calls.add(Call.REQUEST);
+    record(Call.REQUEST);
+  }
+
+  @Override
+  public void onRetry(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName) {
+    record(Call.RETRY);
   }
 
   @Override
   public Response onResponse(AsyncHttpClientConfig config, Response response) {
-    calls.add(Call.RESPONSE);
+    record(Call.RESPONSE);
     return response;
   }
 
   @Override
   public void onResponseConverted(Optional<?> result) {
-    calls.add(Call.RESPONSE_CONVERTED);
+    record(Call.RESPONSE_CONVERTED);
   }
 
   @Override
   public void onClientProblem(Throwable t) {
-    calls.add(Call.CLIENT_PROBLEM);
+    record(Call.CLIENT_PROBLEM);
   }
 
   @Override
   public void onConverterProblem(ResponseConverterException e) {
-    calls.add(Call.CONVERTER_PROBLEM);
+    record(Call.CONVERTER_PROBLEM);
   }
 
   @Override
   public void onProcessingFinished() {
-    calls.add(Call.FINISHED);
+    record(Call.FINISHED);
   }
 
   @Override
   public void addLabel(String label) {
-    calls.add(Call.LABEL);
+    record(Call.LABEL);
   }
 
+  private void record(Call call) {
+    if (recordCalls) {
+      calls.add(call);
+    }
+  }
 }

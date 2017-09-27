@@ -17,7 +17,7 @@ import com.ning.http.client.uri.Uri;
  * This implementation of Response is returned in case when transport exception is mapped to status code. It is supposed to emulate intbal error
  * response.
  */
-class MappedTransportErrorResponse implements Response {
+public class MappedTransportErrorResponse implements Response {
 
   private final int statusCode;
   private final String statusText;
@@ -31,7 +31,7 @@ class MappedTransportErrorResponse implements Response {
     HEADERS.add("Content-Type", CONTENT_TYPE);
   }
 
-  MappedTransportErrorResponse(int statusCode, String statusText, Uri uri) {
+  public MappedTransportErrorResponse(int statusCode, String statusText, Uri uri) {
     this.statusCode = statusCode;
     this.statusText = statusText;
     this.uri = uri;

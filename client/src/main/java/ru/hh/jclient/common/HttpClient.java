@@ -1,27 +1,5 @@
 package ru.hh.jclient.common;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
-import javax.xml.bind.JAXBContext;
-
-import ru.hh.jclient.common.converter.JavaSerializedConverter;
-import ru.hh.jclient.common.converter.JsonCollectionConverter;
-import ru.hh.jclient.common.converter.JsonConverter;
-import ru.hh.jclient.common.converter.PlainTextConverter;
-import ru.hh.jclient.common.converter.ProtobufConverter;
-import ru.hh.jclient.common.converter.TypeConverter;
-import ru.hh.jclient.common.converter.VoidConverter;
-import ru.hh.jclient.common.converter.XmlConverter;
-import ru.hh.jclient.common.util.storage.Storage;
-import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
 import com.google.common.net.HttpHeaders;
@@ -32,43 +10,73 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import static java.util.Objects.requireNonNull;
+import ru.hh.jclient.common.balancing.RequestBalancer;
+import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
+import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.converter.JavaSerializedConverter;
+import ru.hh.jclient.common.converter.JsonCollectionConverter;
+import ru.hh.jclient.common.converter.JsonConverter;
+import ru.hh.jclient.common.converter.PlainTextConverter;
+import ru.hh.jclient.common.converter.ProtobufConverter;
+import ru.hh.jclient.common.converter.TypeConverter;
+import ru.hh.jclient.common.converter.VoidConverter;
+import ru.hh.jclient.common.converter.XmlConverter;
+import ru.hh.jclient.common.util.storage.Storage;
+import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
+
+import javax.xml.bind.JAXBContext;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public abstract class HttpClient {
-
   public static final Range<Integer> OK_RANGE = Range.atMost(399);
   public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
-  private AsyncHttpClient http;
-  private Set<String> hostsWithSession;
-  private HttpClientContext context;
-  private Storages storages;
+  private final AsyncHttpClient http;
+  private final Set<String> hostsWithSession;
+  private final HttpClientContext context;
+  private final Storages storages;
+  private final UpstreamManager upstreamManager;
+
   private RequestDebug debug;
-
-  protected Optional<?> requestBodyEntity = Optional.empty();
-  private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
-
   private Request request;
+  private Optional<?> requestBodyEntity = Optional.empty();
+  private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
 
   private boolean readOnlyReplica;
   private boolean noSession;
   private boolean noDebug;
   private boolean externalRequest;
 
-  HttpClient(AsyncHttpClient http, Request request, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
+  HttpClient(AsyncHttpClient http,
+             Request request,
+             Set<String> hostsWithSession,
+             UpstreamManager upstreamManager,
+             Storage<HttpClientContext> contextSupplier) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
-    this.context = contextSupplier.get();
-    this.storages = this.context.getStorages().copy().add(contextSupplier); //
-    this.debug = this.context.getDebugSupplier().get();
+    this.upstreamManager = upstreamManager;
+
+    context = contextSupplier.get();
+    storages = context.getStorages().copy().add(contextSupplier);
+    debug = context.getDebugSupplier().get();
   }
 
   /**
    * Marks request as "read only". Adds corresponding GET attribute to request url.
    */
   public HttpClient readOnly() {
-    this.readOnlyReplica = true;
-    this.debug.addLabel("RO");
+    readOnlyReplica = true;
+    debug.addLabel("RO");
     return this;
   }
 
@@ -76,8 +84,8 @@ public abstract class HttpClient {
    * Forces client NOT to send {@link ru.hh.jclient.common.HttpHeaders#HH_PROTO_SESSION} header.
    */
   public HttpClient noSession() {
-    this.noSession = true;
-    this.debug.addLabel("NOSESSION");
+    noSession = true;
+    debug.addLabel("NOSESSION");
     return this;
   }
 
@@ -85,8 +93,8 @@ public abstract class HttpClient {
    * Tells client the request will be performed to external resource. Client will not pass-through any of {@link HttpClientImpl#PASS_THROUGH_HEADERS}.
    */
   public HttpClient external() {
-    this.externalRequest = true;
-    this.debug.addLabel("EXTERNAL");
+    externalRequest = true;
+    debug.addLabel("EXTERNAL");
     return this;
   }
 
@@ -94,8 +102,8 @@ public abstract class HttpClient {
    * Forces client NOT to send {@link ru.hh.jclient.common.HttpHeaders#X_HH_DEBUG} header.
    */
   public HttpClient noDebug() {
-    this.noDebug = true;
-    this.debug.addLabel("NODEBUG");
+    noDebug = true;
+    debug.addLabel("NODEBUG");
     return this;
   }
 
@@ -107,8 +115,7 @@ public abstract class HttpClient {
    *          protobuf object to send in request
    */
   public HttpClient withProtobufBody(MessageLite body) {
-    Objects.requireNonNull(body, "body must not be null");
-    this.requestBodyEntity = Optional.of(body);
+    requestBodyEntity = Optional.of(requireNonNull(body, "body must not be null"));
     RequestBuilder builder = new RequestBuilder(request);
     builder.setBody(body.toByteArray());
     builder.addHeader(HttpHeaders.CONTENT_TYPE, "application/x-protobuf");
@@ -124,13 +131,10 @@ public abstract class HttpClient {
    *          java object to send in request
    */
   public HttpClient withJavaObjectBody(Object body) {
-    Objects.requireNonNull(body, "body must not be null");
-    this.requestBodyEntity = Optional.of(body);
+    requestBodyEntity = Optional.of(requireNonNull(body, "body must not be null"));
     RequestBuilder builder = new RequestBuilder(request);
-    try (
-            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(byteOut);
-    ) {
+    try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+         ObjectOutputStream out = new ObjectOutputStream(byteOut)) {
       out.writeObject(body);
       builder.setBody(byteOut.toByteArray());
     } catch (IOException e) {
@@ -194,7 +198,7 @@ public abstract class HttpClient {
    * Specifies that the type of result must be serialized clazz or derivatives.
    */
   public <T> ResultProcessor<T> expectJavaSerialized(Class<T> clazz) {
-    TypeConverter<T> converter = new JavaSerializedConverter<T>(clazz);
+    TypeConverter<T> converter = new JavaSerializedConverter<>(clazz);
     expectedMediaTypes = converter.getSupportedMediaTypes();
     return new ResultProcessor<>(this, converter);
   }
@@ -221,7 +225,7 @@ public abstract class HttpClient {
    * Specifies that the result must not be parsed.
    */
   public ResultProcessor<Void> expectEmpty() {
-    return new ResultProcessor<Void>(this, new VoidConverter());
+    return new ResultProcessor<>(this, new VoidConverter());
   }
 
   /**
@@ -231,7 +235,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<T> expect(TypeConverter<T> converter) {
     expectedMediaTypes = converter.getSupportedMediaTypes();
-    return new ResultProcessor<T>(this, converter);
+    return new ResultProcessor<>(this, converter);
   }
 
   /**
@@ -240,19 +244,22 @@ public abstract class HttpClient {
    * @return response
    */
   public CompletableFuture<Response> request() {
-    return executeRequest();
+    RequestExecutor requestExecutor = (request, retryCount, upstreamName) -> {
+      if (retryCount > 0) {
+        debug = context.getDebugSupplier().get();
+      }
+      return executeRequest(request, retryCount, upstreamName);
+    };
+    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor);
+    return requestBalancer.requestWithRetry(0);
   }
 
-  abstract CompletableFuture<Response> executeRequest();
+  abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, String upstreamName);
 
   // getters for tools
 
   AsyncHttpClient getHttp() {
     return http;
-  }
-
-  Request getRequest() {
-    return request;
   }
 
   Set<String> getHostsWithSession() {
@@ -267,6 +274,10 @@ public abstract class HttpClient {
     return storages;
   }
 
+  Optional<?> getRequestBodyEntity() {
+    return requestBodyEntity;
+  }
+
   Optional<Collection<MediaType>> getExpectedMediaTypes() {
     return expectedMediaTypes;
   }
@@ -279,7 +290,7 @@ public abstract class HttpClient {
     return readOnlyReplica;
   }
 
-  boolean isExternal() {
+  boolean isExternalRequest() {
     return externalRequest;
   }
 
