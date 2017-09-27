@@ -240,7 +240,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
     assertTrue(actualRequest.get().getUrl().indexOf(HttpParams.READ_ONLY_REPLICA) > -1);
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
+    debug.assertCalled(LABEL, REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -254,19 +254,19 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
     http.with(request).expectEmpty().result().get();
-    // all those headers won't be accepted, as they come from global request and are not in allowed list
+    // all those headers won't be accepted, as they come from global mockRequest and are not in allowed list
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader1"));
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader2"));
     // this header is accepted because it consists in allowed list
     assertEquals("111", actualRequest.get().getHeaders().getFirstValue(X_REQUEST_ID));
-    // this header is accepted since it comes from local request
+    // this header is accepted since it comes from local mockRequest
     assertEquals("somevalue", actualRequest.get().getHeaders().getFirstValue("someheader"));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = IllegalStateException.class)
   public void testDebugManualHeaderWithNoDebug() throws IOException, InterruptedException, ExecutionException {
-    // situation when manually building request with debug header, it should be removed
+    // situation when manually building mockRequest with debug header, it should be removed
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
         .addHeader(X_HH_DEBUG, "true")
@@ -280,7 +280,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = IllegalStateException.class)
   public void testDebugManualParamWithNoDebug() throws IOException, InterruptedException, ExecutionException {
-    // situation when manually building request with debug param
+    // situation when manually building mockRequest with debug param
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
         .addHeader(AUTHORIZATION, "someauth")
@@ -340,9 +340,9 @@ public class HttpClientTest extends HttpClientTestBase {
     http.with(request).external().expectEmpty().result().get();
 
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
-    assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // not passed through but can be added manually to request if needed
+    assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // not passed through but can be added manually to mockRequest if needed
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
+    debug.assertCalled(LABEL, REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -361,7 +361,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
     assertTrue(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // passed through because it might be auth not related to debug
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, LABEL, FINISHED);
+    debug.assertCalled(LABEL, REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test

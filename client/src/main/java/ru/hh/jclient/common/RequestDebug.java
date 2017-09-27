@@ -17,6 +17,11 @@ public interface RequestDebug {
   void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity);
 
   /**
+   * Called before retrying the request
+   */
+  void onRetry(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName);
+
+  /**
    * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
    * purposes.
    */

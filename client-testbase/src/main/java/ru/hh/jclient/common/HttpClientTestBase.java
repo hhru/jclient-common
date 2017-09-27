@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import static java.util.Collections.singleton;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -9,7 +10,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -23,7 +27,6 @@ import java.util.function.Supplier;
 
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.ning.http.client.AsyncHttpClient;
@@ -34,10 +37,10 @@ import com.ning.http.client.Response;
 
 public class HttpClientTestBase {
 
-  public static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
-  public static HttpClientBuilder http;
-  public static HttpClientContext httpClientContext;
-  public static TestRequestDebug debug = new TestRequestDebug(true);
+  static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
+  static HttpClientBuilder http;
+  static HttpClientContext httpClientContext;
+  static TestRequestDebug debug = new TestRequestDebug(true);
 
   public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), () -> debug);
@@ -101,7 +104,7 @@ public class HttpClientTestBase {
       handler.onCompleted(response);
       return null;
     });
-    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), new SingletonStorage<>(() -> httpClientContext));
+    http = createHttpClientBuilder(httpClient);
     return () -> request[0];
   }
 
@@ -149,4 +152,12 @@ public class HttpClientTestBase {
     return completedFuture(new ResultOrErrorWithStatus<>(empty(), of(error), status));
   }
 
+  HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient) {
+    return new HttpClientBuilder(httpClient, singleton("http://localhost"), new SingletonStorage<>(() -> httpClientContext), Runnable::run);
+  }
+
+  HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs) {
+    return new HttpClientBuilder(httpClient, singleton("http://localhost"),
+        new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamConfigs, 0);
+  }
 }
