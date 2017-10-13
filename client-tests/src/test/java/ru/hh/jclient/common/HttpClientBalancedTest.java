@@ -22,6 +22,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 
+import java.net.ConnectException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -94,6 +95,34 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     Request[] request = mockConnectTimeoutRequest();
 
     getTestClient().post();
+
+    assertHostEquals(request[0], "server1");
+    assertHostEquals(request[1], "server2");
+    assertHostEquals(request[2], "server3");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryConnectionRefused() throws Exception {
+    createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
+
+    Request[] request = new Request[3];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = failWith(new ConnectException("Connection refused"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[1] = failWith(new ConnectException("Connection refused"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[2] = completeWith(200, iom);
+          return null;
+        });
+
+    getTestClient().get();
 
     assertHostEquals(request[0], "server1");
     assertHostEquals(request[1], "server2");
@@ -235,14 +264,14 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
       super(host, http);
     }
 
-    String get() throws Exception {
-      Request request = get(url("/get"), "param1", "value1").build();
-      return http.with(request).expectPlainText().result().get();
+    void get() throws Exception {
+      Request request = get(url("/get")).build();
+      http.with(request).expectPlainText().result().get();
     }
 
-    String post() throws Exception {
-      Request request = post(url("/post"), "param1", "value1").build();
-      return http.with(request).expectPlainText().result().get();
+    void post() throws Exception {
+      Request request = post(url("/post")).build();
+      http.with(request).expectPlainText().result().get();
     }
   }
 }
