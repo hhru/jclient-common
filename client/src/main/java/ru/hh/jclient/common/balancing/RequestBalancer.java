@@ -7,7 +7,7 @@ import com.ning.http.client.uri.Uri;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static ru.hh.jclient.common.AbstractClient.HTTP_POST;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
-import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_TIMEOUT;
+import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 import ru.hh.jclient.common.ResponseWrapper;
 
@@ -110,9 +110,8 @@ public class RequestBalancer {
     if (triesLeft == 0 || requestTimeLeftMs == 0 || !isServerError) {
       return false;
     }
-    String statusText = response.getStatusText();
     int statusCode = response.getStatusCode();
-    boolean isConnectTimeout = statusCode == STATUS_CONNECT_TIMEOUT && (statusText != null && statusText.contains("TimeoutException"));
+    boolean isConnectTimeout = statusCode == STATUS_CONNECT_ERROR;
     boolean isRequestTimeout = statusCode == STATUS_REQUEST_TIMEOUT;
     return isConnectTimeout || (isIdempotent() && isRequestTimeout);
   }
@@ -134,7 +133,7 @@ public class RequestBalancer {
 
   private static boolean isServerError(Response response) {
     int statusCode = response.getStatusCode();
-    return statusCode == STATUS_CONNECT_TIMEOUT || statusCode == STATUS_REQUEST_TIMEOUT;
+    return statusCode == STATUS_CONNECT_ERROR || statusCode == STATUS_REQUEST_TIMEOUT;
   }
 
   private boolean isIdempotent() {
