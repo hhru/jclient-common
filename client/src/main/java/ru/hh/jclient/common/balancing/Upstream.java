@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-class Upstream {
+public class Upstream {
 
   private final String name;
   private final UpstreamConfig upstreamConfig;
@@ -28,7 +28,7 @@ class Upstream {
     this.periodicTasksExecutor = periodicTasksExecutor;
   }
 
-  int acquireServer(  Set<Integer> excludedServers) {
+  int acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
       List<Server> servers = upstreamConfig.getServers();

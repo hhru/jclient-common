@@ -19,7 +19,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
-import com.ning.http.client.uri.Uri;
 import static java.lang.Boolean.TRUE;
 import static java.util.function.Function.identity;
 import org.slf4j.Logger;
@@ -30,7 +29,6 @@ import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
-import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.jclient.common.util.MDCCopy;
 import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
@@ -90,9 +88,7 @@ class HttpClientImpl extends HttpClient {
 
     headers.addAll(request.getHeaders());
 
-    // remove hh-session header if host does not need it
-    String host = request.getUri().getHost();
-    if (isNoSession() || getHostsWithSession().stream().map(Uri::create).map(Uri::getHost).noneMatch(host::equals)) {
+    if (isNoSessionRequired()) {
       headers.remove(HH_PROTO_SESSION);
     }
 

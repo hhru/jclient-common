@@ -5,7 +5,9 @@ import com.google.common.net.MediaType;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
 import com.ning.http.client.Response;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import org.jboss.netty.channel.ConnectTimeoutException;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
@@ -21,14 +23,18 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
+import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
+import ru.hh.jclient.common.util.storage.SingletonStorage;
+import ru.hh.metrics.StatsDSender;
 
 import java.net.ConnectException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 public class HttpClientBalancedTest extends HttpClientTestBase {
 
-  private static final String TEST_HOST = "backend";
+  private static final String TEST_UPSTREAM = "backend";
   private AsyncHttpClient httpClient;
 
   @Before
@@ -252,11 +258,11 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   private void createHttpClientBuilder(String upstreamConfig) {
-    http = createHttpClientBuilder(httpClient, singletonMap(TEST_HOST, upstreamConfig));
+    http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig));
   }
 
   private static TestClient getTestClient() {
-    return new TestClient("http://" + TEST_HOST, http);
+    return new TestClient("http://" + TEST_UPSTREAM, http);
   }
 
   private static class TestClient extends AbstractClient {
@@ -273,5 +279,11 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
       Request request = post(url("/post")).build();
       http.with(request).expectPlainText().result().get();
     }
+  }
+
+  HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs) {
+    UpstreamManager upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(StatsDSender.class), "testService", 0);
+    return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
+        new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }
 }

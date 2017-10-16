@@ -10,6 +10,7 @@ import ru.hh.jclient.common.MappedTransportErrorResponse;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 import ru.hh.jclient.common.ResponseWrapper;
+import ru.hh.jclient.common.UpstreamManager;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,31 +20,33 @@ public class RequestBalancer {
   private final String host;
   private final Request request;
   private final Upstream upstream;
+  private final UpstreamManager upstreamManager;
   private final Set<Integer> triedServers = new HashSet<>();
   private final RequestExecutor requestExecutor;
 
   private int triesLeft;
   private long requestTimeLeftMs;
   private int currentServerIndex = -1;
+  private int firstStatusCode;
 
   public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor) {
     this.request = request;
+    this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
 
     host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host);
     if (upstream != null) {
       triesLeft = upstream.getConfig().getMaxTries();
-      long requestTimeoutMs = upstream.getConfig().getRequestTimeoutMs();
       int maxRequestTimeoutTries = upstream.getConfig().getMaxTimeoutTries();
-      requestTimeLeftMs = requestTimeoutMs * maxRequestTimeoutTries;
+      requestTimeLeftMs = upstream.getConfig().getRequestTimeoutMs() * maxRequestTimeoutTries;
     } else {
       triesLeft = UpstreamConfig.DEFAULT_MAX_TRIES;
       requestTimeLeftMs = UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS * UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
     }
   }
 
-  public CompletableFuture<Response> requestWithRetry(int retryCount) {
+  public CompletableFuture<Response> requestWithRetry() {
     Request balancedRequest = request;
     if (isUpstreamAvailable()) {
       balancedRequest = getBalancedRequest(request);
@@ -51,17 +54,35 @@ public class RequestBalancer {
         return completedFuture(getServerNotAvailableResponse(request, upstream.getName()));
       }
     }
+    int retryCount = triedServers.size();
     return requestExecutor.executeRequest(balancedRequest, retryCount, isUpstreamAvailable() ? upstream.getName() : host)
         .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
-        .thenCompose(wrapper -> unwrapOrRetry(wrapper.getResponse(), retryCount));
+        .thenCompose(this::unwrapOrRetry);
   }
 
-  private CompletableFuture<Response> unwrapOrRetry(Response response, int retryCount) {
-    if (checkRetry(response)) {
+  private CompletableFuture<Response> unwrapOrRetry(ResponseWrapper wrapper) {
+    boolean doRetry = checkRetry(wrapper.getResponse());
+    countStatistics(wrapper, doRetry);
+    Response response = wrapper.getResponse();
+    if (doRetry) {
+      if (triedServers.isEmpty()) {
+        firstStatusCode = response.getStatusCode();
+      }
       prepareRetry();
-      return requestWithRetry(retryCount + 1);
+      return requestWithRetry();
     }
     return completedFuture(response);
+  }
+
+  private void countStatistics(ResponseWrapper wrapper, boolean doRetry) {
+    if (isServerAvailable()) {
+      UpstreamMonitoring monitoring = upstreamManager.getMonitoring();
+      String serverAddress = upstream.getServerAddress(currentServerIndex);
+      monitoring.addRequest(wrapper, upstream.getName(), serverAddress, !doRetry);
+      if (!triedServers.isEmpty()) {
+        monitoring.addRetry(wrapper, upstream.getName(), serverAddress, firstStatusCode, triedServers.size());
+      }
+    }
   }
 
   private static Response getServerNotAvailableResponse(Request request, String upstreamName) {
