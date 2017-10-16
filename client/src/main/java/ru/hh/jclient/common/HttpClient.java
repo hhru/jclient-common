@@ -10,10 +10,10 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.ning.http.client.uri.Uri;
 import static java.util.Objects.requireNonNull;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
-import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.jclient.common.converter.JavaSerializedConverter;
 import ru.hh.jclient.common.converter.JsonCollectionConverter;
 import ru.hh.jclient.common.converter.JsonConverter;
@@ -251,19 +251,20 @@ public abstract class HttpClient {
       return executeRequest(request, retryCount, upstreamName);
     };
     RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor);
-    return requestBalancer.requestWithRetry(0);
+    return requestBalancer.requestWithRetry();
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, String upstreamName);
+
+  boolean isNoSessionRequired() {
+    String host = request.getUri().getHost();
+    return noSession || hostsWithSession.stream().map(Uri::create).map(Uri::getHost).noneMatch(host::equals);
+  }
 
   // getters for tools
 
   AsyncHttpClient getHttp() {
     return http;
-  }
-
-  Set<String> getHostsWithSession() {
-    return hostsWithSession;
   }
 
   HttpClientContext getContext() {
@@ -292,10 +293,6 @@ public abstract class HttpClient {
 
   boolean isExternalRequest() {
     return externalRequest;
-  }
-
-  boolean isNoSession() {
-    return noSession;
   }
 
   boolean isNoDebug() {

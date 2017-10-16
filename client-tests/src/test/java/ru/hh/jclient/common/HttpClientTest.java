@@ -404,8 +404,7 @@ public class HttpClientTest extends HttpClientTestBase {
       handler.onThrowable(new TestException());
       return null;
     });
-    http = new HttpClientBuilder(httpClient, ImmutableSet.of("http://localhost"), new SingletonStorage<>(() -> httpClientContext));
-
+    http = createHttpClientBuilder(httpClient);
     withEmptyContext();
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
