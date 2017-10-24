@@ -138,8 +138,6 @@ public class UpstreamTest {
       assertCounter(counter, 0, 0, numOfRequests * 2, 0);
 
       System.out.println("finished iteration " + t + " out of " + tests + " in " + (currentTimeMillis() - start) + " ms");
-
-      upstream.resetStats();
     }
   }
 

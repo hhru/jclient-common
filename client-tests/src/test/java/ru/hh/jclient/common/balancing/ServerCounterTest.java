@@ -28,9 +28,6 @@ public class ServerCounterTest {
 
     assertEquals(0, counter.getRequests());
     assertEquals(0, counter.getFails());
-
-    assertEquals(1, counter.getTotalRequests());
-    assertEquals(0, counter.getTotalFails());
   }
 
   @Test
@@ -42,9 +39,6 @@ public class ServerCounterTest {
 
     assertEquals(0, counter.getRequests());
     assertEquals(1, counter.getFails());
-
-    assertEquals(1, counter.getTotalRequests());
-    assertEquals(1, counter.getTotalFails());
   }
 
   @Test
@@ -82,7 +76,5 @@ public class ServerCounterTest {
   public static void assertCounter(ServerCounter counter, int requests, int fails, long totalRequests, long totalFails) {
     assertEquals("requests", requests, counter.getRequests());
     assertEquals("fails", fails, counter.getFails());
-    assertEquals("total requests", totalRequests, counter.getTotalRequests());
-    assertEquals("total fails",totalFails, counter.getTotalFails());
   }
 }

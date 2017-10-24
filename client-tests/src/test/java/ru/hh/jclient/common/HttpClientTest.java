@@ -38,11 +38,9 @@ import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
-import ru.hh.jclient.common.util.storage.SingletonStorage;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
@@ -533,5 +531,4 @@ public class HttpClientTest extends HttpClientTestBase {
     objectMapper.writeValue(out, object);
     return out.toByteArray();
   }
-
 }

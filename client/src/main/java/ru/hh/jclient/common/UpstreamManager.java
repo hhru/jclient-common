@@ -1,7 +1,6 @@
 package ru.hh.jclient.common;
 
 import ru.hh.jclient.common.balancing.Upstream;
-import ru.hh.jclient.common.balancing.UpstreamMonitoring;
 
 import java.util.Map;
 
@@ -12,5 +11,5 @@ public interface UpstreamManager {
 
   void updateUpstream(String name, String configString);
 
-  UpstreamMonitoring getMonitoring();
+  Monitoring getMonitoring();
 }
