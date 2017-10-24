@@ -7,8 +7,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
+import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.UpstreamManager;
-import ru.hh.metrics.StatsDSender;
 
 public class UpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";
@@ -69,7 +69,6 @@ public class UpstreamManagerTest {
   }
 
   private static UpstreamManager createUpstreamManager(String backend, String configString) {
-    return new BalancingUpstreamManager(singletonMap(backend, configString),
-        newSingleThreadScheduledExecutor(), mock(StatsDSender.class), "", 0);
+    return new BalancingUpstreamManager(singletonMap(backend, configString), newSingleThreadScheduledExecutor(), mock(Monitoring.class));
   }
 }

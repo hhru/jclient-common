@@ -7,6 +7,7 @@ import com.ning.http.client.uri.Uri;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static ru.hh.jclient.common.AbstractClient.HTTP_POST;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
+import ru.hh.jclient.common.Monitoring;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 import ru.hh.jclient.common.ResponseWrapper;
@@ -76,11 +77,13 @@ public class RequestBalancer {
 
   private void countStatistics(ResponseWrapper wrapper, boolean doRetry) {
     if (isServerAvailable()) {
-      UpstreamMonitoring monitoring = upstreamManager.getMonitoring();
+      Monitoring monitoring = upstreamManager.getMonitoring();
       String serverAddress = upstream.getServerAddress(currentServerIndex);
-      monitoring.addRequest(wrapper, upstream.getName(), serverAddress, !doRetry);
+      long requestTimeMs = wrapper.getTimeToLastByteMs();
+      int statusCode = wrapper.getResponse().getStatusCode();
+      monitoring.countRequest(upstream.getName(), serverAddress, requestTimeMs, statusCode, !doRetry);
       if (!triedServers.isEmpty()) {
-        monitoring.addRetry(wrapper, upstream.getName(), serverAddress, firstStatusCode, triedServers.size());
+        monitoring.countRetry(upstream.getName(), serverAddress, statusCode, firstStatusCode, triedServers.size());
       }
     }
   }

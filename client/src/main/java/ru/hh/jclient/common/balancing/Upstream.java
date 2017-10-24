@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 public class Upstream {
 
@@ -111,26 +110,6 @@ public class Upstream {
     try {
       Optional<Server> server = upstreamConfig.getServer(index);
       return server.map(Server::getCounter).orElse(null);
-    } finally {
-      configReadLock.unlock();
-    }
-  }
-
-  String getStats() {
-    configReadLock.lock();
-    try {
-      return upstreamConfig.getServers().stream()
-          .map(s -> String.format("%s : (%s, %s)", s.getAddress(), s.getCounter().getTotalRequests(), s.getCounter().getTotalFails()))
-          .collect(Collectors.joining(","));
-    } finally {
-      configReadLock.unlock();
-    }
-  }
-
-  void resetStats() {
-    configReadLock.lock();
-    try {
-      upstreamConfig.getServers().forEach(server -> server.getCounter().resetTotals());
     } finally {
       configReadLock.unlock();
     }

@@ -25,7 +25,6 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.metrics.StatsDSender;
 
 import java.net.ConnectException;
 import java.util.Map;
@@ -282,7 +281,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs) {
-    UpstreamManager upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(StatsDSender.class), "testService", 0);
+    UpstreamManager upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class));
     return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }

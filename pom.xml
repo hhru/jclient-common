@@ -19,7 +19,8 @@
         <module>client-testbase</module>
         <module>client-tests</module>
         <module>client-utils</module>		
-        <module>client-maven-enforcer</module>		
+        <module>client-maven-enforcer</module>
+        <module>client-metrics</module>
     </modules>
 
     <properties>

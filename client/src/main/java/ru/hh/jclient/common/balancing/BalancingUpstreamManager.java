@@ -5,34 +5,26 @@ import static java.util.Objects.requireNonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.UpstreamManager;
-import ru.hh.metrics.StatsDSender;
+import ru.hh.jclient.common.Monitoring;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class BalancingUpstreamManager implements UpstreamManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
 
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduledExecutor;
-  private final UpstreamMonitoring upstreamMonitoring;
+  private final Monitoring monitoring;
 
-  public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
-                                  ScheduledExecutorService scheduledExecutor,
-                                  StatsDSender statsDSender,
-                                  String serviceName,
-                                  int logStatsIntervalMs) {
+  public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring) {
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);
 
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
-    if (logStatsIntervalMs > 0) {
-      scheduledExecutor.scheduleWithFixedDelay(this::logStats, logStatsIntervalMs, logStatsIntervalMs, TimeUnit.MILLISECONDS);
-    }
-    upstreamMonitoring = new UpstreamMonitoring(statsDSender, serviceName);
+    this.monitoring = requireNonNull(monitoring, "monitoring must not be null");
   }
 
   @Override
@@ -64,15 +56,8 @@ public class BalancingUpstreamManager implements UpstreamManager {
   }
 
   @Override
-  public UpstreamMonitoring getMonitoring() {
-    return upstreamMonitoring;
-  }
-
-  private void logStats() {
-    upstreams.forEach((host, upstream) -> {
-      LOGGER.info("upstream {} servers: {}", host, upstream.getStats());
-      upstream.resetStats();
-    });
+  public Monitoring getMonitoring() {
+    return monitoring;
   }
 
   private static String getNameWithoutScheme(String host) {

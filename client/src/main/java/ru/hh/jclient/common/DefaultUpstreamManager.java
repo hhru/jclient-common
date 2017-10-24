@@ -1,7 +1,6 @@
 package ru.hh.jclient.common;
 
 import ru.hh.jclient.common.balancing.Upstream;
-import ru.hh.jclient.common.balancing.UpstreamMonitoring;
 
 import java.util.Collections;
 import java.util.Map;
@@ -22,7 +21,7 @@ class DefaultUpstreamManager implements UpstreamManager {
   }
 
   @Override
-  public UpstreamMonitoring getMonitoring() {
+  public Monitoring getMonitoring() {
     return null;
   }
 }
