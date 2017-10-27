@@ -57,6 +57,18 @@ public class UpstreamTest {
   }
 
   @Test
+  public void acquireSuspendedServer() throws Exception {
+    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
+    upstream.getConfig().getServers().forEach(server -> server.suspend(1, mock(ScheduledExecutorService.class)));
+
+    int last = upstream.acquireServer();
+    assertEquals(-1, last);
+
+    last = upstream.acquireServer();
+    assertEquals(-1, last);
+  }
+
+  @Test
   public void acquireServerWithExcluding() throws Exception {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
