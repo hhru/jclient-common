@@ -67,12 +67,15 @@ public class Upstream {
     }
   }
 
-  private int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, int prevIndex) {
+  private int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, int lastIndex) {
     int minIndex = -1;
     int numOfServers = servers.size();
     float minLoad = 0;
+    if (lastIndex < 0) {
+      lastIndex = 0;
+    }
     for (int i = 0; i < numOfServers; i++) {
-      int index = (prevIndex + i) % numOfServers;
+      int index = (lastIndex + i) % numOfServers;
       Server server = servers.get(index);
       if (server != null && server.isActive() && !excludedServers.contains(index)) {
         int requests = server.getCounter().getRequests();
