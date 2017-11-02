@@ -17,27 +17,34 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRequest(String upstreamName, String serverAddress, long requestTimeMs, int statusCode, boolean isRequestFinal) {
-    Map<String, String> tags = createCommonTags(serviceName, upstreamName, serverAddress, statusCode);
-    tags.put("final", String.valueOf(isRequestFinal));
+  public void countRequest(String upstreamName, String serverAddress, int statusCode, boolean isRequestFinal) {
+    Map<String, String> tags = getCommonTags(serviceName, upstreamName);
+    tags.put("server", serverAddress);
     tags.put("status", String.valueOf(statusCode));
-    statsDSender.sendTiming("http.client.requests", requestTimeMs, toTagsArray(tags));
+    tags.put("final", String.valueOf(isRequestFinal));
+    statsDSender.sendCounter("http.client.requests", 1, toTagsArray(tags));
+  }
+
+  @Override
+  public void countRequestTime(String upstreamName, long requestTimeMs) {
+    Map<String, String> tags = getCommonTags(serviceName, upstreamName);
+    statsDSender.sendTiming("http.client.request.time", requestTimeMs, toTagsArray(tags));
   }
 
   @Override
   public void countRetry(String upstreamName, String serverAddress, int statusCode, int firstStatusCode, int retryCount) {
-    Map<String, String> tags = createCommonTags(serviceName, upstreamName, serverAddress, statusCode);
+    Map<String, String> tags = getCommonTags(serviceName, upstreamName);
+    tags.put("server", serverAddress);
+    tags.put("status", String.valueOf(statusCode));
     tags.put("first_upstream_status", String.valueOf(firstStatusCode));
     tags.put("tries", String.valueOf(retryCount));
     statsDSender.sendCounter("http.client.retries", 1, toTagsArray(tags));
   }
 
-  private static Map<String, String> createCommonTags(String serviceName, String upstreamName, String serverAddress, int statusCode) {
+  private static Map<String, String> getCommonTags(String serviceName, String upstreamName) {
     Map<String, String> tags = new HashMap<>();
     tags.put("app", serviceName);
     tags.put("upstream", upstreamName);
-    tags.put("server", serverAddress);
-    tags.put("status", String.valueOf(statusCode));
     return tags;
   }
 
