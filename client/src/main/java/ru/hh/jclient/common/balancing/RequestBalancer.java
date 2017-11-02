@@ -79,9 +79,12 @@ public class RequestBalancer {
     if (isServerAvailable()) {
       Monitoring monitoring = upstreamManager.getMonitoring();
       String serverAddress = upstream.getServerAddress(currentServerIndex);
-      long requestTimeMs = wrapper.getTimeToLastByteMs();
       int statusCode = wrapper.getResponse().getStatusCode();
-      monitoring.countRequest(upstream.getName(), serverAddress, requestTimeMs, statusCode, !doRetry);
+      monitoring.countRequest(upstream.getName(), serverAddress, statusCode, !doRetry);
+
+      long requestTimeMs = wrapper.getTimeToLastByteMs();
+      monitoring.countRequestTime(upstream.getName(), requestTimeMs);
+
       if (!triedServers.isEmpty()) {
         monitoring.countRetry(upstream.getName(), serverAddress, statusCode, firstStatusCode, triedServers.size());
       }
