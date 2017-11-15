@@ -1,8 +1,8 @@
-package ru.hh.jclient.common.converter;
+package ru.hh.jclient.common.responseconverter;
 
 import com.google.common.net.MediaType;
-import com.ning.http.client.Response;
 import ru.hh.jclient.common.util.ClassesCache;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
@@ -16,10 +16,6 @@ import java.util.Set;
 
 import static com.google.common.collect.ImmutableSet.of;
 
-/**
- * @deprecated use same class from 'ru.hh.jclient.common.responseconverter'
- */
-@Deprecated
 public class JavaSerializedConverter<T> extends SingleTypeConverter<T> {
   private static final Set<MediaType> MEDIA_TYPES = of(MediaType.parse("application/x-java-serialized-object"));
 

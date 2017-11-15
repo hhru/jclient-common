@@ -5,12 +5,12 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import javax.xml.bind.JAXBContext;
-import ru.hh.jclient.common.converter.TypeConverter;
-import ru.hh.jclient.common.converter.JsonCollectionConverter;
-import ru.hh.jclient.common.converter.JsonConverter;
-import ru.hh.jclient.common.converter.PlainTextConverter;
-import ru.hh.jclient.common.converter.ProtobufConverter;
-import ru.hh.jclient.common.converter.XmlConverter;
+import ru.hh.jclient.common.responseconverter.TypeConverter;
+import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
+import ru.hh.jclient.common.responseconverter.JsonConverter;
+import ru.hh.jclient.common.responseconverter.PlainTextConverter;
+import ru.hh.jclient.common.responseconverter.ProtobufConverter;
+import ru.hh.jclient.common.responseconverter.XmlConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,10 +20,16 @@ public class ResultProcessor<T> {
 
   private HttpClient httpClient;
   private TypeConverter<T> converter;
+  private ru.hh.jclient.common.converter.TypeConverter<T> oldConverter;
 
   ResultProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
     this.converter = requireNonNull(converter, "converter must not be null");
+  }
+
+  ResultProcessor(HttpClient httpClient, ru.hh.jclient.common.converter.TypeConverter<T> converter) {
+    this.httpClient = requireNonNull(httpClient, "http client must not be null");
+    this.oldConverter = requireNonNull(converter, "converter must not be null");
   }
 
   HttpClient getHttpClient() {
@@ -34,6 +40,10 @@ public class ResultProcessor<T> {
     return converter;
   }
 
+  ru.hh.jclient.common.converter.TypeConverter<T> getOldConverter() {
+    return oldConverter;
+  }
+
   /**
    * Returns future containing expected result or {@link ClientResponseException}.
    *
@@ -42,7 +52,7 @@ public class ResultProcessor<T> {
    * @throws ResponseConverterException if converter failed to process response
    */
   public CompletableFuture<T> result() {
-    return httpClient.requestRaw().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
+    return httpClient.unconverted().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
   }
 
   /**
@@ -52,7 +62,7 @@ public class ResultProcessor<T> {
    * @throws ResponseConverterException if converter failed to process response
    */
   public CompletableFuture<ResultWithResponse<T>> resultWithResponse() {
-    return httpClient.requestRaw().thenApply(this::wrapOrNull);
+    return httpClient.unconverted().thenApply(this::wrapOrNull);
   }
 
   /**
@@ -91,7 +101,13 @@ public class ResultProcessor<T> {
 
   private ResultWithResponse<T> wrap(Response response) {
     try {
-      ResultWithResponse<T> result = converter.converterFunction().apply(response.getDelegate());
+      ResultWithResponse<T> result;
+      if (converter != null) {
+        result = converter.converterFunction().apply(response);
+      }
+      else {
+        result = oldConverter.converterFunction().apply(response.getDelegate());
+      }
       httpClient.getDebug().onResponseConverted(result.get());
       return result;
     }

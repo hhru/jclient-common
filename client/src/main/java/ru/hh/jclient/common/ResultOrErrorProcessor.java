@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.HttpClient.OK_RANGE;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import ru.hh.jclient.common.converter.TypeConverter;
+import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.google.common.collect.Range;
@@ -13,11 +13,17 @@ public class ResultOrErrorProcessor<T, E> {
 
   private ResultProcessor<T> responseProcessor;
   private TypeConverter<E> errorConverter;
+  private ru.hh.jclient.common.converter.TypeConverter<E> oldErrorConverter;
   private Range<Integer> errorsRange = Range.greaterThan(OK_RANGE.upperEndpoint());
 
   ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
     this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
     this.errorConverter = requireNonNull(errorConverter, "errorConverter must not be null");
+  }
+
+  ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, ru.hh.jclient.common.converter.TypeConverter<E> errorConverter) {
+    this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
+    this.oldErrorConverter = requireNonNull(errorConverter, "errorConverter must not be null");
   }
 
   /**
@@ -57,7 +63,7 @@ public class ResultOrErrorProcessor<T, E> {
    * @throws ResponseConverterException if failed to process response with either normal or error converter
    */
   public CompletableFuture<ResultOrErrorWithResponse<T, E>> resultWithResponse() {
-    return responseProcessor.getHttpClient().requestRaw().thenApply(this::wrapResponseAndError);
+    return responseProcessor.getHttpClient().unconverted().thenApply(this::wrapResponseAndError);
   }
 
   /**
@@ -83,7 +89,13 @@ public class ResultOrErrorProcessor<T, E> {
     Optional<E> errorValue;
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
-        value = responseProcessor.getConverter().converterFunction().apply(response.getDelegate()).get();
+        if (responseProcessor.getConverter() != null) {
+          value = responseProcessor.getConverter().converterFunction().apply(response).get();
+        }
+        else {
+          value = responseProcessor.getOldConverter().converterFunction().apply(response.getDelegate()).get();
+        }
+
         errorValue = Optional.empty();
 
         responseProcessor.getHttpClient().getDebug().onResponseConverted(value);
@@ -111,7 +123,10 @@ public class ResultOrErrorProcessor<T, E> {
 
   private Optional<E> parseError(Response response) throws Exception {
     if (errorsRange.contains(response.getStatusCode())) {
-      return errorConverter.converterFunction().apply(response.getDelegate()).get();
+      if (errorConverter != null) {
+        return errorConverter.converterFunction().apply(response).get();
+      }
+      return oldErrorConverter.converterFunction().apply(response.getDelegate()).get();
     }
     return Optional.empty();
   }
