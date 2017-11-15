@@ -14,6 +14,14 @@ public class Param {
     this.delegate = new com.ning.http.client.Param(name, value);
   }
 
+  public String getName() {
+    return delegate.getName();
+  }
+
+  public String getValue() {
+    return delegate.getValue();
+  }
+
   @Override
   public boolean equals(Object obj) {
     return Objects.equals(obj, this.delegate);

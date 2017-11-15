@@ -3,7 +3,6 @@ package ru.hh.jclient.common;
 import java.net.ConnectException;
 import java.util.concurrent.TimeoutException;
 import org.jboss.netty.channel.ConnectTimeoutException;
-import com.ning.http.client.uri.Uri;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_BAD_GATEWAY;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 

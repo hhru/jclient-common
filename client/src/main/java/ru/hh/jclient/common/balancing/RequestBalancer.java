@@ -1,17 +1,17 @@
 package ru.hh.jclient.common.balancing;
 
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.uri.Uri;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
+import ru.hh.jclient.common.Request;
+import ru.hh.jclient.common.RequestBuilder;
+import ru.hh.jclient.common.Response;
+import ru.hh.jclient.common.ResponseUtils;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.UpstreamManager;
-
+import ru.hh.jclient.common.Uri;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -95,7 +95,7 @@ public class RequestBalancer {
 
   private static Response getServerNotAvailableResponse(Request request, String upstreamName) {
     Uri uri = request.getUri();
-    return new MappedTransportErrorResponse(502, "No available servers for upstream: " + upstreamName, uri);
+    return ResponseUtils.convert(new MappedTransportErrorResponse(502, "No available servers for upstream: " + upstreamName, uri));
   }
 
   private Request getBalancedRequest(Request request) {

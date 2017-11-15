@@ -7,10 +7,6 @@ import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.MessageLite;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.ning.http.client.uri.Uri;
 import static java.util.Objects.requireNonNull;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
@@ -243,7 +239,7 @@ public abstract class HttpClient {
    *
    * @return response
    */
-  public CompletableFuture<Response> request() {
+  public CompletableFuture<Response> requestRaw() {
     RequestExecutor requestExecutor = (request, retryCount, upstreamName) -> {
       if (retryCount > 0) {
         debug = context.getDebugSupplier().get();
@@ -252,6 +248,14 @@ public abstract class HttpClient {
     };
     RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor);
     return requestBalancer.requestWithRetry();
+  }
+
+  /**
+   * @deprecated use {@link #requestRaw()}
+   */
+  @Deprecated
+  public CompletableFuture<com.ning.http.client.Response> request() {
+    return requestRaw().thenApply(Response::getDelegate);
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, String upstreamName);

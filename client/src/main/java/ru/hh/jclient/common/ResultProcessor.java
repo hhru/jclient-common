@@ -15,7 +15,6 @@ import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessage;
-import com.ning.http.client.Response;
 
 public class ResultProcessor<T> {
 
@@ -43,7 +42,7 @@ public class ResultProcessor<T> {
    * @throws ResponseConverterException if converter failed to process response
    */
   public CompletableFuture<T> result() {
-    return httpClient.request().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
+    return httpClient.requestRaw().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
   }
 
   /**
@@ -53,7 +52,7 @@ public class ResultProcessor<T> {
    * @throws ResponseConverterException if converter failed to process response
    */
   public CompletableFuture<ResultWithResponse<T>> resultWithResponse() {
-    return httpClient.request().thenApply(this::wrapOrNull);
+    return httpClient.requestRaw().thenApply(this::wrapOrNull);
   }
 
   /**
@@ -92,7 +91,7 @@ public class ResultProcessor<T> {
 
   private ResultWithResponse<T> wrap(Response response) {
     try {
-      ResultWithResponse<T> result = converter.converterFunction().apply(response);
+      ResultWithResponse<T> result = converter.converterFunction().apply(response.getDelegate());
       httpClient.getDebug().onResponseConverted(result.get());
       return result;
     }

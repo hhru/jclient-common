@@ -1,6 +1,6 @@
 package ru.hh.jclient.common.exception;
 
-import com.ning.http.client.Response;
+import ru.hh.jclient.common.Response;
 
 public class NoContentTypeException extends ClientResponseException {
 

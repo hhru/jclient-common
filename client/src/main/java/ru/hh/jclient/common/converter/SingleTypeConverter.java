@@ -2,7 +2,7 @@ package ru.hh.jclient.common.converter;
 
 import java.util.Collection;
 import java.util.Optional;
-
+import ru.hh.jclient.common.ResponseUtils;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
@@ -20,14 +20,14 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
 
   /**
    * Returns list of allowed media types. Response' "Content-Type" header will be checked against this list.
-   * 
+   *
    * @return list of allowed media types
    */
   protected abstract Collection<MediaType> getMediaTypes();
 
   /**
    * Returns converter function that, ignoring content type, just converts the response.
-   * 
+   *
    * @return converter function
    */
   public abstract FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction();
@@ -46,11 +46,11 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
   private Response checkContentType(Response r) throws Exception {
     String contentType = r.getHeader(HttpHeaders.CONTENT_TYPE);
     if (contentType == null) {
-      throw new NoContentTypeException(r);
+      throw new NoContentTypeException(ResponseUtils.convert(r));
     }
     MediaType mt = MediaType.parse(contentType);
     if (getMediaTypes().stream().noneMatch(m -> mt.is(m))) {
-      throw new UnexpectedContentTypeException(r, mt, getMediaTypes());
+      throw new UnexpectedContentTypeException(ResponseUtils.convert(r), mt, getMediaTypes());
     }
     return r;
   }

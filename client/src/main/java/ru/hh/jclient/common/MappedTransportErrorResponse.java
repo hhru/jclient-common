@@ -31,6 +31,10 @@ public class MappedTransportErrorResponse implements Response {
     HEADERS.add("Content-Type", CONTENT_TYPE);
   }
 
+  public MappedTransportErrorResponse(int statusCode, String statusText, ru.hh.jclient.common.Uri uri) {
+    this(statusCode, statusText, uri.getDelegate());
+  }
+
   public MappedTransportErrorResponse(int statusCode, String statusText, Uri uri) {
     this.statusCode = statusCode;
     this.statusText = statusText;

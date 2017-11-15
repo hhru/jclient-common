@@ -2,9 +2,10 @@ package ru.hh.jclient.common;
 
 import static java.util.stream.Collectors.toList;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.util.UriEncoder;
 
 public class RequestBuilder {
@@ -96,8 +97,14 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder setHeaders(Map<String, Collection<String>> headers) {
-    delegate.setHeaders(headers);
+  public RequestBuilder setHeaders(Map<? extends CharSequence, ? extends Iterable<?>> headers) {
+    FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
+    for (Entry<? extends CharSequence, ? extends Iterable<?>> entry : headers.entrySet()) {
+      for (Object value : entry.getValue()) {
+        map.add(entry.getKey().toString(), value.toString());
+      }
+    }
+    delegate.setHeaders(map);
     return this;
   }
 

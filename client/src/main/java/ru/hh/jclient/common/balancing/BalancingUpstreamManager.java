@@ -1,10 +1,10 @@
 package ru.hh.jclient.common.balancing;
 
-import com.ning.http.client.uri.Uri;
 import static java.util.Objects.requireNonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.UpstreamManager;
+import ru.hh.jclient.common.Uri;
 import ru.hh.jclient.common.Monitoring;
 
 import java.util.Collections;
