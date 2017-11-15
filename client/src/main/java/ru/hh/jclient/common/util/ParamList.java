@@ -8,6 +8,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated use list of {@link ru.hh.jclient.common.Param} object
+ */
+@Deprecated
 public class ParamList {
 
   private List<Param> params = new ArrayList<>();

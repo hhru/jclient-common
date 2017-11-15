@@ -1,14 +1,9 @@
 package ru.hh.jclient.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import com.ning.http.client.RequestBuilder;
 import ru.hh.jclient.common.util.jersey.UriBuilder;
 
-/**
- * @deprecated use {@link JClientBase}
- */
-@Deprecated
-public abstract class AbstractClient {
+public abstract class JClientBase {
 
   public static final String HTTP_GET = "GET";
   public static final String HTTP_POST = "POST";
@@ -18,12 +13,12 @@ public abstract class AbstractClient {
   protected String host;
   protected HttpClientBuilder http;
 
-  protected AbstractClient(String host, HttpClientBuilder http) {
+  protected JClientBase(String host, HttpClientBuilder http) {
     this.host = host;
     this.http = http;
   }
 
-  protected AbstractClient(String host, String path, HttpClientBuilder http) {
+  protected JClientBase(String host, String path, HttpClientBuilder http) {
     this(host + path, http);
   }
 
