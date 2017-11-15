@@ -184,4 +184,12 @@ public class ResultProcessor<T> {
   public <E> ResultOrErrorProcessor<T, E> orError(TypeConverter<E> converter) {
     return new ResultOrErrorProcessor<>(this, converter);
   }
+
+  /**
+   * @deprecated use {@link #orError(TypeConverter)}
+   */
+  @Deprecated
+  public <E> ResultOrErrorProcessor<T, E> orError(ru.hh.jclient.common.converter.TypeConverter<E> converter) {
+    return new ResultOrErrorProcessor<>(this, converter);
+  }
 }
