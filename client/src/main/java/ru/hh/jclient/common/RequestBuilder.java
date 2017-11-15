@@ -2,6 +2,8 @@ package ru.hh.jclient.common;
 
 import static java.util.stream.Collectors.toList;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,23 +34,38 @@ public class RequestBuilder {
     delegate = new com.ning.http.client.RequestBuilder(prototype.getDelegate(), UriEncoder.uriEncoder(disableUrlEncoding));
   }
 
-  //
-  // public RequestBuilder addBodyPart(Part part) {
-  // return super.addBodyPart(part);
-  // }
+  public RequestBuilder setCookies(Collection<Cookie> cookies) {
+    delegate.setCookies(cookies.stream().map(Cookie::getDelegate).collect(toList()));
+    return this;
+  }
 
   public RequestBuilder addCookie(Cookie cookie) {
     delegate.addCookie(cookie.getDelegate());
     return this;
   }
 
-  public RequestBuilder addHeader(String name, String value) {
-    delegate.addHeader(name, value);
+  public RequestBuilder addOrReplaceCookie(Cookie c) {
+    delegate.addOrReplaceCookie(c.getDelegate());
+    return this;
+  }
+
+  public RequestBuilder resetCookies() {
+    delegate.resetCookies();
+    return this;
+  }
+
+  public RequestBuilder addHeader(CharSequence name, String value) {
+    delegate.addHeader(name.toString(), value);
     return this;
   }
 
   public RequestBuilder addFormParam(String key, String value) {
     delegate.addFormParam(key, value);
+    return this;
+  }
+
+  public RequestBuilder resetFormParams() {
+    delegate.resetFormParams();
     return this;
   }
 
@@ -72,6 +89,11 @@ public class RequestBuilder {
     return this;
   }
 
+  public RequestBuilder resetQuery() {
+    delegate.resetQuery();
+    return this;
+  }
+
   public Request build() {
     return new Request(delegate.build());
   }
@@ -92,8 +114,8 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder setHeader(String name, String value) {
-    delegate.setHeader(name, value);
+  public RequestBuilder setHeader(CharSequence name, String value) {
+    delegate.setHeader(name.toString(), value);
     return this;
   }
 
@@ -105,6 +127,11 @@ public class RequestBuilder {
       }
     }
     delegate.setHeaders(map);
+    return this;
+  }
+
+  public RequestBuilder clearHeaders() {
+    delegate.setHeaders((FluentCaseInsensitiveStringsMap) null);
     return this;
   }
 
@@ -128,23 +155,38 @@ public class RequestBuilder {
     return this;
   }
 
+  public RequestBuilder setUri(Uri uri) {
+    delegate.setUri(uri.getDelegate());
+    return this;
+  }
+
+  public RequestBuilder setAddress(InetAddress address) {
+    delegate.setInetAddress(address);
+    return this;
+  }
+
+  public RequestBuilder setLocalAddress(InetAddress address) {
+    delegate.setLocalInetAddress(address);
+    return this;
+  }
+
   public RequestBuilder setVirtualHost(String virtualHost) {
     delegate.setVirtualHost(virtualHost);
     return this;
   }
 
-  public RequestBuilder setFollowRedirects(boolean followRedirects) {
+  public RequestBuilder setFollowRedirect(boolean followRedirects) {
     delegate.setFollowRedirects(followRedirects);
-    return this;
-  }
-
-  public RequestBuilder addOrReplaceCookie(Cookie c) {
-    delegate.addOrReplaceCookie(c.getDelegate());
     return this;
   }
 
   public RequestBuilder setRequestTimeout(int requestTimeout) {
     delegate.setRequestTimeout(requestTimeout);
+    return this;
+  }
+
+  public RequestBuilder setRangeOffset(long rangeOffset) {
+    delegate.setRangeOffset(rangeOffset);
     return this;
   }
 
