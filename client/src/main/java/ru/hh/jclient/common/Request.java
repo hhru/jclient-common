@@ -27,8 +27,8 @@ public class Request {
     return delegate.getMethod();
   }
 
-  public String getRelativeUrl() {
-    return delegate.getUri().toRelativeUrl();
+  public Uri getUri() {
+    return new Uri(delegate.getUri());
   }
 
   public String getUrl() {

@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,15 @@ public class Response {
    */
   public String getResponseBody() throws IOException {
     return delegate.getResponseBody();
+  }
+
+  /**
+   * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link URI} will be the last valid redirect url.
+   *
+   * @return the request {@link Uri}.
+   */
+  public Uri getUri() {
+    return new Uri(delegate.getUri());
   }
 
   /**

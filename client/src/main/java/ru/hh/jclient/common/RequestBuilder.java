@@ -136,6 +136,11 @@ public class RequestBuilder {
     return this;
   }
 
+  public RequestBuilder setRequestTimeout(int requestTimeout) {
+    delegate.setRequestTimeout(requestTimeout);
+    return this;
+  }
+
   com.ning.http.client.RequestBuilder getDelegate() {
     return delegate;
   }
