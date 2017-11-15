@@ -148,6 +148,11 @@ public class RequestBuilder {
     return this;
   }
 
+  public RequestBuilder setContentLength(int contentLength) {
+    delegate.setContentLength(contentLength);
+    return this;
+  }
+
   com.ning.http.client.RequestBuilder getDelegate() {
     return delegate;
   }
