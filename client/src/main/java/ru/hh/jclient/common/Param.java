@@ -14,6 +14,10 @@ public class Param {
     this.delegate = new com.ning.http.client.Param(name, value);
   }
 
+  public static Param of(Object name, Object value) {
+    return new Param(name == null ? null : name.toString(), value == null ? null : value.toString());
+  }
+
   public String getName() {
     return delegate.getName();
   }
