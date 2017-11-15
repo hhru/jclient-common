@@ -13,7 +13,7 @@ public class Uri {
   }
 
   public static Uri create(String originalUrl) {
-    return create(null, originalUrl);
+    return new Uri(com.ning.http.client.uri.Uri.create(null, originalUrl));
   }
 
   public static Uri create(Uri context, final String originalUrl) {
@@ -62,6 +62,9 @@ public class Uri {
 
   @Override
   public String toString() {
+    if (delegate == null) { // can happen when mock response in tests
+      return null;
+    }
     return delegate.toString();
   }
 
