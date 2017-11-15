@@ -7,9 +7,6 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -67,7 +64,7 @@ class HttpClientImpl extends HttpClient {
 
     Transfers transfers = getStorages().prepare();
     CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebug(), transfers, getHttp().getConfig(), callbackExecutor);
-    getHttp().executeRequest(request, handler);
+    getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
   }
@@ -86,7 +83,7 @@ class HttpClientImpl extends HttpClient {
       headers.remove(X_HH_DEBUG);
     }
 
-    headers.addAll(request.getHeaders());
+    request.getHeaders().entrySet().forEach(e -> headers.add(e.getKey(), e.getValue()));
 
     if (isNoSessionRequired()) {
       headers.remove(HH_PROTO_SESSION);
@@ -145,7 +142,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     @Override
-    public ResponseWrapper onCompleted(Response response) throws Exception {
+    public ResponseWrapper onCompleted(com.ning.http.client.Response response) throws Exception {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
 
@@ -158,7 +155,7 @@ class HttpClientImpl extends HttpClient {
 
     @Override
     public void onThrowable(Throwable t) {
-      Response response = TransportExceptionMapper.map(t, request.getUri());
+      com.ning.http.client.Response response = TransportExceptionMapper.map(t, request.getUri());
       long timeToLastByteMs = getTimeToLastByte();
 
       mdcCopy.doInContext(
@@ -181,8 +178,8 @@ class HttpClientImpl extends HttpClient {
       completeExceptionally(t);
     }
 
-    private ResponseWrapper proceedWithResponse(Response response, long responseTimeMs) {
-      Response debuggedResponse = requestDebug.onResponse(config, response);
+    private ResponseWrapper proceedWithResponse(com.ning.http.client.Response response, long responseTimeMs) {
+      Response debuggedResponse = requestDebug.onResponse(config, new Response(response));
       ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMs);
       // complete promise in a separate thread not to block ning thread
       callbackExecutor.execute(() -> {

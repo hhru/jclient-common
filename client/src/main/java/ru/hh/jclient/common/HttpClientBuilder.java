@@ -3,7 +3,6 @@ package ru.hh.jclient.common;
 import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Request;
 import static java.util.Objects.requireNonNull;
 import ru.hh.jclient.common.util.storage.Storage;
 
@@ -47,7 +46,27 @@ public class HttpClientBuilder {
   /**
    * Specifies request to be executed. This is a starting point of request execution chain.
    *
-   * @param request to execute
+   * @param request
+   *          to execute
+   *
+   * @deprecated use {@link #with(Request)}
+   */
+  @Deprecated
+  public HttpClient with(com.ning.http.client.Request request) {
+    return new HttpClientImpl(
+        http,
+        requireNonNull(new Request(request), "request must not be null"),
+        hostsWithSession,
+        upstreamManager,
+        contextSupplier,
+        callbackExecutor);
+  }
+
+  /**
+   * Specifies request to be executed. This is a starting point of request execution chain.
+   *
+   * @param request
+   *          to execute
    */
   public HttpClient with(Request request) {
     return new HttpClientImpl(

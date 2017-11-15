@@ -8,7 +8,6 @@ import ru.hh.jclient.common.converter.TypeConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.google.common.collect.Range;
-import com.ning.http.client.Response;
 
 public class ResultOrErrorProcessor<T, E> {
 
@@ -23,7 +22,7 @@ public class ResultOrErrorProcessor<T, E> {
 
   /**
    * Specifies HTTP status code that is eligible for ERROR response parsing. It must not intersect with {@link HttpClient#OK_RANGE}.
-   * 
+   *
    * @param status HTTP status code that converter will be used for
    */
   public ResultOrErrorProcessor<T, E> forStatus(int status) {
@@ -32,7 +31,7 @@ public class ResultOrErrorProcessor<T, E> {
 
   /**
    * Specifies range of HTTP status codes that are eligible for ERROR response parsing. It must not intersect with {@link HttpClient#OK_RANGE}.
-   * 
+   *
    * @param status HTTP status codes that converter will be used for
    */
   public ResultOrErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
@@ -50,15 +49,15 @@ public class ResultOrErrorProcessor<T, E> {
    * <li>error result, if HTTP status code is NOT in {@link HttpClient#OK_RANGE}, otherwise {@link Optional#empty()}</li>
    * <li>response object</li>
    * </ul>
-   * 
+   *
    * By default ERROR result will be parsed if HTTP status code is not in {@link HttpClient#OK_RANGE}. More specific range can be specified using
    * {@link #forStatus(Range)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
-   * 
+   *
    * @return {@link ResultOrErrorWithResponse} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter
    */
   public CompletableFuture<ResultOrErrorWithResponse<T, E>> resultWithResponse() {
-    return responseProcessor.getHttpClient().request().thenApply(this::wrapResponseAndError);
+    return responseProcessor.getHttpClient().requestRaw().thenApply(this::wrapResponseAndError);
   }
 
   /**
@@ -68,10 +67,10 @@ public class ResultOrErrorProcessor<T, E> {
    * <li>error result, if HTTP status code is NOT in {@link HttpClient#OK_RANGE}, otherwise {@link Optional#empty()}</li>
    * <li>response status code</li>
    * </ul>
-   * 
+   *
    * By default ERROR result will be parsed if HTTP status code is not in {@link HttpClient#OK_RANGE}. More specific range can be specified using
    * {@link #forStatus(Range)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
-   * 
+   *
    * @return {@link ResultOrErrorWithStatus} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter
    */
@@ -84,7 +83,7 @@ public class ResultOrErrorProcessor<T, E> {
     Optional<E> errorValue;
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
-        value = responseProcessor.getConverter().converterFunction().apply(response).get();
+        value = responseProcessor.getConverter().converterFunction().apply(response.getDelegate()).get();
         errorValue = Optional.empty();
 
         responseProcessor.getHttpClient().getDebug().onResponseConverted(value);
@@ -95,7 +94,7 @@ public class ResultOrErrorProcessor<T, E> {
 
         responseProcessor.getHttpClient().getDebug().onResponseConverted(errorValue);
       }
-      return new ResultOrErrorWithResponse<T, E>(value, errorValue, response);
+      return new ResultOrErrorWithResponse<>(value, errorValue, response);
     }
     catch (ClientResponseException e) {
       throw e;
@@ -112,7 +111,7 @@ public class ResultOrErrorProcessor<T, E> {
 
   private Optional<E> parseError(Response response) throws Exception {
     if (errorsRange.contains(response.getStatusCode())) {
-      return errorConverter.converterFunction().apply(response).get();
+      return errorConverter.converterFunction().apply(response.getDelegate()).get();
     }
     return Optional.empty();
   }

@@ -1,7 +1,5 @@
 package ru.hh.jclient.common;
 
-import com.ning.http.client.Response;
-
 public class ResponseWrapper {
   private Response response;
   private long timeToLastByteMs;

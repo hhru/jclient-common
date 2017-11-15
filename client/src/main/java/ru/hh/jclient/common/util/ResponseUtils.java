@@ -1,7 +1,7 @@
 package ru.hh.jclient.common.util;
 
 import com.google.common.base.MoreObjects;
-import com.ning.http.client.Response;
+import ru.hh.jclient.common.Response;
 
 public class ResponseUtils {
 

@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.exception;
 
 import static java.lang.String.format;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.util.ResponseUtils;
-import com.ning.http.client.Response;
 
 public class ClientResponseException extends RuntimeException {
 
