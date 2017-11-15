@@ -24,8 +24,16 @@ public class ResultWithResponse<T> extends ResultWithStatus<T> {
   /**
    * @return response object
    */
-  public Response getResponse() {
+  public Response unconverted() {
     return response;
+  }
+
+  /**
+   * @deprecated use {@link #unconverted()}
+   */
+  @Deprecated
+  public com.ning.http.client.Response getResponse() {
+    return response.getDelegate();
   }
 
   /**
