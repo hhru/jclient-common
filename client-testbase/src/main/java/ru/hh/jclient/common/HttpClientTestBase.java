@@ -6,7 +6,6 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -23,12 +22,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
-import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
@@ -41,7 +38,7 @@ import com.ning.http.client.Response;
 public class HttpClientTestBase {
 
   static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
-  static HttpClientBuilder http;
+  public static HttpClientBuilder http;
   static HttpClientContext httpClientContext;
   static TestRequestDebug debug = new TestRequestDebug(true);
 
