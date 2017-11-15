@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -31,6 +30,7 @@ public class UpstreamConfig {
   private int connectTimeoutMs;
   private int requestTimeoutMs;
 
+  private RetryPolicy retryPolicy = new RetryPolicy();
   private final List<Server> servers = new ArrayList<>();
 
   static UpstreamConfig parse(String configString) {
@@ -47,6 +47,10 @@ public class UpstreamConfig {
       upstreamConfig.failTimeoutMs = parseAndConvertToMillisOrFallback(configMap.get("fail_timeout_sec"), DEFAULT_FAIL_TIMEOUT_MS);
       upstreamConfig.connectTimeoutMs = parseAndConvertToMillisOrFallback(configMap.get("connect_timeout_sec"), DEFAULT_CONNECT_TIMEOUT_MS);
       upstreamConfig.requestTimeoutMs = parseAndConvertToMillisOrFallback(configMap.get("request_timeout_sec"), DEFAULT_REQUEST_TIMEOUT_MS);
+
+      if (configMap.containsKey("retry_policy")) {
+        upstreamConfig.retryPolicy.update(configMap.get("retry_policy"));
+      }
 
       for (int i = 1; i < configs.length; i++) {
         if (!isNullOrEmpty(configs[i].trim())) {
@@ -68,8 +72,12 @@ public class UpstreamConfig {
     }
 
     maxTries = newConfig.maxTries;
-    failTimeoutMs = newConfig.failTimeoutMs;
     maxFails = newConfig.maxFails;
+    maxTimeoutTries = newConfig.maxTimeoutTries;
+    failTimeoutMs = newConfig.failTimeoutMs;
+    connectTimeoutMs = newConfig.connectTimeoutMs;
+    requestTimeoutMs = newConfig.requestTimeoutMs;
+    retryPolicy = newConfig.retryPolicy;
 
     Map<String, Server> newAddressToServerMap = newConfig.servers
         .stream()
@@ -123,8 +131,8 @@ public class UpstreamConfig {
     return requestTimeoutMs;
   }
 
-  Optional<Server> getServer(int index) {
-    return Optional.ofNullable(servers.get(index));
+  public RetryPolicy getRetryPolicy() {
+    return retryPolicy;
   }
 
   List<Server> getServers() {

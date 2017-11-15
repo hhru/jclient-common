@@ -61,28 +61,11 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = ExecutionException.class)
-  public void retryConnectTimeoutShouldFailIfNoServerAvailable() throws Exception {
-    createHttpClientBuilder("max_tries=2 max_fails=1 fail_timeout_sec=0.01 | server=http://server");
-
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          failWith(new ConnectTimeoutException("Connect timed out 1"), iom);
-          return null;
-        })
-        .then(iom -> {
-          failWith(new ConnectTimeoutException("Connect timed out 2"), iom);
-          return null;
-        });
-
-    getTestClient().get();
-  }
-
   @Test
-  public void retryConnectTimeoutForMultipleServers() throws Exception {
+  public void retryConnectTimeoutException() throws Exception {
     createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
-    Request[] request = mockConnectTimeoutRequest();
+    Request[] request = mockRequestWithConnectTimeoutResponse();
 
     getTestClient().get();
 
@@ -94,10 +77,10 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   @Test
-  public void retryConnectTimeoutForNonIdempotentRequest() throws Exception {
+  public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
     createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
-    Request[] request = mockConnectTimeoutRequest();
+    Request[] request = mockRequestWithConnectTimeoutResponse();
 
     getTestClient().post();
 
@@ -109,7 +92,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   @Test
-  public void retryConnectionRefused() throws Exception {
+  public void retryConnectException() throws Exception {
     createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
     Request[] request = new Request[3];
@@ -137,7 +120,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   @Test(expected = ExecutionException.class)
-  public void retryRequestTimeoutShouldFailIfNoServerAvailable() throws Exception {
+  public void retryShouldFailIfNoServerAvailable() throws Exception {
     createHttpClientBuilder("max_tries=2 max_fails=1 fail_timeout_sec=0.01 | server=http://server");
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -153,21 +136,8 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     getTestClient().get();
   }
 
-  @Test(expected = ExecutionException.class)
-  public void requestTimeoutShouldNotBeRetriedForNonIdempotentRequest() throws Exception {
-    createHttpClientBuilder("max_tries=2 max_fails=2 fail_timeout_sec=0.01 | server=http://server");
-
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          failWith(new TimeoutException("Request timed out 1"), iom);
-          return null;
-        });
-
-    getTestClient().post();
-  }
-
   @Test
-  public void retryRequestTimeout() throws Exception {
+  public void retryTimeoutException() throws Exception {
     createHttpClientBuilder("max_tries=3 max_fails=3 max_timeout_tries=1 | server=http://server1 | server=http://server2");
 
     Request[] request = new Request[2];
@@ -190,23 +160,10 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   @Test
-  public void retryRequestTimeoutBy503Response() throws Exception {
+  public void retry503() throws Exception {
     createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
-    Request[] request = new Request[3];
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          request[0] = completeWith(503, iom);
-          return null;
-        })
-        .then(iom -> {
-          request[1] = completeWith(503, iom);
-          return null;
-        })
-        .then(iom -> {
-          request[2] = completeWith(200, iom);
-          return null;
-        });
+    Request[] request = mockRequestWith503Response();
 
     getTestClient().get();
 
@@ -217,7 +174,22 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  private Request[] mockConnectTimeoutRequest() {
+  @Test
+  public void retry503ForNonIdempotentRequest() throws Exception {
+    createHttpClientBuilder("max_tries=3 max_fails=2 retry_policy=non_idempotent_503 | server=http://server1 | server=http://server2 | server=http://server3");
+
+    Request[] request = mockRequestWith503Response();
+
+    getTestClient().post();
+
+    assertHostEquals(request[0], "server1");
+    assertHostEquals(request[1], "server2");
+    assertHostEquals(request[2], "server3");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  private Request[] mockRequestWithConnectTimeoutResponse() {
     Request[] request = new Request[3];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
         .then(iom -> {
@@ -226,6 +198,24 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
         })
         .then(iom -> {
           request[1] = failWith(new ConnectTimeoutException("Connect timed out"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[2] = completeWith(200, iom);
+          return null;
+        });
+    return request;
+  }
+
+  private Request[] mockRequestWith503Response() {
+    Request[] request = new Request[3];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(503, iom);
+          return null;
+        })
+        .then(iom -> {
+          request[1] = completeWith(503, iom);
           return null;
         })
         .then(iom -> {
