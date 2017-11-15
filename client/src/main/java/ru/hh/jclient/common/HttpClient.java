@@ -10,14 +10,14 @@ import com.ning.http.client.AsyncHttpClient;
 import static java.util.Objects.requireNonNull;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
-import ru.hh.jclient.common.converter.JavaSerializedConverter;
-import ru.hh.jclient.common.converter.JsonCollectionConverter;
-import ru.hh.jclient.common.converter.JsonConverter;
-import ru.hh.jclient.common.converter.PlainTextConverter;
-import ru.hh.jclient.common.converter.ProtobufConverter;
-import ru.hh.jclient.common.converter.TypeConverter;
-import ru.hh.jclient.common.converter.VoidConverter;
-import ru.hh.jclient.common.converter.XmlConverter;
+import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
+import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
+import ru.hh.jclient.common.responseconverter.JsonConverter;
+import ru.hh.jclient.common.responseconverter.PlainTextConverter;
+import ru.hh.jclient.common.responseconverter.ProtobufConverter;
+import ru.hh.jclient.common.responseconverter.TypeConverter;
+import ru.hh.jclient.common.responseconverter.VoidConverter;
+import ru.hh.jclient.common.responseconverter.XmlConverter;
 import ru.hh.jclient.common.util.storage.Storage;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 
@@ -235,11 +235,20 @@ public abstract class HttpClient {
   }
 
   /**
+   * @deprecated user {@link #expect(TypeConverter)}
+   */
+  @Deprecated
+  public <T> ResultProcessor<T> expect(ru.hh.jclient.common.converter.TypeConverter<T> converter) {
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
+  }
+
+  /**
    * Returns unconverted, raw response. Avoid using this method, use "converter" methods instead.
    *
    * @return response
    */
-  public CompletableFuture<Response> requestRaw() {
+  public CompletableFuture<Response> unconverted() {
     RequestExecutor requestExecutor = (request, retryCount, upstreamName) -> {
       if (retryCount > 0) {
         debug = context.getDebugSupplier().get();
@@ -251,11 +260,11 @@ public abstract class HttpClient {
   }
 
   /**
-   * @deprecated use {@link #requestRaw()}
+   * @deprecated use {@link #unconverted()}
    */
   @Deprecated
   public CompletableFuture<com.ning.http.client.Response> request() {
-    return requestRaw().thenApply(Response::getDelegate);
+    return unconverted().thenApply(Response::getDelegate);
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, String upstreamName);

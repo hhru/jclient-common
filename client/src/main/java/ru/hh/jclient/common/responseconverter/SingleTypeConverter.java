@@ -1,25 +1,20 @@
-package ru.hh.jclient.common.converter;
+package ru.hh.jclient.common.responseconverter;
 
 import java.util.Collection;
 import java.util.Optional;
-import ru.hh.jclient.common.ResponseUtils;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import com.ning.http.client.Response;
 
 /**
  * Converter that knows how to convert response to exactly one type of result. Knows and checks expected content type.
  *
- * @param <T>
- *          type of result
- *
- * @deprecated use same class from 'ru.hh.jclient.common.responseconverter'
+ * @param <T> type of result
  */
-@Deprecated
 public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
 
   /**
@@ -50,11 +45,11 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
   private Response checkContentType(Response r) throws Exception {
     String contentType = r.getHeader(HttpHeaders.CONTENT_TYPE);
     if (contentType == null) {
-      throw new NoContentTypeException(ResponseUtils.convert(r));
+      throw new NoContentTypeException(r);
     }
     MediaType mt = MediaType.parse(contentType);
     if (getMediaTypes().stream().noneMatch(m -> mt.is(m))) {
-      throw new UnexpectedContentTypeException(ResponseUtils.convert(r), mt, getMediaTypes());
+      throw new UnexpectedContentTypeException(r, mt, getMediaTypes());
     }
     return r;
   }

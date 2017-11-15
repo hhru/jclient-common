@@ -1,18 +1,15 @@
-package ru.hh.jclient.common.converter;
+package ru.hh.jclient.common.responseconverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.net.MediaType;
-import com.ning.http.client.Response;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 
-/**
- * @deprecated use same class from 'ru.hh.jclient.common.responseconverter'
- */
-@Deprecated
+
 public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T>> {
 
   private ObjectMapper objectMapper;

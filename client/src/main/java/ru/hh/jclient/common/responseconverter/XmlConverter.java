@@ -1,4 +1,4 @@
-package ru.hh.jclient.common.converter;
+package ru.hh.jclient.common.responseconverter;
 
 import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.MediaType.APPLICATION_XML_UTF_8;
@@ -12,15 +12,11 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.common.net.MediaType;
-import com.ning.http.client.Response;
 
-/**
- * @deprecated use same class from 'ru.hh.jclient.common.responseconverter'
- */
-@Deprecated
 public class XmlConverter<T> extends SingleTypeConverter<T> {
 
   private static final Set<MediaType> MEDIA_TYPES = of(XML_UTF_8.withoutParameters(), APPLICATION_XML_UTF_8.withoutParameters());

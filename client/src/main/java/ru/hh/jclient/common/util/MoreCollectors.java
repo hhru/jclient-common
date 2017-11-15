@@ -22,6 +22,11 @@ public class MoreCollectors {
     });
   }
 
+  /**
+   * @deprecated do not use FluentCaseInsensitiveStringsMap, use Map<String, Collection<String>> instead
+   *
+   */
+  @Deprecated
   public static <T> Collector<T, FluentCaseInsensitiveStringsMap, FluentCaseInsensitiveStringsMap> toFluentCaseInsensitiveStringsMap(
     Function<? super T, String> keyMapper, Function<? super T, Collection<String>> valueMapper) {
     return Collector.of(FluentCaseInsensitiveStringsMap::new, (map, in) -> map.add(keyMapper.apply(in), valueMapper.apply(in)), (map1, map2) -> {
