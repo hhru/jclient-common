@@ -5,7 +5,6 @@ import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
 import com.ning.http.client.uri.Uri;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static ru.hh.jclient.common.AbstractClient.HTTP_POST;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
@@ -22,12 +21,12 @@ public class RequestBalancer {
   private final Request request;
   private final Upstream upstream;
   private final UpstreamManager upstreamManager;
-  private final Set<Integer> triedServers = new HashSet<>();
   private final RequestExecutor requestExecutor;
+  private final Set<Integer> triedServers = new HashSet<>();
 
+  private ServerEntry currentServer = null;
   private int triesLeft;
   private long requestTimeLeftMs;
-  private int currentServerIndex = -1;
   private int firstStatusCode;
 
   public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor) {
@@ -38,9 +37,10 @@ public class RequestBalancer {
     host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host);
     if (upstream != null) {
-      triesLeft = upstream.getConfig().getMaxTries();
-      int maxRequestTimeoutTries = upstream.getConfig().getMaxTimeoutTries();
-      requestTimeLeftMs = upstream.getConfig().getRequestTimeoutMs() * maxRequestTimeoutTries;
+      UpstreamConfig upstreamConfig = upstream.getConfig();
+      triesLeft = upstreamConfig.getMaxTries();
+      int maxRequestTimeoutTries = upstreamConfig.getMaxTimeoutTries();
+      requestTimeLeftMs = upstreamConfig.getRequestTimeoutMs() * maxRequestTimeoutTries;
     } else {
       triesLeft = UpstreamConfig.DEFAULT_MAX_TRIES;
       requestTimeLeftMs = UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS * UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
@@ -69,7 +69,10 @@ public class RequestBalancer {
       if (triedServers.isEmpty()) {
         firstStatusCode = response.getStatusCode();
       }
-      prepareRetry();
+      if (isServerAvailable()) {
+        triedServers.add(currentServer.getIndex());
+        currentServer = null;
+      }
       return requestWithRetry();
     }
     return completedFuture(response);
@@ -78,15 +81,14 @@ public class RequestBalancer {
   private void countStatistics(ResponseWrapper wrapper, boolean doRetry) {
     if (isServerAvailable()) {
       Monitoring monitoring = upstreamManager.getMonitoring();
-      String serverAddress = upstream.getServerAddress(currentServerIndex);
       int statusCode = wrapper.getResponse().getStatusCode();
-      monitoring.countRequest(upstream.getName(), serverAddress, statusCode, !doRetry);
+      monitoring.countRequest(upstream.getName(), currentServer.getAddress(), statusCode, !doRetry);
 
       long requestTimeMs = wrapper.getTimeToLastByteMs();
       monitoring.countRequestTime(upstream.getName(), requestTimeMs);
 
       if (!triedServers.isEmpty()) {
-        monitoring.countRetry(upstream.getName(), serverAddress, statusCode, firstStatusCode, triedServers.size());
+        monitoring.countRetry(upstream.getName(), currentServer.getAddress(), statusCode, firstStatusCode, triedServers.size());
       }
     }
   }
@@ -97,12 +99,12 @@ public class RequestBalancer {
   }
 
   private Request getBalancedRequest(Request request) {
-    RequestBuilder requestBuilder = new RequestBuilder(request);
-    int index = upstream.acquireServer(triedServers);
-    if (index >= 0) {
-      requestBuilder.setUrl(getBalancedUrl(request, upstream, index));
+    currentServer = upstream.acquireServer(triedServers);
+    if (currentServer == null) {
+      return request;
     }
-    currentServerIndex = index;
+    RequestBuilder requestBuilder = new RequestBuilder(request);
+    requestBuilder.setUrl(getBalancedUrl(request, currentServer.getAddress()));
     requestBuilder.setRequestTimeout(upstream.getConfig().getRequestTimeoutMs());
     return requestBuilder.build();
   }
@@ -125,7 +127,7 @@ public class RequestBalancer {
 
   private void releaseServer(boolean isError) {
     if (isServerAvailable()) {
-      upstream.releaseServer(currentServerIndex, isError);
+      upstream.releaseServer(currentServer.getIndex(), isError);
     }
   }
 
@@ -137,21 +139,12 @@ public class RequestBalancer {
     if (triesLeft == 0 || requestTimeLeftMs == 0 || !isServerError) {
       return false;
     }
-    int statusCode = response.getStatusCode();
-    boolean isConnectTimeout = statusCode == STATUS_CONNECT_ERROR;
-    boolean isRequestTimeout = statusCode == STATUS_REQUEST_TIMEOUT;
-    return isConnectTimeout || (isIdempotent() && isRequestTimeout);
-  }
-
-  private void prepareRetry() {
-    if (isServerAvailable()) {
-      triedServers.add(currentServerIndex);
-      currentServerIndex = -1;
-    }
+    RetryPolicy retryPolicy = upstream.getConfig().getRetryPolicy();
+    return retryPolicy.isRetriable(response.getStatusCode(), request.getMethod());
   }
 
   private boolean isServerAvailable() {
-    return currentServerIndex >= 0;
+    return currentServer != null && currentServer.getIndex() >= 0;
   }
 
   private boolean isUpstreamAvailable() {
@@ -163,13 +156,9 @@ public class RequestBalancer {
     return statusCode == STATUS_CONNECT_ERROR || statusCode == STATUS_REQUEST_TIMEOUT;
   }
 
-  private boolean isIdempotent() {
-    return ! HTTP_POST.equals(request.getMethod());
-  }
-
-  private static String getBalancedUrl(Request request, Upstream upstream, int serverIndex) {
+  private static String getBalancedUrl(Request request, String serverAddress) {
     String originalServer = getOriginalServer(request);
-    return request.getUrl().replace(originalServer, upstream.getServerAddress(serverIndex));
+    return request.getUrl().replace(originalServer, serverAddress);
   }
 
   private static String getOriginalServer(Request request) {

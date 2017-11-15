@@ -1,13 +1,14 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
-import static ru.hh.jclient.common.balancing.ServerCounterTest.assertCounter;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class UpstreamTest {
@@ -16,91 +17,71 @@ public class UpstreamTest {
 
   @Test
   public void createUpstream() throws Exception {
-    Upstream upstream = createTestUpstream(TEST_HOST,"| server=a");
+    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
     assertEquals(TEST_HOST, upstream.getName());
 
-    ServerCounter counter = upstream.getConfig().getServer(0).get().getCounter();
-    assertEquals(0, counter.getRequests());
-    assertEquals(0, counter.getFails());
-  }
-
-  @Test
-  public void getServerAddress() throws Exception {
-    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
-
-    assertEquals("a", upstream.getServerAddress(0));
-    assertEquals("b", upstream.getServerAddress(1));
+    assertServerCounters(upstream, 0, 0, 0, 0);
+    assertServerCounters(upstream, 1, 0, 0, 0);
   }
 
   @Test
   public void acquireServer() throws Exception {
-    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
+    Upstream upstream = createTestUpstream(TEST_HOST, "| server=a weight=1 | server=b weight=2");
 
-    int last = upstream.acquireServer();
-    assertEquals("a", upstream.getServerAddress(last));
+    assertEquals("a", upstream.acquireServer().getAddress());
+    assertServerCounters(upstream, 0, 1, 1, 0);
+    assertServerCounters(upstream, 1, 0, 0, 0);
 
-    last = upstream.acquireServer();
-    assertEquals("b", upstream.getServerAddress(last));
+    assertEquals("b", upstream.acquireServer().getAddress());
+    assertServerCounters(upstream, 1, 1, 1, 0);
 
-    last = upstream.acquireServer();
-    assertEquals("b", upstream.getServerAddress(last));
+    assertEquals("b", upstream.acquireServer().getAddress());
+    assertServerCounters(upstream, 1, 2, 2, 0);
 
-    last = upstream.acquireServer();
-    assertEquals("b", upstream.getServerAddress(last));
+    upstream.releaseServer(0, false);
+    upstream.releaseServer(1, false);
 
-    last = upstream.acquireServer();
-    assertEquals("a", upstream.getServerAddress(last));
+    assertServerCounters(upstream, 0, 0, 0, 0);
+    assertServerCounters(upstream, 1, 1, 0, 0);
 
-    assertEquals(2, upstream.getServerCounter(0).getRequests());
-    assertEquals(3, upstream.getServerCounter(1).getRequests());
+    upstream.releaseServer(1, false);
+
+    assertServerCounters(upstream, 0, 0, 0, 0);
+    assertServerCounters(upstream, 1, 0, 0, 0);
   }
 
   @Test
-  public void acquireSuspendedServer() throws Exception {
+  public void acquireInactiveServer() throws Exception {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
-    upstream.getConfig().getServers().forEach(server -> server.suspend(1, mock(ScheduledExecutorService.class)));
 
-    int last = upstream.acquireServer();
-    assertEquals(-1, last);
+    upstream.getConfig().getServers().forEach(server -> server.deactivate(1, mock(ScheduledExecutorService.class)));
 
-    last = upstream.acquireServer();
-    assertEquals(-1, last);
+    assertNull(upstream.acquireServer());
+
+    assertServerCounters(upstream, 0, 0, 0, 0);
+    assertServerCounters(upstream, 1, 0, 0, 0);
+
+    upstream.getConfig().getServers().get(1).activate();
+
+    assertEquals("b", upstream.acquireServer().getAddress());
+
+    assertServerCounters(upstream, 1, 1, 1, 0);
   }
 
   @Test
-  public void acquireServerWithExcluding() throws Exception {
+  public void acquireExcludedServer() throws Exception {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
-    int indexOfServerA = 0;
+    int excludedServerIndex = 0;
 
-    int last = upstream.acquireServer(Collections.singleton(indexOfServerA));
+    ServerEntry serverEntry = upstream.acquireServer(singleton(excludedServerIndex));
 
-    assertEquals("b", upstream.getServerAddress(last));
+    assertEquals("b", serverEntry.getAddress());
 
-    assertEquals(0, upstream.getServerCounter(0).getRequests());
-    assertEquals(1, upstream.getServerCounter(1).getRequests());
-  }
-
-  @Test
-  public void acquireAndReleaseServer() throws Exception {
-    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
-
-    upstream.acquireServer(); // a
-    int last = upstream.acquireServer(); // b
-
-    upstream.releaseServer(last, false); // b
-
-    last = upstream.acquireServer();
-    assertEquals("b", upstream.getServerAddress(last));
-
-    ServerCounter counter = upstream.getServerCounter(0);
-    assertEquals(1, counter.getRequests());
-    assertEquals(0, counter.getFails());
-
-    counter = upstream.getServerCounter(1);
-    assertEquals(1, counter.getRequests());
-    assertEquals(0, counter.getFails());
+    List<Server> servers = upstream.getConfig().getServers();
+    assertEquals(0, servers.get(0).getRequests());
+    assertEquals(1, servers.get(1).getRequests());
   }
 
   @Test
@@ -108,35 +89,41 @@ public class UpstreamTest {
     Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=1 fail_timeout_sec=0.1 | server=a");
 
     int serverIndex = 0;
-    assertEquals(0, upstream.getServerCounter(serverIndex).getFails());
+    Server server = upstream.getConfig().getServers().get(serverIndex);
+    assertEquals(0, server.getFails());
 
-    assertEquals(serverIndex, upstream.acquireServer());
+    assertEquals(serverIndex, upstream.acquireServer().getIndex());
     upstream.releaseServer(serverIndex, true);
 
-    assertFalse(upstream.getConfig().getServers().get(serverIndex).isActive());
-    assertEquals(1, upstream.getServerCounter(serverIndex).getFails());
-    assertEquals(-1, upstream.acquireServer());
+    assertFalse(server.isActive());
+
+    assertEquals(1, server.getFails());
+
+    assertNull(upstream.acquireServer());
   }
 
   @Test
   public void acquireReleaseWhenMaxFailsIsZero() throws Exception {
     Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=0 fail_timeout_sec=0.1 | server=a");
 
-    upstream.releaseServer(upstream.acquireServer(), true);
+    upstream.releaseServer(upstream.acquireServer().getIndex(), true);
 
     int serverIndex = 0;
 
-    assertEquals(serverIndex, upstream.acquireServer());
+    assertEquals(serverIndex, upstream.acquireServer().getIndex());
   }
 
   @Test
   public void acquireReleaseFromTwoThreads() throws Exception {
-    Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=2 fail_timeout_sec=0.1 | server=a");
-
     int numOfRequests = 100_000;
+    int tests = 100;
+    int weight = numOfRequests * tests * 2 + 1;
+
+    Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=2 fail_timeout_sec=0.1 | server=a weight=" + weight);
+    Server server = upstream.getConfig().getServers().get(0);
+
     Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests);
 
-    int tests = 100;
     for (int t = 1; t <= tests; t++) {
       long start = currentTimeMillis();
       Thread thread = new Thread(acquireReleaseTask);
@@ -146,21 +133,33 @@ public class UpstreamTest {
 
       thread.join();
 
-      ServerCounter counter = upstream.getServerCounter(0);
-      assertCounter(counter, 0, 0, numOfRequests * 2, 0);
+      assertEquals("current requests", 0, server.getRequests());
+      assertEquals("current fails", 0, server.getFails());
 
       System.out.println("finished iteration " + t + " out of " + tests + " in " + (currentTimeMillis() - start) + " ms");
     }
+
+    assertEquals("stats requests", weight - 1, server.getStatsRequests());
+  }
+
+  private static void assertServerCounters(Upstream upstream, int serverIndex, int requests, int statsRequests, int fails) {
+    List<Server> servers = upstream.getConfig().getServers();
+
+    assertEquals("requests", requests, servers.get(serverIndex).getRequests());
+    assertEquals("statsRequests", statsRequests, servers.get(serverIndex).getStatsRequests());
+    assertEquals("fails", fails, servers.get(serverIndex).getFails());
   }
 
   private static void acquireReleaseUpstream(Upstream upstream, int times) {
     for (int i = 0; i < times; i++) {
-      int index = upstream.acquireServer();
-      upstream.releaseServer(index, false);
+      ServerEntry serverEntry = upstream.acquireServer();
+      if (serverEntry != null) {
+        upstream.releaseServer(serverEntry.getIndex(), false);
+      }
     }
   }
 
-  static Upstream createTestUpstream(String host, String configStr) {
+  private static Upstream createTestUpstream(String host, String configStr) {
     UpstreamConfig config = UpstreamConfig.parse(configStr);
     return new Upstream(host, config, mock(ScheduledExecutorService.class));
   }

@@ -20,11 +20,11 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final Monitoring monitoring;
 
   public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring) {
-    requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
-    upstreamConfigs.forEach(this::updateUpstream);
-
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitoring must not be null");
+
+    requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
+    upstreamConfigs.forEach(this::updateUpstream);
   }
 
   @Override
