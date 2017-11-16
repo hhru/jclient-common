@@ -235,7 +235,7 @@ public abstract class HttpClient {
   }
 
   /**
-   * @deprecated user {@link #expect(TypeConverter)}
+   * @deprecated use {@link #expect(TypeConverter)}
    */
   @Deprecated
   public <T> ResultProcessor<T> expect(ru.hh.jclient.common.converter.TypeConverter<T> converter) {
