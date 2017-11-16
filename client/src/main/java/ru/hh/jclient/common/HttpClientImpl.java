@@ -145,21 +145,23 @@ class HttpClientImpl extends HttpClient {
 
     @Override
     public Response onCompleted(Response response) throws Exception {
+      long millisOfResponseReceiving = requestStart.until(now(), ChronoUnit.MILLIS);
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
       mdcCopy.doInContext( () -> log.info("ASYNC_HTTP_RESPONSE: {} {} in {} ms on {} {}", responseStatusCode, responseStatusText,
-        requestStart.until(now(), ChronoUnit.MILLIS), request.getMethod(), request.getUri()));
+        millisOfResponseReceiving, request.getMethod(), request.getUri()));
 
       return proceedWithResponse(response);
     }
 
     @Override
     public void onThrowable(Throwable t) {
+      long millisOfResponseReceiving = requestStart.until(now(), ChronoUnit.MILLIS);
       Response response = TransportExceptionMapper.map(t, request.getUri());
       mdcCopy.doInContext(
           () -> log.warn(
               "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}{}",
-              requestStart.until(now(), ChronoUnit.MILLIS),
+              millisOfResponseReceiving,
               request.getMethod(),
               request.getUri(),
               t.toString(),
