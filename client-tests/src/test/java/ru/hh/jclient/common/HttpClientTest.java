@@ -44,8 +44,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
 
 public class HttpClientTest extends HttpClientTestBase {
 
@@ -93,7 +91,7 @@ public class HttpClientTest extends HttpClientTestBase {
     ResultWithResponse<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).resultWithResponse().get();
     Optional<XmlTest> testOutput = testOutputWrapper.get();
     assertEquals(test.name, testOutput.get().name);
-    assertNotNull(testOutputWrapper.getResponse());
+    assertNotNull(testOutputWrapper.unconverted());
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -256,9 +254,9 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader1"));
     assertFalse(actualRequest.get().getHeaders().containsKey("myheader2"));
     // this header is accepted because it consists in allowed list
-    assertEquals("111", actualRequest.get().getHeaders().getFirstValue(X_REQUEST_ID));
+    assertEquals("111", actualRequest.get().getHeaders().get(X_REQUEST_ID).get(0));
     // this header is accepted since it comes from local mockRequest
-    assertEquals("somevalue", actualRequest.get().getHeaders().getFirstValue("someheader"));
+    assertEquals("somevalue", actualRequest.get().getHeaders().get("someheader").get(0));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
@@ -304,8 +302,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
     http.with(request).expectEmpty().result().get();
 
-    assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
-    assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
+    assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG).get(0));
+    assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION).get(0));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
@@ -318,8 +316,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
     http.with(request).expectEmpty().result().get();
 
-    assertEquals("true", actualRequest.get().getHeaders().getFirstValue(X_HH_DEBUG));
-    assertEquals("someauth", actualRequest.get().getHeaders().getFirstValue(AUTHORIZATION));
+    assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG).get(0));
+    assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION).get(0));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -370,7 +368,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectEmpty().result().get();
-    assertEquals("somesession", actualRequest.get().getHeaders().getFirstValue(HttpHeaders.HH_PROTO_SESSION));
+    assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaders.HH_PROTO_SESSION).get(0));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
@@ -397,7 +395,7 @@ public class HttpClientTest extends HttpClientTestBase {
   public void testHttpClientError() throws Throwable {
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class))).then(iom -> {
+    when(httpClient.executeRequest(isA(com.ning.http.client.Request.class), isA(CompletionHandler.class))).then(iom -> {
       CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
       handler.onThrowable(new TestException());
       return null;

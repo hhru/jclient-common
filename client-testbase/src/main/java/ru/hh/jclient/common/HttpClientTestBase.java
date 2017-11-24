@@ -31,9 +31,6 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Request;
-import com.ning.http.client.Response;
 
 public class HttpClientTestBase {
 
@@ -71,7 +68,7 @@ public class HttpClientTestBase {
   }
 
   public Supplier<Request> request(byte[] data, MediaType contentType, int status) throws IOException {
-    Response response = mock(Response.class);
+    com.ning.http.client.Response response = mock(com.ning.http.client.Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
       when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
@@ -82,36 +79,36 @@ public class HttpClientTestBase {
       String charsetName = iom.getArgumentAt(0, String.class);
       return new String(data, Charset.forName(charsetName));
     });
-    return request(response);
+    return request(new Response(response));
   }
 
   public Supplier<Request> request(MediaType contentType, int status) {
-    Response response = mock(Response.class);
+    com.ning.http.client.Response response = mock(com.ning.http.client.Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
       when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
     }
-    return request(response);
+    return request(new Response(response));
   }
 
   public Supplier<Request> request(Response response) {
-    Request[] request = new Request[1];
+    com.ning.http.client.Request[] request = new com.ning.http.client.Request[1];
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class))).then(iom -> {
-      request[0] = iom.getArgumentAt(0, Request.class);
+    when(httpClient.executeRequest(isA(com.ning.http.client.Request.class), isA(CompletionHandler.class))).then(iom -> {
+      request[0] = iom.getArgumentAt(0, com.ning.http.client.Request.class);
       CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
-      handler.onCompleted(response);
+      handler.onCompleted(response.getDelegate());
       return null;
     });
     http = createHttpClientBuilder(httpClient);
-    return () -> request[0];
+    return () -> new Request(request[0]);
   }
 
   public void assertEqualRequests(Request request1, Request request2) {
     assertEquals(request1.getUrl(), request2.getUrl());
     assertEquals(request1.getMethod(), request2.getMethod());
-    FluentCaseInsensitiveStringsMap headers2 = request2.getHeaders();
+    Map<String, List<String>> headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
     assertEquals(request1.getHeaders(), headers2);
   }
