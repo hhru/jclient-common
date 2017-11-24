@@ -6,7 +6,7 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.Response;
-import ru.hh.jclient.common.ResponseUtils;
+import ru.hh.jclient.common.ResponseConverterUtils;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 import ru.hh.jclient.common.ResponseWrapper;
@@ -95,7 +95,7 @@ public class RequestBalancer {
 
   private static Response getServerNotAvailableResponse(Request request, String upstreamName) {
     Uri uri = request.getUri();
-    return ResponseUtils.convert(new MappedTransportErrorResponse(502, "No available servers for upstream: " + upstreamName, uri));
+    return ResponseConverterUtils.convert(new MappedTransportErrorResponse(502, "No available servers for upstream: " + upstreamName, uri));
   }
 
   private Request getBalancedRequest(Request request) {
