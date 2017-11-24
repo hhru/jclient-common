@@ -254,18 +254,18 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     return new TestClient("http://" + TEST_UPSTREAM, http);
   }
 
-  private static class TestClient extends AbstractClient {
+  private static class TestClient extends JClientBase {
     TestClient(String host, HttpClientBuilder http) {
       super(host, http);
     }
 
     void get() throws Exception {
-      Request request = get(url("/get")).build();
+      ru.hh.jclient.common.Request request = get(url("/get")).build();
       http.with(request).expectPlainText().result().get();
     }
 
     void post() throws Exception {
-      Request request = post(url("/post")).build();
+      ru.hh.jclient.common.Request request = post(url("/post")).build();
       http.with(request).expectPlainText().result().get();
     }
   }
