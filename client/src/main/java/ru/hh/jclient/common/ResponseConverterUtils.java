@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-public class ResponseUtils {
+public class ResponseConverterUtils {
 
   /**
    * Temporary helper until we clean-up wrapping ning to our own classes

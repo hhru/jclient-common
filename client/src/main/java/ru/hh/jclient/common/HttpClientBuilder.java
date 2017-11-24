@@ -55,7 +55,7 @@ public class HttpClientBuilder {
   public HttpClient with(com.ning.http.client.Request request) {
     return new HttpClientImpl(
         http,
-        requireNonNull(new Request(request), "request must not be null"),
+        new Request(requireNonNull(request, "request must not be null")),
         hostsWithSession,
         upstreamManager,
         contextSupplier,
