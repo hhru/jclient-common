@@ -4,6 +4,7 @@ import static ru.hh.jclient.common.balancing.BalancingStrategy.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.Lock;
@@ -62,7 +63,9 @@ public class Upstream {
           }
         }
       }
-      checkAndResetStats(servers);
+      if (servers.stream().allMatch(s -> s.getStatsRequests() >= s.getWeight())) {
+        servers.forEach(Server::resetStatsRequests);
+      }
     } finally {
       configReadLock.unlock();
     }
@@ -74,12 +77,6 @@ public class Upstream {
       upstreamConfig.update(newConfig);
     } finally {
       configWriteLock.unlock();
-    }
-  }
-
-  private static void checkAndResetStats(List<Server> servers) {
-    if (servers.stream().allMatch(server -> server.getStatsRequests() >= server.getWeight())) {
-      servers.forEach(Server::resetStatsRequests);
     }
   }
 

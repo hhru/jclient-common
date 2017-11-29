@@ -35,6 +35,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
   private static final String TEST_UPSTREAM = "backend";
   private AsyncHttpClient httpClient;
+  private UpstreamManager upstreamManager;
 
   @Before
   public void setUp() throws Exception {
@@ -44,7 +45,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   @Test
-  public void okRequest() throws Exception {
+  public void request() throws Exception {
     createHttpClientBuilder("| server=http://server");
 
     Request[] request = new Request[1];
@@ -59,6 +60,32 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     assertHostEquals(request[0], "server");
 
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void requestAndUpdateServers() throws Exception {
+    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server1");
+
+    upstreamManager.updateUpstream(TEST_UPSTREAM, "| server=http://server2");
+    getTestClient().get();
+    assertHostEquals(request[0], "server2");
+
+    upstreamManager.updateUpstream(TEST_UPSTREAM, "| server=http://server2 | server=http://server3");
+    getTestClient().get();
+    assertHostEquals(request[0], "server2");
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server3");
   }
 
   @Test
@@ -271,7 +298,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs) {
-    UpstreamManager upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class));
+    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class));
     return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }
