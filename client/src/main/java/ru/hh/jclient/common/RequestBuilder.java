@@ -3,6 +3,7 @@ package ru.hh.jclient.common;
 import static java.util.stream.Collectors.toList;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -192,6 +193,11 @@ public class RequestBuilder {
 
   public RequestBuilder setContentLength(int contentLength) {
     delegate.setContentLength(contentLength);
+    return this;
+  }
+
+  public RequestBuilder setCharset(Charset charset) {
+    delegate.setBodyEncoding(String.valueOf(charset.name()));
     return this;
   }
 
