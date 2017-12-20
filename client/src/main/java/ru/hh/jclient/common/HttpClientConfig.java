@@ -14,9 +14,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static java.util.Optional.ofNullable;
 
@@ -108,34 +106,15 @@ public final class HttpClientConfig {
       callbackExecutor,
       upstreamManager
     );
-    connectHttpClientMonitoringIfPossible(http);
+    connectMonitoringIfPossible(http);
     return httpClientBuilder;
   }
 
-  private void connectHttpClientMonitoringIfPossible(AsyncHttpClient http) {
+  private void connectMonitoringIfPossible(AsyncHttpClient http) {
     if (monitoringConnector == null) {
       return;
     }
-    ExecutorService executorService = http.getConfig().executorService();
-    if (!(executorService instanceof ThreadPoolExecutor)) {
-      monitoringConnector.accept(MetricProvider.EMPTY);
-    }
-    monitoringConnector.accept(new MetricProvider() {
-      @Override
-      public Supplier<Integer> threadPoolSizeProvider() {
-        return ((ThreadPoolExecutor)executorService)::getPoolSize;
-      }
-
-      @Override
-      public Supplier<Integer> threadPoolActiveTaskSizeProvider() {
-        return ((ThreadPoolExecutor)executorService)::getActiveCount;
-      }
-
-      @Override
-      public boolean containsThreadMetrics() {
-        return true;
-      }
-    });
+    monitoringConnector.accept(MetricProviderFactory.from(http, this));
   }
 
   private AsyncHttpClient buildClient() {
