@@ -1,30 +1,57 @@
 package ru.hh.jclient.common.metrics;
 
+import com.timgroup.statsd.StatsDClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.MetricProvider;
-import ru.hh.metrics.StatsDSender;
-import ru.hh.metrics.Tag;
 
+import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public class StatsDMetricConnector implements Consumer<MetricProvider> {
 
-  private final StatsDSender statsDSender;
-  private final String name;
+  private static final Logger log = LoggerFactory.getLogger(StatsDMetricConnector.class);
+  private static final String NAME_KEY = "name";
 
-  public StatsDMetricConnector(StatsDSender statsDSender, String name) {
-    this.statsDSender = statsDSender;
-    this.name = name;
+  private final String nameTag;
+  private final StatsDClient statsDClient;
+  private final ScheduledExecutorService scheduler;
+  private final long delayAmount;
+  private final TimeUnit delayUnit;
+
+  private ScheduledFuture<?> future;
+
+  public StatsDMetricConnector(String name, StatsDClient statsDClient, ScheduledExecutorService scheduler,
+      long delayAmount, TimeUnit delayUnit) {
+    this.nameTag = buildNameTag(name);
+    this.statsDClient = statsDClient;
+    this.scheduler = scheduler;
+    this.delayAmount = delayAmount;
+    this.delayUnit = delayUnit;
+  }
+
+  private static String buildNameTag(String name) {
+    return NAME_KEY + "_is_" + name.replace('.', '-');
+  }
+
+  public void disconnect() {
+    Optional.ofNullable(future).ifPresent(scheduledFuture -> scheduledFuture.cancel(false));
   }
 
   @Override
   public void accept(MetricProvider metricProvider) {
-    if (metricProvider.containsThreadMetrics()) {
-      Supplier<Long> threadPoolSizeSupplier = () -> Long.valueOf(metricProvider.threadPoolSizeProvider().get());
-      statsDSender.sendMetricPeriodically("async.client.thread.pool.size", threadPoolSizeSupplier, new Tag("clientName", name));
-      Supplier<Long> threadPoolActiveTaskCountSupplier = () -> Long.valueOf(metricProvider.threadPoolActiveTaskSizeProvider().get());
-      statsDSender.sendMetricPeriodically("async.client.thread.pool.active.task.count", threadPoolActiveTaskCountSupplier,
-          new Tag("clientName", name));
+    if (metricProvider == null || !metricProvider.containsThreadMetrics()) {
+      log.info("Metric provider contains no metrics, won't schedule anything");
+      return;
     }
+    future = scheduler.schedule(() -> {
+      statsDClient.gauge("async.client.thread.pool.size", metricProvider.threadPoolSizeProvider().get(), nameTag);
+      statsDClient.gauge("async.client.thread.pool.active.task.count", metricProvider.threadPoolActiveTaskSizeProvider().get(), nameTag);
+    }, delayAmount, delayUnit);
+    log.info("Successfully scheduled metrics sending");
+
   }
 }
