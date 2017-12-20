@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+//TODO rename to HttpClientFactory
 public class HttpClientBuilder {
 
   private final AsyncHttpClient http;
