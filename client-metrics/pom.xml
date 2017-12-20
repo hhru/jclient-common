@@ -20,12 +20,6 @@
             <groupId>ru.hh.metrics</groupId>
             <artifactId>hh-metrics</artifactId>
             <version>0.15</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.datadoghq</groupId>
-                    <artifactId>java-dogstatsd-client</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
