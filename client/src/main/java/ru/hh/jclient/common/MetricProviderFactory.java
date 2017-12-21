@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import com.ning.http.client.AsyncHttpClient;
+import ru.hh.jclient.common.metric.MetricProvider;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -8,10 +8,10 @@ import java.util.function.Supplier;
 
 public final class MetricProviderFactory {
 
-  public static MetricProvider from(AsyncHttpClient asyncHttpClient, HttpClientConfig config) {
-    ExecutorService executorService = asyncHttpClient.getConfig().executorService();
+  public static MetricProvider from(HttpClientBuilder clientBuilder) {
+    ExecutorService executorService = clientBuilder.getHttp().getConfig().executorService();
     if (!(executorService instanceof ThreadPoolExecutor)) {
-      return MetricProvider.EMPTY;
+      return null;
     }
 
     return new MetricProvider() {

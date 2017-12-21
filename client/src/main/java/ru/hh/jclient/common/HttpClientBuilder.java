@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import static java.util.Objects.requireNonNull;
+
+import ru.hh.jclient.common.metric.MetricProvider;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.Collection;
@@ -85,4 +87,13 @@ public class HttpClientBuilder {
   public Map<String, List<String>> getHeaders() {
     return new FluentCaseInsensitiveStringsMap(contextSupplier.get().getHeaders());
   }
+
+  AsyncHttpClient getHttp() {
+    return http;
+  }
+
+  MetricProvider getMetricProvider() {
+    return MetricProviderFactory.from(this);
+  }
+
 }
