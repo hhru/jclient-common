@@ -5,6 +5,8 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
+import ru.hh.jclient.common.metric.MetricConnector;
+import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import javax.net.ssl.SSLContext;
@@ -14,7 +16,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 
 import static java.util.Optional.ofNullable;
 
@@ -27,7 +28,9 @@ public final class HttpClientConfig {
   private Executor callbackExecutor;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
-  private Consumer<MetricProvider> monitoringConnector;
+  private double timeoutMultiplier = 1;
+
+  private MetricConnector metricConnector;
 
   public static HttpClientConfig basedOn(Properties properties) {
     AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
@@ -41,21 +44,23 @@ public final class HttpClientConfig {
     ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean).ifPresent(configBuilder::setCompressionEnforced);
     ofNullable(properties.getProperty(ConfigKeys.ALLOW_POOLING_CONNECTIONS)).map(Boolean::parseBoolean)
         .ifPresent(configBuilder::setAllowPoolingConnections);
-    return new HttpClientConfig(configBuilder);
+    HttpClientConfig httpClientConfig = new HttpClientConfig(configBuilder);
+    ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble).ifPresent(httpClientConfig::withTimeoutMultiplier);
+    return httpClientConfig;
   }
 
   /**
    * use this only if there's not enough "with*" methods to cover all requirements
    * example: you need to set {@link AsyncHttpProviderConfig}
    * example: you need to set {@link RequestFilter}
-   * @param asyncClientConfigBuilder instance of {@link AsyncHttpClientConfig.Builder}
+   * @param asyncClientConfig instance of {@link AsyncHttpClientConfig}
    * @return instance of HttpClientConfig based on passed config to continue building
    */
-  public static HttpClientConfig forNativeBuilder(Object asyncClientConfigBuilder) {
-    if (!(asyncClientConfigBuilder instanceof AsyncHttpClientConfig.Builder)) {
-      throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.Builder.class.getName());
+  public static HttpClientConfig basedOnNativeConfig(Object asyncClientConfig) {
+    if (!(asyncClientConfig instanceof AsyncHttpClientConfig)) {
+      throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.class.getName());
     }
-    return new HttpClientConfig((AsyncHttpClientConfig.Builder) asyncClientConfigBuilder);
+    return new HttpClientConfig(new AsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig));
   }
 
   private HttpClientConfig(AsyncHttpClientConfig.Builder configBuilder) {
@@ -87,13 +92,18 @@ public final class HttpClientConfig {
     return this;
   }
 
-  public HttpClientConfig withMonitoringConnector(Consumer<MetricProvider> monitoringConnector) {
-    this.monitoringConnector = monitoringConnector;
+  public HttpClientConfig withMetricConnector(MetricConnector metricConnector) {
+    this.metricConnector = metricConnector;
     return this;
   }
 
   public HttpClientConfig withSSLContext(SSLContext sslContext) {
     this.configBuilder.setSSLContext(sslContext);
+    return this;
+  }
+
+  public HttpClientConfig withTimeoutMultiplier(double timeoutMultiplier) {
+    this.timeoutMultiplier = timeoutMultiplier;
     return this;
   }
 
@@ -106,20 +116,52 @@ public final class HttpClientConfig {
       callbackExecutor,
       upstreamManager
     );
-    connectMonitoringIfPossible(http);
+    ofNullable(metricConnector).ifPresent(connector -> connector.accept(httpClientBuilder.getMetricProvider()));
     return httpClientBuilder;
   }
 
-  private void connectMonitoringIfPossible(AsyncHttpClient http) {
-    if (monitoringConnector == null) {
-      return;
-    }
-    monitoringConnector.accept(MetricProviderFactory.from(http, this));
+  private AsyncHttpClient buildClient() {
+    AsyncHttpClientConfig clientConfig = applyTimeoutMultiplier(configBuilder).build();
+    return MDCCopy.doWithoutContext(() -> new AsyncHttpClient(new NettyAsyncHttpProvider(clientConfig), clientConfig));
   }
 
-  private AsyncHttpClient buildClient() {
-    AsyncHttpClientConfig clientConfig = configBuilder.build();
-    return new AsyncHttpClient(new NettyAsyncHttpProvider(clientConfig), clientConfig);
+  private AsyncHttpClientConfig.Builder applyTimeoutMultiplier(AsyncHttpClientConfig.Builder clientConfigBuilder) {
+    AsyncHttpClientConfig config = clientConfigBuilder.build();
+    AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder(config);
+    builder.setConnectTimeout((int)(config.getConnectTimeout() * timeoutMultiplier));
+    builder.setReadTimeout((int)(config.getReadTimeout() * timeoutMultiplier));
+    builder.setRequestTimeout((int)(config.getRequestTimeout() * timeoutMultiplier));
+    return builder;
+  }
+
+  public HttpClientConfig withUserAgent(String userAgent) {
+    configBuilder.setUserAgent(userAgent);
+    return this;
+  }
+
+  public HttpClientConfig withMaxConnections(int maxConnections) {
+    configBuilder.setMaxConnections(maxConnections);
+    return this;
+  }
+
+  public HttpClientConfig withMaxRequestRetries(int maxRequestRetries) {
+    configBuilder.setMaxRequestRetry(maxRequestRetries);
+    return this;
+  }
+
+  public HttpClientConfig withConnectTimeoutMs(int connectTimeoutMs) {
+    configBuilder.setConnectTimeout(connectTimeoutMs);
+    return this;
+  }
+
+  public HttpClientConfig withReadTimeoutMs(int readTimeoutMs) {
+    configBuilder.setReadTimeout(readTimeoutMs);
+    return this;
+  }
+
+  public HttpClientConfig withRequestTimeoutMs(int requestTimeoutMs) {
+    configBuilder.setRequestTimeout(requestTimeoutMs);
+    return this;
   }
 
   public interface ConfigKeys {
@@ -131,6 +173,8 @@ public final class HttpClientConfig {
     String CONNECTION_TIMEOUT_MS = "connectionTimeoutMs";
     String READ_TIMEOUT_MS = "readTimeoutMs";
     String REQUEST_TIMEOUT_MS = "requestTimeoutMs";
+
+    String TIMEOUT_MULTIPLIER = "timeoutMultiplier";
 
     String FOLLOW_REDIRECT = "followRedirect";
     String COMPRESSION_ENFORCED = "compressionEnforced";
