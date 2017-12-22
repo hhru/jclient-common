@@ -5,7 +5,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
-import ru.hh.jclient.common.metric.MetricConnector;
+import ru.hh.jclient.common.metric.MetricConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
 
@@ -30,7 +30,7 @@ public final class HttpClientConfig {
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = 1;
 
-  private MetricConnector metricConnector;
+  private MetricConsumer metricConsumer;
 
   public static HttpClientConfig basedOn(Properties properties) {
     AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
@@ -92,8 +92,8 @@ public final class HttpClientConfig {
     return this;
   }
 
-  public HttpClientConfig withMetricConnector(MetricConnector metricConnector) {
-    this.metricConnector = metricConnector;
+  public HttpClientConfig withMetricConsumer(MetricConsumer metricConsumer) {
+    this.metricConsumer = metricConsumer;
     return this;
   }
 
@@ -116,7 +116,7 @@ public final class HttpClientConfig {
       callbackExecutor,
       upstreamManager
     );
-    ofNullable(metricConnector).ifPresent(connector -> connector.accept(httpClientBuilder.getMetricProvider()));
+    ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider()));
     return httpClientBuilder;
   }
 
