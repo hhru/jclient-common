@@ -3,7 +3,7 @@ package ru.hh.jclient.common.metrics;
 import com.timgroup.statsd.StatsDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.metric.MetricConnector;
+import ru.hh.jclient.common.metric.MetricConsumer;
 import ru.hh.jclient.common.metric.MetricProvider;
 
 import java.util.Optional;
@@ -11,9 +11,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class StatsDMetricConnector implements MetricConnector {
+public class StatsDMetricConsumer implements MetricConsumer {
 
-  private static final Logger log = LoggerFactory.getLogger(StatsDMetricConnector.class);
+  private static final Logger log = LoggerFactory.getLogger(StatsDMetricConsumer.class);
   private static final String NAME_KEY = "name";
 
   private final String nameTag;
@@ -24,8 +24,8 @@ public class StatsDMetricConnector implements MetricConnector {
 
   private ScheduledFuture<?> future;
 
-  public StatsDMetricConnector(String name, StatsDClient statsDClient, ScheduledExecutorService scheduler,
-                               long sendIntervalAmount, TimeUnit sendIntervalUnit) {
+  public StatsDMetricConsumer(String name, StatsDClient statsDClient, ScheduledExecutorService scheduler,
+                              long sendIntervalAmount, TimeUnit sendIntervalUnit) {
     this.nameTag = buildNameTag(name);
     this.statsDClient = statsDClient;
     this.scheduler = scheduler;
