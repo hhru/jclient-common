@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableSet;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import static java.util.Objects.requireNonNull;
+
+import ru.hh.jclient.common.metric.MetricProvider;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.Collection;
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+//TODO rename to HttpClientFactory
 public class HttpClientBuilder {
 
   private final AsyncHttpClient http;
@@ -84,4 +87,13 @@ public class HttpClientBuilder {
   public Map<String, List<String>> getHeaders() {
     return new FluentCaseInsensitiveStringsMap(contextSupplier.get().getHeaders());
   }
+
+  AsyncHttpClient getHttp() {
+    return http;
+  }
+
+  MetricProvider getMetricProvider() {
+    return MetricProviderFactory.from(this);
+  }
+
 }
