@@ -45,7 +45,17 @@ class HttpClientImpl extends HttpClient {
                  UpstreamManager upstreamManager,
                  Storage<HttpClientContext> contextSupplier,
                  Executor callbackExecutor) {
-    super(http, request, hostsWithSession, upstreamManager, contextSupplier);
+    this(http, request, hostsWithSession, upstreamManager, contextSupplier, callbackExecutor, false);
+  }
+
+  HttpClientImpl(AsyncHttpClient http,
+                 Request request,
+                 Set<String> hostsWithSession,
+                 UpstreamManager upstreamManager,
+                 Storage<HttpClientContext> contextSupplier,
+                 Executor callbackExecutor,
+                 boolean adaptive) {
+    super(http, request, hostsWithSession, upstreamManager, contextSupplier, adaptive);
     this.callbackExecutor = callbackExecutor;
   }
 

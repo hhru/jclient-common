@@ -51,16 +51,19 @@ public abstract class HttpClient {
   private boolean noSession;
   private boolean noDebug;
   private boolean externalRequest;
+  private boolean adaptive;
 
   HttpClient(AsyncHttpClient http,
              Request request,
              Set<String> hostsWithSession,
              UpstreamManager upstreamManager,
-             Storage<HttpClientContext> contextSupplier) {
+             Storage<HttpClientContext> contextSupplier,
+             boolean adaptive) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
     this.upstreamManager = upstreamManager;
+    this.adaptive = adaptive;
 
     context = contextSupplier.get();
     storages = context.getStorages().copy().add(contextSupplier);
@@ -255,7 +258,7 @@ public abstract class HttpClient {
       }
       return executeRequest(request, retryCount, upstreamName);
     };
-    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor);
+    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor, adaptive);
     return requestBalancer.requestWithRetry();
   }
 
