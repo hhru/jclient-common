@@ -69,7 +69,7 @@ class HttpClientImpl extends HttpClient {
       getDebug().onRetry(getHttp().getConfig(), request, getRequestBodyEntity(), retryCount, upstreamName);
     } else {
       LOGGER.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-      getDebug().onRequest(getHttp().getConfig(), request, getRequestBodyEntity());
+      getDebug().onRequest(getHttp().getConfig(), request, getRequestBodyEntity(), upstreamName);
     }
 
     Transfers transfers = getStorages().prepare();
