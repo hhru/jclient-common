@@ -36,25 +36,23 @@ public class RequestBalancer {
   private int firstStatusCode;
   private Iterator<ServerEntry> serverEntryIterator;
 
-  public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor, boolean adaptive) {
+  public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor,
+                         Integer maxRequestTimeoutTries, boolean adaptive) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
+    this.adaptive = adaptive;
 
     host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host);
-    this.adaptive = adaptive;
-    if (upstream != null) {
-      UpstreamConfig upstreamConfig = upstream.getConfig();
-      maxTries = upstreamConfig.getMaxTries();
-      triesLeft = upstreamConfig.getMaxTries();
-      int maxRequestTimeoutTries = upstreamConfig.getMaxTimeoutTries();
-      requestTimeLeftMs = upstreamConfig.getRequestTimeoutMs() * maxRequestTimeoutTries;
-    } else {
-      maxTries = UpstreamConfig.DEFAULT_MAX_TRIES;
-      triesLeft = UpstreamConfig.DEFAULT_MAX_TRIES;
-      requestTimeLeftMs = UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS * UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
-    }
+    int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
+      upstream != null ? upstream.getConfig().getRequestTimeoutMs() : UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS;
+    int requestTimeoutTries = maxRequestTimeoutTries != null ? maxRequestTimeoutTries :
+      upstream != null ? upstream.getConfig().getMaxTimeoutTries() : UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
+    requestTimeLeftMs = requestTimeoutMs * requestTimeoutTries;
+    maxTries = upstream != null ? upstream.getConfig().getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
+
+    triesLeft = upstream != null ? upstream.getConfig().getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
   }
 
   public CompletableFuture<Response> requestWithRetry() {
@@ -115,7 +113,7 @@ public class RequestBalancer {
     }
     RequestBuilder requestBuilder = new RequestBuilder(request);
     requestBuilder.setUrl(getBalancedUrl(request, currentServer.getAddress()));
-    requestBuilder.setRequestTimeout(upstream.getConfig().getRequestTimeoutMs());
+    requestBuilder.setRequestTimeout(request.getRequestTimeout() > 0 ? request.getRequestTimeout() : upstream.getConfig().getRequestTimeoutMs());
     return requestBuilder.build();
   }
 

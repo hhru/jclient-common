@@ -46,6 +46,7 @@ public abstract class HttpClient {
   private Request request;
   private Optional<?> requestBodyEntity = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
+  private Integer maxRequestTimeoutTries;
 
   private boolean readOnlyReplica;
   private boolean noSession;
@@ -103,6 +104,14 @@ public abstract class HttpClient {
   public HttpClient noDebug() {
     noDebug = true;
     debug.addLabel("NODEBUG");
+    return this;
+  }
+
+  /**
+   * Overrides {@link ru.hh.jclient.common.balancing.UpstreamConfig#getMaxTimeoutTries() when using {@link RequestBalancer}}
+   */
+  public HttpClient withMaxRequestTimeoutTries(Integer maxRequestTimeoutTries) {
+    this.maxRequestTimeoutTries = maxRequestTimeoutTries;
     return this;
   }
 
@@ -258,7 +267,8 @@ public abstract class HttpClient {
       }
       return executeRequest(request, retryCount, upstreamName);
     };
-    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor, adaptive);
+    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
+      maxRequestTimeoutTries, adaptive);
     return requestBalancer.requestWithRetry();
   }
 
