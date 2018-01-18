@@ -9,6 +9,14 @@ import com.ning.http.client.AsyncHttpClientConfig;
  */
 public interface RequestDebug {
 
+  default void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, String upstreamName) {
+    onRequest(config, request.getDelegate(), requestBodyEntity);
+  }
+
+  /**
+   * @deprecated use {@link #onRequest(AsyncHttpClientConfig, Request, Optional, String)}
+   */
+  @Deprecated
   default void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity) {
     onRequest(config, request.getDelegate(), requestBodyEntity);
   }
