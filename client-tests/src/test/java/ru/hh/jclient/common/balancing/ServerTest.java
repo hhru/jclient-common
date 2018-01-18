@@ -38,7 +38,7 @@ public class ServerTest {
     Server server = new Server("test", 1);
 
     server.acquire();
-    server.release(false);
+    server.release(false, 100);
 
     assertEquals(0, server.getFails());
     assertEquals(0, server.getRequests());
@@ -51,7 +51,7 @@ public class ServerTest {
     Server server = new Server("test", 1);
 
     server.acquire();
-    server.release(true);
+    server.release(true, 100);
 
     assertEquals(1, server.getFails());
     assertEquals(0, server.getRequests());
@@ -64,7 +64,7 @@ public class ServerTest {
     Server server = new Server("test", 1);
 
     server.acquire();
-    server.release(true);
+    server.release(true, 100);
     server.deactivate(1, mock(ScheduledExecutorService.class));
 
     assertFalse(server.isActive());

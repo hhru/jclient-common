@@ -9,10 +9,14 @@ import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
+import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MS;
+
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.UpstreamManager;
 import ru.hh.jclient.common.Uri;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,25 +27,31 @@ public class RequestBalancer {
   private final UpstreamManager upstreamManager;
   private final RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
+  private final int maxTries;
+  private final boolean adaptive;
 
   private ServerEntry currentServer = null;
   private int triesLeft;
   private long requestTimeLeftMs;
   private int firstStatusCode;
+  private Iterator<ServerEntry> serverEntryIterator;
 
-  public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor) {
+  public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor, boolean adaptive) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
 
     host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host);
+    this.adaptive = adaptive;
     if (upstream != null) {
       UpstreamConfig upstreamConfig = upstream.getConfig();
+      maxTries = upstreamConfig.getMaxTries();
       triesLeft = upstreamConfig.getMaxTries();
       int maxRequestTimeoutTries = upstreamConfig.getMaxTimeoutTries();
       requestTimeLeftMs = upstreamConfig.getRequestTimeoutMs() * maxRequestTimeoutTries;
     } else {
+      maxTries = UpstreamConfig.DEFAULT_MAX_TRIES;
       triesLeft = UpstreamConfig.DEFAULT_MAX_TRIES;
       requestTimeLeftMs = UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS * UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
     }
@@ -99,7 +109,7 @@ public class RequestBalancer {
   }
 
   private Request getBalancedRequest(Request request) {
-    currentServer = upstream.acquireServer(triedServers);
+    currentServer = adaptive ? acquireAdaptiveServer() : upstream.acquireServer(triedServers);
     if (currentServer == null) {
       return request;
     }
@@ -109,12 +119,21 @@ public class RequestBalancer {
     return requestBuilder.build();
   }
 
+  private ServerEntry acquireAdaptiveServer() {
+    if (serverEntryIterator == null) {
+      List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries);
+      serverEntryIterator = entries.iterator();
+    }
+    return serverEntryIterator.next();
+  }
+
   private void finishRequest(ResponseWrapper wrapper) {
     if (wrapper == null) {
-      releaseServer(false);
+      releaseServer(false, WARM_UP_DEFAULT_TIME_MS);
     } else {
-      updateLeftTriesAndTime(wrapper.getTimeToLastByteMs());
-      releaseServer(isServerError(wrapper.getResponse()));
+      long timeToLastByteMs = wrapper.getTimeToLastByteMs();
+      updateLeftTriesAndTime(timeToLastByteMs);
+      releaseServer(isServerError(wrapper.getResponse()), timeToLastByteMs);
     }
   }
 
@@ -125,9 +144,9 @@ public class RequestBalancer {
     }
   }
 
-  private void releaseServer(boolean isError) {
+  private void releaseServer(boolean isError, long responseTimeMs) {
     if (isServerAvailable()) {
-      upstream.releaseServer(currentServer.getIndex(), isError);
+      upstream.releaseServer(currentServer.getIndex(), isError, responseTimeMs);
     }
   }
 
