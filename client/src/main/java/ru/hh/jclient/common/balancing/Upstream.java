@@ -1,10 +1,10 @@
 package ru.hh.jclient.common.balancing;
 
+import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.*;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.Lock;
@@ -43,11 +43,26 @@ public class Upstream {
     }
   }
 
+  List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
+    try {
+      configReadLock.lock();
+      List<Server> servers = upstreamConfig.getServers();
+      List<Integer> ids = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
+      return ids.stream().map(id -> {
+        Server server = servers.get(id);
+        server.acquire();
+        return new ServerEntry(id, server.getAddress());
+      }).collect(toList());
+    } finally {
+      configReadLock.unlock();
+    }
+  }
+
   ServerEntry acquireServer() {
     return acquireServer(Collections.emptySet());
   }
 
-  void releaseServer(int serverIndex, boolean isError) {
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMs) {
     configReadLock.lock();
     try {
       List<Server> servers = upstreamConfig.getServers();
@@ -56,7 +71,7 @@ public class Upstream {
       }
       Server server = servers.get(serverIndex);
       if (server != null) {
-        server.release(isError);
+        server.release(isError, responseTimeMs);
         if (isError) {
           if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
             server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);

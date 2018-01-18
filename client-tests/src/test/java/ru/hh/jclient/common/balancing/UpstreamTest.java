@@ -39,13 +39,13 @@ public class UpstreamTest {
     assertEquals("b", upstream.acquireServer().getAddress());
     assertServerCounters(upstream, 1, 2, 2, 0);
 
-    upstream.releaseServer(0, false);
-    upstream.releaseServer(1, false);
+    upstream.releaseServer(0, false, 100);
+    upstream.releaseServer(1, false, 100);
 
     assertServerCounters(upstream, 0, 0, 0, 0);
     assertServerCounters(upstream, 1, 1, 0, 0);
 
-    upstream.releaseServer(1, false);
+    upstream.releaseServer(1, false, 100);
 
     assertServerCounters(upstream, 0, 0, 0, 0);
     assertServerCounters(upstream, 1, 0, 0, 0);
@@ -93,7 +93,7 @@ public class UpstreamTest {
     assertEquals(0, server.getFails());
 
     assertEquals(serverIndex, upstream.acquireServer().getIndex());
-    upstream.releaseServer(serverIndex, true);
+    upstream.releaseServer(serverIndex, true, 100);
 
     assertFalse(server.isActive());
 
@@ -106,7 +106,7 @@ public class UpstreamTest {
   public void acquireReleaseWhenMaxFailsIsZero() throws Exception {
     Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=0 fail_timeout_sec=0.1 | server=a");
 
-    upstream.releaseServer(upstream.acquireServer().getIndex(), true);
+    upstream.releaseServer(upstream.acquireServer().getIndex(), true, 100);
 
     int serverIndex = 0;
 
@@ -154,7 +154,7 @@ public class UpstreamTest {
     for (int i = 0; i < times; i++) {
       ServerEntry serverEntry = upstream.acquireServer();
       if (serverEntry != null) {
-        upstream.releaseServer(serverEntry.getIndex(), false);
+        upstream.releaseServer(serverEntry.getIndex(), false, 100);
       }
     }
   }
