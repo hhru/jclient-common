@@ -122,7 +122,9 @@ public class RequestBalancer {
       List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries);
       serverEntryIterator = entries.iterator();
     }
-    return serverEntryIterator.next();
+    ServerEntry entry = serverEntryIterator.next();
+    upstream.acquireServer(entry.getIndex());
+    return entry;
   }
 
   private void finishRequest(ResponseWrapper wrapper) {
