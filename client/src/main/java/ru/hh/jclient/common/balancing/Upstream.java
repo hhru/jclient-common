@@ -43,16 +43,19 @@ public class Upstream {
     }
   }
 
+  void acquireServer(int id) {
+    upstreamConfig.getServers().get(id).acquire();
+  }
+
   List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
     try {
       configReadLock.lock();
       List<Server> servers = upstreamConfig.getServers();
       List<Integer> ids = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
-      return ids.stream().map(id -> {
-        Server server = servers.get(id);
-        server.acquire();
-        return new ServerEntry(id, server.getAddress());
-      }).collect(toList());
+      return ids
+          .stream()
+          .map(id -> new ServerEntry(id, servers.get(id).getAddress()))
+          .collect(toList());
     } finally {
       configReadLock.unlock();
     }
