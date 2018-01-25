@@ -8,14 +8,20 @@ import com.ning.http.client.Response;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+
 import org.jboss.netty.channel.ConnectTimeoutException;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.invocation.InvocationOnMock;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
@@ -27,15 +33,28 @@ import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.net.ConnectException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
+@RunWith(Parameterized.class)
 public class HttpClientBalancedTest extends HttpClientTestBase {
 
   private static final String TEST_UPSTREAM = "backend";
   private AsyncHttpClient httpClient;
   private UpstreamManager upstreamManager;
+
+  @Parameterized.Parameters
+  public static Iterable<?> data() {
+    return Arrays.asList(true, false);
+  }
+
+  @Parameterized.Parameter
+  public boolean adaptive;
 
   @Before
   public void setUp() throws Exception {
@@ -55,7 +74,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
           return null;
         });
 
-    getTestClient().get();
+    getTestClient(adaptive).get();
 
     assertHostEquals(request[0], "server");
 
@@ -96,9 +115,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertHostEquals(request[0], "server1");
-    assertHostEquals(request[1], "server2");
-    assertHostEquals(request[2], "server3");
+    assertRequestsEquals(request, "server1", "server2", "server3");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -111,9 +128,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
     getTestClient().post();
 
-    assertHostEquals(request[0], "server1");
-    assertHostEquals(request[1], "server2");
-    assertHostEquals(request[2], "server3");
+    assertRequestsEquals(request, "server1", "server2", "server3");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -139,9 +154,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertHostEquals(request[0], "server1");
-    assertHostEquals(request[1], "server2");
-    assertHostEquals(request[2], "server3");
+    assertRequestsEquals(request, "server1", "server2", "server3");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -160,7 +173,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
           return null;
         });
 
-    getTestClient().get();
+    getTestClient(adaptive).get();
   }
 
   @Test
@@ -180,8 +193,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertHostEquals(request[0], "server1");
-    assertHostEquals(request[1], "server2");
+    assertRequestsEquals(request, "server1", "server2");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -194,9 +206,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertHostEquals(request[0], "server1");
-    assertHostEquals(request[1], "server2");
-    assertHostEquals(request[2], "server3");
+    assertRequestsEquals(request, "server1", "server2", "server3");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -209,11 +219,29 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
 
     getTestClient().post();
 
-    assertHostEquals(request[0], "server1");
-    assertHostEquals(request[1], "server2");
-    assertHostEquals(request[2], "server3");
+    assertRequestsEquals(request, "server1", "server2", "server3");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  private void assertRequestsEquals(Request[] request, String... actual) {
+    if (adaptive) {
+      assertTrue(toSet(request).containsAll(toSet(actual)));
+      assertTrue(toSet(actual).containsAll(toSet(request)));
+    } else {
+      assertEquals(request.length, actual.length);
+      for (int i = 0; i < request.length; i++) {
+        assertHostEquals(request[i], actual[i]);
+      }
+    }
+  }
+
+  private static <T> Set<T> toSet(T[] array) {
+    return new HashSet<>(Arrays.asList(array));
+  }
+
+  private static Set<String> toSet(Request[] requests) {
+    return Arrays.stream(requests).map(r -> r.getUri().getHost()).collect(Collectors.toSet());
   }
 
   private Request[] mockRequestWithConnectTimeoutResponse() {
@@ -278,22 +306,29 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   }
 
   private static TestClient getTestClient() {
-    return new TestClient("http://" + TEST_UPSTREAM, http);
+    return new TestClient("http://" + TEST_UPSTREAM, http, false);
+  }
+
+  private static TestClient getTestClient(boolean adaptive) {
+    return new TestClient("http://" + TEST_UPSTREAM, http, adaptive);
   }
 
   private static class TestClient extends JClientBase {
-    TestClient(String host, HttpClientBuilder http) {
+    private boolean adaptive;
+
+    TestClient(String host, HttpClientBuilder http, boolean adaptive) {
       super(host, http);
+      this.adaptive = adaptive;
     }
 
     void get() throws Exception {
       ru.hh.jclient.common.Request request = get(url("/get")).build();
-      http.with(request).expectPlainText().result().get();
+      (adaptive ? http.withAdaptive(request) : http.with(request)).expectPlainText().result().get();
     }
 
     void post() throws Exception {
       ru.hh.jclient.common.Request request = post(url("/post")).build();
-      http.with(request).expectPlainText().result().get();
+      (adaptive ? http.withAdaptive(request) : http.with(request)).expectPlainText().result().get();
     }
   }
 
