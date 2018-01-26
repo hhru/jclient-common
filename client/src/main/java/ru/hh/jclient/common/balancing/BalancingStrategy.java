@@ -1,9 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Set;
 
 public class BalancingStrategy {
+  private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
   static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers) {
     int minIndex = -1;
@@ -16,6 +20,7 @@ public class BalancingStrategy {
         float currentLoad = (float) server.getRequests() / server.getWeight();
         float statLoad = (float) server.getStatsRequests() / server.getWeight();
         boolean minLoad = currentLoad < minCurrentLoad || (currentLoad == minCurrentLoad && statLoad < minStatLoad);
+        LOGGER.debug("static balancer stats for {}, load:{}, stat_load:{}", server, currentLoad, statLoad);
 
         if (!excludedServers.contains(index) && (minIndex < 0 || minLoad)) {
           minIndex = index;
@@ -25,6 +30,7 @@ public class BalancingStrategy {
       }
     }
 
+    LOGGER.debug("static balancer pick for {}, load:{}, stat_load:{}", minIndex, minCurrentLoad, minStatLoad);
     return minIndex;
   }
 }
