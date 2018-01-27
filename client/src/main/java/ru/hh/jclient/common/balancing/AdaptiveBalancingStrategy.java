@@ -48,8 +48,8 @@ public class AdaptiveBalancingStrategy {
       long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MS : totalTime - scores[j];
       int health = healths[j];
       long score = time * (health <= lowestHealth ? lowestHealth : health);
-      if (LOGGER.isInfoEnabled()) {
-        LOGGER.info("balancer stats for {}, health:{}, time_score:{}, final_score:{}", servers.get(j), health, time, score);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("balancer stats for {}, health:{}, time_score:{}, final_score:{}", servers.get(j), health, time, score);
       }
       total += score;
       scores[j] = score;
@@ -65,8 +65,8 @@ public class AdaptiveBalancingStrategy {
         sum += scores[k];
         if (pick < sum) {
           shuffled.add(ids[k]);
-          if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("balancer pick for {}, {}:{}", servers.get(ids[k]), n - 1 - j, ids[k]);
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("balancer pick for {}, {}:{}", servers.get(ids[k]), n - 1 - j, ids[k]);
           }
           total -= scores[k];
           swap(scores, ids, k, j);
