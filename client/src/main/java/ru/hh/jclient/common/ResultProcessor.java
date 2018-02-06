@@ -3,8 +3,11 @@ package ru.hh.jclient.common;
 import static java.util.Objects.requireNonNull;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.xml.bind.JAXBContext;
+
+import ru.hh.jclient.common.responseconverter.JsonMapConverter;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
@@ -149,6 +152,17 @@ public class ResultProcessor<T> {
    */
   public <E> ResultOrErrorProcessor<T, Collection<E>> orJsonCollectionError(ObjectMapper mapper, Class<E> jsonClass) {
     return new ResultOrErrorProcessor<>(this, new JsonCollectionConverter<>(mapper, jsonClass));
+  }
+
+  /**
+   * Specifies that the type of ERROR result must be map of JSON objects.
+   *
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonKeyClass type of Key of the ERROR (works only with simple types: String, Integer, etc)
+   * @param jsonValueClass type of Value of the ERROR
+   */
+  public <K, V> ResultOrErrorProcessor<T, Map<K, V>> orJsonMapError(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
+    return new ResultOrErrorProcessor<>(this, new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass));
   }
 
   /**
