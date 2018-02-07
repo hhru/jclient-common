@@ -13,6 +13,7 @@ import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
 import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
+import ru.hh.jclient.common.responseconverter.JsonMapConverter;
 import ru.hh.jclient.common.responseconverter.PlainTextConverter;
 import ru.hh.jclient.common.responseconverter.ProtobufConverter;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -187,6 +189,19 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, Class<T> jsonClass) {
     TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
+  }
+
+  /**
+   * Specifies that the type of result must be a map with JSON objects.
+   *
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonKeyClass type of Key object (works only with simple types: String, Integer, etc)
+   * @param jsonValueClass type of Value object
+   */
+  public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
+    TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
     expectedMediaTypes = converter.getSupportedMediaTypes();
     return new ResultProcessor<>(this, converter);
   }

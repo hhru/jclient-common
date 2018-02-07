@@ -18,10 +18,14 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -34,6 +38,7 @@ import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
+import ru.hh.jclient.common.model.JsonTest;
 import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
@@ -173,6 +178,43 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(tests.size(), testOutput.size());
     assertEquals(test1.name, Iterables.get(testOutput, 0).name);
     assertEquals(test2.name, Iterables.get(testOutput, 1).name);
+    assertEqualRequests(request, actualRequest.get());
+  }
+
+  @Test
+  public void testJsonMap() throws IOException, InterruptedException, ExecutionException {
+    XmlTest test1 = new XmlTest("test тест1");
+    XmlTest test2 = new XmlTest("test тест2");
+    Map<String, XmlTest> tests = Stream.of(test1, test2).collect(Collectors.toMap(xml -> xml.name, xml -> xml));
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), JSON_UTF_8);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
+    Map<String, XmlTest> testOutput = http.with(request).expectJsonMap(objectMapper, String.class, XmlTest.class).result().get();
+    assertEquals(tests.size(), testOutput.size());
+    assertEquals(test1, testOutput.get(test1.name));
+    assertEquals(test2, testOutput.get(test2.name));
+    assertEqualRequests(request, actualRequest.get());
+  }
+
+  @Test
+  public void testJsonMapWithObjectKey() throws IOException, InterruptedException, ExecutionException {
+    JsonTest test1 = new JsonTest(1L, "test тест1");
+    JsonTest test2 = new JsonTest(2L, "test тест2");
+    JsonTest test3 = new JsonTest(3L, "test тест3");
+    JsonTest test4 = new JsonTest(4L, "test тест4");
+
+    Map<JsonTest, JsonTest> testMap = new HashMap<>();
+    testMap.put(test1, test2);
+    testMap.put(test3, test4);
+
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(testMap), JSON_UTF_8);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
+    Map<JsonTest, JsonTest> testOutput = http.with(request)
+      .expectJsonMap(objectMapper, JsonTest.class, JsonTest.class).result().get();
+    assertEquals(testMap.size(), testOutput.size());
+    assertEquals(test2, testOutput.get(test1));
+    assertEquals(test4, testOutput.get(test3));
     assertEqualRequests(request, actualRequest.get());
   }
 
