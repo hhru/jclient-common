@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.metric.MetricProvider;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -53,7 +52,7 @@ public final class MetricProviderFactory {
 
       @Override
       public Supplier<Integer> applicationThreadPoolQueueSizeProvider() {
-        return () -> Optional.ofNullable(((ThreadPoolExecutor) applicationExecutorService).getQueue()).map(Queue::size).orElse(0);
+        return () -> Optional.ofNullable(((ThreadPoolExecutor) applicationExecutorService).getQueue()).map(Queue::size).orElse(-1);
       }
 
       @Override
@@ -68,17 +67,17 @@ public final class MetricProviderFactory {
 
       @Override
       public Supplier<Integer> nettyBossThreadPoolQueueSizeProvider() {
-        return () -> Optional.ofNullable(((ThreadPoolExecutor) nettyBossExecutorService).getQueue()).map(Queue::size).orElse(0);
+        return () -> Optional.ofNullable(((ThreadPoolExecutor) nettyBossExecutorService).getQueue()).map(Queue::size).orElse(-1);
       }
 
       @Override
       public Supplier<Integer> nettyServerChannelPoolSizeProvider() {
-        return channelInfo.serverChannelMap::size;
+        return () -> channelInfo.serverChannelMap.map(Map::size).orElse(-1);
       }
 
       @Override
       public Supplier<Integer> nettyNonServerChannelPoolSizeProvider() {
-        return channelInfo.nonserverChannelMap::size;
+        return () -> channelInfo.nonserverChannelMap.map(Map::size).orElse(-1);
       }
 
       @Override
@@ -130,12 +129,12 @@ public final class MetricProviderFactory {
   }
 
   private static final class NettyChannelsInfo {
-    private final Map serverChannelMap;
-    private final Map nonserverChannelMap;
+    private final Optional<Map<?, ?>> serverChannelMap;
+    private final Optional<Map<?, ?>> nonserverChannelMap;
 
     private NettyChannelsInfo(Object serverChannelMap, Object nonserverChannelMap) {
-      this.serverChannelMap = Optional.ofNullable(serverChannelMap).map(val -> (Map) val).orElseGet(Collections::emptyMap);
-      this.nonserverChannelMap = Optional.ofNullable(nonserverChannelMap).map(val -> (Map) val).orElseGet(Collections::emptyMap);
+      this.serverChannelMap = Optional.ofNullable(serverChannelMap).map(val -> (Map<?, ?>) val);
+      this.nonserverChannelMap = Optional.ofNullable(nonserverChannelMap).map(val -> (Map<?, ?>) val);
     }
   }
 }
