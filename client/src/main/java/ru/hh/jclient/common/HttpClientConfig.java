@@ -5,6 +5,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
+import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
 import ru.hh.jclient.common.metric.MetricConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -16,6 +17,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.util.Optional.ofNullable;
 
@@ -26,6 +28,7 @@ public final class HttpClientConfig {
 
   private UpstreamManager upstreamManager;
   private Executor callbackExecutor;
+  private NettyAsyncHttpProviderConfig nettyConfig;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = 1;
@@ -46,6 +49,10 @@ public final class HttpClientConfig {
         .ifPresent(configBuilder::setAllowPoolingConnections);
     HttpClientConfig httpClientConfig = new HttpClientConfig(configBuilder);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble).ifPresent(httpClientConfig::withTimeoutMultiplier);
+    httpClientConfig.nettyConfig = new NettyAsyncHttpProviderConfig();
+    //to be able to monitor netty boss thread pool. See: com.ning.http.client.providers.netty.channel.ChannelManager
+    httpClientConfig.nettyConfig.setBossExecutorService(Executors.newCachedThreadPool());
+    configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
     return httpClientConfig;
   }
 
@@ -79,6 +86,11 @@ public final class HttpClientConfig {
 
   public HttpClientConfig withCallbackExecutor(Executor callbackExecutor) {
     this.callbackExecutor = callbackExecutor;
+    return this;
+  }
+
+  public HttpClientConfig withBossNettyExecutor(ExecutorService nettyBossExecutorService) {
+    this.nettyConfig.setBossExecutorService(nettyBossExecutorService);
     return this;
   }
 

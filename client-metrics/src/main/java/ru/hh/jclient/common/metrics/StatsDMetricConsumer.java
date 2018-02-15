@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class StatsDMetricConsumer implements MetricConsumer {
 
   private static final Logger log = LoggerFactory.getLogger(StatsDMetricConsumer.class);
-  private static final String NAME_KEY = "name";
+  private static final String NAME_KEY = "clientName";
 
   private final String nameTag;
   private final StatsDClient statsDClient;
@@ -43,15 +43,36 @@ public class StatsDMetricConsumer implements MetricConsumer {
 
   @Override
   public void accept(MetricProvider metricProvider) {
-    if (metricProvider == null || !metricProvider.containsThreadMetrics()) {
+    if (metricProvider == null) {
       log.info("Metric provider contains no metrics, won't schedule anything");
       return;
     }
     future = scheduler.scheduleAtFixedRate(() -> {
-      statsDClient.gauge("async.client.thread.pool.size", metricProvider.threadPoolSizeProvider().get(), nameTag);
-      statsDClient.gauge("async.client.thread.pool.active.task.count", metricProvider.threadPoolActiveTaskSizeProvider().get(), nameTag);
+      if (metricProvider.containsApplicationThreadPoolMetrics()) {
+        statsDClient.gauge(getFullMetricName("async.client.application.thread.pool.size", nameTag),
+            metricProvider.applicationThreadPoolSizeProvider().get());
+        statsDClient.gauge(getFullMetricName("async.client.application.thread.pool.active.task.count", nameTag),
+            metricProvider.applicationThreadPoolActiveTaskSizeProvider().get());
+        statsDClient.gauge(getFullMetricName("async.client.application.thread.pool.queue.size", nameTag),
+            metricProvider.applicationThreadPoolQueueSizeProvider().get());
+      }
+      if (metricProvider.containsNettyBossThreadPoolMetrics()) {
+        statsDClient.gauge(getFullMetricName("async.client.netty.boss.thread.pool.size", nameTag),
+            metricProvider.nettyBossThreadPoolSizeProvider().get());
+        statsDClient.gauge(getFullMetricName("async.client.netty.boss.thread.pool.active.task.count", nameTag),
+            metricProvider.nettyBossThreadPoolActiveTaskSizeProvider().get());
+        statsDClient.gauge(getFullMetricName("async.client.netty.boss.thread.pool.queue.size", nameTag),
+            metricProvider.nettyBossthreadPoolQueueSizeProvider().get());
+      }
     }, 0, sendIntervalAmount, sendIntervalUnit);
     log.info("Successfully scheduled metrics sending");
 
+  }
+
+  private static String getFullMetricName(String metricName, String... tags) {
+    if (tags == null) {
+      return metricName;
+    }
+    return String.join(".", metricName, String.join(".", tags));
   }
 }
