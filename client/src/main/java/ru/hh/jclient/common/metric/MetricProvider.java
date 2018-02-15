@@ -10,8 +10,12 @@ public interface MetricProvider {
 
   Supplier<Integer> nettyBossThreadPoolSizeProvider();
   Supplier<Integer> nettyBossThreadPoolActiveTaskSizeProvider();
-  Supplier<Integer> nettyBossthreadPoolQueueSizeProvider();
+  Supplier<Integer> nettyBossThreadPoolQueueSizeProvider();
+
+  Supplier<Integer> nettyServerChannelPoolSizeProvider();
+  Supplier<Integer> nettyNonServerChannelPoolSizeProvider();
 
   boolean containsApplicationThreadPoolMetrics();
   boolean containsNettyBossThreadPoolMetrics();
+  boolean containsNettyChannelMetrics();
 }
