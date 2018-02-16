@@ -6,9 +6,9 @@ import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
-import org.jboss.netty.handler.logging.LoggingHandler;
 import ru.hh.jclient.common.metric.MetricConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
+import ru.hh.jclient.common.util.stats.SlowRequestsLoggingHandler;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import javax.net.ssl.SSLContext;
@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Optional.ofNullable;
 
@@ -54,8 +55,9 @@ public final class HttpClientConfig {
     //to be able to monitor netty boss thread pool. See: com.ning.http.client.providers.netty.channel.ChannelManager
     httpClientConfig.nettyConfig.setBossExecutorService(Executors.newCachedThreadPool());
     configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
+    int slowRequestThreshold = ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).orElse(2000);
     NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline -> {
-      pipeline.addLast("logger", new LoggingHandler("pipelineLogger"));
+      pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, slowRequestThreshold << 1, TimeUnit.MILLISECONDS));
     };
     httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
     return httpClientConfig;
@@ -182,6 +184,7 @@ public final class HttpClientConfig {
   }
 
   public interface ConfigKeys {
+    String SLOW_REQ_THRESHOLD_MS = "slowRequestThresholdMs";
     String USER_AGENT = "userAgent";
 
     String MAX_CONNECTIONS = "maxTotalConnections";
