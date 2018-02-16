@@ -65,10 +65,8 @@ public class StatsDMetricConsumer implements MetricConsumer {
             metricProvider.nettyBossThreadPoolQueueSizeProvider().get());
       }
       if (metricProvider.containsNettyChannelMetrics()) {
-        statsDClient.gauge(getFullMetricName("async.client.netty.server.channels.size", nameTag),
-            metricProvider.nettyServerChannelPoolSizeProvider().get());
-        statsDClient.gauge(getFullMetricName("async.client.netty.non.server.channels.size", nameTag),
-            metricProvider.nettyNonServerChannelPoolSizeProvider().get());
+        statsDClient.gauge(getFullMetricName("async.client.netty.channels.size", nameTag),
+            metricProvider.nettyChannelPoolSizeProvider().get());
       }
     }, 0, sendIntervalAmount, sendIntervalUnit);
     log.info("Successfully scheduled metrics sending");

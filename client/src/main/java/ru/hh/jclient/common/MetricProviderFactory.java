@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.metric.MetricProvider;
 
 import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +28,7 @@ public final class MetricProviderFactory {
   public static MetricProvider from(HttpClientBuilder clientBuilder) {
     AsyncHttpClientConfig config = clientBuilder.getHttp().getConfig();
     AsyncHttpProvider provider = clientBuilder.getHttp().getProvider();
-    NettyChannelsInfo channelInfo = getChannelInfo(provider);
+    DefaultChannelGroup channelInfo = getChannelInfo(provider);
     boolean applicationExecutorServiceMeasurable = config.executorService() instanceof ThreadPoolExecutor;
 
     AsyncHttpProviderConfig<?, ?> asyncHttpProviderConfig = config.getAsyncHttpProviderConfig();
@@ -71,13 +70,8 @@ public final class MetricProviderFactory {
       }
 
       @Override
-      public Supplier<Integer> nettyServerChannelPoolSizeProvider() {
-        return () -> channelInfo.serverChannelMap.map(Map::size).orElse(-1);
-      }
-
-      @Override
-      public Supplier<Integer> nettyNonServerChannelPoolSizeProvider() {
-        return () -> channelInfo.nonserverChannelMap.map(Map::size).orElse(-1);
+      public Supplier<Integer> nettyChannelPoolSizeProvider() {
+        return channelInfo::size;
       }
 
       @Override
@@ -97,7 +91,7 @@ public final class MetricProviderFactory {
     };
   }
 
-  private static NettyChannelsInfo getChannelInfo(AsyncHttpProvider provider) {
+  private static DefaultChannelGroup getChannelInfo(AsyncHttpProvider provider) {
     try {
       Field channelManagerField = NettyAsyncHttpProvider.class.getDeclaredField("channelManager");
       channelManagerField.setAccessible(true);
@@ -111,13 +105,7 @@ public final class MetricProviderFactory {
       if (!(openChannels instanceof DefaultChannelGroup)) {
         return null;
       }
-      Field serverChannelsField = DefaultChannelGroup.class.getDeclaredField("serverChannels");
-      serverChannelsField.setAccessible(true);
-      Field nonServerChannelsField = DefaultChannelGroup.class.getDeclaredField("nonServerChannels");
-      nonServerChannelsField.setAccessible(true);
-      Object serverChannelMap = serverChannelsField.get(openChannels);
-      Object nonserverChannelMap = nonServerChannelsField.get(openChannels);
-      return new NettyChannelsInfo(serverChannelMap, nonserverChannelMap);
+      return (DefaultChannelGroup) openChannels;
     } catch (NoSuchFieldException | IllegalAccessException e) {
       log.warn("Error on getting channelInfo", e);
       return null;
@@ -126,15 +114,5 @@ public final class MetricProviderFactory {
 
   private static ExecutorService extract(AsyncHttpProviderConfig<?, ?> asyncHttpProviderConfig) {
     return ((NettyAsyncHttpProviderConfig) asyncHttpProviderConfig).getBossExecutorService();
-  }
-
-  private static final class NettyChannelsInfo {
-    private final Optional<Map<?, ?>> serverChannelMap;
-    private final Optional<Map<?, ?>> nonserverChannelMap;
-
-    private NettyChannelsInfo(Object serverChannelMap, Object nonserverChannelMap) {
-      this.serverChannelMap = Optional.ofNullable(serverChannelMap).map(val -> (Map<?, ?>) val);
-      this.nonserverChannelMap = Optional.ofNullable(nonserverChannelMap).map(val -> (Map<?, ?>) val);
-    }
   }
 }
