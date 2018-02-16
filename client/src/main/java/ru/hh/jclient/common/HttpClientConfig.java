@@ -6,6 +6,7 @@ import com.ning.http.client.AsyncHttpProviderConfig;
 import com.ning.http.client.filter.RequestFilter;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
 import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import org.jboss.netty.handler.logging.LoggingHandler;
 import ru.hh.jclient.common.metric.MetricConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -53,6 +54,10 @@ public final class HttpClientConfig {
     //to be able to monitor netty boss thread pool. See: com.ning.http.client.providers.netty.channel.ChannelManager
     httpClientConfig.nettyConfig.setBossExecutorService(Executors.newCachedThreadPool());
     configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
+    NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline -> {
+      pipeline.addLast("logger", new LoggingHandler("pipelineLogger"));
+    };
+    httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
     return httpClientConfig;
   }
 
