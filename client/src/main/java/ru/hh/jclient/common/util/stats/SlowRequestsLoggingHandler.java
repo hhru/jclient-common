@@ -2,12 +2,12 @@ package ru.hh.jclient.common.util.stats;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
+import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 
-public class SlowRequestsLoggingHandler implements ChannelUpstreamHandler, ChannelDownstreamHandler {
+public class SlowRequestsLoggingHandler extends SimpleChannelHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(SlowRequestsLoggingHandler.class);
 
@@ -26,33 +26,39 @@ public class SlowRequestsLoggingHandler implements ChannelUpstreamHandler, Chann
   private final long thresholdMs;
 
   public SlowRequestsLoggingHandler(int threshold, int expireTimeout, TimeUnit timeUnit) {
-    cache = CacheBuilder.newBuilder().expireAfterWrite(expireTimeout, TimeUnit.SECONDS).weakKeys().weakValues().build();
+    cache = CacheBuilder.newBuilder().expireAfterWrite(expireTimeout, timeUnit).weakKeys().weakValues().build();
     thresholdMs = timeUnit.toMillis(threshold);
   }
 
   @Override
   public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-    handle(ctx, e);
-    ctx.sendUpstream(e);
+    storeEvent(e.getChannel().getId(), e);
+    super.handleUpstream(ctx, e);
   }
 
   @Override
   public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-    handle(ctx, e);
-    ctx.sendDownstream(e);
+    storeEvent(e.getChannel().getId(), e);
+    super.handleDownstream(ctx, e);
   }
 
-  private void handle(ChannelHandlerContext ctx, ChannelEvent e) {
-    Integer key = e.getChannel().getId();
-    storeEvent(key, e);
-    if (isTerminal(e)) {
-      logEventsIfSlow(key);
-    }
+
+  @Override
+  public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    logEventsIfSlow(e.getChannel().getId());
+    super.messageReceived(ctx, e);
   }
 
-  private static boolean isTerminal(ChannelEvent e) {
-    //FUUUUUUUUUUUUUUUUUUUUUUCK
-    return e instanceof ExceptionEvent || e instanceof MessageEvent && ((MessageEvent) e).getMessage().toString().contains("RECEIVED:");
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+    logEventsIfSlow(e.getChannel().getId());
+    super.exceptionCaught(ctx, e);
+  }
+
+  @Override
+  public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    logEventsIfSlow(e.getChannel().getId());
+    super.channelClosed(ctx, e);
   }
 
   private void storeEvent(Integer key, ChannelEvent e) {
@@ -66,14 +72,16 @@ public class SlowRequestsLoggingHandler implements ChannelUpstreamHandler, Chann
 
   private void logEventsIfSlow(Integer key) {
     List<EventWithTimestamp> events = cache.getIfPresent(key);
-    if (events == null || events.isEmpty()) {
-      return;
-    }
-    if (events.get(events.size() - 1).timestamp - events.get(0).timestamp < thresholdMs) {
-      return;
-    }
     cache.invalidate(key);
-    events.forEach(SlowRequestsLoggingHandler::log);
+    if (events == null || events.size() < 2) {
+      return;
+    }
+
+    long duration = events.get(events.size() - 1).timestamp - events.get(0).timestamp;
+    logger.debug("Duration: {}ms", duration);
+    if (duration >= thresholdMs) {
+      events.forEach(SlowRequestsLoggingHandler::log);
+    }
   }
 
   private static final class EventWithTimestamp {
