@@ -32,6 +32,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
   public boolean adaptive;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     withEmptyContext();
     httpClient = mock(AsyncHttpClient.class);
     debug.reset();
@@ -222,6 +223,28 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
     assertRequestsEquals(request, "server1", "server2", "server3");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryIOExceptionRequestClosed() throws Exception {
+    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+
+    Request[] request = new Request[2];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = failWith(new IOException("Remotely closed"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[1] = completeWith(200, iom);
+          return null;
+        });
+
+    getTestClient(adaptive).get();
+
+    assertRequestsEquals(request, "server1", "server2");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   private void assertRequestsEquals(Request[] request, String... actual) {
