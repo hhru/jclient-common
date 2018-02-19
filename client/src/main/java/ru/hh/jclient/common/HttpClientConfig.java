@@ -57,7 +57,7 @@ public final class HttpClientConfig {
     configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
     int slowRequestThreshold = ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).orElse(2000);
     NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline -> {
-      pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, slowRequestThreshold << 1, TimeUnit.MILLISECONDS));
+      pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, TimeUnit.MILLISECONDS));
     };
     httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
     return httpClientConfig;
