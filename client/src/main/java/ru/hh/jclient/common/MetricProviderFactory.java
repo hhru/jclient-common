@@ -25,10 +25,8 @@ public final class MetricProviderFactory {
   private MetricProviderFactory() {
   }
 
-  public static MetricProvider from(HttpClientBuilder clientBuilder) {
+  public static MetricProvider from(HttpClientBuilder clientBuilder, boolean provideExtendedMetrics) {
     AsyncHttpClientConfig config = clientBuilder.getHttp().getConfig();
-    AsyncHttpProvider provider = clientBuilder.getHttp().getProvider();
-    DefaultChannelGroup channelInfo = getChannelInfo(provider);
     boolean applicationExecutorServiceMeasurable = config.executorService() instanceof ThreadPoolExecutor;
 
     AsyncHttpProviderConfig<?, ?> asyncHttpProviderConfig = config.getAsyncHttpProviderConfig();
@@ -37,6 +35,9 @@ public final class MetricProviderFactory {
 
     ExecutorService applicationExecutorService = config.executorService();
     ExecutorService nettyBossExecutorService = extract(asyncHttpProviderConfig);
+
+    AsyncHttpProvider provider = clientBuilder.getHttp().getProvider();
+    DefaultChannelGroup channelInfo = provideExtendedMetrics ? getChannelInfo(provider) : null;
 
     return new MetricProvider() {
       @Override

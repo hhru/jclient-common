@@ -34,6 +34,7 @@ public final class HttpClientConfig {
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = 1;
+  private boolean provideExtendedMetrics;
 
   private MetricConsumer metricConsumer;
 
@@ -51,15 +52,20 @@ public final class HttpClientConfig {
         .ifPresent(configBuilder::setAllowPoolingConnections);
     HttpClientConfig httpClientConfig = new HttpClientConfig(configBuilder);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble).ifPresent(httpClientConfig::withTimeoutMultiplier);
+    ofNullable(properties.getProperty(ConfigKeys.PROVIDE_EXTENDED_METRICS)).map(Boolean::parseBoolean)
+        .ifPresent(httpClientConfig::withExtendedMetrics);
     httpClientConfig.nettyConfig = new NettyAsyncHttpProviderConfig();
     //to be able to monitor netty boss thread pool. See: com.ning.http.client.providers.netty.channel.ChannelManager
     httpClientConfig.nettyConfig.setBossExecutorService(Executors.newCachedThreadPool());
     configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
-    int slowRequestThreshold = ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).orElse(2000);
-    NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline -> {
-      pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, TimeUnit.MILLISECONDS));
-    };
-    httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
+    ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).ifPresent(slowRequestThreshold -> {
+      if (slowRequestThreshold <= 0) {
+        return;
+      }
+      NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline ->
+          pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, TimeUnit.MILLISECONDS));
+      httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
+    });
     return httpClientConfig;
   }
 
@@ -126,6 +132,11 @@ public final class HttpClientConfig {
     return this;
   }
 
+  public HttpClientConfig withExtendedMetrics(boolean provideExtendedMetrics) {
+    this.provideExtendedMetrics = provideExtendedMetrics;
+    return this;
+  }
+
   public HttpClientBuilder build() {
     AsyncHttpClient http = buildClient();
     HttpClientBuilder httpClientBuilder = new HttpClientBuilder(
@@ -135,7 +146,7 @@ public final class HttpClientConfig {
       callbackExecutor,
       upstreamManager
     );
-    ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider()));
+    ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider(provideExtendedMetrics)));
     return httpClientBuilder;
   }
 
@@ -184,6 +195,7 @@ public final class HttpClientConfig {
   }
 
   public interface ConfigKeys {
+    String PROVIDE_EXTENDED_METRICS = "provideExtendedMetrics";
     String SLOW_REQ_THRESHOLD_MS = "slowRequestThresholdMs";
     String USER_AGENT = "userAgent";
 
