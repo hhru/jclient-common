@@ -19,9 +19,9 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Optional.ofNullable;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 //TODO rename to HttpClientFactoryBuilder
 public final class HttpClientConfig {
@@ -58,15 +58,18 @@ public final class HttpClientConfig {
     //to be able to monitor netty boss thread pool. See: com.ning.http.client.providers.netty.channel.ChannelManager
     httpClientConfig.nettyConfig.setBossExecutorService(Executors.newCachedThreadPool());
     configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
-    ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).ifPresent(slowRequestThreshold -> {
-      if (slowRequestThreshold <= 0) {
-        return;
-      }
-      NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline ->
-          pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, TimeUnit.MILLISECONDS));
-      httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
-    });
+    ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).ifPresent(slowRequestThreshold ->
+        setSlowRequestHandler(httpClientConfig, slowRequestThreshold));
     return httpClientConfig;
+  }
+
+  private static void setSlowRequestHandler(HttpClientConfig httpClientConfig, Integer slowRequestThreshold) {
+    if (slowRequestThreshold <= 0) {
+      return;
+    }
+    NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline ->
+        pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, slowRequestThreshold << 2, MILLISECONDS));
+    httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
   }
 
   /**
@@ -129,6 +132,11 @@ public final class HttpClientConfig {
 
   public HttpClientConfig withTimeoutMultiplier(double timeoutMultiplier) {
     this.timeoutMultiplier = timeoutMultiplier;
+    return this;
+  }
+
+  public HttpClientConfig withSlowRequestLogging(int slowRequestThreshold) {
+    setSlowRequestHandler(this, slowRequestThreshold);
     return this;
   }
 
