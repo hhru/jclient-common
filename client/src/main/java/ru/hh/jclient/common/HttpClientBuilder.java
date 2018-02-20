@@ -109,8 +109,8 @@ public class HttpClientBuilder {
     return http;
   }
 
-  MetricProvider getMetricProvider() {
-    return MetricProviderFactory.from(this);
+  MetricProvider getMetricProvider(boolean provideExtendedMetrics) {
+    return MetricProviderFactory.from(this, provideExtendedMetrics);
   }
 
 }
