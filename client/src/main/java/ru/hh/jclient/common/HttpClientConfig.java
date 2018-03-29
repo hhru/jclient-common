@@ -28,7 +28,7 @@ public final class HttpClientConfig {
 
   private final AsyncHttpClientConfig.Builder configBuilder;
 
-  private UpstreamManager upstreamManager;
+  private UpstreamManager upstreamManager = new DefaultUpstreamManager();
   private Executor callbackExecutor;
   private NettyAsyncHttpProviderConfig nettyConfig;
   private Set<String> hostsWithSession;
