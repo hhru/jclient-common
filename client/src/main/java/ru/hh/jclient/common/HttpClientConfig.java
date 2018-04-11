@@ -166,9 +166,9 @@ public final class HttpClientConfig {
   private AsyncHttpClientConfig.Builder applyTimeoutMultiplier(AsyncHttpClientConfig.Builder clientConfigBuilder) {
     AsyncHttpClientConfig config = clientConfigBuilder.build();
     AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder(config);
-    builder.setConnectTimeout((int)(config.getConnectTimeout() * timeoutMultiplier));
-    builder.setReadTimeout((int)(config.getReadTimeout() * timeoutMultiplier));
-    builder.setRequestTimeout((int)(config.getRequestTimeout() * timeoutMultiplier));
+    builder.setConnectTimeout(config.getConnectTimeout() > 0 ? (int)(config.getConnectTimeout() * timeoutMultiplier) : config.getConnectTimeout());
+    builder.setReadTimeout(config.getReadTimeout() > 0 ? (int)(config.getReadTimeout() * timeoutMultiplier) : config.getReadTimeout());
+    builder.setRequestTimeout(config.getRequestTimeout() > 0 ? (int)(config.getRequestTimeout() * timeoutMultiplier) : config.getRequestTimeout());
     return builder;
   }
 
