@@ -1,6 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
-import static ru.hh.jclient.common.AbstractClient.HTTP_POST;
+import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 

@@ -18,7 +18,7 @@ public class UpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";
 
   @Test
-  public void createUpstreamManager() throws Exception {
+  public void createUpstreamManager() {
     UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
 
     assertEquals(1, manager.getUpstreams().size());
@@ -34,7 +34,7 @@ public class UpstreamManagerTest {
   }
 
   @Test
-  public void updateUpstreams() throws Exception {
+  public void updateUpstreams() {
     UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 retry_policy=timeout | server=a | server=b");
 
     manager.updateUpstream(TEST_BACKEND, "max_fails=6 | server=a");
@@ -59,7 +59,7 @@ public class UpstreamManagerTest {
   }
 
   @Test
-  public void testRemoveUpstream() throws Exception {
+  public void testRemoveUpstream() {
     UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
 
     manager.updateUpstream(TEST_BACKEND, null);
@@ -69,7 +69,7 @@ public class UpstreamManagerTest {
   }
 
   @Test
-  public void testGetUpstream() throws Exception {
+  public void testGetUpstream() {
     UpstreamManager upstreamManager = createUpstreamManager(TEST_BACKEND, "|server=server");
 
     assertNotNull(upstreamManager.getUpstream(TEST_BACKEND));
