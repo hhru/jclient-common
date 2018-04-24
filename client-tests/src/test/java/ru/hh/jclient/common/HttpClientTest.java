@@ -15,6 +15,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
+import com.google.common.net.MediaType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -510,6 +512,30 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(response.getError().isPresent());
     assertNotNull(response.getResponse());
     assertEquals(800, response.getResponse().getStatusCode());
+    assertEqualRequests(request, actualRequest.get());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void testErrorXmlHandlesTransportError() throws Exception {
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
+
+    MappedTransportErrorResponse errorResponse = TransportExceptionMapper.map(
+      new ConnectException("test connect exception"), request.getUri());
+
+    Supplier<Request> actualRequest = withEmptyContext().request(new Response(errorResponse));
+    ResultOrErrorWithResponse<XmlTest, XmlError> response = http
+      .with(request)
+      .expectJson(objectMapper, XmlTest.class)
+      .orXmlError(jaxbContext, XmlError.class)
+      .resultWithResponse()
+      .get();
+
+    assertFalse(response.isSuccess());
+    assertFalse(response.get().isPresent());
+    assertFalse(response.getError().isPresent());
+    assertNotNull(response.getResponse());
+    assertEquals(errorResponse, response.getResponse().getDelegate());
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }

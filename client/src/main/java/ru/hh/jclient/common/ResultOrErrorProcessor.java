@@ -122,7 +122,7 @@ public class ResultOrErrorProcessor<T, E> {
   }
 
   private Optional<E> parseError(Response response) throws Exception {
-    if (errorsRange.contains(response.getStatusCode())) {
+    if (errorsRange.contains(response.getStatusCode()) && !(response.getDelegate() instanceof MappedTransportErrorResponse)) {
       if (errorConverter != null) {
         return errorConverter.converterFunction().apply(response).get();
       }
