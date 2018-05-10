@@ -17,9 +17,22 @@
         </dependency>
 
         <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>3.0.4</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>ru.hh.metrics</groupId>
             <artifactId>hh-metrics</artifactId>
             <version>0.15</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ru.hh.settings-client</groupId>
+            <artifactId>settings-java-client</artifactId>
+            <version>1.4-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
