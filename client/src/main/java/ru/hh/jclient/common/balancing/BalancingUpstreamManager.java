@@ -1,11 +1,12 @@
 package ru.hh.jclient.common.balancing;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.UpstreamManager;
 import ru.hh.jclient.common.Uri;
-import ru.hh.jclient.common.Monitoring;
 
 import java.util.Collections;
 import java.util.Map;
@@ -18,6 +19,10 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduledExecutor;
   private final Monitoring monitoring;
+
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Monitoring monitoring) {
+    this(emptyMap(), scheduledExecutor, monitoring);
+  }
 
   public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
