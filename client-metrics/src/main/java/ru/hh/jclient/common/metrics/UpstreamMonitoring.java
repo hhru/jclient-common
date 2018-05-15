@@ -7,6 +7,14 @@ import ru.hh.metrics.Tag;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * UpstreamMonitoring sends requests metrics to okmeter.io using StatsD.
+ *
+ * Metrics:
+ *  - http.client.requests
+ *  - http.client.request.time
+ *  - http.client.retries
+ */
 public class UpstreamMonitoring implements Monitoring {
   private final StatsDSender statsDSender;
   private final String serviceName;
