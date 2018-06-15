@@ -145,7 +145,7 @@ public class HttpClientBalancedTest extends HttpClientTestBase {
           return null;
         })
         .then(iom -> {
-          request[1] = failWith(new ConnectException("Connection refused"), iom);
+          request[1] = failWith(new ConnectException("Connection reset by peer"), iom);
           return null;
         })
         .then(iom -> {

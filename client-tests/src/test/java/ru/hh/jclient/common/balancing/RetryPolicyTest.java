@@ -9,7 +9,7 @@ import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 public class RetryPolicyTest {
 
   @Test
-  public void testIsRetriable() throws Exception {
+  public void testIsRetriable() {
 
     RetryPolicy policy = new RetryPolicy();
 

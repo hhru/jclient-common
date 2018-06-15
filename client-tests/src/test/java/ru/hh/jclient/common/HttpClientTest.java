@@ -449,7 +449,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
-      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
+      http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, CLIENT_PROBLEM, FINISHED);

@@ -10,7 +10,7 @@ import java.util.List;
 public class UpstreamConfigParserTest {
 
   @Test
-  public void parseOneServer() throws Exception {
+  public void parseOneServer() {
     String configStr = "max_tries=3 max_timeout_tries=2 max_fails=30  connect_timeout_sec=0.2 request_timeout_sec=2   " +
         "fail_timeout_sec=1.5 |server=localhost:9090   weight=42 ";
     UpstreamConfig config = UpstreamConfig.parse(configStr);
@@ -29,7 +29,7 @@ public class UpstreamConfigParserTest {
   }
 
   @Test
-  public void parseMultipleServers() throws Exception {
+  public void parseMultipleServers() {
     String configStr = "max_tries=1 max_fails=1 fail_timeout_sec=1 | server=local-host:9090 weight=5   |server=host:9091 weight=2 | ";
     UpstreamConfig config = UpstreamConfig.parse(configStr);
 
@@ -47,7 +47,7 @@ public class UpstreamConfigParserTest {
   }
 
   @Test
-  public void parseEmptyConfig() throws Exception {
+  public void parseEmptyConfig() {
     UpstreamConfig config = UpstreamConfig.parse("");
 
     assertEquals(UpstreamConfig.DEFAULT_MAX_TRIES, config.getMaxTries());
