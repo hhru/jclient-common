@@ -11,7 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class ServerTest {
 
   @Test
-  public void testCreateServer() throws Exception {
+  public void testCreateServer() {
     Server server = new Server("test", 1);
 
     assertEquals(0, server.getRequests());
@@ -22,7 +22,7 @@ public class ServerTest {
   }
 
   @Test
-  public void testAcquire() throws Exception {
+  public void testAcquire() {
     Server server = new Server("test", 1);
 
     server.acquire();
@@ -34,7 +34,7 @@ public class ServerTest {
   }
 
   @Test
-  public void testAcquireRelease() throws Exception {
+  public void testAcquireRelease() {
     Server server = new Server("test", 1);
 
     server.acquire();
@@ -47,7 +47,7 @@ public class ServerTest {
   }
 
   @Test
-  public void testAcquireReleaseWithFail() throws Exception {
+  public void testAcquireReleaseWithFail() {
     Server server = new Server("test", 1);
 
     server.acquire();
@@ -60,7 +60,7 @@ public class ServerTest {
   }
 
   @Test
-  public void testActivateDeactivate() throws Exception {
+  public void testActivateDeactivate() {
     Server server = new Server("test", 1);
 
     server.acquire();
