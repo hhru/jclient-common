@@ -1,6 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
-public class ServerEntry {
+final class ServerEntry {
   private final int index;
   private final String address;
 

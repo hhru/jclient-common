@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 
-public class BalancingStrategy {
+final class BalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
   static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers) {
@@ -32,5 +32,8 @@ public class BalancingStrategy {
 
     LOGGER.debug("static balancer pick for {}, load:{}, stat_load:{}", minIndex, minCurrentLoad, minStatLoad);
     return minIndex;
+  }
+
+  private BalancingStrategy() {
   }
 }

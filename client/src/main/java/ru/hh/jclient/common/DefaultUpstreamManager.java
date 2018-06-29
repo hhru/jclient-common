@@ -5,7 +5,7 @@ import ru.hh.jclient.common.balancing.Upstream;
 import java.util.Collections;
 import java.util.Map;
 
-class DefaultUpstreamManager implements UpstreamManager {
+final class DefaultUpstreamManager implements UpstreamManager {
   @Override
   public Upstream getUpstream(String host) {
     return null;

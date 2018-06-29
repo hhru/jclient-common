@@ -1,13 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
-public class DowntimeDetector {
+final class DowntimeDetector {
   private final int[] errors;
   private final int n;
 
   private volatile int errorsCount;
   private int current;
 
-  public DowntimeDetector(int n) {
+  DowntimeDetector(int n) {
     this.n = n;
     errors = new int[n];
     current = 0;
