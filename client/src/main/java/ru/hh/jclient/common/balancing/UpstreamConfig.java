@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-public class UpstreamConfig {
+final class UpstreamConfig {
   static final int DEFAULT_MAX_TRIES = 2;
   static final int DEFAULT_MAX_FAILS = 1;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;

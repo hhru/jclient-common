@@ -4,7 +4,7 @@ import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
 
-public class RetryPolicy {
+final class RetryPolicy {
   private boolean connectTimeout = true;
   private boolean requestTimeout = true;
   private boolean nonIdempotentRequestTimeout = false;
@@ -39,5 +39,14 @@ public class RetryPolicy {
 
   boolean isNonIdempotentRequestTimeout() {
     return nonIdempotentRequestTimeout;
+  }
+
+  @Override
+  public String toString() {
+    return "RetryPolicy {" +
+        "connectTimeout=" + connectTimeout +
+        ", requestTimeout=" + requestTimeout +
+        ", nonIdempotentRequestTimeout=" + nonIdempotentRequestTimeout +
+        '}';
   }
 }

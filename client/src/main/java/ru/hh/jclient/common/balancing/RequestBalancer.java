@@ -36,8 +36,11 @@ public class RequestBalancer {
   private int firstStatusCode;
   private Iterator<ServerEntry> serverEntryIterator;
 
-  public RequestBalancer(Request request, UpstreamManager upstreamManager, RequestExecutor requestExecutor,
-                         Integer maxRequestTimeoutTries, boolean adaptive) {
+  public RequestBalancer(Request request,
+                         UpstreamManager upstreamManager,
+                         RequestExecutor requestExecutor,
+                         Integer maxRequestTimeoutTries,
+                         boolean adaptive) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;

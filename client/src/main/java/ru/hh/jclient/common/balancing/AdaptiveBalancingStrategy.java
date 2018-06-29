@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class AdaptiveBalancingStrategy {
+final class AdaptiveBalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdaptiveBalancingStrategy.class);
 
   static final int WARM_UP_DEFAULT_TIME_MS = 100;
@@ -90,5 +90,8 @@ public class AdaptiveBalancingStrategy {
     int d = ids[a];
     ids[a] = ids[b];
     ids[b] = d;
+  }
+
+  private AdaptiveBalancingStrategy() {
   }
 }

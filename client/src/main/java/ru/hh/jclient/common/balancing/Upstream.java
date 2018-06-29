@@ -11,7 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class Upstream {
+public final class Upstream {
 
   private final String name;
   private final UpstreamConfig upstreamConfig;

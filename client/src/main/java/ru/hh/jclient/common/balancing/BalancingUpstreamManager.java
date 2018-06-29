@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
-public class BalancingUpstreamManager implements UpstreamManager {
+public final class BalancingUpstreamManager implements UpstreamManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
 
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();

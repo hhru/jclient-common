@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Server {
+public final class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
   static final int DEFAULT_WEIGHT = 1;
