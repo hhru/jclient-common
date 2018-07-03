@@ -9,55 +9,21 @@ import com.ning.http.client.AsyncHttpClientConfig;
  */
 public interface RequestDebug {
 
-  default void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, String upstreamName) {
-    onRequest(config, request.getDelegate(), requestBodyEntity);
-  }
-
-  /**
-   * @deprecated use {@link #onRequest(AsyncHttpClientConfig, Request, Optional, String)}
-   */
-  @Deprecated
-  default void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity) {
-    onRequest(config, request.getDelegate(), requestBodyEntity);
-  }
-
   /**
    * Called before start of the request
-   *
-   * @deprecated use {@link #onRequest(AsyncHttpClientConfig, Request, Optional)}
    */
-  @Deprecated
-  void onRequest(AsyncHttpClientConfig config, com.ning.http.client.Request request, Optional<?> requestBodyEntity);
-
-  default void onRetry(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName) {
-    onRetry(config, request.getDelegate(), requestBodyEntity, retryCount, upstreamName);
-  }
+  void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, String upstreamName);
 
   /**
    * Called before retrying the request
-   *
-   * @deprecated use {@link #onRetry(AsyncHttpClientConfig, Request, Optional, int, String)}
    */
-  @Deprecated
-  void onRetry(
-      AsyncHttpClientConfig config,
-      com.ning.http.client.Request request,
-      Optional<?> requestBodyEntity,
-      int retryCount,
-      String upstreamName);
-
-  default Response onResponse(AsyncHttpClientConfig config, Response response) {
-    return new Response(onResponse(config, response.getDelegate()));
-  }
+  void onRetry(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName);
 
   /**
    * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
    * purposes.
-   *
-   * @deprecated use {@link #onResponse(AsyncHttpClientConfig, Response)}
    */
-  @Deprecated
-  com.ning.http.client.Response onResponse(AsyncHttpClientConfig config, com.ning.http.client.Response response);
+  Response onResponse(AsyncHttpClientConfig config, Response response);
 
   /**
    * Called once response is successfully converted.
