@@ -16,6 +16,8 @@ public class Response {
     this.delegate = delegate;
   }
 
+  protected Response() { this(null); }
+
   /**
    * Returns the status code for the request.
    *
@@ -68,10 +70,8 @@ public class Response {
    * Returns the first maxLength bytes of the response body as a string. Note that this does not check whether the content type is actually a textual
    * one, but it will use the charset if present in the content type header.
    *
-   * @param maxLength
-   *          The maximum number of bytes to read
-   * @param charset
-   *          the charset to use when decoding the stream
+   * @param maxLength The maximum number of bytes to read
+   * @param charset   the charset to use when decoding the stream
    * @return The response body
    * @throws java.io.IOException
    */
@@ -82,8 +82,7 @@ public class Response {
   /**
    * Return the entire response body as a String.
    *
-   * @param charset
-   *          the charset to use when decoding the stream
+   * @param charset the charset to use when decoding the stream
    * @return the entire response body as a String.
    * @throws IOException
    */
@@ -95,8 +94,7 @@ public class Response {
    * Returns the first maxLength bytes of the response body as a string. Note that this does not check whether the content type is actually a textual
    * one, but it will use the charset if present in the content type header.
    *
-   * @param maxLength
-   *          The maximum number of bytes to read
+   * @param maxLength The maximum number of bytes to read
    * @return The response body
    * @throws java.io.IOException
    */
