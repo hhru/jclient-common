@@ -8,26 +8,12 @@ import java.util.List;
 import java.util.Optional;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Request;
-import com.ning.http.client.Response;
 
 @SuppressWarnings("unused")
 public class TestRequestDebug implements RequestDebug {
 
-  public enum Call {
-    REQUEST,
-    RESPONSE,
-    RETRY,
-    RESPONSE_CONVERTED,
-    CLIENT_PROBLEM,
-    CONVERTER_PROBLEM,
-    FINISHED,
-    LABEL
-  }
-
   private final List<Call> calls = new ArrayList<>();
   private final boolean recordCalls;
-
   public TestRequestDebug() {
     this(false);
   }
@@ -51,17 +37,20 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
-  public void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity) {
+  public void onRequest(AsyncHttpClientConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, String upstreamName) {
     record(Call.REQUEST);
   }
 
   @Override
-  public void onRetry(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName) {
+  public void onRetry(AsyncHttpClientConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity,
+    int retryCount,
+    String upstreamName) {
     record(Call.RETRY);
+
   }
 
   @Override
-  public Response onResponse(AsyncHttpClientConfig config, Response response) {
+  public ru.hh.jclient.common.Response onResponse(AsyncHttpClientConfig config, ru.hh.jclient.common.Response response) {
     record(Call.RESPONSE);
     return response;
   }
@@ -95,5 +84,9 @@ public class TestRequestDebug implements RequestDebug {
     if (recordCalls) {
       calls.add(call);
     }
+  }
+
+  public enum Call {
+    REQUEST, RESPONSE, RETRY, RESPONSE_CONVERTED, CLIENT_PROBLEM, CONVERTER_PROBLEM, FINISHED, LABEL
   }
 }
