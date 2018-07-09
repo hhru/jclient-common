@@ -5,7 +5,6 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
 import java.time.Instant;
@@ -66,14 +65,14 @@ class HttpClientImpl extends HttpClient {
     request = addHeadersAndParams(request);
     if (retryCount > 0) {
       LOGGER.info("ASYNC_HTTP_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
-      getDebug().onRetry(getHttp().getConfig(), request, getRequestBodyEntity(), retryCount, upstreamName);
+      getDebug().onRetry(getDebugConfig(), request, getRequestBodyEntity(), retryCount, upstreamName);
     } else {
       LOGGER.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-      getDebug().onRequest(getHttp().getConfig(), request, getRequestBodyEntity(), upstreamName);
+      getDebug().onRequest(getDebugConfig(), request, getRequestBodyEntity(), upstreamName);
     }
 
     Transfers transfers = getStorages().prepare();
-    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebug(), transfers, getHttp().getConfig(), callbackExecutor);
+    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebug(), transfers, getDebugConfig(), callbackExecutor);
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
@@ -135,12 +134,12 @@ class HttpClientImpl extends HttpClient {
     private Request request;
     private Instant requestStart;
     private RequestDebug requestDebug;
-    private AsyncHttpClientConfig config;
+    private DebugConfig config;
     private Transfers contextTransfers;
     private final Executor callbackExecutor;
 
     CompletionHandler(CompletableFuture<ResponseWrapper> promise, Request request, Instant requestStart,
-                      RequestDebug requestDebug, Transfers contextTransfers, AsyncHttpClientConfig config, Executor callbackExecutor) {
+                      RequestDebug requestDebug, Transfers contextTransfers, DebugConfig config, Executor callbackExecutor) {
       this.requestStart = requestStart;
       this.mdcCopy = MDCCopy.capture();
       this.promise = promise;
