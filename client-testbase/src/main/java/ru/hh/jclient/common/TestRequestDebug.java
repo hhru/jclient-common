@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import ru.hh.jclient.common.exception.ResponseConverterException;
-import com.ning.http.client.AsyncHttpClientConfig;
 
 @SuppressWarnings("unused")
 public class TestRequestDebug implements RequestDebug {
@@ -37,12 +36,12 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
-  public void onRequest(AsyncHttpClientConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, String upstreamName) {
+  public void onRequest(DebugConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, String upstreamName) {
     record(Call.REQUEST);
   }
 
   @Override
-  public void onRetry(AsyncHttpClientConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity,
+  public void onRetry(DebugConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity,
     int retryCount,
     String upstreamName) {
     record(Call.RETRY);
@@ -50,7 +49,7 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
-  public ru.hh.jclient.common.Response onResponse(AsyncHttpClientConfig config, ru.hh.jclient.common.Response response) {
+  public ru.hh.jclient.common.Response onResponse(DebugConfig config, ru.hh.jclient.common.Response response) {
     record(Call.RESPONSE);
     return response;
   }

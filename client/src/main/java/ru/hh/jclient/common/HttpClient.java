@@ -39,6 +39,7 @@ public abstract class HttpClient {
   public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
   private final AsyncHttpClient http;
+  private final DebugConfig debugConfig;
   private final Set<String> hostsWithSession;
   private final HttpClientContext context;
   private final Storages storages;
@@ -68,6 +69,11 @@ public abstract class HttpClient {
     this.upstreamManager = upstreamManager;
     this.adaptive = adaptive;
 
+    debugConfig = DebugConfig.builder()
+      .connectTimeout(http.getConfig().getConnectTimeout())
+      .requestTimeout(http.getConfig().getRequestTimeout())
+      .maxRedirects(http.getConfig().getMaxRedirects())
+      .build();
     context = contextSupplier.get();
     storages = context.getStorages().copy().add(contextSupplier);
     debug = context.getDebugSupplier().get();
@@ -306,6 +312,10 @@ public abstract class HttpClient {
 
   AsyncHttpClient getHttp() {
     return http;
+  }
+
+  DebugConfig getDebugConfig() {
+    return debugConfig;
   }
 
   HttpClientContext getContext() {

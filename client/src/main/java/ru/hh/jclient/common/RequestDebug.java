@@ -2,7 +2,6 @@ package ru.hh.jclient.common;
 
 import java.util.Optional;
 import ru.hh.jclient.common.exception.ResponseConverterException;
-import com.ning.http.client.AsyncHttpClientConfig;
 
 /**
  * Describes object used to gather debug information on performing local (outgoing) request.
@@ -12,18 +11,18 @@ public interface RequestDebug {
   /**
    * Called before start of the request
    */
-  void onRequest(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, String upstreamName);
+  void onRequest(DebugConfig config, Request request, Optional<?> requestBodyEntity, String upstreamName);
 
   /**
    * Called before retrying the request
    */
-  void onRetry(AsyncHttpClientConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName);
+  void onRetry(DebugConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName);
 
   /**
    * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
    * purposes.
    */
-  Response onResponse(AsyncHttpClientConfig config, Response response);
+  Response onResponse(DebugConfig config, Response response);
 
   /**
    * Called once response is successfully converted.
