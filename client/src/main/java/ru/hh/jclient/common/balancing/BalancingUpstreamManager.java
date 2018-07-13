@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
@@ -13,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
-public final class BalancingUpstreamManager implements UpstreamManager {
+public final class BalancingUpstreamManager extends UpstreamManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
 
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();

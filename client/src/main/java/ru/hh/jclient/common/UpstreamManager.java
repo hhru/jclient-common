@@ -4,12 +4,24 @@ import ru.hh.jclient.common.balancing.Upstream;
 
 import java.util.Map;
 
-public interface UpstreamManager {
-  Upstream getUpstream(String host);
+import static ru.hh.jclient.common.HttpClientConfig.DEFAULT_TIMEOUT_MULTIPLIER;
 
-  Map<String, Upstream> getUpstreams();
+public abstract class UpstreamManager {
+  private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
 
-  void updateUpstream(String name, String configString);
+  public abstract Upstream getUpstream(String host);
 
-  Monitoring getMonitoring();
+  public abstract Map<String, Upstream> getUpstreams();
+
+  public abstract void updateUpstream(String name, String configString);
+
+  public abstract Monitoring getMonitoring();
+
+  public double getTimeoutMultiplier() {
+    return timeoutMultiplier;
+  }
+
+  public void setTimeoutMultiplier(double timeoutMultiplier) {
+    this.timeoutMultiplier = timeoutMultiplier;
+  }
 }
