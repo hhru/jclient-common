@@ -25,6 +25,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 //TODO rename to HttpClientFactoryBuilder
 public final class HttpClientConfig {
+  public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
   private final AsyncHttpClientConfig.Builder configBuilder;
 
@@ -33,7 +34,7 @@ public final class HttpClientConfig {
   private NettyAsyncHttpProviderConfig nettyConfig;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
-  private double timeoutMultiplier = 1;
+  private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private boolean provideExtendedMetrics;
 
   private MetricConsumer metricConsumer;
@@ -146,13 +147,12 @@ public final class HttpClientConfig {
   }
 
   public HttpClientBuilder build() {
-    AsyncHttpClient http = buildClient();
     HttpClientBuilder httpClientBuilder = new HttpClientBuilder(
-      http,
+      buildClient(),
       hostsWithSession,
       contextSupplier,
       callbackExecutor,
-      upstreamManager
+      buildUpstreamManager()
     );
     ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider(provideExtendedMetrics)));
     return httpClientBuilder;
@@ -161,6 +161,11 @@ public final class HttpClientConfig {
   private AsyncHttpClient buildClient() {
     AsyncHttpClientConfig clientConfig = applyTimeoutMultiplier(configBuilder).build();
     return MDCCopy.doWithoutContext(() -> new AsyncHttpClient(new NettyAsyncHttpProvider(clientConfig), clientConfig));
+  }
+
+  private UpstreamManager buildUpstreamManager() {
+    upstreamManager.setTimeoutMultiplier(timeoutMultiplier);
+    return upstreamManager;
   }
 
   private AsyncHttpClientConfig.Builder applyTimeoutMultiplier(AsyncHttpClientConfig.Builder clientConfigBuilder) {
