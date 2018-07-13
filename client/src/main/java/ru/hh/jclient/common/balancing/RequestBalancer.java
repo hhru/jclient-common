@@ -114,9 +114,12 @@ public class RequestBalancer {
     if (currentServer == null) {
       return request;
     }
+
+    int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : upstream.getConfig().getRequestTimeoutMs();
+
     RequestBuilder requestBuilder = new RequestBuilder(request);
     requestBuilder.setUrl(getBalancedUrl(request, currentServer.getAddress()));
-    requestBuilder.setRequestTimeout(request.getRequestTimeout() > 0 ? request.getRequestTimeout() : upstream.getConfig().getRequestTimeoutMs());
+    requestBuilder.setRequestTimeout((int) (requestTimeout * upstreamManager.getTimeoutMultiplier()));
     return requestBuilder.build();
   }
 
