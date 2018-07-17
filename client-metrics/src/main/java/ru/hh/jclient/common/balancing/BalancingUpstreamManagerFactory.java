@@ -14,17 +14,22 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class BalancingUpstreamManagerFactory {
 
-  public static UpstreamManager create(String serviceName, Session cassandraSession, StatsDSender statsDSender) {
-    return create(serviceName, cassandraSession, statsDSender, createScheduledExecutor());
+  public static UpstreamManager create(String serviceName,
+                                       Session cassandraSession,
+                                       StatsDSender statsDSender,
+                                       String datacenter,
+                                       boolean allowCrossDCRequests) {
+    return create(serviceName, cassandraSession, statsDSender, createScheduledExecutor(), datacenter, allowCrossDCRequests);
   }
 
   public static UpstreamManager create(String serviceName,
                                        Session cassandraSession,
                                        StatsDSender statsDSender,
-                                       ScheduledExecutorService scheduledExecutorService) {
-
+                                       ScheduledExecutorService scheduledExecutorService,
+                                       String datacenter,
+                                       boolean allowCrossDCRequests) {
     Monitoring monitoring = new UpstreamMonitoring(statsDSender, serviceName);
-    UpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, monitoring);
+    UpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, monitoring, datacenter, allowCrossDCRequests);
     createSystemSettingsListener(cassandraSession, upstreamManager);
     return upstreamManager;
   }

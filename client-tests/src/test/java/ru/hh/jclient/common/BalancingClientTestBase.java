@@ -13,8 +13,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -211,7 +209,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   void createHttpClientBuilder(String upstreamConfig) {
-    http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig));
+    http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false);
+  }
+
+  void createHttpClientBuilder(String upstreamConfig, String datacenter, boolean allowCrossDCRequests) {
+    http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests);
   }
 
   com.ning.http.client.Request completeWith(int status, InvocationOnMock iom) throws Exception {
@@ -230,8 +232,8 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     assertEquals(host, request.getUri().getHost());
   }
 
-  private HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs) {
-    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class));
+  private HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter, boolean allowCrossDCRequests) {
+    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class), datacenter, allowCrossDCRequests);
     return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }

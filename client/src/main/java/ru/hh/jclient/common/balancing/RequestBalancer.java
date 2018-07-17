@@ -5,10 +5,11 @@ import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
+import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
-import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
-import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
+
+import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MS;
 
 import ru.hh.jclient.common.ResponseWrapper;
@@ -34,17 +35,20 @@ public class RequestBalancer {
   private int triesLeft;
   private long requestTimeLeftMs;
   private int firstStatusCode;
+  private boolean forceIdempotence;
   private Iterator<ServerEntry> serverEntryIterator;
 
   public RequestBalancer(Request request,
                          UpstreamManager upstreamManager,
                          RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
+                         boolean forceIdempotence,
                          boolean adaptive) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
     this.adaptive = adaptive;
+    this.forceIdempotence = forceIdempotence;
 
     host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host);
@@ -60,14 +64,16 @@ public class RequestBalancer {
 
   public CompletableFuture<Response> requestWithRetry() {
     Request balancedRequest = request;
+    RequestContext context = RequestContext.EMPTY_CONTEXT;
     if (isUpstreamAvailable()) {
       balancedRequest = getBalancedRequest(request);
       if (!isServerAvailable()) {
         return completedFuture(getServerNotAvailableResponse(request, upstream.getName()));
       }
+      context = new RequestContext(upstream.getName(), currentServer.getRack(), currentServer.getDatacenter());
     }
-    int retryCount = triedServers.size();
-    return requestExecutor.executeRequest(balancedRequest, retryCount, isUpstreamAvailable() ? upstream.getName() : host)
+
+    return requestExecutor.executeRequest(balancedRequest, triedServers.size(), context)
         .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
         .thenCompose(this::unwrapOrRetry);
   }
@@ -93,13 +99,13 @@ public class RequestBalancer {
     if (isServerAvailable()) {
       Monitoring monitoring = upstreamManager.getMonitoring();
       int statusCode = wrapper.getResponse().getStatusCode();
-      monitoring.countRequest(upstream.getName(), currentServer.getAddress(), statusCode, !doRetry);
+      monitoring.countRequest(upstream.getName(), currentServer.getDatacenter(), currentServer.getAddress(), statusCode, !doRetry);
 
       long requestTimeMs = wrapper.getTimeToLastByteMs();
-      monitoring.countRequestTime(upstream.getName(), requestTimeMs);
+      monitoring.countRequestTime(upstream.getName(), currentServer.getDatacenter(), requestTimeMs);
 
       if (!triedServers.isEmpty()) {
-        monitoring.countRetry(upstream.getName(), currentServer.getAddress(), statusCode, firstStatusCode, triedServers.size());
+        monitoring.countRetry(upstream.getName(), currentServer.getDatacenter(), currentServer.getAddress(), statusCode, firstStatusCode, triedServers.size());
       }
     }
   }
@@ -128,18 +134,20 @@ public class RequestBalancer {
       List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries);
       serverEntryIterator = entries.iterator();
     }
-    ServerEntry entry = serverEntryIterator.next();
-    upstream.acquireServer(entry.getIndex());
-    return entry;
+
+    return serverEntryIterator.next();
   }
 
   private void finishRequest(ResponseWrapper wrapper) {
-    if (wrapper == null) {
-      releaseServer(false, WARM_UP_DEFAULT_TIME_MS);
-    } else {
-      long timeToLastByteMs = wrapper.getTimeToLastByteMs();
+    long timeToLastByteMs = WARM_UP_DEFAULT_TIME_MS;
+    if (wrapper != null) {
+      timeToLastByteMs = wrapper.getTimeToLastByteMs();
       updateLeftTriesAndTime(timeToLastByteMs);
-      releaseServer(isServerError(wrapper.getResponse()), timeToLastByteMs);
+    }
+
+    if (isServerAvailable() && !adaptive) {
+      boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
+      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs);
     }
   }
 
@@ -150,22 +158,14 @@ public class RequestBalancer {
     }
   }
 
-  private void releaseServer(boolean isError, long responseTimeMs) {
-    if (isServerAvailable()) {
-      upstream.releaseServer(currentServer.getIndex(), isError, responseTimeMs);
-    }
-  }
-
   private boolean checkRetry(Response response) {
     if (!isUpstreamAvailable()) {
       return false;
     }
-    boolean isServerError = isServerError(response);
-    if (triesLeft == 0 || requestTimeLeftMs == 0 || !isServerError) {
+    if (triesLeft == 0 || requestTimeLeftMs == 0) {
       return false;
     }
-    RetryPolicy retryPolicy = upstream.getConfig().getRetryPolicy();
-    return retryPolicy.isRetriable(response.getStatusCode(), request.getMethod());
+    return upstream.getConfig().getRetryPolicy().isRetriable(response, forceIdempotence || !HTTP_POST.equals(request.getMethod()));
   }
 
   private boolean isServerAvailable() {
@@ -174,11 +174,6 @@ public class RequestBalancer {
 
   private boolean isUpstreamAvailable() {
     return upstream != null;
-  }
-
-  private static boolean isServerError(Response response) {
-    int statusCode = response.getStatusCode();
-    return statusCode == STATUS_CONNECT_ERROR || statusCode == STATUS_REQUEST_TIMEOUT;
   }
 
   private static String getBalancedUrl(Request request, String serverAddress) {
@@ -193,6 +188,6 @@ public class RequestBalancer {
 
   @FunctionalInterface
   public interface RequestExecutor {
-    CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, String upstreamName);
+    CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
   }
 }

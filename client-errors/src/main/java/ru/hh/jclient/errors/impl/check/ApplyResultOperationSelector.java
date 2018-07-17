@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.HttpStatuses;
+import ru.hh.jclient.common.HttpStatuses;
 
 public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T, ApplyResultOperationSelector<T>> {
 

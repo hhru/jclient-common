@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.HttpStatuses;
+import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.errors.impl.OperationBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
