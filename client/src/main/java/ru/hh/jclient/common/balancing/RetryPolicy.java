@@ -1,52 +1,96 @@
 package ru.hh.jclient.common.balancing;
 
-import static ru.hh.jclient.common.JClientBase.HTTP_POST;
-import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_CONNECT_ERROR;
-import static ru.hh.jclient.common.ResponseStatusCodes.STATUS_REQUEST_TIMEOUT;
+import ru.hh.jclient.common.Response;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static ru.hh.jclient.common.HttpStatuses.CONNECT_ERROR;
+import static ru.hh.jclient.common.HttpStatuses.REQUEST_TIMEOUT;
+import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
+import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
+
 
 final class RetryPolicy {
-  private boolean connectTimeout = true;
-  private boolean requestTimeout = true;
-  private boolean nonIdempotentRequestTimeout = false;
+  private static final Pattern HTTP_RETRY = Pattern.compile("http_([0-9]{3})");
+  private static final Pattern NON_IDEMPOTENT_RETRY = Pattern.compile("non_idempotent_([0-9]{3})");
+
+  private Map<Integer, Boolean> rules = new HashMap<>();
+
+  RetryPolicy() {
+    rules.put(REQUEST_TIMEOUT, false);
+    rules.put(SERVICE_UNAVAILABLE, false);
+  }
 
   void update(String configString) {
-    connectTimeout = configString.contains("timeout");
-    requestTimeout = configString.contains("http_503");
-    nonIdempotentRequestTimeout = configString.contains("non_idempotent_503");
+    this.rules = Arrays.stream(configString.split(","))
+      .map(c -> {
+        if ("timeout".equals(c)) {
+          return new CodeIdempotence(REQUEST_TIMEOUT, false);
+        }
+
+        Matcher httpRetry = HTTP_RETRY.matcher(c);
+        if (httpRetry.matches()) {
+          return new CodeIdempotence(Integer.parseInt(httpRetry.group(1)), false);
+        }
+
+        Matcher nonIdempotentRetry = NON_IDEMPOTENT_RETRY.matcher(c);
+        if (nonIdempotentRetry.matches()) {
+          return new CodeIdempotence(Integer.parseInt(nonIdempotentRetry.group(1)), true);
+        }
+
+        return null;
+      })
+      .filter(Objects::nonNull)
+      .collect(Collectors.toMap(ci -> ci.code, ci -> ci.idempotent, (i1, i2) -> i1 || i2));
   }
 
-  boolean isRetriable(int statusCode, String method) {
-    if (nonIdempotentRequestTimeout && !isIdempotent(method) && statusCode == STATUS_REQUEST_TIMEOUT) {
+  boolean isRetriable(Response response, boolean idempotent) {
+    int statusCode = response.getStatusCode();
+
+    if (statusCode == CONNECT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
       return true;
     }
-    if (requestTimeout && isIdempotent(method) && statusCode == STATUS_REQUEST_TIMEOUT) {
+
+    Boolean retryNonIdempotent = rules.get(statusCode);
+    if (retryNonIdempotent == null) {
+      return false;
+    }
+
+    return retryNonIdempotent || idempotent;
+  }
+
+  boolean isServerError(Response response) {
+    int statusCode = response.getStatusCode();
+
+    if (statusCode == CONNECT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
       return true;
     }
-    return connectTimeout && statusCode == STATUS_CONNECT_ERROR;
+
+    return rules.containsKey(statusCode);
   }
 
-  private static boolean isIdempotent(String method) {
-    return ! HTTP_POST.equals(method);
-  }
-
-  boolean isConnectTimeout() {
-    return connectTimeout;
-  }
-
-  boolean isRequestTimeout() {
-    return requestTimeout;
-  }
-
-  boolean isNonIdempotentRequestTimeout() {
-    return nonIdempotentRequestTimeout;
+  Map<Integer, Boolean> getRules() {
+    return this.rules;
   }
 
   @Override
   public String toString() {
-    return "RetryPolicy {" +
-        "connectTimeout=" + connectTimeout +
-        ", requestTimeout=" + requestTimeout +
-        ", nonIdempotentRequestTimeout=" + nonIdempotentRequestTimeout +
-        '}';
+    return "RetryPolicy {" +  rules.toString() + '}';
+  }
+
+  private static class CodeIdempotence {
+    final int code;
+    final boolean idempotent;
+
+    CodeIdempotence(int code, boolean idempotent) {
+      this.code = code;
+      this.idempotent = idempotent;
+    }
   }
 }

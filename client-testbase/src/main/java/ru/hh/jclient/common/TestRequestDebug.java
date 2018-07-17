@@ -36,20 +36,17 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
-  public void onRequest(DebugConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, String upstreamName) {
+  public void onRequest(ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, RequestContext context) {
     record(Call.REQUEST);
   }
 
   @Override
-  public void onRetry(DebugConfig config, ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity,
-    int retryCount,
-    String upstreamName) {
+  public void onRetry(ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context) {
     record(Call.RETRY);
-
   }
 
   @Override
-  public ru.hh.jclient.common.Response onResponse(DebugConfig config, ru.hh.jclient.common.Response response) {
+  public ru.hh.jclient.common.Response onResponse(ru.hh.jclient.common.Response response) {
     record(Call.RESPONSE);
     return response;
   }
@@ -74,11 +71,6 @@ public class TestRequestDebug implements RequestDebug {
     record(Call.FINISHED);
   }
 
-  @Override
-  public void addLabel(String label) {
-    record(Call.LABEL);
-  }
-
   private void record(Call call) {
     if (recordCalls) {
       calls.add(call);
@@ -86,6 +78,6 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   public enum Call {
-    REQUEST, RESPONSE, RETRY, RESPONSE_CONVERTED, CLIENT_PROBLEM, CONVERTER_PROBLEM, FINISHED, LABEL
+    REQUEST, RESPONSE, RETRY, RESPONSE_CONVERTED, CLIENT_PROBLEM, CONVERTER_PROBLEM, FINISHED
   }
 }
