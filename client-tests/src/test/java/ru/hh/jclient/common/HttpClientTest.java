@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
-import com.google.common.net.MediaType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -280,7 +279,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
     assertTrue(actualRequest.get().getUrl().indexOf(HttpParams.READ_ONLY_REPLICA) > -1);
-    debug.assertCalled(LABEL, REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -382,7 +381,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
     assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // not passed through but can be added manually to mockRequest if needed
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(LABEL, REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -401,7 +400,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
     assertTrue(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // passed through because it might be auth not related to debug
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(LABEL, REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test

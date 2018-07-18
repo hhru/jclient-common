@@ -20,14 +20,18 @@ public final class BalancingUpstreamManager extends UpstreamManager {
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduledExecutor;
   private final Monitoring monitoring;
+  private final String datacenter;
+  private final boolean allowCrossDCRequests;
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Monitoring monitoring) {
-    this(emptyMap(), scheduledExecutor, monitoring);
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter, boolean allowCrossDCRequests) {
+    this(emptyMap(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
   }
 
-  public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring) {
+  public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter, boolean allowCrossDCRequests) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitoring must not be null");
+    this.datacenter = datacenter;
+    this.allowCrossDCRequests = allowCrossDCRequests;
 
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);
@@ -47,7 +51,7 @@ public final class BalancingUpstreamManager extends UpstreamManager {
       upstream.updateConfig(upstreamConfig);
     } else {
       LOGGER.info("adding upstream: {} {}", name, upstreamConfig);
-      upstreams.put(name, new Upstream(name, upstreamConfig, scheduledExecutor));
+      upstreams.put(name, new Upstream(name, upstreamConfig, scheduledExecutor, datacenter, allowCrossDCRequests));
     }
   }
 

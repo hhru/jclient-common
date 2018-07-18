@@ -12,18 +12,20 @@ public class ServerTest {
 
   @Test
   public void testCreateServer() {
-    Server server = new Server("test", 1);
+    Server server = new Server("test", 1, "rack1", "dc1");
 
     assertEquals(0, server.getRequests());
     assertEquals(0, server.getStatsRequests());
     assertEquals(0, server.getFails());
     assertEquals(1, server.getWeight());
+    assertEquals("rack1", server.getRack());
+    assertEquals("dc1", server.getDatacenter());
     assertTrue(server.isActive());
   }
 
   @Test
   public void testAcquire() {
-    Server server = new Server("test", 1);
+    Server server = new Server("test", 1, null, null);
 
     server.acquire();
 
@@ -35,7 +37,7 @@ public class ServerTest {
 
   @Test
   public void testAcquireRelease() {
-    Server server = new Server("test", 1);
+    Server server = new Server("test", 1, null, null);
 
     server.acquire();
     server.release(false, 100);
@@ -48,7 +50,7 @@ public class ServerTest {
 
   @Test
   public void testAcquireReleaseWithFail() {
-    Server server = new Server("test", 1);
+    Server server = new Server("test", 1, null, null);
 
     server.acquire();
     server.release(true, 100);
@@ -61,7 +63,7 @@ public class ServerTest {
 
   @Test
   public void testActivateDeactivate() {
-    Server server = new Server("test", 1);
+    Server server = new Server("test", 1, null, null);
 
     server.acquire();
     server.release(true, 100);

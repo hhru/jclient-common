@@ -9,6 +9,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 public class BalancingClientTest extends BalancingClientTestBase {
@@ -58,6 +59,56 @@ public class BalancingClientTest extends BalancingClientTestBase {
       assertRequestEquals(request, "server1");
       debug.assertCalled(REQUEST, RESPONSE, FINISHED);
     }
+  }
+
+  @Test
+  public void disallowCrossDCRequests() throws Exception {
+    createHttpClientBuilder("| server=http://server1 dc=DC1 | server=http://server2 dc=DC2", "DC1", false);
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        request[0] = completeWith(200, iom);
+        return null;
+      });
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server1");
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server1");
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server1");
+  }
+
+  @Test(expected = ExecutionException.class)
+  public void failIfNoBackendAvailableInCurrentDC() throws Exception {
+    createHttpClientBuilder("| server=http://server1 dc=DC2 | server=http://server2 dc=DC2", "DC1", false);
+    getTestClient().get();
+  }
+
+  @Test
+  public void testAllowCrossDCRequests() throws Exception {
+    createHttpClientBuilder("| server=http://server1 dc=DC1 | server=http://server2 dc=DC2", "DC1", true);
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        request[0] = completeWith(200, iom);
+        return null;
+      });
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server1");
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server1");
+
+    upstreamManager.updateUpstream(TEST_UPSTREAM, "| server=http://server2 dc=DC2");
+
+    getTestClient().get();
+    assertHostEquals(request[0], "server2");
   }
 
   @Override

@@ -10,7 +10,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
-import ru.hh.jclient.errors.impl.HttpStatuses;
+import ru.hh.jclient.common.HttpStatuses;
 
 public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperationSelector<E, ApplyResultOrErrorOperationSelector<T, E>> {
 

@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
@@ -56,14 +57,13 @@ public class UpstreamConfigParserTest {
     assertEquals(UpstreamConfig.DEFAULT_FAIL_TIMEOUT_MS, config.getFailTimeoutMs());
     assertEquals(UpstreamConfig.DEFAULT_CONNECT_TIMEOUT_MS, config.getConnectTimeoutMs());
     assertEquals(UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS, config.getRequestTimeoutMs());
-    assertTrue(config.getRetryPolicy().isConnectTimeout());
-    assertTrue(config.getRetryPolicy().isRequestTimeout());
-    assertFalse(config.getRetryPolicy().isNonIdempotentRequestTimeout());
+    assertFalse(config.getRetryPolicy().getRules().get(599));
+    assertFalse(config.getRetryPolicy().getRules().get(503));
     assertEquals(0, config.getServers().size());
   }
 
   @Test
-  public void parseConfigWithOneServer() throws Exception {
+  public void parseConfigWithOneServer() {
     UpstreamConfig config = UpstreamConfig.parse("|server=test ");
 
     List<Server> servers = config.getServers();
@@ -72,25 +72,23 @@ public class UpstreamConfigParserTest {
   }
 
   @Test
-  public void parseRetryPolicy() throws Exception {
+  public void parseRetryPolicy() {
     UpstreamConfig config = UpstreamConfig.parse("retry_policy=timeout,http_503,non_idempotent_503 | server=test");
 
-    assertTrue(config.getRetryPolicy().isConnectTimeout());
-    assertTrue(config.getRetryPolicy().isRequestTimeout());
-    assertTrue(config.getRetryPolicy().isNonIdempotentRequestTimeout());
+    assertFalse(config.getRetryPolicy().getRules().get(599));
+    assertTrue(config.getRetryPolicy().getRules().get(503));
   }
 
   @Test
-  public void parseUnknownRetryPolicy() throws Exception {
+  public void parseUnknownRetryPolicy() {
     UpstreamConfig config = UpstreamConfig.parse("retry_policy=timeout,unknown | server=test");
 
-    assertTrue(config.getRetryPolicy().isConnectTimeout());
-    assertFalse(config.getRetryPolicy().isRequestTimeout());
-    assertFalse(config.getRetryPolicy().isNonIdempotentRequestTimeout());
+    assertFalse(config.getRetryPolicy().getRules().get(599));
+    assertNull(config.getRetryPolicy().getRules().get(503));
   }
 
   @Test
-  public void parseConfigWithNoServers() throws Exception {
+  public void parseConfigWithNoServers() {
     UpstreamConfig config = UpstreamConfig.parse(" | ");
 
     List<Server> servers = config.getServers();
@@ -98,7 +96,7 @@ public class UpstreamConfigParserTest {
   }
 
   @Test(expected = UpstreamConfigFormatException.class)
-  public void parseShouldFailIfServerPrefixIsMissed() throws Exception {
+  public void parseShouldFailIfServerPrefixIsMissed() {
 
     UpstreamConfig.parse("| http://test");
   }

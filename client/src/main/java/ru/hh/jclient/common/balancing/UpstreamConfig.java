@@ -1,17 +1,14 @@
 package ru.hh.jclient.common.balancing;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -33,7 +30,7 @@ final class UpstreamConfig {
   private int requestTimeoutMs;
 
   private RetryPolicy retryPolicy = new RetryPolicy();
-  private final List<Server> servers = new ArrayList<>();
+  private final List<Server> servers = new CopyOnWriteArrayList<>();
 
   static UpstreamConfig parse(String configString) {
     requireNonNull(configString, "config string should not be null");
@@ -138,7 +135,7 @@ final class UpstreamConfig {
   }
 
   List<Server> getServers() {
-    return unmodifiableList(servers.stream().filter(Objects::nonNull).collect(toList()));
+    return servers;
   }
 
   @Override
@@ -167,7 +164,9 @@ final class UpstreamConfig {
   private static Server parseServerConfig(String configStr) {
     Map<String, String> configMap = convertToMap(configStr);
     int weight = parseIntOrFallback(configMap.get("weight"), Server.DEFAULT_WEIGHT);
-    return new Server(configMap.get("server"), weight);
+    String rack = configMap.get("rack");
+    String datacenter = configMap.get("dc");
+    return new Server(configMap.get("server"), weight, rack, datacenter);
   }
 
   private static Map<String, String> convertToMap(String configStr) {

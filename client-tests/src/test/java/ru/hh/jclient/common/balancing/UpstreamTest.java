@@ -6,17 +6,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class UpstreamTest {
+  private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamTest.class);
   private static final String TEST_HOST = "backend";
   private static final String TEST_CONFIG = "| server=a weight=1 | server=b weight=2";
 
   @Test
-  public void createUpstream() throws Exception {
+  public void createUpstream() {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
     assertEquals(TEST_HOST, upstream.getName());
@@ -26,7 +31,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireServer() throws Exception {
+  public void acquireServer() {
     Upstream upstream = createTestUpstream(TEST_HOST, "| server=a weight=1 | server=b weight=2");
 
     assertEquals("a", upstream.acquireServer().getAddress());
@@ -52,7 +57,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireInactiveServer() throws Exception {
+  public void acquireInactiveServer() {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
     upstream.getConfig().getServers().forEach(server -> server.deactivate(1, mock(ScheduledExecutorService.class)));
@@ -70,7 +75,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireExcludedServer() throws Exception {
+  public void acquireExcludedServer() {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
     int excludedServerIndex = 0;
@@ -85,7 +90,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireReleaseServerWithFails() throws Exception {
+  public void acquireReleaseServerWithFails() {
     Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=1 fail_timeout_sec=0.1 | server=a");
 
     int serverIndex = 0;
@@ -103,7 +108,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireReleaseWhenMaxFailsIsZero() throws Exception {
+  public void acquireReleaseWhenMaxFailsIsZero() {
     Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=0 fail_timeout_sec=0.1 | server=a");
 
     upstream.releaseServer(upstream.acquireServer().getIndex(), true, 100);
@@ -111,6 +116,31 @@ public class UpstreamTest {
     int serverIndex = 0;
 
     assertEquals(serverIndex, upstream.acquireServer().getIndex());
+  }
+
+  @Test
+  public void acquireReleaseWithDeletedServers() {
+    UpstreamConfig config = UpstreamConfig.parse("| server=a | server=b | server=c");
+    Upstream upstream = new Upstream(TEST_HOST, config, mock(ScheduledExecutorService.class));
+
+    ServerEntry serverA = upstream.acquireServer();
+    ServerEntry serverB = upstream.acquireServer();
+    ServerEntry serverC = upstream.acquireServer();
+
+    upstream.updateConfig(UpstreamConfig.parse("| server=b | server=c | server=d"));
+
+    upstream.releaseServer(serverA.getIndex(), false, 1);
+    upstream.releaseServer(serverB.getIndex(), false, 1);
+
+    assertEquals(0, getServerByAddress(config, "b").getRequests());
+    assertEquals(1, getServerByAddress(config, "c").getRequests());
+    assertEquals(0, getServerByAddress(config, "d").getRequests());
+
+    upstream.releaseServer(serverC.getIndex(), false, 1);
+
+    assertEquals(0, getServerByAddress(config, "b").getRequests());
+    assertEquals(0, getServerByAddress(config, "c").getRequests());
+    assertEquals(0, getServerByAddress(config, "d").getRequests());
   }
 
   @Test
@@ -136,7 +166,7 @@ public class UpstreamTest {
       assertEquals("current requests", 0, server.getRequests());
       assertEquals("current fails", 0, server.getFails());
 
-      System.out.println("finished iteration " + t + " out of " + tests + " in " + (currentTimeMillis() - start) + " ms");
+      LOGGER.info("finished iteration {} out of {} in {} ms", t, tests, (currentTimeMillis() - start));
     }
 
     assertEquals("stats requests", weight - 1, server.getStatsRequests());
@@ -162,5 +192,9 @@ public class UpstreamTest {
   private static Upstream createTestUpstream(String host, String configStr) {
     UpstreamConfig config = UpstreamConfig.parse(configStr);
     return new Upstream(host, config, mock(ScheduledExecutorService.class));
+  }
+
+  private static Server getServerByAddress(UpstreamConfig config, String address) {
+    return config.getServers().stream().filter(Objects::nonNull).filter(server -> server.getAddress().equals(address)).findFirst().get();
   }
 }

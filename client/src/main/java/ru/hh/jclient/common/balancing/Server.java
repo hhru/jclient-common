@@ -17,6 +17,8 @@ public final class Server {
 
   private final String address;
   private volatile int weight;
+  private volatile String rack;
+  private volatile String datacenter;
 
   private volatile boolean active = true;
   private volatile int requests = 0;
@@ -26,9 +28,12 @@ public final class Server {
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
 
-  Server(String address, int weight) {
+  Server(String address, int weight, String rack, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
     this.weight = weight;
+    this.rack = rack;
+    this.datacenter = datacenter;
+
     this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW);
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
   }
@@ -62,16 +67,18 @@ public final class Server {
     LOGGER.info("activate server: {}", address);
     active = true;
     fails = 0;
+    requests = 0;
+    statsRequests = 0;
   }
 
-  synchronized void resetStatsRequests() {
-    if (statsRequests >= weight && active) {
-      statsRequests = 0;
-    }
+  synchronized void rescaleStatsRequests() {
+    statsRequests -= weight;
   }
 
   void update(Server server) {
     weight = server.weight;
+    rack = server.rack;
+    datacenter = server.datacenter;
   }
 
   String getAddress() {
@@ -80,6 +87,14 @@ public final class Server {
 
   int getWeight() {
     return weight;
+  }
+
+  public String getRack() {
+    return rack;
+  }
+
+  public String getDatacenter() {
+    return datacenter;
   }
 
   boolean isActive() {
@@ -108,6 +123,6 @@ public final class Server {
 
   @Override
   public String toString() {
-    return address + " (weight=" + weight + ")";
+    return address + " (weight=" + weight + ", rack=" + rack + ", datacenter=" + datacenter + ")";
   }
 }
