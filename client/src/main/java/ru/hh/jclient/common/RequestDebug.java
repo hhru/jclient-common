@@ -11,18 +11,18 @@ public interface RequestDebug {
   /**
    * Called before start of the request
    */
-  void onRequest(DebugConfig config, Request request, Optional<?> requestBodyEntity, String upstreamName);
+  void onRequest(Request request, Optional<?> requestBodyEntity, RequestContext context);
 
   /**
    * Called before retrying the request
    */
-  void onRetry(DebugConfig config, Request request, Optional<?> requestBodyEntity, int retryCount, String upstreamName);
+  void onRetry(Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context);
 
   /**
    * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
    * purposes.
    */
-  Response onResponse(DebugConfig config, Response response);
+  Response onResponse(Response response);
 
   /**
    * Called once response is successfully converted.
@@ -45,10 +45,5 @@ public interface RequestDebug {
    * Called after response processing has been finished.
    */
   void onProcessingFinished();
-
-  /**
-   * Adds label for debug purposes.
-   */
-  void addLabel(String label);
 
 }

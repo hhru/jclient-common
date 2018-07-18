@@ -25,8 +25,8 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRequest(String upstreamName, String serverAddress, int statusCode, boolean isRequestFinal) {
-    Map<String, String> tags = getCommonTags(serviceName, upstreamName);
+  public void countRequest(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, boolean isRequestFinal) {
+    Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     tags.put("server", serverAddress);
     tags.put("status", String.valueOf(statusCode));
     tags.put("final", String.valueOf(isRequestFinal));
@@ -34,14 +34,14 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRequestTime(String upstreamName, long requestTimeMs) {
-    Map<String, String> tags = getCommonTags(serviceName, upstreamName);
+  public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMs) {
+    Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     statsDSender.sendTiming("http.client.request.time", requestTimeMs, toTagsArray(tags));
   }
 
   @Override
-  public void countRetry(String upstreamName, String serverAddress, int statusCode, int firstStatusCode, int retryCount) {
-    Map<String, String> tags = getCommonTags(serviceName, upstreamName);
+  public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, int firstStatusCode, int retryCount) {
+    Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     tags.put("server", serverAddress);
     tags.put("status", String.valueOf(statusCode));
     tags.put("first_upstream_status", String.valueOf(firstStatusCode));
@@ -49,14 +49,18 @@ public class UpstreamMonitoring implements Monitoring {
     statsDSender.sendCounter("http.client.retries", 1, toTagsArray(tags));
   }
 
-  private static Map<String, String> getCommonTags(String serviceName, String upstreamName) {
+  private static Map<String, String> getCommonTags(String serviceName, String upstreamName, String datacenter) {
     Map<String, String> tags = new HashMap<>();
     tags.put("app", serviceName);
     tags.put("upstream", upstreamName);
+    tags.put("datacenter", datacenter);
     return tags;
   }
 
   private static Tag[] toTagsArray(Map<String, String> tags) {
-    return tags.entrySet().stream().map(p -> new Tag(p.getKey(), p.getValue())).toArray(Tag[]::new);
+    return tags.entrySet().stream()
+      .filter(p -> p.getValue() != null)
+      .map(p -> new Tag(p.getKey(), p.getValue()))
+      .toArray(Tag[]::new);
   }
 }

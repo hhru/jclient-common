@@ -15,7 +15,7 @@ import javax.ws.rs.ext.RuntimeDelegate;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.HttpStatuses;
+import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.errors.jersey.RuntimeDelegateStub;
 
 public class MoreErrorsTest {
