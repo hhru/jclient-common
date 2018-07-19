@@ -1,6 +1,8 @@
 package ru.hh.jclient.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import ru.hh.jclient.common.util.jersey.UriBuilder;
 
 public abstract class JClientBase {
@@ -14,12 +16,12 @@ public abstract class JClientBase {
   protected HttpClientBuilder http;
 
   protected JClientBase(String host, HttpClientBuilder http) {
-    this.host = host;
-    this.http = http;
+    this.host = requireNotEmpty(host, "host");
+    this.http = requireNotNull(http, "http");
   }
 
   protected JClientBase(String host, String path, HttpClientBuilder http) {
-    this(host + path, http);
+    this(requireNotEmpty(host, "host") + ofNullable(path).orElse(""), http);
   }
 
   protected String url(String resourceMethodPath) {
@@ -56,5 +58,14 @@ public abstract class JClientBase {
       builder.addQueryParam(queryParams[i].toString(), queryParams[i + 1].toString());
     }
     return builder;
+  }
+  
+  protected static String requireNotEmpty(String arg, String argName) {
+    checkArgument(arg != null && !arg.isEmpty(), "%s is null or empty string", argName);
+    return arg;
+  }
+  
+  protected static <T> T requireNotNull(T arg, String argName) {
+    return requireNonNull(arg, () -> argName + "is null");
   }
 }
