@@ -110,9 +110,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryConnectException() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
+    createHttpClientBuilder("max_tries=4 max_fails=2 " +
+        "| server=http://server1 | server=http://server2 | server=http://server3 | server=http://server4");
 
-    Request[] request = new Request[3];
+    Request[] request = new Request[4];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
         .then(iom -> {
           request[0] = failWith(new ConnectException("Connection refused"), iom);
@@ -123,15 +124,19 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
           return null;
         })
         .then(iom -> {
-          request[2] = completeWith(200, iom);
+          request[2] = failWith(new ConnectException("No route to host"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[3] = completeWith(200, iom);
           return null;
         });
 
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2", "server3");
+    assertRequestEquals(request, "server1", "server2", "server3", "server4");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
