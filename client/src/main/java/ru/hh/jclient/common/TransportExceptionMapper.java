@@ -12,8 +12,8 @@ import java.net.ConnectException;
 import java.util.concurrent.TimeoutException;
 
 final class TransportExceptionMapper {
-  public static final String CONNECT_ERROR_MESSAGE = "Connect error";
-  public static final String REQUEST_TIMEOUT_MESSAGE = "Request timeout";
+  private static final String CONNECT_ERROR_MESSAGE = "Connect error";
+  private static final String REQUEST_TIMEOUT_MESSAGE = "Request timeout";
 
   static MappedTransportErrorResponse map(Throwable t, Uri uri) {
     final String errorMessage = ofNullable(t.getMessage()).map(String::toLowerCase).orElse("");
@@ -45,7 +45,9 @@ final class TransportExceptionMapper {
   }
 
   private static boolean isConnectError(String errorMessage) {
-    return errorMessage.contains("connection refused") || errorMessage.contains("connection reset");
+    return errorMessage.contains("connection refused")
+        || errorMessage.contains("connection reset")
+        || errorMessage.contains("no route to host");
   }
 
   private TransportExceptionMapper() {
