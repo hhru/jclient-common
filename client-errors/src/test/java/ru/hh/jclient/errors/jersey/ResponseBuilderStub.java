@@ -1,42 +1,26 @@
 package ru.hh.jclient.errors.jersey;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Variant;
+import java.net.URI;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 @SuppressWarnings("unused")
-public class ResponseBuilderStub extends ResponseBuilder {
+final class ResponseBuilderStub extends ResponseBuilder {
 
   private int status;
   private Object entity;
 
   @Override
   public Response build() {
-    return new Response() {
-      @Override
-      public Object getEntity() {
-        return entity;
-      }
-
-      @Override
-      public int getStatus() {
-        return status;
-      }
-
-      @Override
-      public MultivaluedMap<String, Object> getMetadata() {
-        throw new UnsupportedOperationException();
-      }
-    };
+    return new ResponseStub(status, entity);
   }
 
   @Override
@@ -130,5 +114,4 @@ public class ResponseBuilderStub extends ResponseBuilder {
   public ResponseBuilder cookie(NewCookie... cookies) {
     throw new UnsupportedOperationException();
   }
-
 }
