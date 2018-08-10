@@ -21,6 +21,7 @@
         <module>client-utils</module>		
         <module>client-maven-enforcer</module>
         <module>client-metrics</module>
+        <module>jclient-common-api</module>
     </modules>
 
     <properties>
