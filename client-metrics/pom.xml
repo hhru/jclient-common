@@ -28,12 +28,6 @@
             <artifactId>hh-metrics</artifactId>
             <version>0.15</version>
         </dependency>
-
-        <dependency>
-            <groupId>ru.hh.settings-client</groupId>
-            <artifactId>settings-java-client</artifactId>
-            <version>1.4</version>
-        </dependency>
     </dependencies>
 
     <build>
