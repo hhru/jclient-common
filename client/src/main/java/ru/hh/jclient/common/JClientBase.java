@@ -3,7 +3,6 @@ package ru.hh.jclient.common;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
-import ru.hh.jclient.common.util.jersey.UriBuilder;
 
 public abstract class JClientBase {
 
@@ -28,8 +27,19 @@ public abstract class JClientBase {
     return host + resourceMethodPath;
   }
 
+  /**
+   * This method requires jsr311-api (jersey v1) or javax.ws.rs-api (jersey v2) to present in your dependencies.
+   * Otherwise the method throws {@link UnsupportedOperationException}.
+   *
+   * @throws UnsupportedOperationException if javax.ws.rs.core.UriBuilder is not in the classpath.
+   */
   protected String jerseyUrl(String resourceMethodPath, Object... pathParams) {
-    return UriBuilder.fromPath(url(resourceMethodPath)).build(pathParams).toString();
+    try {
+      Class.forName("javax.ws.rs.core.UriBuilder");
+      return javax.ws.rs.core.UriBuilder.fromPath(url(resourceMethodPath)).build(pathParams).toString();
+    } catch (ClassNotFoundException e) {
+      throw new UnsupportedOperationException("Unable to find javax.ws.rs.core.UriBuilder in classpath");
+    }
   }
 
   protected RequestBuilder get(String url, Object... queryParams) {
