@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hhru/jclient-common.svg?branch=master)](https://travis-ci.org/hhru/jclient-common) [![codecov](https://codecov.io/gh/hhru/jclient-common/branch/master/graph/badge.svg)](https://codecov.io/gh/hhru/jclient-common)
+
 # What is it?
 Jclient-common allows to make asynchronous HTTP calls to remote services in Java applications. 
 
@@ -10,15 +12,12 @@ Java 8 is a requirement to build and use this library.
 
 Additionally, if you want to use method `JClientBase.jerseyUrl()`, you have to provide one of the following libraries: 
 
-* `javax.ws.rs:jsr311-api` (jersey v1)
-* `javax.ws.rs:javax.ws.rs-api` (jersey v2)
+* `javax.ws.rs:jsr311-api` _(jersey v.1)_
+* `javax.ws.rs:javax.ws.rs-api` _(jersey v.2)_
 
 depending on what version of Jersey you use in your application.     
 
 Client code that uses this library is usually stored together with server code that it calls, in separate maven module. 
-
-For example see [sofea-client](https://github.com/hhru/hh.ru/tree/master/sofea-jclient). 
-Exception to this rule is when the server code is unavailable - [banner-jclient](https://github.com/hhru/banner-jclient). 
 
 Sample code:
 
@@ -62,8 +61,8 @@ so if `requestTimeout` is sufficiently large (e.g. for slow requests) it will no
 Jclient provides a way to balance load between separate instances of an upstream server.
 
 Currently two methods are supported:
-* [weighted least-connection](https://wiki.hh.ru/pages/viewpage.action?pageId=160661874)  
-* [adaptive balancing](https://wiki.hh.ru/pages/viewpage.action?pageId=162332846) 
+* weighted least-connection  
+* adaptive balancing 
 
 Your application should have connection to Cassandra in order to access configuration of upstreams.
 
@@ -108,7 +107,7 @@ public class JClientConfig {
 
 Notice that you have to provide an instance of `StatsDSender` to create `UpstreamManager` bean.
 
-This is because `BalancingUpstreamManager` has built-in monitoring of requests and `StatsDSender` is used to send metrics to our monitoring system: [okmeter.io](https://okmeter.io/hh.ru/dashboards/balancing-http-client).
+This is because `BalancingUpstreamManager` has built-in monitoring of requests and `StatsDSender` is used to send metrics to our monitoring system ([okmeter.io](https://okmeter.io)).
 
 If you use [NaB](https://github.com/hhru/nuts-and-bolts), then you already have `StatsDSender` in your Spring context.
 
