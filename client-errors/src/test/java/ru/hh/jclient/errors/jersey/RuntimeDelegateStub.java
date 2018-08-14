@@ -7,7 +7,7 @@ import javax.ws.rs.core.Variant.VariantListBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 @SuppressWarnings("unused")
-public class RuntimeDelegateStub extends RuntimeDelegate {
+public final class RuntimeDelegateStub extends RuntimeDelegate {
 
   @Override
   public UriBuilder createUriBuilder() {
@@ -33,5 +33,4 @@ public class RuntimeDelegateStub extends RuntimeDelegate {
   public <T> HeaderDelegate<T> createHeaderDelegate(Class<T> type) {
     throw new UnsupportedOperationException();
   }
-
 }

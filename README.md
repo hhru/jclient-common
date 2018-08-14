@@ -4,15 +4,16 @@ Jclient-common allows to make asynchronous HTTP calls to remote services in Java
 Heavy-lifting is performed using [Async Http Client](https://github.com/AsyncHttpClient/async-http-client), 
 while the library provides user friendly interface that hides unnecessary details.
 
-Java 8 is a requirement to build or use this library.
+## Requirements
 
-```xml
-<dependency>
-    <groupId>ru.hh.jclient-common</groupId>
-    <artifactId>jclient-common</artifactId>
-    <version>0.1.66</version>
-</dependency>
-```
+Java 8 is a requirement to build and use this library.
+
+Additionally, if you want to use method `JClientBase.jerseyUrl()`, you have to provide one of the following libraries: 
+
+* `javax.ws.rs:jsr311-api` (jersey v1)
+* `javax.ws.rs:javax.ws.rs-api` (jersey v2)
+
+depending on what version of Jersey you use in your application.     
 
 Client code that uses this library is usually stored together with server code that it calls, in separate maven module. 
 
