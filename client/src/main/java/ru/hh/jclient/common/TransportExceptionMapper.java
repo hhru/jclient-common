@@ -1,7 +1,8 @@
 package ru.hh.jclient.common;
 
+import io.netty.channel.ConnectTimeoutException;
+
 import static java.util.Optional.ofNullable;
-import org.jboss.netty.channel.ConnectTimeoutException;
 
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_ERROR;

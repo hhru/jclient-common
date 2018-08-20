@@ -3,9 +3,6 @@ package ru.hh.jclient.common;
 import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -16,17 +13,18 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
 import static java.lang.Boolean.TRUE;
-import static java.util.function.Function.identity;
+
+import org.asynchttpclient.AsyncCompletionHandler;
+import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static ru.hh.jclient.common.HttpHeaders.FRONTIK_DEBUG_AUTH;
-import static ru.hh.jclient.common.HttpHeaders.HH_PROTO_SESSION;
-import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
-import static ru.hh.jclient.common.HttpHeaders.X_REAL_IP;
-import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
+import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
+import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REAL_IP;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
 import ru.hh.jclient.common.util.MDCCopy;
-import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 import ru.hh.jclient.common.util.storage.Storage;
 import static java.time.Instant.now;
@@ -82,17 +80,19 @@ class HttpClientImpl extends HttpClient {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
-    FluentCaseInsensitiveStringsMap headers = isExternalRequest() ? new FluentCaseInsensitiveStringsMap() : PASS_THROUGH_HEADERS
-      .stream()
-      .filter(getContext().getHeaders()::containsKey)
-      .collect(toFluentCaseInsensitiveStringsMap(identity(), h -> getContext().getHeaders().get(h)));
+    HttpHeaders headers = new HttpHeaders();
+    if (!isExternalRequest()) {
+      PASS_THROUGH_HEADERS.stream()
+        .filter(getContext().getHeaders()::containsKey)
+        .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
+    }
 
     // debug header is passed through by default, but should be removed before final check at the end if client specifies so
     if (isNoDebug() || isExternalRequest() || !getContext().isDebugMode()) {
       headers.remove(X_HH_DEBUG);
     }
 
-    request.getHeaders().entrySet().forEach(e -> headers.add(e.getKey(), e.getValue()));
+    headers.add(request.getHeaders());
 
     if (isNoSessionRequired()) {
       headers.remove(HH_PROTO_SESSION);
@@ -100,7 +100,7 @@ class HttpClientImpl extends HttpClient {
 
     requestBuilder.setHeaders(headers);
 
-    if (!headers.containsKey(ACCEPT) && getExpectedMediaTypes().isPresent()) {
+    if (!headers.contains(ACCEPT) && getExpectedMediaTypes().isPresent()) {
       requestBuilder.addHeader(ACCEPT, getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")));
     }
 
@@ -117,7 +117,7 @@ class HttpClientImpl extends HttpClient {
 
     // sanity check for debug header/param if debug is not enabled
     if (isNoDebug() || isExternalRequest() || !getContext().isDebugMode()) {
-      if (headers.containsKey(X_HH_DEBUG)) {
+      if (headers.contains(X_HH_DEBUG)) {
         throw new IllegalStateException("Debug header in request when debug is disabled");
       }
 
@@ -149,7 +149,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     @Override
-    public ResponseWrapper onCompleted(com.ning.http.client.Response response) throws Exception {
+    public ResponseWrapper onCompleted(org.asynchttpclient.Response response) {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
 
@@ -162,7 +162,7 @@ class HttpClientImpl extends HttpClient {
 
     @Override
     public void onThrowable(Throwable t) {
-      com.ning.http.client.Response response = TransportExceptionMapper.map(t, request.getUri());
+      org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri());
       long timeToLastByteMs = getTimeToLastByte();
 
       mdcCopy.doInContext(
@@ -185,7 +185,7 @@ class HttpClientImpl extends HttpClient {
       completeExceptionally(t);
     }
 
-    private ResponseWrapper proceedWithResponse(com.ning.http.client.Response response, long responseTimeMs) {
+    private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMs) {
       Response debuggedResponse = requestDebug.onResponse(new Response(response));
       ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMs);
       // complete promise in a separate thread not to block ning thread

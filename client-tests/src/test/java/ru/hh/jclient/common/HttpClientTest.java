@@ -6,10 +6,11 @@ import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PROTOBUF;
 import static com.google.common.net.MediaType.XML_UTF_8;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static ru.hh.jclient.common.HttpHeaders.X_HH_DEBUG;
-import static ru.hh.jclient.common.HttpHeaders.X_REQUEST_ID;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.DEBUG;
 import static ru.hh.jclient.common.TestRequestDebug.Call.*;
 
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
+import org.asynchttpclient.AsyncHttpClient;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,8 +50,6 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 
 public class HttpClientTest extends HttpClientTestBase {
 
@@ -284,22 +284,21 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testHeaders() throws IOException, InterruptedException, ExecutionException {
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
-    headers.add("myheader1", "myvalue1");
-    headers.add("myheader1", "myvalue2");
-    headers.add("myheader2", "myvalue1");
-    headers.add(X_REQUEST_ID, "111");
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put("myheader1", Arrays.asList("myvalue1", "myvalue2"));
+    headers.put("myheader2", singletonList("myvalue1"));
+    headers.put(X_REQUEST_ID, singletonList("111"));
 
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
     http.with(request).expectEmpty().result().get();
     // all those headers won't be accepted, as they come from global mockRequest and are not in allowed list
-    assertFalse(actualRequest.get().getHeaders().containsKey("myheader1"));
-    assertFalse(actualRequest.get().getHeaders().containsKey("myheader2"));
+    assertFalse(actualRequest.get().getHeaders().contains("myheader1"));
+    assertFalse(actualRequest.get().getHeaders().contains("myheader2"));
     // this header is accepted because it consists in allowed list
-    assertEquals("111", actualRequest.get().getHeaders().get(X_REQUEST_ID).get(0));
+    assertEquals("111", actualRequest.get().getHeaders().get(X_REQUEST_ID));
     // this header is accepted since it comes from local mockRequest
-    assertEquals("somevalue", actualRequest.get().getHeaders().get("someheader").get(0));
+    assertEquals("somevalue", actualRequest.get().getHeaders().get("someheader"));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
@@ -337,30 +336,36 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest;
 
     // debug is on via header, headers are passed
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap().add(X_HH_DEBUG, "true").add(AUTHORIZATION, "someauth");
-    FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap();
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(X_HH_DEBUG, singletonList("true"));
+    headers.put(AUTHORIZATION, singletonList("someauth"));
+
+    Map<String, List<String>> queryParams = new HashMap<>();
 
     actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
 
-    assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG).get(0));
-    assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION).get(0));
+    assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG));
+    assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // debug is on via query param, headers are passed
-    headers = new FluentCaseInsensitiveStringsMap().add(AUTHORIZATION, "someauth");
-    queryParams = new FluentCaseInsensitiveStringsMap().add(DEBUG, "123");
+    headers.clear();
+    headers.put(AUTHORIZATION, singletonList("someauth"));
+
+    queryParams.clear();
+    queryParams.put(DEBUG, singletonList("123"));
 
     actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
 
-    assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG).get(0));
-    assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION).get(0));
+    assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG));
+    assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -370,16 +375,20 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on but for 'external' but header / param should not be passed
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap().add(X_HH_DEBUG, "true").add(AUTHORIZATION, "someauth");
-    FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap().add(DEBUG, "123");
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(X_HH_DEBUG, singletonList("true"));
+    headers.put(AUTHORIZATION, singletonList("someauth"));
+
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(DEBUG, singletonList("123"));
 
     Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).external().expectEmpty().result().get();
 
-    assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
-    assertFalse(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // not passed through but can be added manually to mockRequest if needed
+    assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
+    assertFalse(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // not passed through but can be added manually to mockRequest if needed
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -389,34 +398,38 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on but for 'external' but header / param should not be passed
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap().add(X_HH_DEBUG, "true").add(AUTHORIZATION, "someauth");
-    FluentCaseInsensitiveStringsMap queryParams = new FluentCaseInsensitiveStringsMap().add(DEBUG, "123");
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(X_HH_DEBUG, singletonList("true"));
+    headers.put(AUTHORIZATION, singletonList("someauth"));
+
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(DEBUG, singletonList("123"));
 
     Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).noDebug().expectEmpty().result().get();
 
-    assertFalse(actualRequest.get().getHeaders().containsKey(X_HH_DEBUG));
-    assertTrue(actualRequest.get().getHeaders().containsKey(AUTHORIZATION)); // passed through because it might be auth not related to debug
+    assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
+    assertTrue(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // passed through because it might be auth not related to debug
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void testHostsWithSession() throws IOException, InterruptedException, ExecutionException {
-    FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
-    headers.add(HttpHeaders.HH_PROTO_SESSION, "somesession");
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
 
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectEmpty().result().get();
-    assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaders.HH_PROTO_SESSION).get(0));
+    assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
     http.with(request).expectEmpty().result().get();
-    assertFalse(actualRequest.get().getHeaders().containsKey(HttpHeaders.HH_PROTO_SESSION));
+    assertFalse(actualRequest.get().getHeaders().contains(HttpHeaderNames.HH_PROTO_SESSION));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
@@ -438,7 +451,7 @@ public class HttpClientTest extends HttpClientTestBase {
   public void testHttpClientError() throws Throwable {
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
-    when(httpClient.executeRequest(isA(com.ning.http.client.Request.class), isA(CompletionHandler.class))).then(iom -> {
+    when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
       CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
       handler.onThrowable(new TestException());
       return null;

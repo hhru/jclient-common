@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
-public class HttpHeaders {
-  private HttpHeaders() {
+public class HttpHeaderNames {
+  private HttpHeaderNames() {
   }
 
   public static final String X_HH_DEBUG = "X-Hh-Debug";

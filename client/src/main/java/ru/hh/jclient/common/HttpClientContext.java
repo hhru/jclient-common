@@ -3,23 +3,21 @@ package ru.hh.jclient.common;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
-import static ru.hh.jclient.common.util.MoreCollectors.toFluentCaseInsensitiveStringsMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Supplier;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 
 /**
  * Context of global (incoming) request, that is going to spawn local (outgoing) request using
- * {@link HttpClientBuilder#with(com.ning.http.client.Request)}.
+ * {@link HttpClientBuilder#with(Request)}.
  */
 public class HttpClientContext {
 
-  private FluentCaseInsensitiveStringsMap headers = new FluentCaseInsensitiveStringsMap();
+  private Map<String, List<String>> headers;
   private boolean debugMode;
   private Supplier<RequestDebug> debugSupplier;
   private Optional<String> requestId;
@@ -42,17 +40,17 @@ public class HttpClientContext {
       Map<String, List<String>> queryParams,
       Supplier<RequestDebug> debugSupplier,
       Storages storages) {
-    this.headers = requireNonNull(headers, "headers must not be null")
-        .entrySet()
-        .stream()
-        .collect(toFluentCaseInsensitiveStringsMap(Entry::getKey, Entry::getValue));
+    requireNonNull(headers, "headers must not be null");
+    this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    this.headers.putAll(headers);
+
     this.debugMode = isInDebugMode(headers, queryParams);
     this.debugSupplier = requireNonNull(debugSupplier, "debugSupplier must not be null");
     this.requestId = RequestUtils.getRequestId(headers);
     this.storages = requireNonNull(storages, "storages must not be null");
   }
 
-  public FluentCaseInsensitiveStringsMap getHeaders() {
+  public Map<String, List<String>> getHeaders() {
     return headers;
   }
 
