@@ -7,32 +7,37 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.util.UriEncoder;
 
 public class RequestBuilder {
 
-  private final com.ning.http.client.RequestBuilder delegate;
+  private final org.asynchttpclient.RequestBuilder delegate;
 
   public RequestBuilder() {
-    delegate = new com.ning.http.client.RequestBuilder();
+    delegate = new org.asynchttpclient.RequestBuilder();
   }
 
   public RequestBuilder(String method) {
-    delegate = new com.ning.http.client.RequestBuilder(method);
+    delegate = new org.asynchttpclient.RequestBuilder(method, false, false);
   }
 
   public RequestBuilder(String method, boolean disableUrlEncoding) {
-    delegate = new com.ning.http.client.RequestBuilder(method, disableUrlEncoding);
+    delegate = new org.asynchttpclient.RequestBuilder(method, disableUrlEncoding, false);
+  }
+
+  public RequestBuilder(String method, boolean disableUrlEncoding, boolean validateHeaders) {
+    delegate = new org.asynchttpclient.RequestBuilder(method, disableUrlEncoding, validateHeaders);
   }
 
   public RequestBuilder(Request prototype) {
-    delegate = new com.ning.http.client.RequestBuilder(prototype.getDelegate());
+    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), false, false);
   }
 
   public RequestBuilder(Request prototype, boolean disableUrlEncoding) {
-    delegate = new com.ning.http.client.RequestBuilder(prototype.getDelegate(), UriEncoder.uriEncoder(disableUrlEncoding));
+    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), disableUrlEncoding, false);
+  }
+
+  public RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
+    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), disableUrlEncoding, validateHeaders);
   }
 
   public RequestBuilder setCookies(Collection<Cookie> cookies) {
@@ -120,19 +125,18 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder setHeaders(Map<? extends CharSequence, ? extends Iterable<?>> headers) {
-    FluentCaseInsensitiveStringsMap map = new FluentCaseInsensitiveStringsMap();
-    for (Entry<? extends CharSequence, ? extends Iterable<?>> entry : headers.entrySet()) {
-      for (Object value : entry.getValue()) {
-        map.add(entry.getKey().toString(), value.toString());
-      }
-    }
-    delegate.setHeaders(map);
+  public RequestBuilder setHeaders(HttpHeaders headers) {
+    delegate.setHeaders(headers.getDelegate());
+    return this;
+  }
+
+  public RequestBuilder setHeaders(Map<CharSequence, ? extends Iterable<?>> headers) {
+    delegate.setHeaders(headers);
     return this;
   }
 
   public RequestBuilder clearHeaders() {
-    delegate.setHeaders((FluentCaseInsensitiveStringsMap) null);
+    delegate.clearHeaders();
     return this;
   }
 
@@ -162,12 +166,12 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setAddress(InetAddress address) {
-    delegate.setInetAddress(address);
+    delegate.setAddress(address);
     return this;
   }
 
   public RequestBuilder setLocalAddress(InetAddress address) {
-    delegate.setLocalInetAddress(address);
+    delegate.setLocalAddress(address);
     return this;
   }
 
@@ -177,7 +181,7 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setFollowRedirect(boolean followRedirects) {
-    delegate.setFollowRedirects(followRedirects);
+    delegate.setFollowRedirect(followRedirects);
     return this;
   }
 
@@ -191,17 +195,12 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder setContentLength(int contentLength) {
-    delegate.setContentLength(contentLength);
-    return this;
-  }
-
   public RequestBuilder setCharset(Charset charset) {
-    delegate.setBodyEncoding(String.valueOf(charset.name()));
+    delegate.setCharset(charset);
     return this;
   }
 
-  com.ning.http.client.RequestBuilder getDelegate() {
+  org.asynchttpclient.RequestBuilder getDelegate() {
     return delegate;
   }
 }

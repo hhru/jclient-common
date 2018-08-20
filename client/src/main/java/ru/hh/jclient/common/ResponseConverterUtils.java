@@ -5,7 +5,7 @@ public class ResponseConverterUtils {
   /**
    * Temporary helper until we clean-up wrapping ning to our own classes
    */
-  public static Response convert(com.ning.http.client.Response response) {
+  public static Response convert(org.asynchttpclient.Response response) {
     return new Response(response);
   }
 

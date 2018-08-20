@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import com.ning.http.client.Request;
+import org.asynchttpclient.Request;
 import org.junit.Test;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.when;

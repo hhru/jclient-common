@@ -29,7 +29,7 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
 
   @Override
   public FailableFunction<Response, ResultWithResponse<String>, Exception> singleTypeConverterFunction() {
-    return r -> new ResultWithResponse<>(r.getResponseBody(charset.name()), r);
+    return r -> new ResultWithResponse<>(r.getResponseBody(charset), r);
   }
 
   @Override

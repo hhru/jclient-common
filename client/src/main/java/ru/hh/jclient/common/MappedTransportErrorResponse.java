@@ -1,17 +1,19 @@
 package ru.hh.jclient.common;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+
 import com.google.common.net.MediaType;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
-import com.ning.http.client.Response;
-import com.ning.http.client.cookie.Cookie;
-import com.ning.http.client.uri.Uri;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
+import org.asynchttpclient.Response;
+import org.asynchttpclient.uri.Uri;
 
 /**
  * This implementation of Response is returned in case when transport exception is mapped to status code. It is supposed to emulate intbal error
@@ -25,7 +27,7 @@ public class MappedTransportErrorResponse implements Response {
 
   private static final String CONTENT_TYPE = MediaType.PLAIN_TEXT_UTF_8.withoutParameters().toString();
 
-  private static final FluentCaseInsensitiveStringsMap HEADERS = new FluentCaseInsensitiveStringsMap();
+  private static final HttpHeaders HEADERS = new DefaultHttpHeaders();
 
   static {
     HEADERS.add("Content-Type", CONTENT_TYPE);
@@ -52,41 +54,30 @@ public class MappedTransportErrorResponse implements Response {
   }
 
   @Override
-  public byte[] getResponseBodyAsBytes() throws IOException {
+  public byte[] getResponseBodyAsBytes() {
     return statusText.getBytes();
   }
 
   @Override
-  public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+  public ByteBuffer getResponseBodyAsByteBuffer() {
     return ByteBuffer.wrap(getResponseBodyAsBytes());
   }
 
   @Override
-  public InputStream getResponseBodyAsStream() throws IOException {
+  public InputStream getResponseBodyAsStream() {
     return new ByteArrayInputStream(getResponseBodyAsBytes());
   }
 
   @Override
-  public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-    String response = getResponseBody(charset);
-    return response.length() <= maxLength ? response : response.substring(0, maxLength);
-  }
-
-  @Override
-  public String getResponseBody(String charset) throws IOException {
+  public String getResponseBody(Charset charset) {
     if (charset == null) {
       return statusText;
     }
-    return new String(statusText.getBytes(), Charset.forName(charset));
+    return new String(statusText.getBytes(), charset);
   }
 
   @Override
-  public String getResponseBodyExcerpt(int maxLength) throws IOException {
-    return getResponseBodyExcerpt(maxLength, null);
-  }
-
-  @Override
-  public String getResponseBody() throws IOException {
+  public String getResponseBody() {
     return statusText;
   }
 
@@ -101,17 +92,17 @@ public class MappedTransportErrorResponse implements Response {
   }
 
   @Override
-  public String getHeader(String name) {
-    return HEADERS.getFirstValue(name);
-  }
-
-  @Override
-  public List<String> getHeaders(String name) {
+  public String getHeader(CharSequence name) {
     return HEADERS.get(name);
   }
 
   @Override
-  public FluentCaseInsensitiveStringsMap getHeaders() {
+  public List<String> getHeaders(CharSequence name) {
+    return HEADERS.getAll(name);
+  }
+
+  @Override
+  public HttpHeaders getHeaders() {
     return HEADERS;
   }
 
@@ -138,5 +129,15 @@ public class MappedTransportErrorResponse implements Response {
   @Override
   public boolean hasResponseBody() {
     return true;
+  }
+
+  @Override
+  public SocketAddress getRemoteAddress() {
+    return null;
+  }
+
+  @Override
+  public SocketAddress getLocalAddress() {
+    return null;
   }
 }

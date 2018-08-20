@@ -12,7 +12,7 @@ public class ResultWithResponse<T> extends ResultWithStatus<T> {
 
   private Response response;
 
-  public ResultWithResponse(T value, com.ning.http.client.Response response) {
+  public ResultWithResponse(T value, org.asynchttpclient.Response response) {
     this(value, new Response(response));
   }
 
@@ -26,14 +26,6 @@ public class ResultWithResponse<T> extends ResultWithStatus<T> {
    */
   public Response unconverted() {
     return response;
-  }
-
-  /**
-   * @deprecated use {@link #unconverted()}
-   */
-  @Deprecated
-  public com.ning.http.client.Response getResponse() {
-    return response.getDelegate();
   }
 
   /**

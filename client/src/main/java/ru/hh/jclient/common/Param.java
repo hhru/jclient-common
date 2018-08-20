@@ -4,14 +4,14 @@ import java.util.Objects;
 
 public class Param {
 
-  private final com.ning.http.client.Param delegate;
+  private final org.asynchttpclient.Param delegate;
 
-  Param(com.ning.http.client.Param param) {
+  Param(org.asynchttpclient.Param param) {
     this.delegate = param;
   }
 
   public Param(String name, String value) {
-    this.delegate = new com.ning.http.client.Param(name, value);
+    this.delegate = new org.asynchttpclient.Param(name, value);
   }
 
   public static Param of(Object name, Object value) {
@@ -36,7 +36,7 @@ public class Param {
     return delegate.hashCode();
   }
 
-  com.ning.http.client.Param getDelegate() {
+  org.asynchttpclient.Param getDelegate() {
     return delegate;
   }
 

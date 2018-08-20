@@ -23,16 +23,10 @@ public class ResultProcessor<T> {
 
   private HttpClient httpClient;
   private TypeConverter<T> converter;
-  private ru.hh.jclient.common.converter.TypeConverter<T> oldConverter;
 
   ResultProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
     this.converter = requireNonNull(converter, "converter must not be null");
-  }
-
-  ResultProcessor(HttpClient httpClient, ru.hh.jclient.common.converter.TypeConverter<T> converter) {
-    this.httpClient = requireNonNull(httpClient, "http client must not be null");
-    this.oldConverter = requireNonNull(converter, "converter must not be null");
   }
 
   HttpClient getHttpClient() {
@@ -41,10 +35,6 @@ public class ResultProcessor<T> {
 
   TypeConverter<T> getConverter() {
     return converter;
-  }
-
-  ru.hh.jclient.common.converter.TypeConverter<T> getOldConverter() {
-    return oldConverter;
   }
 
   /**
@@ -104,13 +94,7 @@ public class ResultProcessor<T> {
 
   private ResultWithResponse<T> wrap(Response response) {
     try {
-      ResultWithResponse<T> result;
-      if (converter != null) {
-        result = converter.converterFunction().apply(response);
-      }
-      else {
-        result = oldConverter.converterFunction().apply(response.getDelegate());
-      }
+      ResultWithResponse<T> result = converter.converterFunction().apply(response);
       httpClient.getDebug().onResponseConverted(result.get());
       return result;
     }
@@ -196,14 +180,6 @@ public class ResultProcessor<T> {
    * @param converter used to convert response to expected ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orError(TypeConverter<E> converter) {
-    return new ResultOrErrorProcessor<>(this, converter);
-  }
-
-  /**
-   * @deprecated use {@link #orError(TypeConverter)}
-   */
-  @Deprecated
-  public <E> ResultOrErrorProcessor<T, E> orError(ru.hh.jclient.common.converter.TypeConverter<E> converter) {
     return new ResultOrErrorProcessor<>(this, converter);
   }
 }

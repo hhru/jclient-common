@@ -14,7 +14,7 @@ public class ResultOrErrorWithResponse<T, E> extends ResultOrErrorWithStatus<T, 
 
   private Response response;
 
-  public ResultOrErrorWithResponse(Optional<T> value, Optional<E> errorValue, com.ning.http.client.Response response) {
+  public ResultOrErrorWithResponse(Optional<T> value, Optional<E> errorValue, org.asynchttpclient.Response response) {
     this(value, errorValue, new Response(response));
   }
 

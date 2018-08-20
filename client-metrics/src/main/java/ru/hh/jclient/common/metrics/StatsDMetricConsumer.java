@@ -48,26 +48,12 @@ public class StatsDMetricConsumer implements MetricConsumer {
       return;
     }
     future = scheduler.scheduleAtFixedRate(() -> {
-      if (metricProvider.containsApplicationThreadPoolMetrics()) {
-        statsDClient.gauge(getFullMetricName("async.client.application.thread.pool.size", nameTag),
-            metricProvider.applicationThreadPoolSizeProvider().get());
-        statsDClient.gauge(getFullMetricName("async.client.application.thread.pool.active.task.count", nameTag),
-            metricProvider.applicationThreadPoolActiveTaskSizeProvider().get());
-        statsDClient.gauge(getFullMetricName("async.client.application.thread.pool.queue.size", nameTag),
-            metricProvider.applicationThreadPoolQueueSizeProvider().get());
-      }
-      if (metricProvider.containsNettyBossThreadPoolMetrics()) {
-        statsDClient.gauge(getFullMetricName("async.client.netty.boss.thread.pool.size", nameTag),
-            metricProvider.nettyBossThreadPoolSizeProvider().get());
-        statsDClient.gauge(getFullMetricName("async.client.netty.boss.thread.pool.active.task.count", nameTag),
-            metricProvider.nettyBossThreadPoolActiveTaskSizeProvider().get());
-        statsDClient.gauge(getFullMetricName("async.client.netty.boss.thread.pool.queue.size", nameTag),
-            metricProvider.nettyBossThreadPoolQueueSizeProvider().get());
-      }
-      if (metricProvider.containsNettyChannelMetrics()) {
-        statsDClient.gauge(getFullMetricName("async.client.netty.channels.size", nameTag),
-            metricProvider.nettyChannelPoolSizeProvider().get());
-      }
+      statsDClient.gauge(getFullMetricName("async.client.connection.total.count", nameTag),
+        metricProvider.totalConnectionCount().get());
+      statsDClient.gauge(getFullMetricName("async.client.connection.active.count", nameTag),
+        metricProvider.totalActiveConnectionCount().get());
+      statsDClient.gauge(getFullMetricName("async.client.connection.idle.count", nameTag),
+        metricProvider.totalIdleConnectionCount().get());
     }, 0, sendIntervalAmount, sendIntervalUnit);
     log.info("Successfully scheduled metrics sending");
 
