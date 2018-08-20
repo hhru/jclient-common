@@ -15,7 +15,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,16 +24,17 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
 
 public class HttpClientTestBase {
 
-  static AsyncHttpClientConfig httpClientConfig = new AsyncHttpClientConfig.Builder().build();
+  static AsyncHttpClientConfig httpClientConfig = new DefaultAsyncHttpClientConfig.Builder().build();
   public static HttpClientBuilder http;
   static HttpClientContext httpClientContext;
   static TestRequestDebug debug = new TestRequestDebug(true);
@@ -54,36 +54,36 @@ public class HttpClientTestBase {
     return this;
   }
 
-  public Supplier<Request> okRequest(String text, MediaType contentType) throws IOException {
+  public Supplier<Request> okRequest(String text, MediaType contentType) {
     return request(text, contentType, 200);
   }
 
-  public Supplier<Request> request(String text, MediaType contentType, int status) throws IOException {
+  public Supplier<Request> request(String text, MediaType contentType, int status) {
     final Charset charset = contentType.charset().isPresent() ? contentType.charset().get() : Charset.defaultCharset();
     return request(text.getBytes(charset), contentType, status);
   }
 
-  public Supplier<Request> okRequest(byte[] data, MediaType contentType) throws IOException {
+  public Supplier<Request> okRequest(byte[] data, MediaType contentType) {
     return request(data, contentType, 200);
   }
 
-  public Supplier<Request> request(byte[] data, MediaType contentType, int status) throws IOException {
-    com.ning.http.client.Response response = mock(com.ning.http.client.Response.class);
+  public Supplier<Request> request(byte[] data, MediaType contentType, int status) {
+    org.asynchttpclient.Response response = mock(org.asynchttpclient.Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
       when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
     }
     when(response.getResponseBodyAsStream()).thenReturn(new ByteArrayInputStream(data));
     when(response.getResponseBodyAsBytes()).thenReturn(data);
-    when(response.getResponseBody(isA(String.class))).then(iom -> {
-      String charsetName = iom.getArgumentAt(0, String.class);
-      return new String(data, Charset.forName(charsetName));
+    when(response.getResponseBody(isA(Charset.class))).then(iom -> {
+      Charset charset = iom.getArgumentAt(0, Charset.class);
+      return new String(data, charset);
     });
     return request(new Response(response));
   }
 
   public Supplier<Request> request(MediaType contentType, int status) {
-    com.ning.http.client.Response response = mock(com.ning.http.client.Response.class);
+    org.asynchttpclient.Response response = mock(org.asynchttpclient.Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
       when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
@@ -92,11 +92,11 @@ public class HttpClientTestBase {
   }
 
   public Supplier<Request> request(Response response) {
-    com.ning.http.client.Request[] request = new com.ning.http.client.Request[1];
+    org.asynchttpclient.Request[] request = new org.asynchttpclient.Request[1];
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
-    when(httpClient.executeRequest(isA(com.ning.http.client.Request.class), isA(CompletionHandler.class))).then(iom -> {
-      request[0] = iom.getArgumentAt(0, com.ning.http.client.Request.class);
+    when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
+      request[0] = iom.getArgumentAt(0, org.asynchttpclient.Request.class);
       CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
       handler.onCompleted(response.getDelegate());
       return null;
@@ -108,20 +108,20 @@ public class HttpClientTestBase {
   public void assertEqualRequests(Request request1, Request request2) {
     assertEquals(request1.getUrl(), request2.getUrl());
     assertEquals(request1.getMethod(), request2.getMethod());
-    Map<String, List<String>> headers2 = request2.getHeaders();
+    ru.hh.jclient.common.HttpHeaders headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
     assertEquals(request1.getHeaders(), headers2);
   }
 
   public void assertProperAcceptHeader(ResultProcessor<?> resultProcessor, Request actualRequest) {
     if (!resultProcessor.getConverter().getSupportedMediaTypes().isPresent()) {
-      assertFalse(actualRequest.getHeaders().containsKey(ACCEPT));
+      assertFalse(actualRequest.getHeaders().contains(ACCEPT));
       return;
     }
 
     Collection<MediaType> mediaTypes = resultProcessor.getConverter().getSupportedMediaTypes().get();
-    assertEquals(1, actualRequest.getHeaders().get(ACCEPT).size());
-    List<String> acceptTypes = Arrays.asList(actualRequest.getHeaders().get(ACCEPT).get(0).split(","));
+    assertEquals(1, actualRequest.getHeaders().getAll(ACCEPT).size());
+    List<String> acceptTypes = Arrays.asList(actualRequest.getHeaders().get(ACCEPT).split(","));
     mediaTypes.forEach(type -> assertTrue(acceptTypes.contains(type.toString())));
   }
 

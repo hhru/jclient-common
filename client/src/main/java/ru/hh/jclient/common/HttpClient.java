@@ -6,8 +6,9 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.MessageLite;
-import com.ning.http.client.AsyncHttpClient;
 import static java.util.Objects.requireNonNull;
+
+import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
 import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
@@ -83,7 +84,7 @@ public abstract class HttpClient {
   }
 
   /**
-   * Forces client NOT to send {@link ru.hh.jclient.common.HttpHeaders#HH_PROTO_SESSION} header.
+   * Forces client NOT to send {@link HttpHeaderNames#HH_PROTO_SESSION} header.
    */
   public HttpClient noSession() {
     noSession = true;
@@ -99,7 +100,7 @@ public abstract class HttpClient {
   }
 
   /**
-   * Forces client NOT to send {@link ru.hh.jclient.common.HttpHeaders#X_HH_DEBUG} header.
+   * Forces client NOT to send {@link HttpHeaderNames#X_HH_DEBUG} header.
    */
   public HttpClient noDebug() {
     noDebug = true;
@@ -267,15 +268,6 @@ public abstract class HttpClient {
   }
 
   /**
-   * @deprecated use {@link #expect(TypeConverter)}
-   */
-  @Deprecated
-  public <T> ResultProcessor<T> expect(ru.hh.jclient.common.converter.TypeConverter<T> converter) {
-    expectedMediaTypes = converter.getSupportedMediaTypes();
-    return new ResultProcessor<>(this, converter);
-  }
-
-  /**
    * Returns unconverted, raw response. Avoid using this method, use "converter" methods instead.
    *
    * @return response
@@ -290,14 +282,6 @@ public abstract class HttpClient {
     RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
       maxRequestTimeoutTries, forceIdempotence, adaptive);
     return requestBalancer.requestWithRetry();
-  }
-
-  /**
-   * @deprecated use {@link #unconverted()}
-   */
-  @Deprecated
-  public CompletableFuture<com.ning.http.client.Response> request() {
-    return unconverted().thenApply(Response::getDelegate);
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);

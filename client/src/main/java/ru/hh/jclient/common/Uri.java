@@ -6,22 +6,22 @@ import java.util.Objects;
 
 public class Uri {
 
-  private final com.ning.http.client.uri.Uri delegate;
+  private final org.asynchttpclient.uri.Uri delegate;
 
-  Uri(com.ning.http.client.uri.Uri delegate) {
+  Uri(org.asynchttpclient.uri.Uri delegate) {
     this.delegate = delegate;
   }
 
   public static Uri create(String originalUrl) {
-    return new Uri(com.ning.http.client.uri.Uri.create(null, originalUrl));
+    return new Uri(org.asynchttpclient.uri.Uri.create(null, originalUrl));
   }
 
   public static Uri create(Uri context, final String originalUrl) {
-    return new Uri(com.ning.http.client.uri.Uri.create(context.getDelegate(), originalUrl));
+    return new Uri(org.asynchttpclient.uri.Uri.create(context.getDelegate(), originalUrl));
   }
 
   public Uri(String scheme, String userInfo, String host, int port, String path, String query) {
-    this.delegate = new com.ning.http.client.uri.Uri(scheme, userInfo, host, port, path, query);
+    this.delegate = new org.asynchttpclient.uri.Uri(scheme, userInfo, host, port, path, query, null);
   }
 
   public String getQuery() {
@@ -86,7 +86,7 @@ public class Uri {
     return Objects.equals(obj, this.delegate);
   }
 
-  com.ning.http.client.uri.Uri getDelegate() {
+  org.asynchttpclient.uri.Uri getDelegate() {
     return delegate;
   }
 }

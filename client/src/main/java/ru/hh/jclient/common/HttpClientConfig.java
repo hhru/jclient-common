@@ -1,46 +1,39 @@
 package ru.hh.jclient.common;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.AsyncHttpProviderConfig;
-import com.ning.http.client.filter.RequestFilter;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProvider;
-import com.ning.http.client.providers.netty.NettyAsyncHttpProviderConfig;
+import io.netty.handler.ssl.SslContext;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import ru.hh.jclient.common.metric.MetricConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
-import ru.hh.jclient.common.util.stats.SlowRequestsLoggingHandler;
 import ru.hh.jclient.common.util.storage.Storage;
 
-import javax.net.ssl.SSLContext;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import static java.util.Optional.ofNullable;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 //TODO rename to HttpClientFactoryBuilder
 public final class HttpClientConfig {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
-  private final AsyncHttpClientConfig.Builder configBuilder;
+  private final DefaultAsyncHttpClientConfig.Builder configBuilder;
 
   private UpstreamManager upstreamManager = new DefaultUpstreamManager();
   private Executor callbackExecutor;
-  private NettyAsyncHttpProviderConfig nettyConfig;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
-  private boolean provideExtendedMetrics;
 
   private MetricConsumer metricConsumer;
 
   public static HttpClientConfig basedOn(Properties properties) {
-    AsyncHttpClientConfig.Builder configBuilder = new AsyncHttpClientConfig.Builder();
+    DefaultAsyncHttpClientConfig.Builder configBuilder = new DefaultAsyncHttpClientConfig.Builder();
     ofNullable(properties.getProperty(ConfigKeys.USER_AGENT)).ifPresent(configBuilder::setUserAgent);
     ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt).ifPresent(configBuilder::setMaxConnections);
     ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt).ifPresent(configBuilder::setMaxRequestRetry);
@@ -49,47 +42,29 @@ public final class HttpClientConfig {
     ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setRequestTimeout);
     ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean).ifPresent(configBuilder::setFollowRedirect);
     ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean).ifPresent(configBuilder::setCompressionEnforced);
-    ofNullable(properties.getProperty(ConfigKeys.ALLOW_POOLING_CONNECTIONS)).map(Boolean::parseBoolean)
-        .ifPresent(configBuilder::setAllowPoolingConnections);
     ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
-        .ifPresent(configBuilder::setAcceptAnyCertificate);
+        .ifPresent(configBuilder::setUseInsecureTrustManager);
+    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean).ifPresent(configBuilder::setKeepAlive);
+    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt).ifPresent(configBuilder::setIoThreadsCount);
+
     HttpClientConfig httpClientConfig = new HttpClientConfig(configBuilder);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble).ifPresent(httpClientConfig::withTimeoutMultiplier);
-    ofNullable(properties.getProperty(ConfigKeys.PROVIDE_EXTENDED_METRICS)).map(Boolean::parseBoolean)
-        .ifPresent(httpClientConfig::withExtendedMetrics);
-    httpClientConfig.nettyConfig = new NettyAsyncHttpProviderConfig();
-    //to be able to monitor netty boss thread pool. See: com.ning.http.client.providers.netty.channel.ChannelManager
-    httpClientConfig.nettyConfig.setBossExecutorService(Executors.newCachedThreadPool());
-    configBuilder.setAsyncHttpClientProviderConfig(httpClientConfig.nettyConfig);
-    ofNullable(properties.getProperty(ConfigKeys.SLOW_REQ_THRESHOLD_MS)).map(Integer::parseInt).ifPresent(slowRequestThreshold ->
-        setSlowRequestHandler(httpClientConfig, slowRequestThreshold));
     return httpClientConfig;
-  }
-
-  private static void setSlowRequestHandler(HttpClientConfig httpClientConfig, Integer slowRequestThreshold) {
-    if (slowRequestThreshold <= 0) {
-      return;
-    }
-    NettyAsyncHttpProviderConfig.AdditionalPipelineInitializer initializer = pipeline ->
-        pipeline.addFirst("slowRequestLogger", new SlowRequestsLoggingHandler(slowRequestThreshold, slowRequestThreshold << 2, MILLISECONDS));
-    httpClientConfig.nettyConfig.setHttpAdditionalPipelineInitializer(initializer);
   }
 
   /**
    * use this only if there's not enough "with*" methods to cover all requirements
-   * example: you need to set {@link AsyncHttpProviderConfig}
-   * example: you need to set {@link RequestFilter}
-   * @param asyncClientConfig instance of {@link AsyncHttpClientConfig}
+   * @param asyncClientConfig instance of {@link DefaultAsyncHttpClientConfig}
    * @return instance of HttpClientConfig based on passed config to continue building
    */
   public static HttpClientConfig basedOnNativeConfig(Object asyncClientConfig) {
     if (!(asyncClientConfig instanceof AsyncHttpClientConfig)) {
       throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.class.getName());
     }
-    return new HttpClientConfig(new AsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig));
+    return new HttpClientConfig(new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig));
   }
 
-  private HttpClientConfig(AsyncHttpClientConfig.Builder configBuilder) {
+  private HttpClientConfig(DefaultAsyncHttpClientConfig.Builder configBuilder) {
     this.configBuilder = configBuilder;
   }
 
@@ -98,18 +73,13 @@ public final class HttpClientConfig {
     return this;
   }
 
-  public HttpClientConfig withExecutorService(ExecutorService applicationThreadPool) {
-    this.configBuilder.setExecutorService(applicationThreadPool);
+  public HttpClientConfig withThreadFactory(ThreadFactory threadFactory) {
+    this.configBuilder.setThreadFactory(threadFactory);
     return this;
   }
 
   public HttpClientConfig withCallbackExecutor(Executor callbackExecutor) {
     this.callbackExecutor = callbackExecutor;
-    return this;
-  }
-
-  public HttpClientConfig withBossNettyExecutor(ExecutorService nettyBossExecutorService) {
-    this.nettyConfig.setBossExecutorService(nettyBossExecutorService);
     return this;
   }
 
@@ -128,28 +98,18 @@ public final class HttpClientConfig {
     return this;
   }
 
-  public HttpClientConfig withSSLContext(SSLContext sslContext) {
-    this.configBuilder.setSSLContext(sslContext);
+  public HttpClientConfig withSSLContext(SslContext sslContext) {
+    this.configBuilder.setSslContext(sslContext);
     return this;
   }
 
   public HttpClientConfig acceptAnyCetificate(boolean enabled) {
-    this.configBuilder.setAcceptAnyCertificate(enabled);
+    this.configBuilder.setUseInsecureTrustManager(enabled);
     return this;
   }
 
   public HttpClientConfig withTimeoutMultiplier(double timeoutMultiplier) {
     this.timeoutMultiplier = timeoutMultiplier;
-    return this;
-  }
-
-  public HttpClientConfig withSlowRequestLogging(int slowRequestThreshold) {
-    setSlowRequestHandler(this, slowRequestThreshold);
-    return this;
-  }
-
-  public HttpClientConfig withExtendedMetrics(boolean provideExtendedMetrics) {
-    this.provideExtendedMetrics = provideExtendedMetrics;
     return this;
   }
 
@@ -161,13 +121,13 @@ public final class HttpClientConfig {
       callbackExecutor,
       buildUpstreamManager()
     );
-    ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider(provideExtendedMetrics)));
+    ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider()));
     return httpClientBuilder;
   }
 
   private AsyncHttpClient buildClient() {
     AsyncHttpClientConfig clientConfig = applyTimeoutMultiplier(configBuilder).build();
-    return MDCCopy.doWithoutContext(() -> new AsyncHttpClient(new NettyAsyncHttpProvider(clientConfig), clientConfig));
+    return MDCCopy.doWithoutContext(() -> new DefaultAsyncHttpClient(clientConfig));
   }
 
   private UpstreamManager buildUpstreamManager() {
@@ -175,9 +135,9 @@ public final class HttpClientConfig {
     return upstreamManager;
   }
 
-  private AsyncHttpClientConfig.Builder applyTimeoutMultiplier(AsyncHttpClientConfig.Builder clientConfigBuilder) {
+  private DefaultAsyncHttpClientConfig.Builder applyTimeoutMultiplier(DefaultAsyncHttpClientConfig.Builder clientConfigBuilder) {
     AsyncHttpClientConfig config = clientConfigBuilder.build();
-    AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder(config);
+    DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder(config);
     builder.setConnectTimeout(config.getConnectTimeout() > 0 ? (int)(config.getConnectTimeout() * timeoutMultiplier) : config.getConnectTimeout());
     builder.setReadTimeout(config.getReadTimeout() > 0 ? (int)(config.getReadTimeout() * timeoutMultiplier) : config.getReadTimeout());
     builder.setRequestTimeout(config.getRequestTimeout() > 0 ? (int)(config.getRequestTimeout() * timeoutMultiplier) : config.getRequestTimeout());
@@ -218,8 +178,6 @@ public final class HttpClientConfig {
     private ConfigKeys() {
     }
 
-    public static final String PROVIDE_EXTENDED_METRICS = "provideExtendedMetrics";
-    public static final String SLOW_REQ_THRESHOLD_MS = "slowRequestThresholdMs";
     public static final String USER_AGENT = "userAgent";
 
     public static final String MAX_CONNECTIONS = "maxTotalConnections";
@@ -233,8 +191,9 @@ public final class HttpClientConfig {
 
     public static final String FOLLOW_REDIRECT = "followRedirect";
     public static final String COMPRESSION_ENFORCED = "compressionEnforced";
-    public static final String ALLOW_POOLING_CONNECTIONS = "allowPoolingConnections";
 
     public static final String ACCEPT_ANY_CERTIFICATE = "acceptAnyCertificate";
+    public static final String KEEP_ALIVE = "keepAlive";
+    public static final String IO_THREADS_COUNT = "ioThreadsCount";
   }
 }

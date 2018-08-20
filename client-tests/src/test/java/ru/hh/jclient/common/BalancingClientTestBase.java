@@ -2,15 +2,16 @@ package ru.hh.jclient.common;
 
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Request;
-import com.ning.http.client.Response;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import org.jboss.netty.channel.ConnectTimeoutException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import io.netty.channel.ConnectTimeoutException;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.Response;
 import org.junit.Before;
 import org.junit.Test;
 import static org.mockito.Matchers.eq;
@@ -221,13 +222,13 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests);
   }
 
-  com.ning.http.client.Request completeWith(int status, InvocationOnMock iom) throws Exception {
-    com.ning.http.client.Response response = mock(Response.class);
+  Request completeWith(int status, InvocationOnMock iom) throws Exception {
+    Response response = mock(Response.class);
 
     when(response.getStatusCode()).thenReturn(status);
     when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(MediaType.PLAIN_TEXT_UTF_8.toString());
 
-    com.ning.http.client.Request request = iom.getArgumentAt(0, Request.class);
+    Request request = iom.getArgumentAt(0, Request.class);
     CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
     handler.onCompleted(response);
     return request;

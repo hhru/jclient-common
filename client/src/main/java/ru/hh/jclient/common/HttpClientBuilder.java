@@ -1,10 +1,9 @@
 package ru.hh.jclient.common;
 
 import com.google.common.collect.ImmutableSet;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import static java.util.Objects.requireNonNull;
 
+import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metric.MetricProvider;
 import ru.hh.jclient.common.util.storage.Storage;
 
@@ -12,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.Executor;
 
 //TODO rename to HttpClientFactory
@@ -51,25 +51,6 @@ public class HttpClientBuilder {
    *
    * @param request
    *          to execute
-   *
-   * @deprecated use {@link #with(Request)}
-   */
-  @Deprecated
-  public HttpClient with(com.ning.http.client.Request request) {
-    return new HttpClientImpl(
-        http,
-        new Request(requireNonNull(request, "request must not be null")),
-        hostsWithSession,
-        upstreamManager,
-        contextSupplier,
-        callbackExecutor);
-  }
-
-  /**
-   * Specifies request to be executed. This is a starting point of request execution chain.
-   *
-   * @param request
-   *          to execute
    */
   public HttpClient with(Request request) {
     return new HttpClientImpl(
@@ -102,14 +83,16 @@ public class HttpClientBuilder {
    * @return returns copy (within case insensitive map) of headers contained within global (incoming) request
    */
   public Map<String, List<String>> getHeaders() {
-    return new FluentCaseInsensitiveStringsMap(contextSupplier.get().getHeaders());
+    Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    headers.putAll(contextSupplier.get().getHeaders());
+    return headers;
   }
 
   AsyncHttpClient getHttp() {
     return http;
   }
 
-  MetricProvider getMetricProvider(boolean provideExtendedMetrics) {
-    return MetricProviderFactory.from(this, provideExtendedMetrics);
+  MetricProvider getMetricProvider() {
+    return MetricProviderFactory.from(this);
   }
 }

@@ -13,17 +13,11 @@ public class ResultOrErrorProcessor<T, E> {
 
   private ResultProcessor<T> responseProcessor;
   private TypeConverter<E> errorConverter;
-  private ru.hh.jclient.common.converter.TypeConverter<E> oldErrorConverter;
   private Range<Integer> errorsRange = Range.greaterThan(OK_RANGE.upperEndpoint());
 
   ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
     this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
     this.errorConverter = requireNonNull(errorConverter, "errorConverter must not be null");
-  }
-
-  ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, ru.hh.jclient.common.converter.TypeConverter<E> errorConverter) {
-    this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
-    this.oldErrorConverter = requireNonNull(errorConverter, "errorConverter must not be null");
   }
 
   /**
@@ -38,7 +32,7 @@ public class ResultOrErrorProcessor<T, E> {
   /**
    * Specifies range of HTTP status codes that are eligible for ERROR response parsing. It must not intersect with {@link HttpClient#OK_RANGE}.
    *
-   * @param status HTTP status codes that converter will be used for
+   * @param statusCodes HTTP status codes that converter will be used for
    */
   public ResultOrErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
     if (OK_RANGE.isConnected(statusCodes)) {
@@ -89,13 +83,7 @@ public class ResultOrErrorProcessor<T, E> {
     Optional<E> errorValue;
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
-        if (responseProcessor.getConverter() != null) {
-          value = responseProcessor.getConverter().converterFunction().apply(response).get();
-        }
-        else {
-          value = responseProcessor.getOldConverter().converterFunction().apply(response.getDelegate()).get();
-        }
-
+        value = responseProcessor.getConverter().converterFunction().apply(response).get();
         errorValue = Optional.empty();
 
         responseProcessor.getHttpClient().getDebug().onResponseConverted(value);
@@ -123,10 +111,7 @@ public class ResultOrErrorProcessor<T, E> {
 
   private Optional<E> parseError(Response response) throws Exception {
     if (errorsRange.contains(response.getStatusCode()) && !(response.getDelegate() instanceof MappedTransportErrorResponse)) {
-      if (errorConverter != null) {
-        return errorConverter.converterFunction().apply(response).get();
-      }
-      return oldErrorConverter.converterFunction().apply(response.getDelegate()).get();
+      return errorConverter.converterFunction().apply(response).get();
     }
     return Optional.empty();
   }

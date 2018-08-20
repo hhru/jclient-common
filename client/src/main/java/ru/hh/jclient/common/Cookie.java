@@ -2,50 +2,44 @@ package ru.hh.jclient.common;
 
 public class Cookie {
 
-  private final com.ning.http.client.cookie.Cookie delegate;
+  private final io.netty.handler.codec.http.cookie.Cookie delegate;
 
-  Cookie(com.ning.http.client.cookie.Cookie cookie) {
+  Cookie(io.netty.handler.codec.http.cookie.Cookie cookie) {
     this.delegate = cookie;
   }
 
-  public static Cookie newValidCookie(
-      String name,
-      String value,
-      boolean wrap,
-      String domain,
-      String path,
-      long maxAge,
-      boolean secure,
-      boolean httpOnly) {
-    return new Cookie(com.ning.http.client.cookie.Cookie.newValidCookie(name, value, wrap, domain, path, maxAge, secure, httpOnly));
-  }
-
   public Cookie(String name, String value, boolean wrap, String domain, String path, long maxAge, boolean secure, boolean httpOnly) {
-    this.delegate = new com.ning.http.client.cookie.Cookie(name, value, wrap, domain, path, maxAge, secure, httpOnly);
+    this.delegate = new io.netty.handler.codec.http.cookie.DefaultCookie(name, value);
+    this.delegate.setWrap(wrap);
+    this.delegate.setDomain(domain);
+    this.delegate.setPath(path);
+    this.delegate.setMaxAge(maxAge);
+    this.delegate.setSecure(secure);
+    this.delegate.setHttpOnly(httpOnly);
   }
 
   public String getDomain() {
-    return delegate.getDomain();
+    return delegate.domain();
   }
 
   public String getName() {
-    return delegate.getName();
+    return delegate.name();
   }
 
   public String getValue() {
-    return delegate.getValue();
+    return delegate.value();
   }
 
   public boolean isWrap() {
-    return delegate.isWrap();
+    return delegate.wrap();
   }
 
   public String getPath() {
-    return delegate.getPath();
+    return delegate.path();
   }
 
   public long getMaxAge() {
-    return delegate.getMaxAge();
+    return delegate.maxAge();
   }
 
   public boolean isSecure() {
@@ -61,7 +55,7 @@ public class Cookie {
     return delegate.toString();
   }
 
-  com.ning.http.client.cookie.Cookie getDelegate() {
+  io.netty.handler.codec.http.cookie.Cookie getDelegate() {
     return delegate;
   }
 }

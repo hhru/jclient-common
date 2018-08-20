@@ -1,18 +1,16 @@
 package ru.hh.jclient.common;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Response {
 
-  private final com.ning.http.client.Response delegate;
+  private final org.asynchttpclient.Response delegate;
 
-  Response(com.ning.http.client.Response delegate) {
+  Response(org.asynchttpclient.Response delegate) {
     this.delegate = delegate;
   }
 
@@ -40,9 +38,8 @@ public class Response {
    * Return the entire response body as a byte[].
    *
    * @return the entire response body as a byte[].
-   * @throws IOException
    */
-  public byte[] getResponseBodyAsBytes() throws IOException {
+  public byte[] getResponseBodyAsBytes() {
     return delegate.getResponseBodyAsBytes();
   }
 
@@ -50,9 +47,8 @@ public class Response {
    * Return the entire response body as a ByteBuffer.
    *
    * @return the entire response body as a ByteBuffer.
-   * @throws IOException
    */
-  public ByteBuffer getResponseBodyAsByteBuffer() throws IOException {
+  public ByteBuffer getResponseBodyAsByteBuffer() {
     return delegate.getResponseBodyAsByteBuffer();
   }
 
@@ -60,23 +56,9 @@ public class Response {
    * Returns an input stream for the response body. Note that you should not try to get this more than once, and that you should not close the stream.
    *
    * @return The input stream
-   * @throws java.io.IOException
    */
-  public InputStream getResponseBodyAsStream() throws IOException {
+  public InputStream getResponseBodyAsStream() {
     return delegate.getResponseBodyAsStream();
-  }
-
-  /**
-   * Returns the first maxLength bytes of the response body as a string. Note that this does not check whether the content type is actually a textual
-   * one, but it will use the charset if present in the content type header.
-   *
-   * @param maxLength The maximum number of bytes to read
-   * @param charset   the charset to use when decoding the stream
-   * @return The response body
-   * @throws java.io.IOException
-   */
-  public String getResponseBodyExcerpt(int maxLength, String charset) throws IOException {
-    return delegate.getResponseBodyExcerpt(maxLength, charset);
   }
 
   /**
@@ -84,36 +66,22 @@ public class Response {
    *
    * @param charset the charset to use when decoding the stream
    * @return the entire response body as a String.
-   * @throws IOException
    */
-  public String getResponseBody(String charset) throws IOException {
+  public String getResponseBody(Charset charset) {
     return delegate.getResponseBody(charset);
-  }
-
-  /**
-   * Returns the first maxLength bytes of the response body as a string. Note that this does not check whether the content type is actually a textual
-   * one, but it will use the charset if present in the content type header.
-   *
-   * @param maxLength The maximum number of bytes to read
-   * @return The response body
-   * @throws java.io.IOException
-   */
-  public String getResponseBodyExcerpt(int maxLength) throws IOException {
-    return delegate.getResponseBodyExcerpt(maxLength);
   }
 
   /**
    * Return the entire response body as a String.
    *
    * @return the entire response body as a String.
-   * @throws IOException
    */
-  public String getResponseBody() throws IOException {
+  public String getResponseBody() {
     return delegate.getResponseBody();
   }
 
   /**
-   * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link URI} will be the last valid redirect url.
+   * Return the request {@link Uri}. Note that if the request got redirected, the value of the {@link Uri} will be the last valid redirect url.
    *
    * @return the request {@link Uri}.
    */
@@ -131,9 +99,8 @@ public class Response {
   }
 
   /**
-   * Return the response header
-   *
-   * @return the response header
+   * @param name the header name
+   * @return the first response header value
    */
   public String getHeader(String name) {
     return delegate.getHeader(name);
@@ -142,14 +109,15 @@ public class Response {
   /**
    * Return a {@link List} of the response header value.
    *
-   * @return the response header
+   * @param name the header name
+   * @return the response header value
    */
   public List<String> getHeaders(String name) {
     return delegate.getHeaders(name);
   }
 
-  public Map<String, List<String>> getHeaders() {
-    return delegate.getHeaders();
+  public HttpHeaders getHeaders() {
+    return new HttpHeaders(delegate.getHeaders());
   }
 
   /**
@@ -164,7 +132,7 @@ public class Response {
   /**
    * Subclasses SHOULD implement toString() in a way that identifies the response for logging.
    *
-   * @return The textual representation
+   * @return the textual representation
    */
   @Override
   public String toString() {
@@ -179,37 +147,27 @@ public class Response {
   }
 
   /**
-   * Return true if the response's status has been computed by an {@link AsyncHandler}
-   *
-   * @return true if the response's status has been computed by an {@link AsyncHandler}
+   * @return true if the response's status has been computed
    */
   public boolean hasResponseStatus() {
     return delegate.hasResponseStatus();
   }
 
   /**
-   * Return true if the response's headers has been computed by an {@link AsyncHandler} It will return false if the either
-   * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned
-   * {@link AsyncHandler.STATE#ABORT}
-   *
-   * @return true if the response's headers has been computed by an {@link AsyncHandler}
+   * @return true if the response's headers has been computed
    */
   public boolean hasResponseHeaders() {
     return delegate.hasResponseHeaders();
   }
 
   /**
-   * Return true if the response's body has been computed by an {@link AsyncHandler}. It will return false if the either
-   * {@link AsyncHandler#onStatusReceived(HttpResponseStatus)} or {@link AsyncHandler#onHeadersReceived(HttpResponseHeaders)} returned
-   * {@link AsyncHandler.STATE#ABORT}
-   *
-   * @return true if the response's body has been computed by an {@link AsyncHandler}
+   * @return true if the response's body has been computed
    */
   public boolean hasResponseBody() {
     return delegate.hasResponseBody();
   }
 
-  com.ning.http.client.Response getDelegate() {
+  org.asynchttpclient.Response getDelegate() {
     return delegate;
   }
 }
