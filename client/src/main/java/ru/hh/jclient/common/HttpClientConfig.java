@@ -103,7 +103,7 @@ public final class HttpClientConfig {
     return this;
   }
 
-  public HttpClientConfig acceptAnyCetificate(boolean enabled) {
+  public HttpClientConfig acceptAnyCertificate(boolean enabled) {
     this.configBuilder.setUseInsecureTrustManager(enabled);
     return this;
   }
@@ -126,7 +126,10 @@ public final class HttpClientConfig {
   }
 
   private AsyncHttpClient buildClient() {
-    AsyncHttpClientConfig clientConfig = applyTimeoutMultiplier(configBuilder).build();
+    AsyncHttpClientConfig clientConfig = applyTimeoutMultiplier(configBuilder)
+      .setCookieStore(null)
+      .build();
+
     return MDCCopy.doWithoutContext(() -> new DefaultAsyncHttpClient(clientConfig));
   }
 
