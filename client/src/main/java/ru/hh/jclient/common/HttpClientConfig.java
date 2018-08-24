@@ -51,6 +51,8 @@ public final class HttpClientConfig {
     ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean).ifPresent(configBuilder::setCompressionEnforced);
     ofNullable(properties.getProperty(ConfigKeys.ALLOW_POOLING_CONNECTIONS)).map(Boolean::parseBoolean)
         .ifPresent(configBuilder::setAllowPoolingConnections);
+    ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
+        .ifPresent(configBuilder::setAcceptAnyCertificate);
     HttpClientConfig httpClientConfig = new HttpClientConfig(configBuilder);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble).ifPresent(httpClientConfig::withTimeoutMultiplier);
     ofNullable(properties.getProperty(ConfigKeys.PROVIDE_EXTENDED_METRICS)).map(Boolean::parseBoolean)
@@ -131,6 +133,11 @@ public final class HttpClientConfig {
     return this;
   }
 
+  public HttpClientConfig acceptAnyCetificate(boolean enabled) {
+    this.configBuilder.setAcceptAnyCertificate(enabled);
+    return this;
+  }
+
   public HttpClientConfig withTimeoutMultiplier(double timeoutMultiplier) {
     this.timeoutMultiplier = timeoutMultiplier;
     return this;
@@ -207,22 +214,27 @@ public final class HttpClientConfig {
     return this;
   }
 
-  public interface ConfigKeys {
-    String PROVIDE_EXTENDED_METRICS = "provideExtendedMetrics";
-    String SLOW_REQ_THRESHOLD_MS = "slowRequestThresholdMs";
-    String USER_AGENT = "userAgent";
+  public static final class ConfigKeys {
+    private ConfigKeys() {
+    }
 
-    String MAX_CONNECTIONS = "maxTotalConnections";
-    String MAX_REQUEST_RETRIES = "maxRequestRetries";
+    public static final String PROVIDE_EXTENDED_METRICS = "provideExtendedMetrics";
+    public static final String SLOW_REQ_THRESHOLD_MS = "slowRequestThresholdMs";
+    public static final String USER_AGENT = "userAgent";
 
-    String CONNECTION_TIMEOUT_MS = "connectionTimeoutMs";
-    String READ_TIMEOUT_MS = "readTimeoutMs";
-    String REQUEST_TIMEOUT_MS = "requestTimeoutMs";
+    public static final String MAX_CONNECTIONS = "maxTotalConnections";
+    public static final String MAX_REQUEST_RETRIES = "maxRequestRetries";
 
-    String TIMEOUT_MULTIPLIER = "timeoutMultiplier";
+    public static final String CONNECTION_TIMEOUT_MS = "connectionTimeoutMs";
+    public static final String READ_TIMEOUT_MS = "readTimeoutMs";
+    public static final String REQUEST_TIMEOUT_MS = "requestTimeoutMs";
 
-    String FOLLOW_REDIRECT = "followRedirect";
-    String COMPRESSION_ENFORCED = "compressionEnforced";
-    String ALLOW_POOLING_CONNECTIONS = "allowPoolingConnections";
+    public static final String TIMEOUT_MULTIPLIER = "timeoutMultiplier";
+
+    public static final String FOLLOW_REDIRECT = "followRedirect";
+    public static final String COMPRESSION_ENFORCED = "compressionEnforced";
+    public static final String ALLOW_POOLING_CONNECTIONS = "allowPoolingConnections";
+
+    public static final String ACCEPT_ANY_CERTIFICATE = "acceptAnyCertificate";
   }
 }
