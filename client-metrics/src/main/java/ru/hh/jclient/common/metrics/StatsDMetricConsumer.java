@@ -54,6 +54,10 @@ public class StatsDMetricConsumer implements MetricConsumer {
         metricProvider.totalActiveConnectionCount().get());
       statsDClient.gauge(getFullMetricName("async.client.connection.idle.count", nameTag),
         metricProvider.totalIdleConnectionCount().get());
+      statsDClient.gauge(getFullMetricName("async.client.usedDirectMemory", nameTag),
+        metricProvider.usedDirectMemory().get());
+      statsDClient.gauge(getFullMetricName("async.client.usedHeapMemory", nameTag),
+        metricProvider.usedHeapMemory().get());
     }, 0, sendIntervalAmount, sendIntervalUnit);
     log.info("Successfully scheduled metrics sending");
 
