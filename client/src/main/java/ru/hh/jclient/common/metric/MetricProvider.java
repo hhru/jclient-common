@@ -9,4 +9,8 @@ public interface MetricProvider {
 
   Supplier<Long> usedDirectMemory();
   Supplier<Long> usedHeapMemory();
+
+  Supplier<Long> numAllocations();
+  Supplier<Long> numDeallocations();
+  Supplier<Long> numActiveBytes();
 }
