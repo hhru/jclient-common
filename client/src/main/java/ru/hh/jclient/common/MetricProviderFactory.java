@@ -2,12 +2,16 @@ package ru.hh.jclient.common;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufAllocatorMetric;
-import io.netty.buffer.ByteBufAllocatorMetricProvider;
+import io.netty.buffer.PoolArenaMetric;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocatorMetric;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metric.MetricProvider;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import static java.util.Optional.ofNullable;
 
 public final class MetricProviderFactory {
 
@@ -33,21 +37,38 @@ public final class MetricProviderFactory {
 
       @Override
       public Supplier<Long> usedDirectMemory() {
-        return () -> getByteBufferMetrics(clientBuilder.getHttp()).map(ByteBufAllocatorMetric::usedDirectMemory).orElse(0L);
+        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(ByteBufAllocatorMetric::usedDirectMemory).orElse(0L);
       }
 
       @Override
       public Supplier<Long> usedHeapMemory() {
-        return () -> getByteBufferMetrics(clientBuilder.getHttp()).map(ByteBufAllocatorMetric::usedHeapMemory).orElse(0L);
+        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(ByteBufAllocatorMetric::usedHeapMemory).orElse(0L);
+      }
+
+      @Override
+      public Supplier<Long> numAllocations() {
+        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+          .map(a -> a.mapToLong(PoolArenaMetric::numAllocations).sum()).orElse(0L);
+      }
+
+      @Override
+      public Supplier<Long> numDeallocations() {
+        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+          .map(a -> a.mapToLong(PoolArenaMetric::numDeallocations).sum()).orElse(0L);
+      }
+
+      @Override
+      public Supplier<Long> numActiveBytes() {
+        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+          .map(a -> a.mapToLong(PoolArenaMetric::numActiveBytes).sum()).orElse(0L);
       }
     };
   }
 
-  private static Optional<ByteBufAllocatorMetric> getByteBufferMetrics(AsyncHttpClient asyncHttpClient) {
-    ByteBufAllocator allocator = Optional.ofNullable(asyncHttpClient.getConfig().getAllocator()).orElse(ByteBufAllocator.DEFAULT);
-    if (allocator instanceof ByteBufAllocatorMetricProvider) {
-      ByteBufAllocatorMetricProvider metricProvider = (ByteBufAllocatorMetricProvider) allocator;
-      return Optional.ofNullable(metricProvider.metric());
+  private static Optional<PooledByteBufAllocatorMetric> getAllocatorMetrics(AsyncHttpClient asyncHttpClient) {
+    ByteBufAllocator allocator = ofNullable(asyncHttpClient.getConfig().getAllocator()).orElse(ByteBufAllocator.DEFAULT);
+    if (allocator instanceof PooledByteBufAllocator) {
+      return Optional.ofNullable(((PooledByteBufAllocator) allocator).metric());
     }
     return Optional.empty();
   }
