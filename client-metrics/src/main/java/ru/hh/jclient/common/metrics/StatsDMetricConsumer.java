@@ -47,6 +47,7 @@ public class StatsDMetricConsumer implements MetricConsumer {
       log.info("Metric provider contains no metrics, won't schedule anything");
       return;
     }
+
     future = scheduler.scheduleAtFixedRate(() -> {
       statsDClient.gauge(getFullMetricName("async.client.connection.total.count", nameTag),
         metricProvider.totalConnectionCount().get());
@@ -58,9 +59,15 @@ public class StatsDMetricConsumer implements MetricConsumer {
         metricProvider.usedDirectMemory().get());
       statsDClient.gauge(getFullMetricName("async.client.usedHeapMemory", nameTag),
         metricProvider.usedHeapMemory().get());
+      statsDClient.gauge(getFullMetricName("async.client.numAllocations", nameTag),
+        metricProvider.numAllocations().get());
+      statsDClient.gauge(getFullMetricName("async.client.numDeallocations", nameTag),
+        metricProvider.numDeallocations().get());
+      statsDClient.gauge(getFullMetricName("async.client.numActiveBytes", nameTag),
+        metricProvider.numActiveBytes().get());
     }, 0, sendIntervalAmount, sendIntervalUnit);
-    log.info("Successfully scheduled metrics sending");
 
+    log.info("Successfully scheduled metrics sending");
   }
 
   private static String getFullMetricName(String metricName, String... tags) {
