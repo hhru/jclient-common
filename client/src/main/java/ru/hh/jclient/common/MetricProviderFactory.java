@@ -46,21 +46,27 @@ public final class MetricProviderFactory {
       }
 
       @Override
-      public Supplier<Long> numAllocations() {
+      public Supplier<Long> numActiveTinyAllocations() {
         return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numAllocations).sum()).orElse(0L);
+          .map(a -> a.mapToLong(PoolArenaMetric::numActiveTinyAllocations).sum()).orElse(0L);
       }
 
       @Override
-      public Supplier<Long> numDeallocations() {
+      public Supplier<Long> numActiveSmallAllocations() {
         return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numDeallocations).sum()).orElse(0L);
+          .map(a -> a.mapToLong(PoolArenaMetric::numActiveSmallAllocations).sum()).orElse(0L);
       }
 
       @Override
-      public Supplier<Long> numActiveBytes() {
+      public Supplier<Long> numActiveNormalAllocations() {
         return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numActiveBytes).sum()).orElse(0L);
+          .map(a -> a.mapToLong(PoolArenaMetric::numActiveNormalAllocations).sum()).orElse(0L);
+      }
+
+      @Override
+      public Supplier<Long> numActiveHugeAllocations() {
+        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+          .map(a -> a.mapToLong(PoolArenaMetric::numActiveHugeAllocations).sum()).orElse(0L);
       }
     };
   }
