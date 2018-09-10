@@ -59,12 +59,14 @@ public class StatsDMetricConsumer implements MetricConsumer {
         metricProvider.usedDirectMemory().get());
       statsDClient.gauge(getFullMetricName("async.client.usedHeapMemory", nameTag),
         metricProvider.usedHeapMemory().get());
-      statsDClient.gauge(getFullMetricName("async.client.numAllocations", nameTag),
-        metricProvider.numAllocations().get());
-      statsDClient.gauge(getFullMetricName("async.client.numDeallocations", nameTag),
-        metricProvider.numDeallocations().get());
-      statsDClient.gauge(getFullMetricName("async.client.numActiveBytes", nameTag),
-        metricProvider.numActiveBytes().get());
+      statsDClient.gauge(getFullMetricName("async.client.numActiveTinyAllocations", nameTag),
+        metricProvider.numActiveTinyAllocations().get());
+      statsDClient.gauge(getFullMetricName("async.client.numActiveSmallAllocations", nameTag),
+        metricProvider.numActiveSmallAllocations().get());
+      statsDClient.gauge(getFullMetricName("async.client.numActiveNormalAllocations", nameTag),
+        metricProvider.numActiveNormalAllocations().get());
+      statsDClient.gauge(getFullMetricName("async.client.numActiveHugeAllocations", nameTag),
+        metricProvider.numActiveHugeAllocations().get());
     }, 0, sendIntervalAmount, sendIntervalUnit);
 
     log.info("Successfully scheduled metrics sending");
