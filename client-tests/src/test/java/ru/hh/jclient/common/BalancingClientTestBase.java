@@ -26,6 +26,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
+import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.io.IOException;
@@ -88,25 +89,61 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   @Test
-  public void retryIOExceptionRequestClosed() throws Exception {
+  public void retryIOExceptionRemotelyClosed() throws Exception {
     createHttpClientBuilder("| server=http://server1 | server=http://server2");
 
-    Request[] request = new Request[2];
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          request[0] = failWith(new IOException("Remotely closed"), iom);
-          return null;
-        })
-        .then(iom -> {
-          request[1] = completeWith(200, iom);
-          return null;
-        });
-
+    Request[] request = mockRetryIOException("Remotely closed");
     getTestClient().get();
 
     assertRequestEquals(request, "server1", "server2");
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryIdempotentIOExceptionResetByPeer() throws Exception {
+    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+
+    Request[] request = mockRetryIOException("Connection reset by peer");
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void doNotRetryNonIdempotentIOExceptionResetByPeer() throws Exception {
+    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        failWith(new IOException("Connection reset by peer"), iom);
+        return null;
+      });
+
+    try {
+      getTestClient().post();
+    } catch (ExecutionException e) {
+      assertTrue(e.getCause() instanceof ClientResponseException);
+      assertEquals(599, ((ClientResponseException) e.getCause()).getStatusCode());
+
+      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    }
+  }
+
+  private Request[] mockRetryIOException(String exceptionText) {
+    Request[] request = new Request[2];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        request[0] = failWith(new IOException(exceptionText), iom);
+        return null;
+      })
+      .then(iom -> {
+        request[1] = completeWith(200, iom);
+        return null;
+      });
+    return request;
   }
 
   @Test
