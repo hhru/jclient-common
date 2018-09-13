@@ -15,6 +15,7 @@ import java.util.concurrent.TimeoutException;
 final class TransportExceptionMapper {
   private static final String CONNECT_ERROR_MESSAGE = "Connect error";
   private static final String REQUEST_TIMEOUT_MESSAGE = "Request timeout";
+  private static final String CONNECTION_RESET_MESSAGE = "Connection reset";
 
   static MappedTransportErrorResponse map(Throwable t, Uri uri) {
     final String errorMessage = ofNullable(t.getMessage()).map(String::toLowerCase).orElse("");
@@ -26,6 +27,9 @@ final class TransportExceptionMapper {
     }
     if (t instanceof IOException && errorMessage.contains("remotely closed")) {
       return createErrorResponse(CONNECT_ERROR, CONNECT_ERROR_MESSAGE, uri);
+    }
+    if (t instanceof IOException && errorMessage.contains("reset by peer")) {
+      return createErrorResponse(REQUEST_TIMEOUT, CONNECTION_RESET_MESSAGE, uri);
     }
     if (t instanceof TimeoutException) {
       return createErrorResponse(REQUEST_TIMEOUT, REQUEST_TIMEOUT_MESSAGE, uri);
