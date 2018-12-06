@@ -70,7 +70,8 @@ public abstract class HttpClient {
     this.upstreamManager = upstreamManager;
     this.adaptive = adaptive;
 
-    context = contextSupplier.get();
+    context = requireNonNull(contextSupplier.get(), "Context not found. Please, ensure you have set context via JClientBase#executeInContext " +
+        "or other context injection methods");
     storages = context.getStorages().copy().add(contextSupplier);
     debug = context.getDebugSupplier().get();
   }

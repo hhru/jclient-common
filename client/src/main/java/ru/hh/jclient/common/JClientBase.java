@@ -1,5 +1,9 @@
 package ru.hh.jclient.common;
 
+import ru.hh.jclient.common.util.storage.Storage;
+
+import java.util.concurrent.Callable;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
@@ -21,6 +25,17 @@ public abstract class JClientBase {
 
   protected JClientBase(String host, String path, HttpClientBuilder http) {
     this(requireNotEmpty(host, "host") + ofNullable(path).orElse(""), http);
+  }
+
+  public static <T> T executeInContext(JClientBase client, HttpClientContext context, Callable<T> action) throws Exception {
+    Storage<HttpClientContext> contextSupplier = client.http.getContextSupplier();
+    HttpClientContext initialContext = contextSupplier.get();
+    contextSupplier.set(context);
+    try {
+      return action.call();
+    } finally {
+      contextSupplier.set(initialContext);
+    }
   }
 
   protected String url(String resourceMethodPath) {
