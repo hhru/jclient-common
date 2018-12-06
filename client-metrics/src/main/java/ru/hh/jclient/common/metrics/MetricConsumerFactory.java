@@ -14,7 +14,8 @@ public class MetricConsumerFactory {
 
   private static MetricConsumer NOOP_METRIC_CONSUMER = metricProvider -> {};
 
-  public static MetricConsumer buildMetricConsumerFromProperties(Properties properties, String name, StatsDClient statsDClient, ScheduledExecutorService scheduler) {
+  public static MetricConsumer buildMetricConsumerFromProperties(Properties properties, String name, StatsDClient statsDClient,
+                                                                 ScheduledExecutorService scheduler) {
     if (!ofNullable(properties.getProperty("enabled")).map(Boolean::parseBoolean).orElse(Boolean.FALSE)) {
       return NOOP_METRIC_CONSUMER;
     }

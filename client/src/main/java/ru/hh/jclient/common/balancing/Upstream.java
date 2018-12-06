@@ -1,7 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.stream.Collectors.toList;
-import static ru.hh.jclient.common.balancing.BalancingStrategy.*;
+import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
 
 import java.util.Collections;
 import java.util.List;

@@ -23,11 +23,13 @@ public final class BalancingUpstreamManager extends UpstreamManager {
   private final String datacenter;
   private final boolean allowCrossDCRequests;
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter, boolean allowCrossDCRequests) {
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter,
+                                  boolean allowCrossDCRequests) {
     this(emptyMap(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
   }
 
-  public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter, boolean allowCrossDCRequests) {
+  public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring,
+                                  String datacenter, boolean allowCrossDCRequests) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitoring must not be null");
     this.datacenter = datacenter;
