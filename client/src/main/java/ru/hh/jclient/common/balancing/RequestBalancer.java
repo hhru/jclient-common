@@ -145,7 +145,7 @@ public class RequestBalancer {
       updateLeftTriesAndTime(timeToLastByteMs);
     }
 
-    if (isServerAvailable() && !adaptive) {
+    if (isServerAvailable()) {
       boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
       upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs);
     }
