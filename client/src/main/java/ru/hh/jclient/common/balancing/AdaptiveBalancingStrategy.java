@@ -30,27 +30,39 @@ final class AdaptiveBalancingStrategy {
 
     // gather statistics
     int i = 0;
-    long totalTime = 0L;
     boolean isAnyWarmingUp = false;
+    long min = Long.MAX_VALUE;
+    long max = 0;
     for (Server server : servers) {
-      ResponseTimeTracker tracker = server.getResponseTimeTracker();
-      isAnyWarmingUp |= tracker.isWarmUp();
       healths[i] = server.getDowntimeDetector().successCount();
-      long mean = tracker.mean();
-      scores[i] = mean;
-      totalTime += mean;
+
+      ResponseTimeTracker tracker = server.getResponseTimeTracker();
+      LOGGER.debug("gathering stats {}, warmUp:{}, time:{}, successCount:{}", server, tracker.isWarmUp(),
+          tracker.mean(), server.getDowntimeDetector().successCount());
+      if (tracker.isWarmUp()) {
+        isAnyWarmingUp = true;
+      } else {
+        long mean = tracker.mean();
+        scores[i] = mean;
+        min = Math.min(min, mean);
+        max = Math.max(max, mean);
+      }
+
       i++;
+    }
+
+    for (int j = 0; j < n; j++) {
+      long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MS : scores[j];
+      scores[j] = isAnyWarmingUp ? time : (long) Math.round((float) min * max / time);
     }
 
     // adjust scores based on downtime detector health and response time tracker score
     long total = 0;
     for (int j = 0; j < n; j++) {
-      long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MS : totalTime - scores[j];
-      int health = healths[j];
-      long score = time * (health <= lowestHealth ? lowestHealth : health);
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("balancer stats for {}, health:{}, time_score:{}, final_score:{}", servers.get(j), health, time, score);
-      }
+      long invertedTime = scores[j];
+      int health = healths[j] <= lowestHealth ? lowestHealth : healths[j];
+      long score = invertedTime * health;
+      LOGGER.debug("balancer stats for {}, health:{}, inverted_time_score:{}, final_score:{}", servers.get(j), health, invertedTime, score);
       total += score;
       scores[j] = score;
       ids[j] = j;
@@ -65,9 +77,7 @@ final class AdaptiveBalancingStrategy {
         sum += scores[k];
         if (pick < sum) {
           shuffled.add(ids[k]);
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("balancer pick for {}, {}:{}", servers.get(ids[k]), n - 1 - j, ids[k]);
-          }
+          LOGGER.debug("balancer pick for {}, {}:{}", servers.get(ids[k]), n - 1 - j, ids[k]);
           total -= scores[k];
           swap(scores, ids, k, j);
           break;

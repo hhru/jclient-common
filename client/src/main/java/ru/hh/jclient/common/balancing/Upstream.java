@@ -3,6 +3,7 @@ package ru.hh.jclient.common.balancing;
 import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -14,7 +15,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
 public final class Upstream {
-
   private final String name;
   private final UpstreamConfig upstreamConfig;
   private final ScheduledExecutorService scheduledExecutor;
@@ -56,15 +56,23 @@ public final class Upstream {
   List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
     try {
       configReadLock.lock();
-      List<Server> servers = upstreamConfig.getServers().stream()
-        .filter(server -> server != null && (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenter())))
-        .collect(toList());
-      List<Integer> ids = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
-      return ids
+      List<Server> servers = upstreamConfig.getServers();
+      List<Server> allowedServers = new ArrayList<>();
+      List<Integer> allowedIds = new ArrayList<>();
+      for (int i = 0; i < servers.size(); i++) {
+        Server server = servers.get(i);
+        if (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenter())) {
+          allowedIds.add(i);
+          allowedServers.add(server);
+        }
+      }
+
+      return AdaptiveBalancingStrategy
+          .getServers(allowedServers, retriesCount)
           .stream()
           .map(id -> {
-            Server server = servers.get(id);
-            return new ServerEntry(id, server.getAddress(), server.getRack(), server.getDatacenter());
+            Server server = allowedServers.get(id);
+            return new ServerEntry(allowedIds.get(id), server.getAddress(), server.getRack(), server.getDatacenter());
           })
           .collect(toList());
     } finally {
