@@ -61,6 +61,9 @@ public class RequestBuilder {
   }
 
   public RequestBuilder addHeader(CharSequence name, String value) {
+    if (value == null) {
+      value = ""; // Preserve AsynHttpClient behaviour, but without excessive warnings
+    }
     delegate.addHeader(name.toString(), value);
     return this;
   }
