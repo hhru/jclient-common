@@ -49,11 +49,17 @@ public final class Server {
     }
     if (isError) {
       fails++;
+    } else {
+      fails = 0;
+    }
+  }
+
+  void releaseAdaptive(boolean isError, long responseTimeMs) {
+    if (isError) {
       downtimeDetector.failed();
     } else {
       downtimeDetector.success();
       responseTimeTracker.time(responseTimeMs);
-      fails = 0;
     }
   }
 
