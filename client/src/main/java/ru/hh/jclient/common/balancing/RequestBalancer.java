@@ -147,7 +147,7 @@ public class RequestBalancer {
 
     if (isServerAvailable()) {
       boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
-      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs);
+      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs, adaptive);
     }
   }
 

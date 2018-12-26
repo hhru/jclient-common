@@ -61,7 +61,7 @@ public final class Upstream {
       List<Integer> allowedIds = new ArrayList<>();
       for (int i = 0; i < servers.size(); i++) {
         Server server = servers.get(i);
-        if (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenter())) {
+        if (server != null && (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenter()))) {
           allowedIds.add(i);
           allowedServers.add(server);
         }
@@ -85,6 +85,10 @@ public final class Upstream {
   }
 
   void releaseServer(int serverIndex, boolean isError, long responseTimeMs) {
+    releaseServer(serverIndex, isError, responseTimeMs, false);
+  }
+
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMs, boolean adaptive) {
     configReadLock.lock();
     try {
       List<Server> servers = upstreamConfig.getServers();
@@ -93,15 +97,21 @@ public final class Upstream {
       }
       Server server = servers.get(serverIndex);
       if (server != null) {
-        server.release(isError, responseTimeMs);
-        if (isError) {
-          if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
-            server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);
+        if (adaptive) {
+          server.releaseAdaptive(isError, responseTimeMs);
+        } else {
+          server.release(isError, responseTimeMs);
+          if (isError) {
+            if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
+              server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);
+            }
           }
         }
       }
 
-      rescale(servers);
+      if (!adaptive) {
+        rescale(servers);
+      }
     } finally {
       configReadLock.unlock();
     }
