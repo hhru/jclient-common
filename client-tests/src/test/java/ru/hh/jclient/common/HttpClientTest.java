@@ -7,12 +7,23 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PROTOBUF;
 import static com.google.common.net.MediaType.XML_UTF_8;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.DEBUG;
-import static ru.hh.jclient.common.TestRequestDebug.Call.*;
+import static ru.hh.jclient.common.TestRequestDebug.Call.CLIENT_PROBLEM;
+import static ru.hh.jclient.common.TestRequestDebug.Call.CONVERTER_PROBLEM;
+import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
+import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,15 +57,13 @@ import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 
 public class HttpClientTest extends HttpClientTestBase {
 
-  private ObjectMapper objectMapper = new ObjectMapper();
-  private JAXBContext jaxbContext;
+  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final JAXBContext jaxbContext;
 
   public HttpClientTest() throws JAXBException {
     jaxbContext = JAXBContext.newInstance(XmlTest.class, XmlError.class);
@@ -162,7 +171,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
+    XmlTest testOutput = http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
     assertEquals("test тест", testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -175,7 +184,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    Collection<XmlTest> testOutput = http.with(request).<XmlTest> expectJsonCollection(objectMapper, XmlTest.class).result().get();
+    Collection<XmlTest> testOutput = http.with(request).expectJsonCollection(objectMapper, XmlTest.class).result().get();
     assertEquals(tests.size(), testOutput.size());
     assertEquals(test1.name, Iterables.get(testOutput, 0).name);
     assertEquals(test2.name, Iterables.get(testOutput, 1).name);
@@ -225,7 +234,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     try {
-      http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
+      http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -242,7 +251,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), PROTOBUF);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
-    ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
+    ProtobufTestMessage testOutput = http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     assertEquals(test.getIdsList(), testOutput.getIdsList());
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
@@ -254,7 +263,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
     try {
-      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
+      http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -322,7 +331,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
         .addHeader(AUTHORIZATION, "someauth")
-        .addQueryParam(HttpParams.DEBUG, "123")
+        .addQueryParam(DEBUG, "123")
         .build();
 
     withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
@@ -604,7 +613,7 @@ public class HttpClientTest extends HttpClientTestBase {
     return out.toByteArray();
   }
 
-  private byte[] jsonBytes(Object object) throws JsonGenerationException, JsonMappingException, IOException {
+  private byte[] jsonBytes(Object object) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     objectMapper.writeValue(out, object);
     return out.toByteArray();

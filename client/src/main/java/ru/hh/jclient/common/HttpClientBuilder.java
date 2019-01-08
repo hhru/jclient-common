@@ -95,4 +95,8 @@ public class HttpClientBuilder {
   MetricProvider getMetricProvider() {
     return MetricProviderFactory.from(this);
   }
+
+  Storage<HttpClientContext> getContextSupplier() {
+    return contextSupplier;
+  }
 }

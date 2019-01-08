@@ -34,7 +34,10 @@ public class MoreFunctionalInterfaces {
      */
     default FailableConsumer<T, E> andThen(FailableConsumer<? super T, E> after) {
         Objects.requireNonNull(after);
-        return (T t) -> { accept(t); after.accept(t); };
+        return (T t) -> {
+          accept(t);
+          after.accept(t);
+        };
     }
   }
 

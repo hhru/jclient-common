@@ -214,7 +214,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retry503ForNonIdempotentRequest() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=2 retry_policy=non_idempotent_503 | server=http://server1 | server=http://server2 | server=http://server3");
+    createHttpClientBuilder(
+        "max_tries=3 max_fails=2 retry_policy=non_idempotent_503 | server=http://server1 | server=http://server2 | server=http://server3"
+    );
 
     Request[] request = mockRequestWith503Response();
 
@@ -275,8 +277,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     assertEquals(host, request.getUri().getHost());
   }
 
-  private HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter, boolean allowCrossDCRequests) {
-    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class), datacenter, allowCrossDCRequests);
+  private HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs,
+                                                    String datacenter, boolean allowCrossDCRequests) {
+    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class),
+      datacenter, allowCrossDCRequests);
     return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }

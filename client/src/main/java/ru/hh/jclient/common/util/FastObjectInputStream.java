@@ -1,7 +1,5 @@
 package ru.hh.jclient.common.util;
 
-import ru.hh.jclient.common.util.ClassesCache;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
