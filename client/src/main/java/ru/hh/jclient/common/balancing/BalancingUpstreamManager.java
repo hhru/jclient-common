@@ -11,6 +11,7 @@ import ru.hh.jclient.common.Uri;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -19,17 +20,21 @@ public final class BalancingUpstreamManager extends UpstreamManager {
 
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduledExecutor;
-  private final Monitoring monitoring;
+  private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter, boolean allowCrossDCRequests) {
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter, boolean allowCrossDCRequests) {
     this(emptyMap(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
   }
 
-  public BalancingUpstreamManager(Map<String, String> upstreamConfigs, ScheduledExecutorService scheduledExecutor, Monitoring monitoring, String datacenter, boolean allowCrossDCRequests) {
+  public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
+                                  ScheduledExecutorService scheduledExecutor,
+                                  Set<Monitoring> monitoring,
+                                  String datacenter,
+                                  boolean allowCrossDCRequests) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
-    this.monitoring = requireNonNull(monitoring, "monitoring must not be null");
+    this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
 
@@ -66,7 +71,7 @@ public final class BalancingUpstreamManager extends UpstreamManager {
   }
 
   @Override
-  public Monitoring getMonitoring() {
+  public Set<Monitoring> getMonitoring() {
     return monitoring;
   }
 

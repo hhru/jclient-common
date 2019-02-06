@@ -4,6 +4,7 @@ import ru.hh.jclient.common.balancing.Upstream;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 final class DefaultUpstreamManager extends UpstreamManager {
   @Override
@@ -21,7 +22,7 @@ final class DefaultUpstreamManager extends UpstreamManager {
   }
 
   @Override
-  public Monitoring getMonitoring() {
+  public Set<Monitoring> getMonitoring() {
     return null;
   }
 }
