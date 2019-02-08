@@ -32,6 +32,7 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -276,7 +277,8 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   private HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter, boolean allowCrossDCRequests) {
-    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), mock(Monitoring.class), datacenter, allowCrossDCRequests);
+    Monitoring monitoring = mock(Monitoring.class);
+    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), Collections.singleton(monitoring), datacenter, allowCrossDCRequests);
     return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }

@@ -3,6 +3,7 @@ package ru.hh.jclient.common;
 import ru.hh.jclient.common.balancing.Upstream;
 
 import java.util.Map;
+import java.util.Set;
 
 import static ru.hh.jclient.common.HttpClientConfig.DEFAULT_TIMEOUT_MULTIPLIER;
 
@@ -15,7 +16,7 @@ public abstract class UpstreamManager {
 
   public abstract void updateUpstream(String name, String configString);
 
-  public abstract Monitoring getMonitoring();
+  public abstract Set<Monitoring> getMonitoring();
 
   public double getTimeoutMultiplier() {
     return timeoutMultiplier;

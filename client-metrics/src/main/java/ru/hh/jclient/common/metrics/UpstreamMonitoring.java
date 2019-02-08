@@ -9,11 +9,11 @@ import java.util.Map;
 
 /**
  * UpstreamMonitoring sends requests metrics to okmeter.io using StatsD.
- *
+ * <p>
  * Metrics:
- *  - http.client.requests
- *  - http.client.request.time
- *  - http.client.retries
+ * - http.client.requests
+ * - http.client.request.time
+ * - http.client.retries
  */
 public class UpstreamMonitoring implements Monitoring {
   private final StatsDSender statsDSender;
@@ -25,7 +25,11 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRequest(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, boolean isRequestFinal) {
+  public void countRequest(String upstreamName, String serverDatacenter,
+                           String serverAddress,
+                           int statusCode,
+                           long requestTimeMs,
+                           boolean isRequestFinal) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     tags.put("server", serverAddress);
     tags.put("status", String.valueOf(statusCode));
