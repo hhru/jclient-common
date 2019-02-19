@@ -4,17 +4,35 @@ import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
 import ru.hh.jclient.common.Monitoring;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class InfluxUpstreamMonitoring implements Monitoring {
 
   private final String serviceName;
+  private final String dc;
   private final InfluxDB influxDB;
 
-  public InfluxUpstreamMonitoring(String serviceName, InfluxDB influxDB) {
+  public InfluxUpstreamMonitoring(String serviceName,
+                                  String dc,
+                                  InfluxDB influxDB) {
     this.serviceName = serviceName;
+    this.dc = dc;
     this.influxDB = influxDB;
+  }
+
+  public void startHeartbeat(ScheduledExecutorService executorService, long period) throws UnknownHostException {
+    final String hostname = InetAddress.getLocalHost().getHostName();
+    executorService.scheduleAtFixedRate(() -> influxDB.write(Point.measurement("heartbeat")
+      .tag("app", serviceName)
+      .tag("hostname", hostname)
+      .tag("dc", dc)
+      .addField("ts", System.currentTimeMillis())
+      .build()), 0, period, TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -22,14 +40,16 @@ public class InfluxUpstreamMonitoring implements Monitoring {
                            int statusCode,
                            long requestTimeMs,
                            boolean isRequestFinal) {
-    influxDB.write(
-      Point.measurement("request")
-        .addField("response_time", requestTimeMs)
-        .tag("server", serverAddress)
-        .tag("status", String.valueOf(statusCode))
-        .tag("final", String.valueOf(isRequestFinal))
-        .tag(getCommonTags(serviceName, upstreamName, serverDataCenter))
-        .build());
+    if (statusCode >= 500) {
+      influxDB.write(
+        Point.measurement("request")
+          .addField("response_time", requestTimeMs)
+          .tag("server", serverAddress)
+          .tag("status", String.valueOf(statusCode))
+          .tag("final", String.valueOf(isRequestFinal))
+          .tag(getCommonTags(serviceName, upstreamName, serverDataCenter))
+          .build());
+    }
   }
 
   @Override
