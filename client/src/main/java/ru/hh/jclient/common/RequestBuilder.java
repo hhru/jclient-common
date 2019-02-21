@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import org.asynchttpclient.request.body.multipart.Part;
 
 public class RequestBuilder {
 
@@ -150,6 +151,11 @@ public class RequestBuilder {
 
   public RequestBuilder setFormParams(Map<String, List<String>> params) {
     delegate.setFormParams(params);
+    return this;
+  }
+
+  public RequestBuilder addBodyPart(Part bodyPart) {
+    delegate.addBodyPart(bodyPart);
     return this;
   }
 
