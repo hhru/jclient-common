@@ -40,7 +40,7 @@ public class InfluxUpstreamMonitoring implements Monitoring {
                            int statusCode,
                            long requestTimeMs,
                            boolean isRequestFinal) {
-    if (statusCode >= 500) {
+    if (statusCode >= 500 && isRequestFinal) {
       influxDB.write(
         Point.measurement("request")
           .addField("response_time", requestTimeMs)
