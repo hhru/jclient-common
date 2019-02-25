@@ -46,7 +46,6 @@ public class InfluxUpstreamMonitoring implements Monitoring {
           .addField("response_time", requestTimeMs)
           .tag("server", serverAddress)
           .tag("status", String.valueOf(statusCode))
-          .tag("final", String.valueOf(isRequestFinal))
           .tag(getCommonTags(serviceName, upstreamName, serverDataCenter))
           .build());
     }
