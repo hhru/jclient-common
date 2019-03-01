@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/hhru/jclient-common.svg?branch=master)](https://travis-ci.org/hhru/jclient-common) [![codecov](https://codecov.io/gh/hhru/jclient-common/branch/master/graph/badge.svg)](https://codecov.io/gh/hhru/jclient-common)
+[![Build Status](https://travis-ci.org/hhru/jclient-common.svg?branch=master)](https://travis-ci.org/hhru/jclient-common) 
+[![codecov](https://codecov.io/gh/hhru/jclient-common/branch/master/graph/badge.svg)](https://codecov.io/gh/hhru/jclient-common)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=ru.hh.jclient-common%3Ajclient-common-parent&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=ru.hh.jclient-common%3Ajclient-common-parent)
 
 # What is it?
 Jclient-common allows to make asynchronous HTTP calls to remote services in Java applications. 
