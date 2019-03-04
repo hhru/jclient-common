@@ -90,7 +90,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   }
 
   protected T checkForEmpty() {
-    return wrapper.get().orElse(defaultOrThrow("result is empty").get());
+    return wrapper.get().orElseGet(defaultOrThrow("result is empty")::get);
   }
 
   protected Optional<T> defaultOrThrow(String cause) {

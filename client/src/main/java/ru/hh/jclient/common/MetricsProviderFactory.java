@@ -6,66 +6,66 @@ import io.netty.buffer.PoolArenaMetric;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocatorMetric;
 import org.asynchttpclient.AsyncHttpClient;
-import ru.hh.jclient.common.metric.MetricProvider;
+import ru.hh.jclient.common.metrics.MetricsProvider;
 
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import static java.util.Optional.ofNullable;
 
-public final class MetricProviderFactory {
+public final class MetricsProviderFactory {
 
-  private MetricProviderFactory() {
+  private MetricsProviderFactory() {
   }
 
-  public static MetricProvider from(HttpClientBuilder clientBuilder) {
-    return new MetricProvider() {
+  public static MetricsProvider from(AsyncHttpClient httpClient) {
+    return new MetricsProvider() {
       @Override
       public Supplier<Long> totalConnectionCount() {
-        return () -> clientBuilder.getHttp().getClientStats().getTotalConnectionCount();
+        return () -> httpClient.getClientStats().getTotalConnectionCount();
       }
 
       @Override
       public Supplier<Long> totalActiveConnectionCount() {
-        return () -> clientBuilder.getHttp().getClientStats().getTotalActiveConnectionCount();
+        return () -> httpClient.getClientStats().getTotalActiveConnectionCount();
       }
 
       @Override
       public Supplier<Long> totalIdleConnectionCount() {
-        return () -> clientBuilder.getHttp().getClientStats().getTotalIdleConnectionCount();
+        return () -> httpClient.getClientStats().getTotalIdleConnectionCount();
       }
 
       @Override
       public Supplier<Long> usedDirectMemory() {
-        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(ByteBufAllocatorMetric::usedDirectMemory).orElse(0L);
+        return () -> getAllocatorMetrics(httpClient).map(ByteBufAllocatorMetric::usedDirectMemory).orElse(0L);
       }
 
       @Override
       public Supplier<Long> usedHeapMemory() {
-        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(ByteBufAllocatorMetric::usedHeapMemory).orElse(0L);
+        return () -> getAllocatorMetrics(httpClient).map(ByteBufAllocatorMetric::usedHeapMemory).orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveTinyAllocations() {
-        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
           .map(a -> a.mapToLong(PoolArenaMetric::numActiveTinyAllocations).sum()).orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveSmallAllocations() {
-        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
           .map(a -> a.mapToLong(PoolArenaMetric::numActiveSmallAllocations).sum()).orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveNormalAllocations() {
-        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
           .map(a -> a.mapToLong(PoolArenaMetric::numActiveNormalAllocations).sum()).orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveHugeAllocations() {
-        return () -> getAllocatorMetrics(clientBuilder.getHttp()).map(a -> a.directArenas().stream())
+        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
           .map(a -> a.mapToLong(PoolArenaMetric::numActiveHugeAllocations).sum()).orElse(0L);
       }
     };

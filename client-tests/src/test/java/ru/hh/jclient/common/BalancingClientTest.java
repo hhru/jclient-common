@@ -16,7 +16,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void requestAndUpdateServers() throws Exception {
-    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+    createHttpClientFactory("| server=http://server1 | server=http://server2");
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -42,7 +42,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void shouldNotRetryRequestTimeoutForPost() {
-    createHttpClientBuilder("max_tries=3 max_fails=4 max_timeout_tries=2 " +
+    createHttpClientFactory("max_tries=3 max_fails=4 max_timeout_tries=2 " +
         "| server=http://server1 | server=http://server2");
 
     Request[] request = new Request[1];
@@ -63,7 +63,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void disallowCrossDCRequests() throws Exception {
-    createHttpClientBuilder("| server=http://server1 dc=DC1 | server=http://server2 dc=DC2", "DC1", false);
+    createHttpClientFactory("| server=http://server1 dc=DC1 | server=http://server2 dc=DC2", "DC1", false);
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -84,13 +84,13 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test(expected = ExecutionException.class)
   public void failIfNoBackendAvailableInCurrentDC() throws Exception {
-    createHttpClientBuilder("| server=http://server1 dc=DC2 | server=http://server2 dc=DC2", "DC1", false);
+    createHttpClientFactory("| server=http://server1 dc=DC2 | server=http://server2 dc=DC2", "DC1", false);
     getTestClient().get();
   }
 
   @Test
   public void testAllowCrossDCRequests() throws Exception {
-    createHttpClientBuilder("| server=http://server1 dc=DC1 | server=http://server2 dc=DC2", "DC1", true);
+    createHttpClientFactory("| server=http://server1 dc=DC1 | server=http://server2 dc=DC2", "DC1", true);
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))

@@ -5,7 +5,7 @@ import ru.hh.jclient.common.balancing.Upstream;
 import java.util.Map;
 import java.util.Set;
 
-import static ru.hh.jclient.common.HttpClientConfig.DEFAULT_TIMEOUT_MULTIPLIER;
+import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER;
 
 public abstract class UpstreamManager {
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;

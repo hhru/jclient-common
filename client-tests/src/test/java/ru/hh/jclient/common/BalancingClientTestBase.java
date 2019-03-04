@@ -56,7 +56,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void shouldMakeGetRequestForSingleServer() throws Exception {
-    createHttpClientBuilder("| server=http://server");
+    createHttpClientFactory("| server=http://server");
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -74,7 +74,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test(expected = ExecutionException.class)
   public void retryShouldFailIfNoServersAvailable() throws Exception {
-    createHttpClientBuilder("max_tries=2 max_fails=1 fail_timeout_sec=0.01 | server=http://server");
+    createHttpClientFactory("max_tries=2 max_fails=1 fail_timeout_sec=0.01 | server=http://server");
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
         .then(iom -> {
@@ -91,7 +91,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryIOExceptionRemotelyClosed() throws Exception {
-    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+    createHttpClientFactory("| server=http://server1 | server=http://server2");
 
     Request[] request = mockRetryIOException("Remotely closed");
     getTestClient().get();
@@ -103,7 +103,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryIdempotentIOExceptionResetByPeer() throws Exception {
-    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+    createHttpClientFactory("| server=http://server1 | server=http://server2");
 
     Request[] request = mockRetryIOException("Connection reset by peer");
     getTestClient().get();
@@ -115,7 +115,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void doNotRetryNonIdempotentIOExceptionResetByPeer() throws Exception {
-    createHttpClientBuilder("| server=http://server1 | server=http://server2");
+    createHttpClientFactory("| server=http://server1 | server=http://server2");
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
       .then(iom -> {
@@ -149,7 +149,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryConnectException() throws Exception {
-    createHttpClientBuilder("max_tries=4 max_fails=2 " +
+    createHttpClientFactory("max_tries=4 max_fails=2 " +
         "| server=http://server1 | server=http://server2 | server=http://server3 | server=http://server4");
 
     Request[] request = new Request[4];
@@ -180,7 +180,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retry503() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
+    createHttpClientFactory("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
     Request[] request = mockRequestWith503Response();
 
@@ -193,7 +193,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryTimeoutException() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=3 max_timeout_tries=1 | server=http://server1 | server=http://server2");
+    createHttpClientFactory("max_tries=3 max_fails=3 max_timeout_tries=1 | server=http://server1 | server=http://server2");
 
     Request[] request = new Request[2];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -215,7 +215,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retry503ForNonIdempotentRequest() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=2 retry_policy=non_idempotent_503 | server=http://server1 | server=http://server2 | server=http://server3");
+    createHttpClientFactory(
+      "max_tries=3 max_fails=2 retry_policy=non_idempotent_503 | server=http://server1 | server=http://server2 | server=http://server3"
+    );
 
     Request[] request = mockRequestWith503Response();
 
@@ -228,7 +230,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryConnectTimeoutException() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
+    createHttpClientFactory("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
     Request[] request = mockRequestWithConnectTimeoutResponse();
 
@@ -241,7 +243,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
-    createHttpClientBuilder("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
+    createHttpClientFactory("max_tries=3 max_fails=2 | server=http://server1 | server=http://server2 | server=http://server3");
 
     Request[] request = mockRequestWithConnectTimeoutResponse();
 
@@ -252,12 +254,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  void createHttpClientBuilder(String upstreamConfig) {
-    http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false);
+  void createHttpClientFactory(String upstreamConfig) {
+    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false);
   }
 
-  void createHttpClientBuilder(String upstreamConfig, String datacenter, boolean allowCrossDCRequests) {
-    http = createHttpClientBuilder(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests);
+  void createHttpClientFactory(String upstreamConfig, String datacenter, boolean allowCrossDCRequests) {
+    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests);
   }
 
   Request completeWith(int status, InvocationOnMock iom) throws Exception {
@@ -266,8 +268,8 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(response.getStatusCode()).thenReturn(status);
     when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(MediaType.PLAIN_TEXT_UTF_8.toString());
 
-    Request request = iom.getArgumentAt(0, Request.class);
-    CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
+    Request request = iom.getArgument(0);
+    CompletionHandler handler = iom.getArgument(1);
     handler.onCompleted(response);
     return request;
   }
@@ -276,16 +278,18 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     assertEquals(host, request.getUri().getHost());
   }
 
-  private HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter, boolean allowCrossDCRequests) {
+  private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter,
+                                                    boolean allowCrossDCRequests) {
     Monitoring monitoring = mock(Monitoring.class);
-    upstreamManager = new BalancingUpstreamManager(upstreamConfigs, newSingleThreadScheduledExecutor(), Collections.singleton(monitoring), datacenter, allowCrossDCRequests);
-    return new HttpClientBuilder(httpClient, singleton("http://" + TEST_UPSTREAM),
+    upstreamManager = new BalancingUpstreamManager(
+      upstreamConfigs, newSingleThreadScheduledExecutor(), Collections.singleton(monitoring), datacenter, allowCrossDCRequests);
+    return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }
 
   Request failWith(Throwable t, InvocationOnMock iom) {
-    Request request = iom.getArgumentAt(0, Request.class);
-    CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
+    Request request = iom.getArgument(0);
+    CompletionHandler handler = iom.getArgument(1);
     handler.onThrowable(t);
     return request;
   }
@@ -355,7 +359,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   static class TestClient extends JClientBase {
     private boolean adaptive;
 
-    TestClient(HttpClientBuilder http, boolean adaptive) {
+    TestClient(HttpClientFactory http, boolean adaptive) {
       super("http://" + TEST_UPSTREAM, http);
       this.adaptive = adaptive;
     }

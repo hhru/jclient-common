@@ -113,9 +113,8 @@ public class RequestBuilder {
     return this;
   }
 
-  @SuppressWarnings("deprecation")
   public RequestBuilder setBody(InputStream stream) {
-    delegate.setBody(stream); // it appears again in ning2
+    delegate.setBody(stream);
     return this;
   }
 
@@ -134,7 +133,7 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder setHeaders(Map<CharSequence, ? extends Iterable<?>> headers) {
+  public RequestBuilder setHeaders(Map<? extends CharSequence, ? extends Iterable<?>> headers) {
     delegate.setHeaders(headers);
     return this;
   }

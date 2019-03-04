@@ -35,7 +35,7 @@ import com.google.common.net.MediaType;
 public class HttpClientTestBase {
 
   static AsyncHttpClientConfig httpClientConfig = new DefaultAsyncHttpClientConfig.Builder().build();
-  public static HttpClientBuilder http;
+  public static HttpClientFactory http;
   static HttpClientContext httpClientContext;
   static TestRequestDebug debug = new TestRequestDebug(true);
 
@@ -76,7 +76,7 @@ public class HttpClientTestBase {
     when(response.getResponseBodyAsStream()).thenReturn(new ByteArrayInputStream(data));
     when(response.getResponseBodyAsBytes()).thenReturn(data);
     when(response.getResponseBody(isA(Charset.class))).then(iom -> {
-      Charset charset = iom.getArgumentAt(0, Charset.class);
+      Charset charset = iom.getArgument(0);
       return new String(data, charset);
     });
     return request(new Response(response));
@@ -96,8 +96,8 @@ public class HttpClientTestBase {
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
-      request[0] = iom.getArgumentAt(0, org.asynchttpclient.Request.class);
-      CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
+      request[0] = iom.getArgument(0);
+      CompletionHandler handler = iom.getArgument(1);
       handler.onCompleted(response.getDelegate());
       return null;
     });
@@ -149,7 +149,7 @@ public class HttpClientTestBase {
     return completedFuture(new ResultOrErrorWithStatus<>(empty(), of(error), status));
   }
 
-  HttpClientBuilder createHttpClientBuilder(AsyncHttpClient httpClient) {
-    return new HttpClientBuilder(httpClient, singleton("http://localhost"), new SingletonStorage<>(() -> httpClientContext), Runnable::run);
+  HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient) {
+    return new HttpClientFactory(httpClient, singleton("http://localhost"), new SingletonStorage<>(() -> httpClientContext), Runnable::run);
   }
 }

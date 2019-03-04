@@ -34,7 +34,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * time will override previous value.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.proxyOnly(400, 404)</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.proxyOnly(400, 404)</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 400 or 404 status if response status is the same, otherwise 403.
@@ -51,7 +51,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * time will override previous value.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.proxyOnly(BAD_REQUEST, NOT_FOUND)</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.proxyOnly(BAD_REQUEST, NOT_FOUND)</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 400 or 404 status if response status is the same, otherwise 403.
@@ -68,7 +68,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * THROW_* status code). This method can be called multiple times and will chain conversion in the corresponding order.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.convertAndProxy(400, 409)</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.convertAndProxy(400, 409)</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 409 if response status is 400, otherwise 403.
@@ -91,7 +91,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * THROW_* status code). This method can be called multiple times and will chain conversion in the corresponding order.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.convertAndProxy(BAD_REQUEST, CONFLICT)</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.convertAndProxy(BAD_REQUEST, CONFLICT)</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 409 if response status is 400, otherwise 403.
@@ -104,7 +104,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   /**
    * Uses {@link Status#INTERNAL_SERVER_ERROR} status code.
    */
-  public ApplyResultOperation<T> THROW_INTERNAL_SERVER_ERROR() {
+  public ApplyResultOperation<T> throwInternalServerError() {
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(INTERNAL_SERVER_ERROR.getStatusCode()),
@@ -117,7 +117,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   /**
    * Uses {@link Status#BAD_GATEWAY} status code.
    */
-  public ApplyResultOperation<T> THROW_BAD_GATEWAY() {
+  public ApplyResultOperation<T> throwBadGateway() {
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(HttpStatuses.BAD_GATEWAY),
@@ -130,7 +130,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   /**
    * Uses {@link Status#FORBIDDEN} status code.
    */
-  public ApplyResultOperation<T> THROW_FORBIDDEN() {
+  public ApplyResultOperation<T> throwForbidden() {
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(FORBIDDEN.getStatusCode()),
@@ -143,7 +143,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   /**
    * Uses {@link Status#NOT_FOUND} status code.
    */
-  public ApplyResultOperation<T> THROW_NOT_FOUND() {
+  public ApplyResultOperation<T> throwNotFound() {
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(NOT_FOUND.getStatusCode()),
@@ -156,7 +156,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   /**
    * Uses {@link Status#BAD_REQUEST} status code.
    */
-  public ApplyResultOperation<T> THROW_BAD_REQUEST() {
+  public ApplyResultOperation<T> throwBadRequest() {
     return new ApplyResultOperation<>(
         resultWithStatus,
         of(BAD_REQUEST.getStatusCode()),
@@ -175,7 +175,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * Calling {@link #proxyOnly(Status...)} or {@link #convertAndProxy(Status, Status)} does nothing when used with this operation.
    * </p>
    */
-  public ApplyResultOperation<T> PROXY_STATUS_CODE() {
+  public ApplyResultOperation<T> proxyStatusCode() {
     return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates);
   }
 
@@ -190,7 +190,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * @param value
    *          default value to return in case of error
    */
-  public ApplyResultOperation<T> RETURN_DEFAULT(T value) {
+  public ApplyResultOperation<T> returnDefault(T value) {
     return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, of(value));
   }
 
@@ -205,8 +205,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * @param value
    *          default value to return in case of error
    */
-  public ApplyResultOperation<T> RETURN_DEFAULT(Supplier<T> value) {
+  public ApplyResultOperation<T> returnDefault(Supplier<T> value) {
     return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, of(value.get()));
   }
-
 }

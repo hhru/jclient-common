@@ -1,8 +1,8 @@
-package ru.hh.jclient.common.metric;
+package ru.hh.jclient.common.metrics;
 
 import java.util.function.Supplier;
 
-public interface MetricProvider {
+public interface MetricsProvider {
   Supplier<Long> totalConnectionCount();
   Supplier<Long> totalActiveConnectionCount();
   Supplier<Long> totalIdleConnectionCount();

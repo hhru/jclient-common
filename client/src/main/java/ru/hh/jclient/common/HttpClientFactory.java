@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import static java.util.Objects.requireNonNull;
 
 import org.asynchttpclient.AsyncHttpClient;
-import ru.hh.jclient.common.metric.MetricProvider;
+import ru.hh.jclient.common.metrics.MetricsProvider;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.Collection;
@@ -14,8 +14,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
 
-//TODO rename to HttpClientFactory
-public class HttpClientBuilder {
+public class HttpClientFactory {
 
   private final AsyncHttpClient http;
   private final Set<String> hostsWithSession;
@@ -23,18 +22,18 @@ public class HttpClientBuilder {
   private final Executor callbackExecutor;
   private final UpstreamManager upstreamManager;
 
-  public HttpClientBuilder(AsyncHttpClient http, Collection<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
+  public HttpClientFactory(AsyncHttpClient http, Collection<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
     this(http, hostsWithSession, contextSupplier, Runnable::run);
   }
 
-  public HttpClientBuilder(AsyncHttpClient http,
+  public HttpClientFactory(AsyncHttpClient http,
                            Collection<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor, new DefaultUpstreamManager());
   }
 
-  public HttpClientBuilder(AsyncHttpClient http,
+  public HttpClientFactory(AsyncHttpClient http,
                            Collection<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
@@ -92,7 +91,7 @@ public class HttpClientBuilder {
     return http;
   }
 
-  MetricProvider getMetricProvider() {
-    return MetricProviderFactory.from(this);
+  MetricsProvider getMetricProvider() {
+    return MetricsProviderFactory.from(getHttp());
   }
 }

@@ -28,7 +28,7 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    * times, resulting predicate will be built with {@link Predicate#or(Predicate)}.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived())</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived())</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 403 status on any errors including case of archived vacancy.
@@ -47,7 +47,7 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    * times, resulting predicate will be built with {@link Predicate#or(Predicate)}.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived(), 404)</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived(), 404)</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 404 if predicate returns 'true', or 403 on any other errors.
@@ -70,7 +70,7 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    * times, resulting predicate will be built with {@link Predicate#or(Predicate)}.
    * </p>
    * <code>
-   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived(), Status.NOT_FOUND)</b>.THROW_FORBIDDEN().onAnyError();
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.failIf(vac -> vac.isArchived(), Status.NOT_FOUND)</b>.throwForbidden().onAnyError();
    * </code>
    * <p>
    * This will throw WAE with 404 if predicate returns 'true', or 403 on any other errors.

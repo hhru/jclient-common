@@ -13,7 +13,7 @@ import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 
 /**
  * Context of global (incoming) request, that is going to spawn local (outgoing) request using
- * {@link HttpClientBuilder#with(Request)}.
+ * {@link HttpClientFactory#with(Request)}.
  */
 public class HttpClientContext {
 

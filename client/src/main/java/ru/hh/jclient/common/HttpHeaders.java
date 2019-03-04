@@ -3,6 +3,7 @@ package ru.hh.jclient.common;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.stream.Stream;
@@ -129,12 +130,20 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
-    HttpHeaders that = (HttpHeaders) o;
+    HttpHeaders entries = (HttpHeaders) o;
+    return Objects.equals(delegate, entries.delegate);
+  }
 
-    return delegate != null ? delegate.equals(that.delegate) : that.delegate == null;
+  @Override
+  public int hashCode() {
+    return Objects.hash(delegate);
   }
 
   io.netty.handler.codec.http.HttpHeaders getDelegate() {

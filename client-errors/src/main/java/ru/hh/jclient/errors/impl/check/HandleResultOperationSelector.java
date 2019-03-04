@@ -20,7 +20,7 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
   /**
    * Specifies that any errors (incorrect result or exception) should be ignored and empty result returned.
    */
-  public HandleResultOperation<T> IGNORE() {
+  public HandleResultOperation<T> ignore() {
     return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), empty());
   }
 
@@ -30,7 +30,7 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    * @param defaultValue
    *          default value to return
    */
-  public HandleResultOperation<T> RETURN_DEFAULT(T defaultValue) {
+  public HandleResultOperation<T> returnDefault(T defaultValue) {
     return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue), empty());
   }
 
@@ -40,7 +40,7 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    * @param defaultValue
    *          default value to return
    */
-  public HandleResultOperation<T> RETURN_DEFAULT(Supplier<T> defaultValue) {
+  public HandleResultOperation<T> returnDefault(Supplier<T> defaultValue) {
     return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue.get()), empty());
   }
 
@@ -50,8 +50,7 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    * @param consumer
    *          error consumer
    */
-  public HandleResultOperation<T> ACCEPT_ERROR(Consumer<Throwable> consumer) {
+  public HandleResultOperation<T> acceptError(Consumer<Throwable> consumer) {
     return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), of(consumer));
   }
-
 }

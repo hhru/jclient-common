@@ -72,5 +72,4 @@ public class ErrorResponseBuilder {
     exception.setMessage(message);
     return exception;
   }
-
 }

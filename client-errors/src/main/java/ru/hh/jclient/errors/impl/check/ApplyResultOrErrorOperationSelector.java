@@ -27,7 +27,7 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
    * @param defaultValue
    *          default value to set
    */
-  public ApplyResultOrErrorOperation<T, E> SET_DEFAULT(T defaultValue) {
+  public ApplyResultOrErrorOperation<T, E> setDefault(T defaultValue) {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, of(defaultValue));
   }
 
@@ -37,35 +37,35 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
    * @param defaultValue
    *          default value to set
    */
-  public ApplyResultOrErrorOperation<T, E> SET_DEFAULT(Supplier<T> defaultValue) {
+  public ApplyResultOrErrorOperation<T, E> setDefault(Supplier<T> defaultValue) {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, of(defaultValue.get()));
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_BAD_GATEWAY() {
+  public ApplyResultOrErrorOperation<T, E> throwBadGateway() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(HttpStatuses.BAD_GATEWAY), errorMessage, predicates, empty());
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_GATEWAY_TIMEOUT() {
+  public ApplyResultOrErrorOperation<T, E> throwGatewayTimeout() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(HttpStatuses.GATEWAY_TIMEOUT), errorMessage, predicates, empty());
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_INTERNAL_SERVER_ERROR() {
+  public ApplyResultOrErrorOperation<T, E> throwInternalServerError() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(INTERNAL_SERVER_ERROR.getStatusCode()), errorMessage, predicates, empty());
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_CONFLICT() {
+  public ApplyResultOrErrorOperation<T, E> throwConflict() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(CONFLICT.getStatusCode()), errorMessage, predicates, empty());
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_FORBIDDEN() {
+  public ApplyResultOrErrorOperation<T, E> throwForbidden() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(FORBIDDEN.getStatusCode()), errorMessage, predicates, empty());
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_NOT_FOUND() {
+  public ApplyResultOrErrorOperation<T, E> throwNotFound() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(NOT_FOUND.getStatusCode()), errorMessage, predicates, empty());
   }
 
-  public ApplyResultOrErrorOperation<T, E> THROW_BAD_REQUEST() {
+  public ApplyResultOrErrorOperation<T, E> throwBadRequest() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(BAD_REQUEST.getStatusCode()), errorMessage, predicates, empty());
   }
 
@@ -73,8 +73,7 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
    * Uses status code from {@link ResultOrErrorWithStatus#getStatusCode()} (response code from remote call). Note that
    * {@link Status#SERVICE_UNAVAILABLE} will be replaced with {@link Status#BAD_GATEWAY}.
    */
-  public ApplyResultOrErrorOperation<T, E> PROXY_STATUS_CODE() {
+  public ApplyResultOrErrorOperation<T, E> proxyStatusCode() {
     return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, empty());
   }
-
 }

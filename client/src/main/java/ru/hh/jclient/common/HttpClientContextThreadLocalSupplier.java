@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import ru.hh.jclient.common.HttpClientContext;
-import ru.hh.jclient.common.RequestDebug;
 import ru.hh.jclient.common.util.storage.Storage;
 import ru.hh.jclient.common.util.storage.ThreadLocalStorage;
 import ru.hh.jclient.common.util.storage.StorageUtils;

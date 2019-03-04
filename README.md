@@ -24,7 +24,7 @@ Client code that uses this library is usually stored together with server code t
 Sample code:
 
 ```java
-HttpClientBuilder http = ...;
+HttpClientFactory http = ...;
 JAXBContext jaxb = JAXBContext.newInstance(Banners.class);
 Request request = new RequestBuilder("GET").setUrl("http://myservice/banners").addQueryParam("places", "1,2,3").build();
 CompletableFuture<Banners> bannersFuture = http.with(request).expectXml(jaxb, Banners.class).request();
@@ -35,7 +35,8 @@ CompletableFuture<Banners> bannersFuture = http.with(request).expectXml(jaxb, Ba
 `HttpClientConfig` is a builder that provides convenient way to create an instance of `HttpClientBuilder`:
 
 ```java
-HttpClientBuilder http = HttpClientConfig.basedOn(jClientProperties)
+HttpClientFactory http = new HttpClientFactoryBuilder()
+    .withProperties(jClientProperties)
     .withCallbackExecutor(callbackExecutor)
     .withStorage(contextStorage)
     .withHostsWithSession(hostsWithSession)
@@ -92,11 +93,12 @@ public class JClientConfig {
   }
 
   @Bean
-  public HttpClientBuilder httpClientBuilder(Properties jClientProperties,
+  public HttpClientFactory httpClientFactory(Properties jClientProperties,
                                              Storage<HttpClientContext> contextStorage,
                                              UpstreamManager upstreamManager) {
     
-    return HttpClientConfig.basedOn(jClientProperties)
+    return new HttpClientFactoryBuilder()
+      .withProperties(jClientProperties)
       .withUpstreamManager(upstreamManager)    
       .withStorage(contextStorage)
       .withCallbackExecutor(Runnable::run)
