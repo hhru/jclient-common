@@ -9,5 +9,7 @@ public class HttpHeaderNames {
   public static final String HH_PROTO_SESSION = "Hh-Proto-Session";
   public static final String X_REQUEST_ID = "X-Request-Id";
   public static final String X_REAL_IP = "X-Real-IP";
+  public static final String X_LOAD_TESTING = "X-Load-Testing";
+  public static final String X_SOURCE = "X-Source";
 
 }
