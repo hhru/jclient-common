@@ -10,7 +10,7 @@ while the library provides user friendly interface that hides unnecessary detail
 
 ## Requirements
 
-Java 8 is a requirement to build and use this library.
+Java 11 is a requirement to build and use this library.
 
 Additionally, if you want to use method `JClientBase.jerseyUrl()`, you have to provide one of the following libraries: 
 

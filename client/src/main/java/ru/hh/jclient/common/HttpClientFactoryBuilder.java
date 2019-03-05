@@ -9,8 +9,10 @@ import ru.hh.jclient.common.metrics.MetricsConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -21,35 +23,47 @@ import static java.util.Optional.ofNullable;
 public final class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
-  private final DefaultAsyncHttpClientConfig.Builder configBuilder;
-
+  private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private UpstreamManager upstreamManager = new DefaultUpstreamManager();
   private Executor callbackExecutor;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
-
   private MetricsConsumer metricsConsumer;
+  private List<HttpClientEventListener> eventListeners = new ArrayList<>();
 
-  public static HttpClientFactoryBuilder basedOn(Properties properties) {
-    DefaultAsyncHttpClientConfig.Builder configBuilder = new DefaultAsyncHttpClientConfig.Builder();
-    ofNullable(properties.getProperty(ConfigKeys.USER_AGENT)).ifPresent(configBuilder::setUserAgent);
-    ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt).ifPresent(configBuilder::setMaxConnections);
-    ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt).ifPresent(configBuilder::setMaxRequestRetry);
-    ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setConnectTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setReadTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setRequestTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean).ifPresent(configBuilder::setFollowRedirect);
-    ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean).ifPresent(configBuilder::setCompressionEnforced);
-    ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
-        .ifPresent(configBuilder::setUseInsecureTrustManager);
-    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean).ifPresent(configBuilder::setKeepAlive);
-    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt).ifPresent(configBuilder::setIoThreadsCount);
+  public HttpClientFactoryBuilder() {
+    this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
+  }
 
-    HttpClientFactoryBuilder httpClientFactoryBuilder = new HttpClientFactoryBuilder(configBuilder);
+  public HttpClientFactoryBuilder withProperties(Properties properties) {
+    ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
+      .ifPresent(this::withMaxConnections);
+    ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
+      .ifPresent(this::withMaxRequestRetries);
+    ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt)
+      .ifPresent(this::withConnectTimeoutMs);
+    ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt)
+      .ifPresent(this::withReadTimeoutMs);
+    ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt)
+      .ifPresent(this::withRequestTimeoutMs);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble)
-      .ifPresent(httpClientFactoryBuilder::withTimeoutMultiplier);
-    return httpClientFactoryBuilder;
+      .ifPresent(this::withTimeoutMultiplier);
+    ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
+      .ifPresent(this::withUserAgent);
+
+    ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setFollowRedirect);
+    ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setCompressionEnforced);
+    ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setUseInsecureTrustManager);
+    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setKeepAlive);
+    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt)
+      .ifPresent(configBuilder::setIoThreadsCount);
+
+    return this;
   }
 
   /**
@@ -57,15 +71,17 @@ public final class HttpClientFactoryBuilder {
    * @param asyncClientConfig instance of {@link DefaultAsyncHttpClientConfig}
    * @return instance of HttpClientFactoryBuilder based on passed config to continue building
    */
-  public static HttpClientFactoryBuilder basedOnNativeConfig(Object asyncClientConfig) {
+  public HttpClientFactoryBuilder withNativeConfig(Object asyncClientConfig) {
     if (!(asyncClientConfig instanceof AsyncHttpClientConfig)) {
       throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.class.getName());
     }
-    return new HttpClientFactoryBuilder(new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig));
+    this.configBuilder = new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig);
+    return this;
   }
 
-  private HttpClientFactoryBuilder(DefaultAsyncHttpClientConfig.Builder configBuilder) {
-    this.configBuilder = configBuilder;
+  public HttpClientFactoryBuilder withEventListeners(List<HttpClientEventListener> eventListeners) {
+    this.eventListeners.addAll(eventListeners);
+    return this;
   }
 
   public HttpClientFactoryBuilder withUpstreamManager(UpstreamManager upstreamManager) {
@@ -93,7 +109,7 @@ public final class HttpClientFactoryBuilder {
     return this;
   }
 
-  public HttpClientFactoryBuilder withMetricConsumer(MetricsConsumer metricsConsumer) {
+  public HttpClientFactoryBuilder withMetricsConsumer(MetricsConsumer metricsConsumer) {
     this.metricsConsumer = metricsConsumer;
     return this;
   }
@@ -116,10 +132,11 @@ public final class HttpClientFactoryBuilder {
   public HttpClientFactory build() {
     HttpClientFactory httpClientFactory = new HttpClientFactory(
       buildClient(),
-      hostsWithSession,
+      Set.copyOf(hostsWithSession),
       contextSupplier,
       callbackExecutor,
-      buildUpstreamManager()
+      buildUpstreamManager(),
+      eventListeners
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
     return httpClientFactory;

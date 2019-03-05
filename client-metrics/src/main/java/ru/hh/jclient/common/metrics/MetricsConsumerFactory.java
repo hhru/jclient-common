@@ -8,19 +8,19 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Optional.ofNullable;
 
-public class MetricConsumerFactory {
-  private MetricConsumerFactory() {}
+public class MetricsConsumerFactory {
+  private MetricsConsumerFactory() {}
 
-  private static MetricsConsumer NOOP_METRIC_CONSUMER = metricProvider -> {};
+  private static final MetricsConsumer NOOP_METRICS_CONSUMER = metricsProvider -> {};
 
-  public static MetricsConsumer buildMetricConsumerFromProperties(Properties properties, String name, StatsDClient statsDClient,
-                                                                  ScheduledExecutorService scheduler) {
+  public static MetricsConsumer buildMetricsConsumer(Properties properties, String name, StatsDClient statsDClient,
+                                                     ScheduledExecutorService scheduler) {
     if (!ofNullable(properties.getProperty("enabled")).map(Boolean::parseBoolean).orElse(Boolean.FALSE)) {
-      return NOOP_METRIC_CONSUMER;
+      return NOOP_METRICS_CONSUMER;
     }
 
     return ofNullable(properties.getProperty("sendIntervalMs")).map(Integer::parseInt)
       .<MetricsConsumer>map(sendIntervalMs -> new StatsDMetricsConsumer(name, statsDClient, scheduler, sendIntervalMs, TimeUnit.MILLISECONDS))
-      .orElse(NOOP_METRIC_CONSUMER);
+      .orElse(NOOP_METRICS_CONSUMER);
   }
 }
