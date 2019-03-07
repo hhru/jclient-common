@@ -30,5 +30,4 @@ class CustomWebApplicationException extends WebApplicationException {
   void setMessage(String message) {
     this.message = message;
   }
-
 }

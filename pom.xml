@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.31</version>
+        <version>1.36</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -25,7 +25,7 @@
     </modules>
 
     <properties>
-        <jdk.version>1.8</jdk.version>
+        <jdk.version>11</jdk.version>
         <surefire.encoding>UTF-8</surefire.encoding>
     </properties>
 
@@ -35,19 +35,19 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.7</version>
+                <version>1.7.25</version>
             </dependency>
 
             <!-- Logging for tests -->
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.1.2</version>
+                <version>1.2.3</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jul-to-slf4j</artifactId>
-                <version>1.7.7</version>
+                <version>1.7.25</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -59,28 +59,22 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <fork>true</fork>
-                    <compilerVersion>${jdk.version}</compilerVersion>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <release>${jdk.version}</release>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.gaul</groupId>
-                <artifactId>modernizer-maven-plugin</artifactId>
-                <version>1.4.0</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.6.0.1398</version>
+            </plugin>
+
+            <plugin>
+                <groupId>ru.hh.checkstyle</groupId>
+                <artifactId>hh-maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <javaVersion>1.8</javaVersion>
-                    <ignorePackages />
+                    <excludes>**/ru/hh/jclient/common/model/ProtobufTest.java</excludes>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>modernizer</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>modernizer</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

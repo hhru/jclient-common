@@ -29,7 +29,7 @@ public abstract class OperationBase<OB extends OperationBase<OB>> {
    * Specifies how to create an entity that will be used in response in case of error. Example:
    *
    * <pre>
-   * MoreErrors.check(rws, "Request failed").THROW_BAD_REQUEST().as((message, status) -> new XmlError(message, status)).onAnyError()
+   * MoreErrors.check(rws, "Request failed").throwBadRequest().as((message, status) -> new XmlError(message, status)).onAnyError()
    * </pre>
    *
    * In this example when error is detected, XmlError entity with "Request failed" message and {@link Response.Status#BAD_REQUEST} status code will be

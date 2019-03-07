@@ -14,7 +14,9 @@ public class Response {
     this.delegate = delegate;
   }
 
-  protected Response() { this(null); }
+  protected Response() {
+    this(null);
+  }
 
   /**
    * Returns the status code for the request.

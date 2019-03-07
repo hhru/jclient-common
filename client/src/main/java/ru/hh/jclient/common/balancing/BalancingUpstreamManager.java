@@ -24,7 +24,8 @@ public final class BalancingUpstreamManager extends UpstreamManager {
   private final String datacenter;
   private final boolean allowCrossDCRequests;
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter, boolean allowCrossDCRequests) {
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter,
+                                  boolean allowCrossDCRequests) {
     this(emptyMap(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
   }
 

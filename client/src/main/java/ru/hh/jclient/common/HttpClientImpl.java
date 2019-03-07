@@ -6,6 +6,7 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -18,6 +19,7 @@ import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
@@ -26,6 +28,7 @@ import static ru.hh.jclient.common.HttpHeaderNames.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaderNames.X_SOURCE;
 import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
+
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -44,8 +47,9 @@ class HttpClientImpl extends HttpClient {
                  Set<String> hostsWithSession,
                  UpstreamManager upstreamManager,
                  Storage<HttpClientContext> contextSupplier,
-                 Executor callbackExecutor) {
-    this(http, request, hostsWithSession, upstreamManager, contextSupplier, callbackExecutor, false);
+                 Executor callbackExecutor,
+                 List<HttpClientEventListener> eventListeners) {
+    this(http, request, hostsWithSession, upstreamManager, contextSupplier, callbackExecutor, eventListeners, false);
   }
 
   HttpClientImpl(AsyncHttpClient http,
@@ -54,13 +58,16 @@ class HttpClientImpl extends HttpClient {
                  UpstreamManager upstreamManager,
                  Storage<HttpClientContext> contextSupplier,
                  Executor callbackExecutor,
+                 List<HttpClientEventListener> eventListeners,
                  boolean adaptive) {
-    super(http, request, hostsWithSession, upstreamManager, contextSupplier, adaptive);
+    super(http, request, hostsWithSession, upstreamManager, contextSupplier, eventListeners, adaptive);
     this.callbackExecutor = callbackExecutor;
   }
 
   @Override
   CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context) {
+    getEventListeners().forEach(check -> check.beforeExecute(this));
+
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
     request = addHeadersAndParams(request);

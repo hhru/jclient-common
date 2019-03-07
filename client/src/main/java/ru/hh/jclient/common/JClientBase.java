@@ -12,14 +12,14 @@ public abstract class JClientBase {
   public static final String HTTP_DELETE = "DELETE";
 
   protected String host;
-  protected HttpClientBuilder http;
+  protected HttpClientFactory http;
 
-  protected JClientBase(String host, HttpClientBuilder http) {
+  protected JClientBase(String host, HttpClientFactory http) {
     this.host = requireNotEmpty(host, "host");
     this.http = requireNotNull(http, "http");
   }
 
-  protected JClientBase(String host, String path, HttpClientBuilder http) {
+  protected JClientBase(String host, String path, HttpClientFactory http) {
     this(requireNotEmpty(host, "host") + ofNullable(path).orElse(""), http);
   }
 

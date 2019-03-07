@@ -106,7 +106,8 @@ public class RequestBalancer {
         monitoring.countRequestTime(upstream.getName(), currentServer.getDatacenter(), requestTimeMs);
 
         if (!triedServers.isEmpty()) {
-          monitoring.countRetry(upstream.getName(), currentServer.getDatacenter(), currentServer.getAddress(), statusCode, firstStatusCode, triedServers.size());
+          monitoring.countRetry(upstream.getName(), currentServer.getDatacenter(), currentServer.getAddress(),
+            statusCode, firstStatusCode, triedServers.size());
         }
       }
     }

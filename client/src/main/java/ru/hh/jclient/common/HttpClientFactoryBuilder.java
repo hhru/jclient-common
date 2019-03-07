@@ -5,12 +5,14 @@ import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import ru.hh.jclient.common.metric.MetricConsumer;
+import ru.hh.jclient.common.metrics.MetricsConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -18,111 +20,126 @@ import java.util.concurrent.ThreadFactory;
 
 import static java.util.Optional.ofNullable;
 
-//TODO rename to HttpClientFactoryBuilder
-public final class HttpClientConfig {
+public final class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
-  private final DefaultAsyncHttpClientConfig.Builder configBuilder;
-
+  private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private UpstreamManager upstreamManager = new DefaultUpstreamManager();
   private Executor callbackExecutor;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
+  private MetricsConsumer metricsConsumer;
+  private List<HttpClientEventListener> eventListeners = new ArrayList<>();
 
-  private MetricConsumer metricConsumer;
+  public HttpClientFactoryBuilder() {
+    this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
+  }
 
-  public static HttpClientConfig basedOn(Properties properties) {
-    DefaultAsyncHttpClientConfig.Builder configBuilder = new DefaultAsyncHttpClientConfig.Builder();
-    ofNullable(properties.getProperty(ConfigKeys.USER_AGENT)).ifPresent(configBuilder::setUserAgent);
-    ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt).ifPresent(configBuilder::setMaxConnections);
-    ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt).ifPresent(configBuilder::setMaxRequestRetry);
-    ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setConnectTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setReadTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt).ifPresent(configBuilder::setRequestTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean).ifPresent(configBuilder::setFollowRedirect);
-    ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean).ifPresent(configBuilder::setCompressionEnforced);
+  public HttpClientFactoryBuilder withProperties(Properties properties) {
+    ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
+      .ifPresent(this::withMaxConnections);
+    ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
+      .ifPresent(this::withMaxRequestRetries);
+    ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt)
+      .ifPresent(this::withConnectTimeoutMs);
+    ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt)
+      .ifPresent(this::withReadTimeoutMs);
+    ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt)
+      .ifPresent(this::withRequestTimeoutMs);
+    ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble)
+      .ifPresent(this::withTimeoutMultiplier);
+    ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
+      .ifPresent(this::withUserAgent);
+
+    ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setFollowRedirect);
+    ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setCompressionEnforced);
     ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
-        .ifPresent(configBuilder::setUseInsecureTrustManager);
-    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean).ifPresent(configBuilder::setKeepAlive);
-    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt).ifPresent(configBuilder::setIoThreadsCount);
+      .ifPresent(configBuilder::setUseInsecureTrustManager);
+    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean)
+      .ifPresent(configBuilder::setKeepAlive);
+    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt)
+      .ifPresent(configBuilder::setIoThreadsCount);
 
-    HttpClientConfig httpClientConfig = new HttpClientConfig(configBuilder);
-    ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble).ifPresent(httpClientConfig::withTimeoutMultiplier);
-    return httpClientConfig;
+    return this;
   }
 
   /**
    * use this only if there's not enough "with*" methods to cover all requirements
    * @param asyncClientConfig instance of {@link DefaultAsyncHttpClientConfig}
-   * @return instance of HttpClientConfig based on passed config to continue building
+   * @return instance of HttpClientFactoryBuilder based on passed config to continue building
    */
-  public static HttpClientConfig basedOnNativeConfig(Object asyncClientConfig) {
+  public HttpClientFactoryBuilder withNativeConfig(Object asyncClientConfig) {
     if (!(asyncClientConfig instanceof AsyncHttpClientConfig)) {
       throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.class.getName());
     }
-    return new HttpClientConfig(new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig));
+    this.configBuilder = new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig);
+    return this;
   }
 
-  private HttpClientConfig(DefaultAsyncHttpClientConfig.Builder configBuilder) {
-    this.configBuilder = configBuilder;
+  public HttpClientFactoryBuilder withEventListeners(List<HttpClientEventListener> eventListeners) {
+    this.eventListeners.addAll(eventListeners);
+    return this;
   }
 
-  public HttpClientConfig withUpstreamManager(UpstreamManager upstreamManager) {
+  public HttpClientFactoryBuilder withUpstreamManager(UpstreamManager upstreamManager) {
     this.upstreamManager = upstreamManager;
     return this;
   }
 
-  public HttpClientConfig withThreadFactory(ThreadFactory threadFactory) {
+  public HttpClientFactoryBuilder withThreadFactory(ThreadFactory threadFactory) {
     this.configBuilder.setThreadFactory(threadFactory);
     return this;
   }
 
-  public HttpClientConfig withCallbackExecutor(Executor callbackExecutor) {
+  public HttpClientFactoryBuilder withCallbackExecutor(Executor callbackExecutor) {
     this.callbackExecutor = callbackExecutor;
     return this;
   }
 
-  public HttpClientConfig withHostsWithSession(Collection<String> hostsWithSession) {
+  public HttpClientFactoryBuilder withHostsWithSession(Collection<String> hostsWithSession) {
     this.hostsWithSession = new HashSet<>(hostsWithSession);
     return this;
   }
 
-  public HttpClientConfig withStorage(Storage<HttpClientContext> contextSupplier) {
+  public HttpClientFactoryBuilder withStorage(Storage<HttpClientContext> contextSupplier) {
     this.contextSupplier = contextSupplier;
     return this;
   }
 
-  public HttpClientConfig withMetricConsumer(MetricConsumer metricConsumer) {
-    this.metricConsumer = metricConsumer;
+  public HttpClientFactoryBuilder withMetricsConsumer(MetricsConsumer metricsConsumer) {
+    this.metricsConsumer = metricsConsumer;
     return this;
   }
 
-  public HttpClientConfig withSSLContext(SslContext sslContext) {
+  public HttpClientFactoryBuilder withSSLContext(SslContext sslContext) {
     this.configBuilder.setSslContext(sslContext);
     return this;
   }
 
-  public HttpClientConfig acceptAnyCertificate(boolean enabled) {
+  public HttpClientFactoryBuilder acceptAnyCertificate(boolean enabled) {
     this.configBuilder.setUseInsecureTrustManager(enabled);
     return this;
   }
 
-  public HttpClientConfig withTimeoutMultiplier(double timeoutMultiplier) {
+  public HttpClientFactoryBuilder withTimeoutMultiplier(double timeoutMultiplier) {
     this.timeoutMultiplier = timeoutMultiplier;
     return this;
   }
 
-  public HttpClientBuilder build() {
-    HttpClientBuilder httpClientBuilder = new HttpClientBuilder(
+  public HttpClientFactory build() {
+    HttpClientFactory httpClientFactory = new HttpClientFactory(
       buildClient(),
-      hostsWithSession,
+      Set.copyOf(hostsWithSession),
       contextSupplier,
       callbackExecutor,
-      buildUpstreamManager()
+      buildUpstreamManager(),
+      eventListeners
     );
-    ofNullable(metricConsumer).ifPresent(consumer -> consumer.accept(httpClientBuilder.getMetricProvider()));
-    return httpClientBuilder;
+    ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
+    return httpClientFactory;
   }
 
   private AsyncHttpClient buildClient() {
@@ -147,39 +164,38 @@ public final class HttpClientConfig {
     return builder;
   }
 
-  public HttpClientConfig withUserAgent(String userAgent) {
+  public HttpClientFactoryBuilder withUserAgent(String userAgent) {
     configBuilder.setUserAgent(userAgent);
     return this;
   }
 
-  public HttpClientConfig withMaxConnections(int maxConnections) {
+  public HttpClientFactoryBuilder withMaxConnections(int maxConnections) {
     configBuilder.setMaxConnections(maxConnections);
     return this;
   }
 
-  public HttpClientConfig withMaxRequestRetries(int maxRequestRetries) {
+  public HttpClientFactoryBuilder withMaxRequestRetries(int maxRequestRetries) {
     configBuilder.setMaxRequestRetry(maxRequestRetries);
     return this;
   }
 
-  public HttpClientConfig withConnectTimeoutMs(int connectTimeoutMs) {
+  public HttpClientFactoryBuilder withConnectTimeoutMs(int connectTimeoutMs) {
     configBuilder.setConnectTimeout(connectTimeoutMs);
     return this;
   }
 
-  public HttpClientConfig withReadTimeoutMs(int readTimeoutMs) {
+  public HttpClientFactoryBuilder withReadTimeoutMs(int readTimeoutMs) {
     configBuilder.setReadTimeout(readTimeoutMs);
     return this;
   }
 
-  public HttpClientConfig withRequestTimeoutMs(int requestTimeoutMs) {
+  public HttpClientFactoryBuilder withRequestTimeoutMs(int requestTimeoutMs) {
     configBuilder.setRequestTimeout(requestTimeoutMs);
     return this;
   }
 
   public static final class ConfigKeys {
-    private ConfigKeys() {
-    }
+    private ConfigKeys() {}
 
     public static final String USER_AGENT = "userAgent";
 

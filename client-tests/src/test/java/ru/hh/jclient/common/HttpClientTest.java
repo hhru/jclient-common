@@ -7,12 +7,23 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.net.MediaType.PROTOBUF;
 import static com.google.common.net.MediaType.XML_UTF_8;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.DEBUG;
-import static ru.hh.jclient.common.TestRequestDebug.Call.*;
+import static ru.hh.jclient.common.TestRequestDebug.Call.CLIENT_PROBLEM;
+import static ru.hh.jclient.common.TestRequestDebug.Call.CONVERTER_PROBLEM;
+import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
+import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,8 +57,6 @@ import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Iterables;
 
@@ -66,7 +75,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testPlain() throws InterruptedException, ExecutionException, IOException {
+  public void testPlain() throws InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест", PLAIN_TEXT_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
@@ -77,7 +86,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testPlainCp1251() throws InterruptedException, ExecutionException, IOException {
+  public void testPlainCp1251() throws InterruptedException, ExecutionException {
     Charset charset = Charset.forName("Cp1251");
     Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест".getBytes(charset), PLAIN_TEXT_UTF_8.withCharset(charset));
 
@@ -89,7 +98,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testResponseWrapper() throws InterruptedException, ExecutionException, IOException, JAXBException {
+  public void testResponseWrapper() throws InterruptedException, ExecutionException, IOException {
     XmlTest test = new XmlTest("test тест");
     Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(test), JSON_UTF_8);
 
@@ -131,7 +140,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testXml() throws InterruptedException, ExecutionException, IOException, JAXBException {
+  public void testXml() throws InterruptedException, ExecutionException, JAXBException {
     XmlTest test = new XmlTest("test тест");
     Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), XML_UTF_8);
 
@@ -162,7 +171,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    XmlTest testOutput = http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
+    XmlTest testOutput = http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
     assertEquals("test тест", testOutput.name);
     assertEqualRequests(request, actualRequest.get());
   }
@@ -175,7 +184,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    Collection<XmlTest> testOutput = http.with(request).<XmlTest> expectJsonCollection(objectMapper, XmlTest.class).result().get();
+    Collection<XmlTest> testOutput = http.with(request).expectJsonCollection(objectMapper, XmlTest.class).result().get();
     assertEquals(tests.size(), testOutput.size());
     assertEquals(test1.name, Iterables.get(testOutput, 0).name);
     assertEquals(test2.name, Iterables.get(testOutput, 1).name);
@@ -225,7 +234,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     try {
-      http.with(request).<XmlTest> expectJson(objectMapper, XmlTest.class).result().get();
+      http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -242,7 +251,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), PROTOBUF);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
-    ProtobufTestMessage testOutput = http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
+    ProtobufTestMessage testOutput = http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     assertEquals(test.getIdsList(), testOutput.getIdsList());
     assertEqualRequests(request, actualRequest.get());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
@@ -254,7 +263,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
     try {
-      http.with(request).<ProtobufTestMessage> expectProtobuf(ProtobufTestMessage.class).result().get();
+      http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     }
     catch (ExecutionException e) {
       debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
@@ -263,7 +272,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testEmpty() throws IOException, InterruptedException, ExecutionException {
+  public void testEmpty() throws InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).expectEmpty().result().get();
@@ -273,17 +282,17 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testReadOnly() throws IOException, InterruptedException, ExecutionException {
+  public void testReadOnly() throws InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
-    assertTrue(actualRequest.get().getUrl().indexOf(HttpParams.READ_ONLY_REPLICA) > -1);
+    assertTrue(actualRequest.get().getUrl().contains(HttpParams.READ_ONLY_REPLICA));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
-  public void testHeaders() throws IOException, InterruptedException, ExecutionException {
+  public void testHeaders() throws InterruptedException, ExecutionException {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put("myheader1", Arrays.asList("myvalue1", "myvalue2"));
     headers.put("myheader2", singletonList("myvalue1"));
@@ -303,7 +312,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test(expected = IllegalStateException.class)
-  public void testDebugManualHeaderWithNoDebug() throws IOException, InterruptedException, ExecutionException {
+  public void testDebugManualHeaderWithNoDebug() throws InterruptedException, ExecutionException {
     // situation when manually building mockRequest with debug header, it should be removed
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
@@ -317,7 +326,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test(expected = IllegalStateException.class)
-  public void testDebugManualParamWithNoDebug() throws IOException, InterruptedException, ExecutionException {
+  public void testDebugManualParamWithNoDebug() throws InterruptedException, ExecutionException {
     // situation when manually building mockRequest with debug param
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
@@ -331,7 +340,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testDebug() throws IOException, InterruptedException, ExecutionException {
+  public void testDebug() throws InterruptedException, ExecutionException {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Supplier<Request> actualRequest;
 
@@ -371,7 +380,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testExternalRequestWithDebugOn() throws IOException, InterruptedException, ExecutionException {
+  public void testExternalRequestWithDebugOn() throws InterruptedException, ExecutionException {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on but for 'external' but header / param should not be passed
@@ -394,7 +403,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testNoDebugRequestWithDebugOn() throws IOException, InterruptedException, ExecutionException {
+  public void testNoDebugRequestWithDebugOn() throws InterruptedException, ExecutionException {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on but for 'external' but header / param should not be passed
@@ -417,7 +426,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testHostsWithSession() throws IOException, InterruptedException, ExecutionException {
+  public void testHostsWithSession() throws InterruptedException, ExecutionException {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
 
@@ -452,7 +461,7 @@ public class HttpClientTest extends HttpClientTestBase {
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
-      CompletionHandler handler = iom.getArgumentAt(1, CompletionHandler.class);
+      CompletionHandler handler = iom.getArgument(1);
       handler.onThrowable(new TestException());
       return null;
     });
@@ -470,7 +479,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testErrorXml() throws InterruptedException, ExecutionException, IOException, JAXBException {
+  public void testErrorXml() throws InterruptedException, ExecutionException, JAXBException {
     XmlError error = new XmlError("errror message тест");
     byte[] bytes = xmlBytes(error);
 
@@ -553,7 +562,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testXmlWithNoError() throws InterruptedException, ExecutionException, IOException, JAXBException {
+  public void testXmlWithNoError() throws InterruptedException, ExecutionException, JAXBException {
     XmlTest test = new XmlTest("test тест");
     Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), XML_UTF_8);
 
@@ -604,7 +613,7 @@ public class HttpClientTest extends HttpClientTestBase {
     return out.toByteArray();
   }
 
-  private byte[] jsonBytes(Object object) throws JsonGenerationException, JsonMappingException, IOException {
+  private byte[] jsonBytes(Object object) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     objectMapper.writeValue(out, object);
     return out.toByteArray();

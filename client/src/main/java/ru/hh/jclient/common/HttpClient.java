@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -44,6 +45,7 @@ public abstract class HttpClient {
   private final HttpClientContext context;
   private final Storages storages;
   private final UpstreamManager upstreamManager;
+  private final List<HttpClientEventListener> eventListeners;
 
   private RequestDebug debug;
   private Request request;
@@ -63,12 +65,14 @@ public abstract class HttpClient {
              Set<String> hostsWithSession,
              UpstreamManager upstreamManager,
              Storage<HttpClientContext> contextSupplier,
+             List<HttpClientEventListener> eventListeners,
              boolean adaptive) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
     this.upstreamManager = upstreamManager;
     this.adaptive = adaptive;
+    this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
     storages = context.getStorages().copy().add(contextSupplier);
@@ -303,6 +307,10 @@ public abstract class HttpClient {
 
   Storages getStorages() {
     return storages;
+  }
+
+  List<HttpClientEventListener> getEventListeners() {
+    return eventListeners;
   }
 
   Optional<?> getRequestBodyEntity() {
