@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageLite;
 import static java.util.Objects.requireNonNull;
 
@@ -221,7 +221,7 @@ public abstract class HttpClient {
    *
    * @param protobufClass type of result
    */
-  public <T extends GeneratedMessage> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
+  public <T extends GeneratedMessageV3> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
     TypeConverter<T> converter = new ProtobufConverter<>(protobufClass);
     expectedMediaTypes = converter.getSupportedMediaTypes();
     return new ResultProcessor<>(this, converter);

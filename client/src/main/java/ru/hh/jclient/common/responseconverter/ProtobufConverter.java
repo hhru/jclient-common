@@ -7,13 +7,14 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Set;
+
+import com.google.protobuf.GeneratedMessageV3;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import com.google.common.net.MediaType;
-import com.google.protobuf.GeneratedMessage;
 
-public class ProtobufConverter<T extends GeneratedMessage> extends SingleTypeConverter<T> {
+public class ProtobufConverter<T extends GeneratedMessageV3> extends SingleTypeConverter<T> {
 
   private static final Set<MediaType> MEDIA_TYPES = of(PROTOBUF.withoutParameters(), MediaType.parse("application/x-protobuf"));
 

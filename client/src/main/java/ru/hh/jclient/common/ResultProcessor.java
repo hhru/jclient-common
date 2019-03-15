@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.xml.bind.JAXBContext;
 
+import com.google.protobuf.GeneratedMessageV3;
 import ru.hh.jclient.common.responseconverter.JsonMapConverter;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
@@ -17,7 +18,6 @@ import ru.hh.jclient.common.responseconverter.XmlConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.GeneratedMessage;
 
 public class ResultProcessor<T> {
 
@@ -154,7 +154,7 @@ public class ResultProcessor<T> {
    *
    * @param protobufClass type of ERROR result
    */
-  public <E extends GeneratedMessage> ResultOrErrorProcessor<T, E> orProtobufError(Class<E> protobufClass) {
+  public <E extends GeneratedMessageV3> ResultOrErrorProcessor<T, E> orProtobufError(Class<E> protobufClass) {
     return new ResultOrErrorProcessor<>(this, new ProtobufConverter<>(protobufClass));
   }
 
