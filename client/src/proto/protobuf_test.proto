@@ -1,5 +1,0 @@
-option java_package = "ru.hh.jclient.common.model";
-
-message ProtobufTestMessage {
-  repeated int32 ids = 1;
-}
