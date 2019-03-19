@@ -31,7 +31,6 @@ public class UpstreamMonitoring implements Monitoring {
                            long requestTimeMs,
                            boolean isRequestFinal) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
-    tags.put("server", serverAddress);
     tags.put("status", String.valueOf(statusCode));
     tags.put("final", String.valueOf(isRequestFinal));
     statsDSender.sendCounter("http.client.requests", 1, toTagsArray(tags));
@@ -46,9 +45,8 @@ public class UpstreamMonitoring implements Monitoring {
   @Override
   public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, int firstStatusCode, int retryCount) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
-    tags.put("server", serverAddress);
     tags.put("status", String.valueOf(statusCode));
-    tags.put("first_upstream_status", String.valueOf(firstStatusCode));
+    tags.put("first_status", String.valueOf(firstStatusCode));
     tags.put("tries", String.valueOf(retryCount));
     statsDSender.sendCounter("http.client.retries", 1, toTagsArray(tags));
   }
@@ -57,7 +55,7 @@ public class UpstreamMonitoring implements Monitoring {
     Map<String, String> tags = new HashMap<>();
     tags.put("app", serviceName);
     tags.put("upstream", upstreamName);
-    tags.put("datacenter", datacenter);
+    tags.put("dc", datacenter);
     return tags;
   }
 
