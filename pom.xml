@@ -26,6 +26,7 @@
 
     <properties>
         <jdk.version>11</jdk.version>
+        <junit.version>4.12</junit.version>
         <surefire.encoding>UTF-8</surefire.encoding>
     </properties>
 
@@ -48,6 +49,12 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>jul-to-slf4j</artifactId>
                 <version>1.7.25</version>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
