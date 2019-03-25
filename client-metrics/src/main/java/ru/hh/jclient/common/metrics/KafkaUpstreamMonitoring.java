@@ -14,49 +14,50 @@ import java.util.concurrent.TimeUnit;
 
 public class KafkaUpstreamMonitoring implements Monitoring {
   private static final Logger log = LoggerFactory.getLogger(KafkaUpstreamMonitoring.class);
-  private final String requestsCountTopicName;
-  private final String heartbeatTopicName;
 
   private final KafkaProducer<String, String> kafkaProducer;
-  private final String serviceName;
-  private final String dc;
+  private final KafkaUpstreamMonitoringConfig monitoringConfig;
 
   public KafkaUpstreamMonitoring(KafkaProducer<String, String> kafkaMetricsProducer,
-                                 String dc, String serviceName,
-                                 String requestsCountTopicName, String heartbeatTopicName) {
-    this.serviceName = serviceName;
-    this.dc = dc;
+                                 KafkaUpstreamMonitoringConfig monitoringConfig) {
     this.kafkaProducer = kafkaMetricsProducer;
-    this.requestsCountTopicName = requestsCountTopicName;
-    this.heartbeatTopicName = heartbeatTopicName;
+    this.monitoringConfig = monitoringConfig;
   }
 
-  public void startHeartbeat(ScheduledExecutorService executorService, long periodInMillis) throws UnknownHostException {
+  public void startHeartbeat(ScheduledExecutorService executorService) throws UnknownHostException {
     final String hostname = InetAddress.getLocalHost().getHostName();
 
     executorService.scheduleAtFixedRate(() -> {
       var jsonBuilder = new SimpleJsonBuilder();
-      jsonBuilder.put("app", serviceName);
+      jsonBuilder.put("app", monitoringConfig.serviceName);
       jsonBuilder.put("hostname", hostname);
-      jsonBuilder.put("dc", dc);
+      jsonBuilder.put("dc", monitoringConfig.dc);
       jsonBuilder.put("ts", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
-      ProducerRecord<String, String> record = new ProducerRecord<>(heartbeatTopicName, jsonBuilder.build());
-      kafkaProducer.send(record, (recordMetadata, e) -> log.warn(e.getMessage(), e));
-    }, 0, periodInMillis, TimeUnit.MILLISECONDS);
+      ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.heartbeatTopicName, jsonBuilder.build());
+      kafkaProducer.send(record, (recordMetadata, e) -> {
+        if (e != null) {
+          log.warn(e.getMessage(), e);
+        }
+      });
+    }, 0, monitoringConfig.heartbeatPeriodInMillis, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public void countRequest(String upstreamName, String dc, String serverAddress, int statusCode, long requestTimeMs, boolean isRequestFinal) {
     var requestId = MDC.get("rid");
     var jsonBuilder = new SimpleJsonBuilder();
-    jsonBuilder.put("app", serviceName);
+    jsonBuilder.put("app", monitoringConfig.serviceName);
     jsonBuilder.put("upstream", upstreamName);
     jsonBuilder.put("dc", dc);
     jsonBuilder.put("hostname", serverAddress);
     jsonBuilder.put("ts", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
     jsonBuilder.put("requestId", requestId);
-    ProducerRecord<String, String> record = new ProducerRecord<>(requestsCountTopicName, jsonBuilder.build());
-    kafkaProducer.send(record, (recordMetadata, e) -> log.warn(e.getMessage(), e));
+    ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.requestsCountTopicName, jsonBuilder.build());
+    kafkaProducer.send(record, (recordMetadata, e) -> {
+      if (e != null) {
+        log.warn(e.getMessage(), e);
+      }
+    });
   }
 
   @Override
