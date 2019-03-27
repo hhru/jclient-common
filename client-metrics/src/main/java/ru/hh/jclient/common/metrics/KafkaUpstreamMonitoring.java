@@ -12,6 +12,8 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Optional.ofNullable;
+
 public class KafkaUpstreamMonitoring implements Monitoring {
   private static final Logger log = LoggerFactory.getLogger(KafkaUpstreamMonitoring.class);
 
@@ -29,10 +31,10 @@ public class KafkaUpstreamMonitoring implements Monitoring {
 
     executorService.scheduleAtFixedRate(() -> {
       var jsonBuilder = new SimpleJsonBuilder();
+      jsonBuilder.put("ts", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
       jsonBuilder.put("app", monitoringConfig.serviceName);
       jsonBuilder.put("hostname", hostname);
       jsonBuilder.put("dc", monitoringConfig.dc);
-      jsonBuilder.put("ts", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
       ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.heartbeatTopicName, jsonBuilder.build());
       kafkaProducer.send(record, (recordMetadata, e) -> {
         if (e != null) {
@@ -44,20 +46,23 @@ public class KafkaUpstreamMonitoring implements Monitoring {
 
   @Override
   public void countRequest(String upstreamName, String dc, String serverAddress, int statusCode, long requestTimeMs, boolean isRequestFinal) {
-    var requestId = MDC.get("rid");
-    var jsonBuilder = new SimpleJsonBuilder();
-    jsonBuilder.put("app", monitoringConfig.serviceName);
-    jsonBuilder.put("upstream", upstreamName);
-    jsonBuilder.put("dc", dc);
-    jsonBuilder.put("hostname", serverAddress);
-    jsonBuilder.put("ts", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
-    jsonBuilder.put("requestId", requestId);
-    ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.requestsCountTopicName, jsonBuilder.build());
-    kafkaProducer.send(record, (recordMetadata, e) -> {
-      if (e != null) {
-        log.warn(e.getMessage(), e);
-      }
-    });
+    if (statusCode >= 500 && isRequestFinal) {
+      var requestId = ofNullable(MDC.get("rid")).orElse("");
+      var jsonBuilder = new SimpleJsonBuilder();
+      jsonBuilder.put("ts", TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
+      jsonBuilder.put("app", monitoringConfig.serviceName);
+      jsonBuilder.put("upstream", upstreamName);
+      jsonBuilder.put("dc", dc);
+      jsonBuilder.put("server", serverAddress);
+      jsonBuilder.put("status", statusCode);
+      jsonBuilder.put("requestId", requestId);
+      ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.requestsCountTopicName, jsonBuilder.build());
+      kafkaProducer.send(record, (recordMetadata, e) -> {
+        if (e != null) {
+          log.warn(e.getMessage(), e);
+        }
+      });
+    }
   }
 
   @Override
