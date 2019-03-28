@@ -37,9 +37,9 @@
         </dependency>
 
         <dependency>
-            <groupId>ru.hh.metrics</groupId>
-            <artifactId>hh-metrics</artifactId>
-            <version>0.16</version>
+            <groupId>ru.hh.nab</groupId>
+            <artifactId>nab-metrics</artifactId>
+            <version>4.19.1</version>
         </dependency>
 
         <dependency>
