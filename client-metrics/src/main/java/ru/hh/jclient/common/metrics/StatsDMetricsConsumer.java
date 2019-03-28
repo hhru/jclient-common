@@ -1,13 +1,8 @@
 package ru.hh.jclient.common.metrics;
 
-import com.timgroup.statsd.StatsDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import ru.hh.nab.metrics.StatsDSender;
 
 public class StatsDMetricsConsumer implements MetricsConsumer {
 
@@ -15,28 +10,17 @@ public class StatsDMetricsConsumer implements MetricsConsumer {
   private static final String NAME_KEY = "clientName";
 
   private final String nameTag;
-  private final StatsDClient statsDClient;
-  private final ScheduledExecutorService scheduler;
-  private final long sendIntervalAmount;
-  private final TimeUnit sendIntervalUnit;
+  private final StatsDSender statsDSender;
+  private final int sendIntervalInSeconds;
 
-  private ScheduledFuture<?> future;
-
-  public StatsDMetricsConsumer(String name, StatsDClient statsDClient, ScheduledExecutorService scheduler,
-                               long sendIntervalAmount, TimeUnit sendIntervalUnit) {
+  public StatsDMetricsConsumer(String name, StatsDSender statsDSender, int sendIntervalInSeconds) {
     this.nameTag = buildNameTag(name);
-    this.statsDClient = statsDClient;
-    this.scheduler = scheduler;
-    this.sendIntervalAmount = sendIntervalAmount;
-    this.sendIntervalUnit = sendIntervalUnit;
+    this.statsDSender = statsDSender;
+    this.sendIntervalInSeconds = sendIntervalInSeconds;
   }
 
   private static String buildNameTag(String name) {
     return NAME_KEY + "_is_" + name.replace('.', '-');
-  }
-
-  public void disconnect() {
-    Optional.ofNullable(future).ifPresent(scheduledFuture -> scheduledFuture.cancel(false));
   }
 
   @Override
@@ -46,26 +30,26 @@ public class StatsDMetricsConsumer implements MetricsConsumer {
       return;
     }
 
-    future = scheduler.scheduleAtFixedRate(() -> {
-      statsDClient.gauge(getFullMetricName("async.client.connection.total.count", nameTag),
+    statsDSender.sendPeriodically(() -> {
+      statsDSender.sendGauge(getFullMetricName("async.client.connection.total.count", nameTag),
         metricsProvider.totalConnectionCount().get());
-      statsDClient.gauge(getFullMetricName("async.client.connection.active.count", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.connection.active.count", nameTag),
         metricsProvider.totalActiveConnectionCount().get());
-      statsDClient.gauge(getFullMetricName("async.client.connection.idle.count", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.connection.idle.count", nameTag),
         metricsProvider.totalIdleConnectionCount().get());
-      statsDClient.gauge(getFullMetricName("async.client.usedDirectMemory", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.usedDirectMemory", nameTag),
         metricsProvider.usedDirectMemory().get());
-      statsDClient.gauge(getFullMetricName("async.client.usedHeapMemory", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.usedHeapMemory", nameTag),
         metricsProvider.usedHeapMemory().get());
-      statsDClient.gauge(getFullMetricName("async.client.numActiveTinyAllocations", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.numActiveTinyAllocations", nameTag),
         metricsProvider.numActiveTinyAllocations().get());
-      statsDClient.gauge(getFullMetricName("async.client.numActiveSmallAllocations", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.numActiveSmallAllocations", nameTag),
         metricsProvider.numActiveSmallAllocations().get());
-      statsDClient.gauge(getFullMetricName("async.client.numActiveNormalAllocations", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.numActiveNormalAllocations", nameTag),
         metricsProvider.numActiveNormalAllocations().get());
-      statsDClient.gauge(getFullMetricName("async.client.numActiveHugeAllocations", nameTag),
+      statsDSender.sendGauge(getFullMetricName("async.client.numActiveHugeAllocations", nameTag),
         metricsProvider.numActiveHugeAllocations().get());
-    }, 0, sendIntervalAmount, sendIntervalUnit);
+    }, sendIntervalInSeconds);
 
     log.info("Successfully scheduled metrics sending");
   }

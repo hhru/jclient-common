@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.metrics;
 
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.metrics.StatsDSender;
-import ru.hh.metrics.Tag;
+import ru.hh.nab.metrics.StatsDSender;
+import ru.hh.nab.metrics.Tag;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,13 +33,13 @@ public class UpstreamMonitoring implements Monitoring {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     tags.put("status", String.valueOf(statusCode));
     tags.put("final", String.valueOf(isRequestFinal));
-    statsDSender.sendCounter("http.client.requests", 1, toTagsArray(tags));
+    statsDSender.sendCount("http.client.requests", 1, toTagsArray(tags));
   }
 
   @Override
   public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMs) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
-    statsDSender.sendTiming("http.client.request.time", requestTimeMs, toTagsArray(tags));
+    statsDSender.sendTime("http.client.request.time", requestTimeMs, toTagsArray(tags));
   }
 
   @Override
@@ -48,7 +48,7 @@ public class UpstreamMonitoring implements Monitoring {
     tags.put("status", String.valueOf(statusCode));
     tags.put("first_status", String.valueOf(firstStatusCode));
     tags.put("tries", String.valueOf(retryCount));
-    statsDSender.sendCounter("http.client.retries", 1, toTagsArray(tags));
+    statsDSender.sendCount("http.client.retries", 1, toTagsArray(tags));
   }
 
   private static Map<String, String> getCommonTags(String serviceName, String upstreamName, String datacenter) {
