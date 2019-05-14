@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
-import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ANALYTIC_DATA;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_LOAD_TESTING;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REAL_IP;
@@ -39,7 +38,7 @@ class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
 
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION,
-    X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE, X_HH_ANALYTIC_DATA);
+    X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE);
 
   private final Executor callbackExecutor;
 
