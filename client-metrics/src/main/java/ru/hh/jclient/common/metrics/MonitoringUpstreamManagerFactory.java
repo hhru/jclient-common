@@ -6,7 +6,6 @@ import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.nab.metrics.StatsDSender;
 
 import javax.annotation.Nullable;
-import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -20,7 +19,7 @@ public class MonitoringUpstreamManagerFactory {
                                        Consumer<BalancingUpstreamManager> upstreamUpdater) {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       scheduledExecutorService,
-      buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties, scheduledExecutorService),
+      buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
       dc, allowCrossDCRequests
     );
 
@@ -30,19 +29,11 @@ public class MonitoringUpstreamManagerFactory {
   }
 
   private static Set<Monitoring> buildMonitoring(String serviceName, String dc, StatsDSender statsDSender,
-                                                 Properties kafkaUpstreamMonitoringProperties,
-                                                 ScheduledExecutorService scheduledExecutorService) {
+                                                 Properties kafkaUpstreamMonitoringProperties) {
     Set<Monitoring> monitoring = new HashSet<>();
 
     KafkaUpstreamMonitoring.fromProperties(serviceName, dc, kafkaUpstreamMonitoringProperties)
-      .ifPresent(kafkaUpstreamMonitoring -> {
-        try {
-          kafkaUpstreamMonitoring.startHeartbeat(scheduledExecutorService);
-          monitoring.add(kafkaUpstreamMonitoring);
-        } catch (UnknownHostException e) {
-          throw new RuntimeException(e);
-        }
-      });
+      .ifPresent(monitoring::add);
 
     monitoring.add(new UpstreamMonitoring(statsDSender, serviceName));
 
