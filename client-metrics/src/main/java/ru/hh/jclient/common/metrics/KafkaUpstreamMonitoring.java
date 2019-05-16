@@ -33,7 +33,7 @@ public class KafkaUpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRequest(String upstreamName, String dc, String serverAddress, int statusCode, long requestTimeMs, boolean isRequestFinal) {
+  public void countRequest(String upstreamName, String dc, String hostname, int statusCode, long requestTimeMs, boolean isRequestFinal) {
     if (isRequestFinal) {
       var requestId = ofNullable(MDC.get("rid")).orElse("");
       var jsonBuilder = new SimpleJsonBuilder();
@@ -41,7 +41,7 @@ public class KafkaUpstreamMonitoring implements Monitoring {
       jsonBuilder.put("app", serviceName);
       jsonBuilder.put("upstream", upstreamName);
       jsonBuilder.put("dc", StringUtil.isNullOrEmpty(dc) ? localDc : dc);
-      jsonBuilder.put("server", serverAddress);
+      jsonBuilder.put("hostname", hostname);
       jsonBuilder.put("status", statusCode);
       jsonBuilder.put("requestId", requestId);
       ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.requestsCountTopicName, jsonBuilder.build());
