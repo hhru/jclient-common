@@ -2,7 +2,6 @@ package ru.hh.jclient.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
-import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageLite;
@@ -137,8 +136,7 @@ public abstract class HttpClient {
   public HttpClient withProtobufBody(MessageLite body) {
     requestBodyEntity = Optional.of(requireNonNull(body, "body must not be null"));
     RequestBuilder builder = new RequestBuilder(request);
-    builder.setBody(body.toByteArray());
-    builder.addHeader(HttpHeaders.CONTENT_TYPE, "application/x-protobuf");
+    builder.setBody(body.toByteArray(), "application/x-protobuf");
     request = builder.build();
     return this;
   }
@@ -156,11 +154,10 @@ public abstract class HttpClient {
     try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
          ObjectOutputStream out = new ObjectOutputStream(byteOut)) {
       out.writeObject(body);
-      builder.setBody(byteOut.toByteArray());
+      builder.setBody(byteOut.toByteArray(), "application/x-java-serialized-object");
     } catch (IOException e) {
       throw new RuntimeException("failed to write java object", e);
     }
-    builder.addHeader(HttpHeaders.CONTENT_TYPE, "application/x-java-serialized-object");
     request = builder.build();
     return this;
   }
