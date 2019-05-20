@@ -7,7 +7,13 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.asynchttpclient.request.body.multipart.Part;
+import ru.hh.jclient.common.exception.RequestConverterException;
+
+import javax.ws.rs.core.MediaType;
 
 public class RequestBuilder {
 
@@ -108,19 +114,50 @@ public class RequestBuilder {
     return new Request(delegate.build());
   }
 
+  @Deprecated
   public RequestBuilder setBody(byte[] data) {
     delegate.setBody(data);
     return this;
   }
 
+  @Deprecated
   public RequestBuilder setBody(InputStream stream) {
     delegate.setBody(stream);
     return this;
   }
 
+  @Deprecated
   public RequestBuilder setBody(String data) {
     delegate.setBody(data);
     return this;
+  }
+
+  public RequestBuilder setBody(byte[] data, String contentType) {
+    delegate.setBody(data);
+    delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, contentType);
+    return this;
+  }
+
+  public RequestBuilder setBody(InputStream stream, String contentType) {
+    delegate.setBody(stream);
+    delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, contentType);
+    return this;
+  }
+
+  public RequestBuilder setBody(String data, String contentType) {
+    delegate.setBody(data);
+    delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, contentType);
+    return this;
+  }
+
+  public RequestBuilder setJsonBody(ObjectMapper mapper, Object bodyObject) {
+    try {
+      delegate.setBody(mapper.writeValueAsBytes(bodyObject));
+      delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+      return this;
+    } catch (JsonProcessingException e) {
+      throw new RequestConverterException("Failed to convert " + bodyObject, e);
+    }
   }
 
   public RequestBuilder setHeader(CharSequence name, String value) {
