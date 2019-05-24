@@ -297,13 +297,13 @@ public class MoreErrorsTest {
       MoreErrors.check(result, "error %s", "custom").throwForbidden().onAnyError();
     }
     catch (WebApplicationException e) {
-      assertEquals("error custom - status code is not OK", e.getMessage());
+      assertEquals("error custom - status code 400 is not OK", e.getMessage());
     }
     try {
       MoreErrors.check(result, "error %s").throwForbidden().onAnyError();
     }
     catch (WebApplicationException e) {
-      assertEquals("error %s - status code is not OK", e.getMessage());
+      assertEquals("error %s - status code 400 is not OK", e.getMessage());
     }
   }
 

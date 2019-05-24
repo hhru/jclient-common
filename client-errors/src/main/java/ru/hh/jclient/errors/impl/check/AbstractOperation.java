@@ -65,7 +65,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
     if (wrapper.isSuccess()) {
       return wrapper.get();
     }
-    return defaultOrThrow("status code is not OK");
+    return defaultOrThrow("status code " + wrapper.getStatusCode() + " is not OK");
   }
 
   protected Optional<T> checkForPredicates(Optional<T> response) {
