@@ -96,19 +96,28 @@ public class RequestBalancer {
   }
 
   private void countStatistics(ResponseWrapper wrapper, boolean doRetry) {
-    if (isServerAvailable()) {
-      Set<Monitoring> monitoringSet = upstreamManager.getMonitoring();
-      for (Monitoring monitoring : monitoringSet) {
-        int statusCode = wrapper.getResponse().getStatusCode();
-        long requestTimeMs = wrapper.getTimeToLastByteMs();
+    Set<Monitoring> monitoringSet = upstreamManager.getMonitoring();
+    for (Monitoring monitoring : monitoringSet) {
+      int statusCode = wrapper.getResponse().getStatusCode();
+      long requestTimeMs = wrapper.getTimeToLastByteMs();
 
-        monitoring.countRequest(upstream.getName(), currentServer.getDatacenter(), currentServer.getAddress(), statusCode, requestTimeMs, !doRetry);
-        monitoring.countRequestTime(upstream.getName(), currentServer.getDatacenter(), requestTimeMs);
+      String upstreamName, serverAddress, dcName;
+      if (isServerAvailable()) {
+        upstreamName = upstream.getName();
+        serverAddress = currentServer.getAddress();
+        dcName = currentServer.getDatacenter();
+      } else {
+        Uri originalUri = request.getUri();
+        Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
+        upstreamName = serverAddress = baseUri.toString();
+        dcName = null;
+      }
 
-        if (!triedServers.isEmpty()) {
-          monitoring.countRetry(upstream.getName(), currentServer.getDatacenter(), currentServer.getAddress(),
-            statusCode, firstStatusCode, triedServers.size());
-        }
+      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMs, !doRetry);
+      monitoring.countRequestTime(upstreamName, dcName, requestTimeMs);
+
+      if (!triedServers.isEmpty()) {
+        monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, firstStatusCode, triedServers.size());
       }
     }
   }

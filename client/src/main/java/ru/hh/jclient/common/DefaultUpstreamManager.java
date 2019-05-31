@@ -23,6 +23,6 @@ final class DefaultUpstreamManager extends UpstreamManager {
 
   @Override
   public Set<Monitoring> getMonitoring() {
-    return null;
+    return Set.of();
   }
 }

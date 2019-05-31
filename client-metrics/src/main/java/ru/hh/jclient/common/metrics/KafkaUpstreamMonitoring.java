@@ -72,22 +72,16 @@ public class KafkaUpstreamMonitoring implements Monitoring {
   }
 
   static class Config {
-    final long heartbeatPeriodInMillis;
-    final String heartbeatTopicName;
     final String requestsCountTopicName;
 
-    Config(long heartbeatPeriodInMillis, String heartbeatTopicName, String requestsCountTopicName) {
-      this.heartbeatPeriodInMillis = heartbeatPeriodInMillis;
-      this.heartbeatTopicName = heartbeatTopicName;
+    Config(String requestsCountTopicName) {
       this.requestsCountTopicName = requestsCountTopicName;
     }
 
     static Config fromProperties(Properties properties) {
       var requestsCountTopicName = properties.getProperty("topics.requests");
-      var heartbeatTopicName = properties.getProperty("topics.heartbeat");
-      var heartbeatPeriodInMillis = Long.parseLong(properties.getProperty("heartbeat.period.ms", "10000"));
 
-      return new Config(heartbeatPeriodInMillis, heartbeatTopicName, requestsCountTopicName);
+      return new Config(requestsCountTopicName);
     }
   }
 }
