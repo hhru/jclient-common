@@ -2,9 +2,15 @@ package ru.hh.jclient.common;
 
 import org.asynchttpclient.Request;
 import org.junit.Test;
+
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
+
 import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
@@ -80,6 +86,44 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     getTestClient().get();
     assertHostEquals(request[0], "server1");
+  }
+
+  @Test
+  public void balancedRequestMonitoring() throws Exception {
+    createHttpClientFactory("| server=http://server1 dc=DC1", "DC1", false);
+
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        completeWith(200, iom);
+        return null;
+      });
+
+    http.with(new RequestBuilder("GET").setUrl("http://backend/path?query").build())
+      .expectPlainText().result().get();
+
+    Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
+    verify(monitoring).countRequest(
+      eq("backend"), eq("DC1"), eq("http://server1"), eq(200), anyLong(), eq(true)
+    );
+  }
+
+  @Test
+  public void unbalancedRequestMonitoring() throws Exception {
+    createHttpClientFactory("| server=http://server1 dc=DC1", "DC1", false);
+
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        completeWith(200, iom);
+        return null;
+      });
+
+    http.with(new RequestBuilder("GET").setUrl("http://not-balanced-backend/path?query").build())
+      .expectPlainText().result().get();
+
+    Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
+    verify(monitoring).countRequest(
+      eq("http://not-balanced-backend"), eq(null), eq("http://not-balanced-backend"), eq(200), anyLong(), eq(true)
+    );
   }
 
   @Test(expected = ExecutionException.class)
