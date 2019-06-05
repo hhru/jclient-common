@@ -20,7 +20,7 @@ public class SimpleJsonBuilderTest {
   public static void init() {
     objectMapper = new ObjectMapper()
       .findAndRegisterModules()
-      .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+      .setSerializationInclusion(JsonInclude.Include.ALWAYS)
       .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, false);
   }
 

@@ -13,9 +13,7 @@ class SimpleJsonBuilder {
   String build() {
     var sb = new StringBuilder(64).append("{");
     for (Pair pair : pairs) {
-      if (pair.isPresent()) {
-        sb.append(pair.build()).append(",");
-      }
+      sb.append(pair.build()).append(",");
     }
     if (sb.charAt(sb.length() - 1) == ',') {
       sb.setCharAt(sb.length() - 1, '}');
@@ -35,15 +33,13 @@ class SimpleJsonBuilder {
     }
 
     String build() {
-      if (value instanceof Number) {
+      if (value == null) {
+        return "\"" + key + "\":null";
+      } else if (value instanceof Number) {
         return "\"" + key + "\":" + value;
       } else {
         return "\"" + key + "\":\"" + value.toString() + "\"";
       }
-    }
-
-    boolean isPresent() {
-      return value != null;
     }
   }
 }
