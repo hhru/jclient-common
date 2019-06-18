@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -43,6 +44,7 @@ import java.util.stream.Stream;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.asynchttpclient.AsyncHttpClient;
 import org.junit.Before;
 import org.junit.Test;
@@ -602,6 +604,27 @@ public class HttpClientTest extends HttpClientTestBase {
     resultProcessor = http.with(request).expectXml(jaxbContext, XmlTest.class);
     resultProcessor.result().get();
     assertProperAcceptHeader(resultProcessor, actualRequest.get());
+  }
+
+  @Test
+  public void testGenericValueJsonCollection() throws IOException, ExecutionException, InterruptedException {
+    var testValue = Set.of(Set.of("test"));
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
+    withEmptyContext().okRequest(jsonBytes(testValue), JSON_UTF_8);
+    var valueType = new TypeReference<Set<String>>() {};
+    Collection<Set<String>> result = http.with(request).expectJsonCollection(objectMapper, valueType).result().get();
+    assertEquals(testValue.size(), result.size());
+    assertEquals(testValue.stream().findFirst(), result.stream().findFirst());
+  }
+
+  @Test
+  public void testGenericValueJsonMap() throws IOException, ExecutionException, InterruptedException {
+    var testValue = Map.of("key", Set.of("test"));
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
+    withEmptyContext().okRequest(jsonBytes(testValue), JSON_UTF_8);
+    var valueType = new TypeReference<Set<String>>() {};
+    Map<String, Set<String>> result = http.with(request).expectJsonMap(objectMapper, String.class, valueType).result().get();
+    assertEquals(testValue, result);
   }
 
   private static class TestException extends Exception {
