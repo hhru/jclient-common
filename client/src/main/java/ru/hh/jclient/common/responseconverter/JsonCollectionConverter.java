@@ -20,7 +20,8 @@ public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T
 
   private JsonCollectionConverter(ObjectMapper objectMapper, JavaType elementType) {
     this.objectMapper = objectMapper;
-    this.elementType = objectMapper.getTypeFactory().constructCollectionType(Collection.class, requireNonNull(elementType));
+    this.elementType = objectMapper.getTypeFactory()
+        .constructCollectionType(Collection.class, requireNonNull(elementType, "jsonClass must not be null"));
   }
 
   public JsonCollectionConverter(ObjectMapper objectMapper, Class<T> jsonClass) {
