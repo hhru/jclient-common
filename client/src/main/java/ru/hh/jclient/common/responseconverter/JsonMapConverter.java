@@ -12,17 +12,17 @@ import java.util.Collection;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
+import static ru.hh.jclient.common.util.JsonTypeConverter.convertClassToJavaType;
+import static ru.hh.jclient.common.util.JsonTypeConverter.convertReferenceToJavaType;
 
 
 public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
 
-  private static final JavaType[] EMPTY_PARAMETERS = {};
   private final ObjectMapper objectMapper;
   private final JavaType mapType;
 
   private JsonMapConverter(ObjectMapper objectMapper, JavaType jsonKeyType, JavaType jsonValueType) {
-    this.objectMapper = objectMapper;
+    this.objectMapper = requireNonNull(objectMapper, "objectMapper must not be null");
     mapType = objectMapper.getTypeFactory().constructMapType(
       Map.class,
       requireNonNull(jsonKeyType, "jsonKeyType must not be null"),
@@ -31,20 +31,16 @@ public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
   }
 
   public JsonMapConverter(ObjectMapper objectMapper, Class<K> jsonKeyClass, TypeReference<V> jsonValueClass) {
-    this(requireNonNull(objectMapper, "objectMapper must not be null"),
-        ofNullable(jsonKeyClass)
-          .map(clazz -> objectMapper.getTypeFactory().constructSimpleType(clazz, EMPTY_PARAMETERS)).orElse(null),
-        ofNullable(jsonValueClass)
-            .map(typeRef -> objectMapper.getTypeFactory().constructType(typeRef)).orElse(null)
+    this(objectMapper,
+        convertClassToJavaType(objectMapper, jsonKeyClass),
+        convertReferenceToJavaType(objectMapper, jsonValueClass)
     );
   }
 
   public JsonMapConverter(ObjectMapper objectMapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
-    this(requireNonNull(objectMapper, "objectMapper must not be null"),
-      ofNullable(jsonKeyClass)
-        .map(clazz -> objectMapper.getTypeFactory().constructSimpleType(clazz, EMPTY_PARAMETERS)).orElse(null),
-      ofNullable(jsonValueClass)
-        .map(clazz -> objectMapper.getTypeFactory().constructSimpleType(clazz, EMPTY_PARAMETERS)).orElse(null)
+    this(objectMapper,
+        convertClassToJavaType(objectMapper, jsonKeyClass),
+        convertClassToJavaType(objectMapper, jsonValueClass)
     );
   }
 
