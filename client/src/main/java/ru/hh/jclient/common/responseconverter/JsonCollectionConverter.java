@@ -1,10 +1,12 @@
 package ru.hh.jclient.common.responseconverter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.net.MediaType;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
+import ru.hh.jclient.common.util.JsonTypeConverter;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import java.util.Collection;
 import static java.util.Objects.requireNonNull;
@@ -12,20 +14,27 @@ import static java.util.Objects.requireNonNull;
 
 public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T>> {
 
-  private ObjectMapper objectMapper;
-  private Class<T> jsonClass;
+  private final ObjectMapper objectMapper;
+  private final JavaType elementType;
+
+  private JsonCollectionConverter(ObjectMapper objectMapper, JavaType elementType) {
+    this.objectMapper = requireNonNull(objectMapper, "objectMapper must not be null");
+    this.elementType = objectMapper.getTypeFactory()
+        .constructCollectionType(Collection.class, requireNonNull(elementType, "jsonClass must not be null"));
+  }
 
   public JsonCollectionConverter(ObjectMapper objectMapper, Class<T> jsonClass) {
-    this.objectMapper = requireNonNull(objectMapper, "objectMapper must not be null");
-    this.jsonClass = requireNonNull(jsonClass, "jsonClass must not be null");
+    this(objectMapper, JsonTypeConverter.convertClassToJavaType(objectMapper, jsonClass));
+  }
+
+  public JsonCollectionConverter(ObjectMapper objectMapper, TypeReference<T> jsonClass) {
+    this(objectMapper, JsonTypeConverter.convertReferenceToJavaType(objectMapper, jsonClass));
   }
 
 
   @Override
   public FailableFunction<Response, ResultWithResponse<Collection<T>>, Exception> singleTypeConverterFunction() {
-    return r -> new ResultWithResponse<>(
-        objectMapper.readValue(r.getResponseBodyAsStream(), TypeFactory.defaultInstance().constructCollectionType(Collection.class, jsonClass)),
-        r);
+    return r -> new ResultWithResponse<>(objectMapper.readValue(r.getResponseBodyAsStream(), elementType), r);
   }
 
   @Override

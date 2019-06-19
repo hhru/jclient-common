@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
@@ -201,6 +202,18 @@ public abstract class HttpClient {
   }
 
   /**
+   * Specifies that the type of result must be a collection of JSON objects.
+   *
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonClass type of JSON object allowing generics
+   */
+  public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, TypeReference<T> jsonClass) {
+    TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
+  }
+
+  /**
    * Specifies that the type of result must be a map with JSON objects.
    *
    * @param mapper Jackson mapper used to parse response
@@ -208,6 +221,19 @@ public abstract class HttpClient {
    * @param jsonValueClass type of Value object
    */
   public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
+    TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
+    expectedMediaTypes = converter.getSupportedMediaTypes();
+    return new ResultProcessor<>(this, converter);
+  }
+
+  /**
+   * Specifies that the type of result must be a map with JSON objects.
+   *
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonKeyClass type of Key object (works only with simple types: String, Integer, etc)
+   * @param jsonValueClass type of Value object allowing generic specification
+   */
+  public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, TypeReference<V> jsonValueClass) {
     TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
     expectedMediaTypes = converter.getSupportedMediaTypes();
     return new ResultProcessor<>(this, converter);
