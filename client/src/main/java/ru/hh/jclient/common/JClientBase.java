@@ -1,5 +1,7 @@
 package ru.hh.jclient.common;
 
+import java.util.Map;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
@@ -42,22 +44,63 @@ public abstract class JClientBase {
     }
   }
 
+  /**
+   * @deprecated
+   * {@link JClientBase#get(java.lang.String, java.util.Map)}
+   */
+  @Deprecated(forRemoval = true)
   protected RequestBuilder get(String url, Object... queryParams) {
     return build(HTTP_GET, url, queryParams);
   }
 
+  protected RequestBuilder get(String url, Map<String, Object> queryParams) {
+    return build(HTTP_GET, url, queryParams);
+  }
+
+  /**
+   * @deprecated
+   * {@link JClientBase#post(java.lang.String, java.util.Map)}
+   */
+  @Deprecated(forRemoval = true)
   protected RequestBuilder post(String url, Object... queryParams) {
     return build(HTTP_POST, url, queryParams);
   }
 
+  protected RequestBuilder post(String url, Map<String, Object> queryParams) {
+    return build(HTTP_POST, url, queryParams);
+  }
+
+  /**
+   * @deprecated
+   * {@link JClientBase#put(java.lang.String, java.util.Map)}
+   */
+  @Deprecated(forRemoval = true)
   protected RequestBuilder put(String url, Object... queryParams) {
     return build(HTTP_PUT, url, queryParams);
   }
 
+  protected RequestBuilder put(String url, Map<String, Object> queryParams) {
+    return build(HTTP_PUT, url, queryParams);
+  }
+
+  /**
+   * @deprecated
+   * {@link JClientBase#delete(java.lang.String, java.util.Map)}
+   */
+  @Deprecated(forRemoval = true)
   protected RequestBuilder delete(String url, Object... queryParams) {
     return build(HTTP_DELETE, url, queryParams);
   }
 
+  protected RequestBuilder delete(String url, Map<String, Object> queryParams) {
+    return build(HTTP_DELETE, url, queryParams);
+  }
+
+  /**
+   * @deprecated
+   * {@link JClientBase#build(java.lang.String, java.lang.String, java.util.Map)}
+   */
+  @Deprecated(forRemoval = true)
   protected RequestBuilder build(String method, String url, Object... queryParams) {
     RequestBuilder builder = new RequestBuilder(method).setUrl(url);
     if (queryParams == null) {
@@ -67,6 +110,15 @@ public abstract class JClientBase {
     for (int i = 0; i < queryParams.length; i += 2) {
       builder.addQueryParam(queryParams[i].toString(), queryParams[i + 1].toString());
     }
+    return builder;
+  }
+
+  protected RequestBuilder build(String method, String url, Map<String, Object> queryParams) {
+    RequestBuilder builder = new RequestBuilder(method).setUrl(url);
+    if (queryParams == null) {
+      return builder;
+    }
+    queryParams.forEach((name, value) -> builder.addQueryParam(name, value.toString()));
     return builder;
   }
   
