@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
-public final class BalancingUpstreamManager extends UpstreamManager {
+public class BalancingUpstreamManager extends UpstreamManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
 
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
@@ -76,7 +76,7 @@ public final class BalancingUpstreamManager extends UpstreamManager {
     return monitoring;
   }
 
-  private static String getNameWithoutScheme(String host) {
+  static String getNameWithoutScheme(String host) {
     if (host.startsWith("http")) {
       String scheme = Uri.create(host).getScheme() + "://";
       host = host.substring(scheme.length());

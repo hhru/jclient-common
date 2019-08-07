@@ -12,6 +12,10 @@ public abstract class UpstreamManager {
 
   public abstract Upstream getUpstream(String host);
 
+  public Upstream getDynamicUpstream(String host, String key) {
+    return getUpstream(host);
+  };
+
   public abstract Map<String, Upstream> getUpstreams();
 
   public abstract void updateUpstream(String name, String configString);
