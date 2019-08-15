@@ -37,13 +37,15 @@ public class RequestBalancer {
   private int firstStatusCode;
   private boolean forceIdempotence;
   private Iterator<ServerEntry> serverEntryIterator;
+  private String upstreamName;
 
   public RequestBalancer(Request request,
                          UpstreamManager upstreamManager,
                          RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,
-                         boolean adaptive) {
+                         boolean adaptive,
+                         String dynamicUpstreamKey) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
@@ -51,7 +53,8 @@ public class RequestBalancer {
     this.forceIdempotence = forceIdempotence;
 
     host = request.getUri().getHost();
-    upstream = upstreamManager.getUpstream(host);
+    upstream = upstreamManager.getDynamicUpstream(host, dynamicUpstreamKey);
+    upstreamName = upstream == null ? null : upstream.getName();
     int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
       upstream != null ? upstream.getConfig().getRequestTimeoutMs() : UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS;
     int requestTimeoutTries = maxRequestTimeoutTries != null ? maxRequestTimeoutTries :
@@ -68,9 +71,9 @@ public class RequestBalancer {
     if (isUpstreamAvailable()) {
       balancedRequest = getBalancedRequest(request);
       if (!isServerAvailable()) {
-        return completedFuture(getServerNotAvailableResponse(request, upstream.getName()));
+        return completedFuture(getServerNotAvailableResponse(request, upstreamName));
       }
-      context = new RequestContext(upstream.getName(), currentServer.getRack(), currentServer.getDatacenter());
+      context = new RequestContext(upstreamName, currentServer.getRack(), currentServer.getDatacenter());
     }
 
     return requestExecutor.executeRequest(balancedRequest, triedServers.size(), context)
@@ -101,16 +104,16 @@ public class RequestBalancer {
       int statusCode = wrapper.getResponse().getStatusCode();
       long requestTimeMs = wrapper.getTimeToLastByteMs();
 
-      String upstreamName, serverAddress, dcName;
+      String serverAddress;
+      String dcName = null;
       if (isServerAvailable()) {
-        upstreamName = upstream.getName();
         serverAddress = currentServer.getAddress();
         dcName = currentServer.getDatacenter();
       } else {
         Uri originalUri = request.getUri();
         Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
-        upstreamName = serverAddress = baseUri.toString();
-        dcName = null;
+        serverAddress = baseUri.toString();
+        upstreamName = upstreamName == null ? serverAddress : upstreamName;
       }
 
       monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMs, !doRetry);
@@ -185,7 +188,7 @@ public class RequestBalancer {
   }
 
   private boolean isUpstreamAvailable() {
-    return upstream != null;
+    return upstream != null && upstream.isEnabled();
   }
 
   private static String getBalancedUrl(Request request, String serverAddress) {

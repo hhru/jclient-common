@@ -14,12 +14,13 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-public final class Upstream {
+public class Upstream {
   private final String name;
   private final UpstreamConfig upstreamConfig;
   private final ScheduledExecutorService scheduledExecutor;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
+  private final boolean enabled;
 
   private final ReadWriteLock configReadWriteLock = new ReentrantReadWriteLock();
   private final Lock configWriteLock = configReadWriteLock.writeLock();
@@ -30,11 +31,21 @@ public final class Upstream {
   }
 
   Upstream(String name, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor, String datacenter, boolean allowCrossDCRequests) {
+    this(name, upstreamConfig, scheduledExecutor, datacenter, allowCrossDCRequests, true);
+  }
+
+  Upstream(String name,
+           UpstreamConfig upstreamConfig,
+           ScheduledExecutorService scheduledExecutor,
+           String datacenter,
+           boolean allowCrossDCRequests,
+           boolean enabled) {
     this.name = name;
     this.upstreamConfig = upstreamConfig;
     this.scheduledExecutor = scheduledExecutor;
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.enabled = enabled;
   }
 
   ServerEntry acquireServer(Set<Integer> excludedServers) {
@@ -145,6 +156,10 @@ public final class Upstream {
 
   String getName() {
     return name;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
   }
 
   UpstreamConfig getConfig() {

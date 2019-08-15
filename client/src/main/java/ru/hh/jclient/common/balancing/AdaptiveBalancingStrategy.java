@@ -24,6 +24,10 @@ final class AdaptiveBalancingStrategy {
       return Collections.emptyList();
     }
 
+    if (servers.size() == 1) {
+      return Collections.singletonList(0);
+    }
+
     long[] scores = new long[n];
     int[] ids = new int[n];
     int[] healths = new int[n];

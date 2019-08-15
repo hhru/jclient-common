@@ -59,6 +59,7 @@ public abstract class HttpClient {
   private boolean noDebug;
   private boolean externalRequest;
   private boolean adaptive;
+  private String dynamicUpstreamKey;
 
   HttpClient(AsyncHttpClient http,
              Request request,
@@ -108,6 +109,22 @@ public abstract class HttpClient {
    */
   public HttpClient noDebug() {
     noDebug = true;
+    return this;
+  }
+
+  /**
+   * Use adaptive balancing.
+   */
+  public HttpClient adaptive() {
+    adaptive = true;
+    return this;
+  }
+
+  /**
+   * Sets dynamic upstream key to allow flexible upstream selection.
+   */
+  public HttpClient setDynamicUpstreamKey(String key) {
+    dynamicUpstreamKey = key;
     return this;
   }
 
@@ -307,7 +324,7 @@ public abstract class HttpClient {
       return executeRequest(request, retryCount, requestContext);
     };
     RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
-      maxRequestTimeoutTries, forceIdempotence, adaptive);
+      maxRequestTimeoutTries, forceIdempotence, adaptive, dynamicUpstreamKey);
     return requestBalancer.requestWithRetry();
   }
 
