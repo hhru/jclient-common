@@ -44,6 +44,12 @@ public abstract class JClientBase {
     }
   }
 
+  /**
+   * prepare RequestBuilder instance for GET method
+   * @param url path to request from
+   * @param queryParams flat array of pairs {queryParamName, queryParamValue}
+   * @return RequestBuilder instance
+   */
   protected RequestBuilder get(String url, Object... queryParams) {
     return build(HTTP_GET, url, queryParams);
   }
@@ -52,6 +58,12 @@ public abstract class JClientBase {
     return build(HTTP_GET, url, queryParams);
   }
 
+  /**
+   * prepare RequestBuilder instance for POST method
+   * @param url path to request from
+   * @param queryParams flat array of pairs {queryParamName, queryParamValue}
+   * @return RequestBuilder instance
+   */
   protected RequestBuilder post(String url, Object... queryParams) {
     return build(HTTP_POST, url, queryParams);
   }
@@ -60,6 +72,12 @@ public abstract class JClientBase {
     return build(HTTP_POST, url, queryParams);
   }
 
+  /**
+   * prepare RequestBuilder instance for PUT method
+   * @param url path to request from
+   * @param queryParams flat array of pairs {queryParamName, queryParamValue}
+   * @return RequestBuilder instance
+   */
   protected RequestBuilder put(String url, Object... queryParams) {
     return build(HTTP_PUT, url, queryParams);
   }
@@ -68,6 +86,12 @@ public abstract class JClientBase {
     return build(HTTP_PUT, url, queryParams);
   }
 
+  /**
+   * prepare RequestBuilder instance for DELETE method
+   * @param url path to request from
+   * @param queryParams flat array of pairs {queryParamName, queryParamValue}
+   * @return RequestBuilder instance
+   */
   protected RequestBuilder delete(String url, Object... queryParams) {
     return build(HTTP_DELETE, url, queryParams);
   }
@@ -76,6 +100,13 @@ public abstract class JClientBase {
     return build(HTTP_DELETE, url, queryParams);
   }
 
+  /**
+   * prepare RequestBuilder instance
+   * @param method http method
+   * @param url path to request from
+   * @param queryParams flat array of pairs {queryParamName, queryParamValue}
+   * @return RequestBuilder instance
+   */
   protected RequestBuilder build(String method, String url, Object... queryParams) {
     RequestBuilder builder = new RequestBuilder(method).setUrl(url);
     if (queryParams == null) {
