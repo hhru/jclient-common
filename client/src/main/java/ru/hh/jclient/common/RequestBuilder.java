@@ -105,6 +105,26 @@ public class RequestBuilder {
     return this;
   }
 
+  public RequestBuilder addQueryParamMap(Map<String, Object> params) {
+    delegate.addQueryParams(
+      params.entrySet().stream()
+        .map(entry -> new Param(entry.getKey(), entry.getValue().toString()))
+        .map(Param::getDelegate)
+        .collect(toList())
+    );
+    return this;
+  }
+
+  public RequestBuilder addQueryParams(Map<String, List<Object>> params) {
+    delegate.addQueryParams(
+      params.entrySet().stream()
+        .flatMap(entry -> entry.getValue().stream().map(value -> new Param(entry.getKey(), value.toString())))
+        .map(Param::getDelegate)
+        .collect(toList())
+    );
+    return this;
+  }
+
   public RequestBuilder resetQuery() {
     delegate.resetQuery();
     return this;
