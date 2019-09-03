@@ -2,8 +2,12 @@ package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.HttpClient.OK_RANGE;
+import static ru.hh.jclient.common.HttpClient.UNPROCESSED_ERROR_RANGE;
+
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
+import com.google.common.collect.BoundType;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
@@ -13,7 +17,11 @@ public class ResultOrErrorProcessor<T, E> {
 
   private ResultProcessor<T> responseProcessor;
   private TypeConverter<E> errorConverter;
-  private Range<Integer> errorsRange = Range.greaterThan(OK_RANGE.upperEndpoint());
+  private Range<Integer> errorsRange = Range.range(
+      OK_RANGE.upperEndpoint(),
+      OK_RANGE.upperBoundType(),
+      UNPROCESSED_ERROR_RANGE.lowerEndpoint(),
+      BoundType.OPEN);
 
   ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
     this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");

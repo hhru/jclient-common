@@ -38,6 +38,7 @@ import java.util.function.Function;
 
 public abstract class HttpClient {
   public static final Range<Integer> OK_RANGE = Range.atMost(399);
+  public static final Range<Integer> UNPROCESSED_ERROR_RANGE = Range.atLeast(500);
   public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
   private final AsyncHttpClient http;
