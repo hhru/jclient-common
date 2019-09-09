@@ -2,15 +2,19 @@ package ru.hh.jclient.errors.jersey;
 
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Variant;
+import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @SuppressWarnings("unused")
 final class ResponseBuilderStub extends ResponseBuilder {
@@ -35,9 +39,29 @@ final class ResponseBuilderStub extends ResponseBuilder {
   }
 
   @Override
+  public ResponseBuilder status(int status, String reasonPhrase) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public ResponseBuilder entity(Object entity) {
     this.entity = entity;
     return this;
+  }
+
+  @Override
+  public ResponseBuilder entity(Object entity, Annotation[] annotations) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ResponseBuilder allow(String... methods) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ResponseBuilder allow(Set<String> methods) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -57,6 +81,21 @@ final class ResponseBuilderStub extends ResponseBuilder {
 
   @Override
   public ResponseBuilder variants(List<Variant> variants) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ResponseBuilder links(Link... links) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ResponseBuilder link(URI uri, String rel) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ResponseBuilder link(String uri, String rel) {
     throw new UnsupportedOperationException();
   }
 
@@ -91,6 +130,11 @@ final class ResponseBuilderStub extends ResponseBuilder {
   }
 
   @Override
+  public ResponseBuilder variants(Variant... variants) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public ResponseBuilder lastModified(Date lastModified) {
     throw new UnsupportedOperationException();
   }
@@ -101,12 +145,22 @@ final class ResponseBuilderStub extends ResponseBuilder {
   }
 
   @Override
+  public ResponseBuilder encoding(String encoding) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public ResponseBuilder expires(Date expires) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public ResponseBuilder header(String name, Object value) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ResponseBuilder replaceAll(MultivaluedMap<String, Object> headers) {
     throw new UnsupportedOperationException();
   }
 
