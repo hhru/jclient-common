@@ -110,6 +110,7 @@ public class HttpClientTestBase {
     assertEquals(request1.getMethod(), request2.getMethod());
     ru.hh.jclient.common.HttpHeaders headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
+    headers2.remove(HttpHeaderNames.X_OUTER_TIMEOUT_MS);
     assertEquals(request1.getHeaders(), headers2);
   }
 
