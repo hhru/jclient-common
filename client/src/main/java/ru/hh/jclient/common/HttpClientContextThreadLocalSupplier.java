@@ -17,14 +17,17 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
   private Supplier<RequestDebug> requestDebugSupplier;
   private Storages storagesForTransfer;
 
-  public HttpClientContextThreadLocalSupplier(Supplier<RequestDebug> requestDebugSupplier) {
-    this.requestDebugSupplier = requestDebugSupplier;
+  public HttpClientContextThreadLocalSupplier() {
     this.storagesForTransfer = StorageUtils.build(Collections.emptySet());
   }
 
   public HttpClientContextThreadLocalSupplier register(Storage<?> supplier) {
     this.storagesForTransfer.add(supplier);
     return this;
+  }
+
+  public void registerRequestDebugSupplier(Supplier<RequestDebug> requestDebugSupplier) {
+    this.requestDebugSupplier = requestDebugSupplier;
   }
 
   /**

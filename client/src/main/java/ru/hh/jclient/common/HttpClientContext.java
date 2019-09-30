@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 
 import java.time.LocalDateTime;
@@ -59,7 +60,7 @@ public class HttpClientContext {
     this.headers.putAll(headers);
 
     this.debugMode = isInDebugMode(headers, queryParams);
-    this.debugSupplier = requireNonNull(debugSupplier, "debugSupplier must not be null");
+    this.debugSupplier = ofNullable(debugSupplier).orElseGet(() -> () -> RequestDebug.DISABLED);
     this.requestId = RequestUtils.getRequestId(headers);
     this.storages = requireNonNull(storages, "storages must not be null");
   }
@@ -86,6 +87,6 @@ public class HttpClientContext {
 
   @Override
   public String toString() {
-    return "HttpClientContext for " + requestId.orElse("unknown") + " requestId (" + this.hashCode() + ")";
+    return "HttpClientContext for " + requestId.orElse("unknown") + " requestId (" + this.hashCode() + ')';
   }
 }

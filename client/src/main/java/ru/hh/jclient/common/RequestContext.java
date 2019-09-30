@@ -7,9 +7,19 @@ public class RequestContext {
   public final String rack;
   public final String datacenter;
 
+  private RequestDebug contextDebug;
+
   public RequestContext(String upstreamName, String rack, String datacenter) {
     this.upstreamName = upstreamName;
     this.rack = rack;
     this.datacenter = datacenter;
+  }
+
+  public RequestDebug getContextDebug() {
+    return contextDebug;
+  }
+
+  public void setContextDebug(RequestDebug contextDebug) {
+    this.contextDebug = contextDebug;
   }
 }
