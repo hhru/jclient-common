@@ -66,7 +66,9 @@ class HttpClientImpl extends HttpClient {
 
   @Override
   CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context) {
-    getEventListeners().forEach(check -> check.beforeExecute(this));
+    for (HttpClientEventListener check : getEventListeners()) {
+      check.beforeExecute(this, request);
+    }
 
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
@@ -91,6 +93,7 @@ class HttpClientImpl extends HttpClient {
 
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
     HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, Integer.toString(request.getRequestTimeout()));
     if (!isExternalRequest()) {
       PASS_THROUGH_HEADERS.stream()
         .filter(getContext().getHeaders()::containsKey)

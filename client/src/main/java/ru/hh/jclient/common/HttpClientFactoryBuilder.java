@@ -32,8 +32,10 @@ public final class HttpClientFactoryBuilder {
   private MetricsConsumer metricsConsumer;
   private List<HttpClientEventListener> eventListeners = new ArrayList<>();
 
-  public HttpClientFactoryBuilder() {
+  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
     this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
+    this.contextSupplier = contextSupplier;
+    this.eventListeners = new ArrayList<>(eventListeners);
   }
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
@@ -79,8 +81,19 @@ public final class HttpClientFactoryBuilder {
     return this;
   }
 
+  /**
+   * use {@link HttpClientFactoryBuilder#HttpClientFactoryBuilder(ru.hh.jclient.common.util.storage.Storage, java.util.List)}
+   * @param eventListeners eventListeners to pass
+   * @return HttpClientFactoryBuilder instance
+   */
+  @Deprecated(forRemoval = true)
   public HttpClientFactoryBuilder withEventListeners(List<HttpClientEventListener> eventListeners) {
     this.eventListeners.addAll(eventListeners);
+    return this;
+  }
+
+  public HttpClientFactoryBuilder addEventListener(HttpClientEventListener eventListener) {
+    this.eventListeners.add(eventListener);
     return this;
   }
 
@@ -104,6 +117,12 @@ public final class HttpClientFactoryBuilder {
     return this;
   }
 
+  /**
+   * use {@link HttpClientFactoryBuilder#HttpClientFactoryBuilder(ru.hh.jclient.common.util.storage.Storage, java.util.List)}
+   * @param contextSupplier supplier to user
+   * @return HttpClientFactoryBuilder instance
+   */
+  @Deprecated(forRemoval = true)
   public HttpClientFactoryBuilder withStorage(Storage<HttpClientContext> contextSupplier) {
     this.contextSupplier = contextSupplier;
     return this;

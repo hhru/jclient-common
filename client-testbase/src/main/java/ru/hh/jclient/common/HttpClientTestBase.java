@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +39,7 @@ public class HttpClientTestBase {
   public static HttpClientFactory http;
   static HttpClientContext httpClientContext;
   static TestRequestDebug debug = new TestRequestDebug(true);
+  static List<HttpClientEventListener> eventListeners = new ArrayList<>();
 
   public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), () -> debug);
@@ -110,6 +112,7 @@ public class HttpClientTestBase {
     assertEquals(request1.getMethod(), request2.getMethod());
     ru.hh.jclient.common.HttpHeaders headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
+    headers2.remove(HttpHeaderNames.X_OUTER_TIMEOUT_MS);
     assertEquals(request1.getHeaders(), headers2);
   }
 
@@ -149,7 +152,22 @@ public class HttpClientTestBase {
     return completedFuture(new ResultOrErrorWithStatus<>(empty(), of(error), status));
   }
 
+  public HttpClientTestBase withNoListeners() {
+    eventListeners = List.of();
+    return this;
+  }
+
+  public HttpClientTestBase withEventListener(HttpClientEventListener listener) {
+    eventListeners = List.of(listener);
+    return this;
+  }
+
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient) {
-    return new HttpClientFactory(httpClient, singleton("http://localhost"), new SingletonStorage<>(() -> httpClientContext), Runnable::run);
+    return new HttpClientFactory(httpClient, singleton("http://localhost"),
+        new SingletonStorage<>(() -> httpClientContext),
+        Runnable::run,
+        new DefaultUpstreamManager(),
+        eventListeners
+    );
   }
 }

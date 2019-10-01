@@ -8,6 +8,37 @@ import ru.hh.jclient.common.exception.ResponseConverterException;
  */
 public interface RequestDebug {
 
+  RequestDebug DISABLED = new RequestDebug() {
+    @Override
+    public void onRequest(Request request, Optional<?> requestBodyEntity, RequestContext context) {
+    }
+
+    @Override
+    public void onRetry(Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context) {
+    }
+
+    @Override
+    public Response onResponse(Response response) {
+      return response;
+    }
+
+    @Override
+    public void onResponseConverted(Optional<?> result) {
+    }
+
+    @Override
+    public void onClientProblem(Throwable t) {
+    }
+
+    @Override
+    public void onConverterProblem(ResponseConverterException e) {
+    }
+
+    @Override
+    public void onProcessingFinished() {
+    }
+  };
+
   /**
    * Called before start of the request
    */

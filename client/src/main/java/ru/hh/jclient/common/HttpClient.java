@@ -341,7 +341,7 @@ public abstract class HttpClient {
     return http;
   }
 
-  HttpClientContext getContext() {
+  public HttpClientContext getContext() {
     return context;
   }
 

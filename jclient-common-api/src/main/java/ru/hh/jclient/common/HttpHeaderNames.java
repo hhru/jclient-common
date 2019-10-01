@@ -11,5 +11,5 @@ public class HttpHeaderNames {
   public static final String X_REAL_IP = "X-Real-IP";
   public static final String X_LOAD_TESTING = "X-Load-Testing";
   public static final String X_SOURCE = "X-Source";
-
+  public static final String X_OUTER_TIMEOUT_MS = "X-Outer-Timeout-Ms";
 }
