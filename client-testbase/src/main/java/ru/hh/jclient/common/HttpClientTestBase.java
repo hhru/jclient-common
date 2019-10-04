@@ -9,7 +9,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -39,20 +39,21 @@ public class HttpClientTestBase {
   public static HttpClientFactory http;
   static HttpClientContext httpClientContext;
   static TestRequestDebug debug = new TestRequestDebug(true);
+  static List<Supplier<RequestDebug>> debugs = List.of(() -> debug);
   static List<HttpClientEventListener> eventListeners = new ArrayList<>();
 
   public HttpClientTestBase withEmptyContext() {
-    httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), () -> debug);
+    httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), debugs);
     return this;
   }
 
   public HttpClientTestBase withContext(Map<String, List<String>> headers) {
-    httpClientContext = new HttpClientContext(headers, Collections.emptyMap(), () -> debug);
+    httpClientContext = new HttpClientContext(headers, Collections.emptyMap(), debugs);
     return this;
   }
 
   public HttpClientTestBase withContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
-    httpClientContext = new HttpClientContext(headers, queryParams, () -> debug);
+    httpClientContext = new HttpClientContext(headers, queryParams, debugs);
     return this;
   }
 

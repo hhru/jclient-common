@@ -7,7 +7,9 @@ import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageLite;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
+import java.util.function.Supplier;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
@@ -47,7 +49,7 @@ public abstract class HttpClient {
   private final UpstreamManager upstreamManager;
   private final List<HttpClientEventListener> eventListeners;
 
-  private RequestDebug debug;
+  private List<RequestDebug> debugs;
   private Request request;
   private Optional<?> requestBodyEntity = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
@@ -77,7 +79,7 @@ public abstract class HttpClient {
 
     context = contextSupplier.get();
     storages = context.getStorages().copy().add(contextSupplier);
-    debug = context.getDebugSupplier().get();
+    debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
   }
 
   /**
@@ -319,7 +321,8 @@ public abstract class HttpClient {
   public CompletableFuture<Response> unconverted() {
     RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
       if (retryCount > 0) {
-        debug = context.getDebugSupplier().get();
+        // not sure why we re-get them here, suppliers supposed to be stateless
+        debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
       }
       return executeRequest(request, retryCount, requestContext);
     };
@@ -361,8 +364,8 @@ public abstract class HttpClient {
     return expectedMediaTypes;
   }
 
-  RequestDebug getDebug() {
-    return debug;
+  List<RequestDebug> getDebugs() {
+    return debugs;
   }
 
   boolean useReadOnlyReplica() {

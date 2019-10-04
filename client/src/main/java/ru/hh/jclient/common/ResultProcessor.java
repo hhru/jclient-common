@@ -76,7 +76,7 @@ public class ResultProcessor<T> {
       throw new ClientResponseException(response);
     }
     finally {
-      httpClient.getDebug().onProcessingFinished();
+      httpClient.getDebugs().forEach(RequestDebug::onProcessingFinished);
     }
   }
 
@@ -88,14 +88,14 @@ public class ResultProcessor<T> {
       return new ResultWithResponse<>(null, response);
     }
     finally {
-      httpClient.getDebug().onProcessingFinished();
+      httpClient.getDebugs().forEach(RequestDebug::onProcessingFinished);
     }
   }
 
   private ResultWithResponse<T> wrap(Response response) {
     try {
       ResultWithResponse<T> result = converter.converterFunction().apply(response);
-      httpClient.getDebug().onResponseConverted(result.get());
+      httpClient.getDebugs().forEach(d -> d.onResponseConverted(result.get()));
       return result;
     }
     catch (ClientResponseException e) {
@@ -103,7 +103,7 @@ public class ResultProcessor<T> {
     }
     catch (Exception e) {
       ResponseConverterException rce = new ResponseConverterException("Failed to convert response", e);
-      httpClient.getDebug().onConverterProblem(rce);
+      httpClient.getDebugs().forEach(d -> d.onConverterProblem(rce));
       throw rce;
     }
   }

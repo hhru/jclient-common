@@ -65,24 +65,24 @@ class HttpClientImpl extends HttpClient {
   }
 
   @Override
-  CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context) {
+  CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext context) {
     for (HttpClientEventListener check : getEventListeners()) {
-      check.beforeExecute(this, request);
+      check.beforeExecute(this, originalRequest);
     }
 
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
-    request = addHeadersAndParams(request);
+    Request request = addHeadersAndParams(originalRequest);
     if (retryCount > 0) {
       LOGGER.info("ASYNC_HTTP_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
-      getDebug().onRetry(request, getRequestBodyEntity(), retryCount, context);
+      getDebugs().forEach(d -> d.onRetry(request, getRequestBodyEntity(), retryCount, context));
     } else {
       LOGGER.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-      getDebug().onRequest(request, getRequestBodyEntity(), context);
+      getDebugs().forEach(d -> d.onRequest(request, getRequestBodyEntity(), context));
     }
 
     Transfers transfers = getStorages().prepare();
-    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebug(), transfers, callbackExecutor);
+    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor);
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
@@ -146,17 +146,17 @@ class HttpClientImpl extends HttpClient {
     private CompletableFuture<ResponseWrapper> promise;
     private Request request;
     private Instant requestStart;
-    private RequestDebug requestDebug;
+    private List<RequestDebug> requestDebugs;
     private Transfers contextTransfers;
     private final Executor callbackExecutor;
 
     CompletionHandler(CompletableFuture<ResponseWrapper> promise, Request request, Instant requestStart,
-                      RequestDebug requestDebug, Transfers contextTransfers, Executor callbackExecutor) {
+                      List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor) {
       this.requestStart = requestStart;
       this.mdcCopy = MDCCopy.capture();
       this.promise = promise;
       this.request = request;
-      this.requestDebug = requestDebug;
+      this.requestDebugs = requestDebugs;
       this.contextTransfers = contextTransfers;
       this.callbackExecutor = callbackExecutor;
     }
@@ -192,14 +192,17 @@ class HttpClientImpl extends HttpClient {
         return;
       }
 
-      requestDebug.onClientProblem(t);
-      requestDebug.onProcessingFinished();
+      requestDebugs.forEach(d -> d.onClientProblem(t));
+      requestDebugs.forEach(RequestDebug::onProcessingFinished);
 
       completeExceptionally(t);
     }
 
     private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMs) {
-      Response debuggedResponse = requestDebug.onResponse(new Response(response));
+      Response debuggedResponse = new Response(response);
+      for (RequestDebug debug : requestDebugs) {
+        debuggedResponse = debug.onResponse(new Response(response));
+      }
       ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMs);
       // complete promise in a separate thread not to block ning thread
       callbackExecutor.execute(() -> {

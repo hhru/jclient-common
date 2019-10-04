@@ -86,13 +86,13 @@ public class ResultOrErrorProcessor<T, E> {
         value = responseProcessor.getConverter().converterFunction().apply(response).get();
         errorValue = Optional.empty();
 
-        responseProcessor.getHttpClient().getDebug().onResponseConverted(value);
+        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(value));
       }
       else {
         value = Optional.empty();
         errorValue = parseError(response);
 
-        responseProcessor.getHttpClient().getDebug().onResponseConverted(errorValue);
+        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(errorValue));
       }
       return new ResultOrErrorWithResponse<>(value, errorValue, response);
     }
@@ -101,11 +101,11 @@ public class ResultOrErrorProcessor<T, E> {
     }
     catch (Exception e) {
       ResponseConverterException rce = new ResponseConverterException("Failed to convert response", e);
-      responseProcessor.getHttpClient().getDebug().onConverterProblem(rce);
+      responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onConverterProblem(rce));
       throw rce;
     }
     finally {
-      responseProcessor.getHttpClient().getDebug().onProcessingFinished();
+      responseProcessor.getHttpClient().getDebugs().forEach(RequestDebug::onProcessingFinished);
     }
   }
 

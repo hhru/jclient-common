@@ -158,6 +158,11 @@ public class Request {
     return delegate.getCharset();
   }
 
+  @Override
+  public String toString() {
+    return delegate.toString();
+  }
+
   org.asynchttpclient.Request getDelegate() {
     return delegate;
   }

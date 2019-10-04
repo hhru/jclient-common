@@ -22,4 +22,9 @@ public class RequestContext {
   public void setContextDebug(RequestDebug contextDebug) {
     this.contextDebug = contextDebug;
   }
+
+  @Override
+  public String toString() {
+    return "upstream: " + upstreamName + ", rack: " + rack + ", dc: " + datacenter;
+  }
 }

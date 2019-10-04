@@ -2,10 +2,10 @@ package ru.hh.jclient.common;
 
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,20 +23,20 @@ public class HttpClientContext {
   private final LocalDateTime requestStart;
   private final Map<String, List<String>> headers;
   private final boolean debugMode;
-  private final Supplier<RequestDebug> debugSupplier;
+  private final List<Supplier<RequestDebug>> debugSuppliers;
   private final Optional<String> requestId;
   private final Storages storages;
 
-  public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, Supplier<RequestDebug> debugSupplier) {
-    this(headers, queryParams, debugSupplier, StorageUtils.build(emptySet()));
+  public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, List<Supplier<RequestDebug>> debugSuppliers) {
+    this(headers, queryParams, debugSuppliers, StorageUtils.build(emptySet()));
   }
 
   public HttpClientContext(
       Map<String, List<String>> headers,
       Map<String, List<String>> queryParams,
-      Supplier<RequestDebug> debugSupplier,
+      List<Supplier<RequestDebug>> debugSuppliers,
       Storages storages) {
-    this(LocalDateTime.now(), headers, queryParams, debugSupplier, storages);
+    this(LocalDateTime.now(), headers, queryParams, debugSuppliers, storages);
   }
 
   /**
@@ -45,14 +45,14 @@ public class HttpClientContext {
    * @param requestStart time of global request start
    * @param headers headers of global request. Some of them can be used by the local request.
    * @param queryParams query params of global request
-   * @param debugSupplier supplier of object used to gather debug information
+   * @param debugSuppliers list of suppliers of object used to gather debug information
    * @param storages object storages that needs to be transferred to ning threads executing requests and completable future chains
    */
   public HttpClientContext(
       LocalDateTime requestStart,
       Map<String, List<String>> headers,
       Map<String, List<String>> queryParams,
-      Supplier<RequestDebug> debugSupplier,
+      List<Supplier<RequestDebug>> debugSuppliers,
       Storages storages) {
     this.requestStart = requestStart;
     requireNonNull(headers, "headers must not be null");
@@ -60,7 +60,7 @@ public class HttpClientContext {
     this.headers.putAll(headers);
 
     this.debugMode = isInDebugMode(headers, queryParams);
-    this.debugSupplier = ofNullable(debugSupplier).orElseGet(() -> () -> RequestDebug.DISABLED);
+    this.debugSuppliers = new ArrayList<>(debugSuppliers);
     this.requestId = RequestUtils.getRequestId(headers);
     this.storages = requireNonNull(storages, "storages must not be null");
   }
@@ -77,11 +77,19 @@ public class HttpClientContext {
     return this.debugMode;
   }
 
-  public Supplier<RequestDebug> getDebugSupplier() {
-    return debugSupplier;
+  List<Supplier<RequestDebug>> getDebugSuppliers() {
+    return debugSuppliers;
   }
 
-  public Storages getStorages() {
+  void addDebugSupplier(Supplier<RequestDebug> requestDebugSupplier) {
+    this.debugSuppliers.add(requestDebugSupplier);
+  }
+
+  void removeDebugSupplier(Supplier<RequestDebug> requestDebugSupplier) {
+    this.debugSuppliers.remove(requestDebugSupplier);
+  }
+
+  Storages getStorages() {
     return storages;
   }
 

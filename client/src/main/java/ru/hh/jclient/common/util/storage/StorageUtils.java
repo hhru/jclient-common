@@ -1,10 +1,10 @@
 package ru.hh.jclient.common.util.storage;
 
 import static java.util.stream.Collectors.toList;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StorageUtils {
 
@@ -28,7 +28,7 @@ public class StorageUtils {
     protected Collection<Storage<?>> storages;
 
     protected Storages(Collection<Storage<?>> storages) {
-      this.storages = new ArrayList<>(storages);
+      this.storages = new CopyOnWriteArrayList<>(storages); // can be changed concurrently via add
     }
 
     public Storages add(Storage<?> storage) {

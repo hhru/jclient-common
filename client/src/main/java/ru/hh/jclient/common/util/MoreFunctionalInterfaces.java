@@ -141,4 +141,15 @@ public class MoreFunctionalInterfaces {
   public interface ThrowableFunction<T, R> extends FailableFunction<T, R, Throwable> {
   }
 
+  /**
+   * Same as {@link java.util.concurrent.Callable} but specifies exactly what exception will be thrown.
+   *
+   * @param <T> return type
+   * @param <E> exception type
+   */
+  @FunctionalInterface
+  public interface FailableCallable<T, E extends Throwable> {
+    T call() throws E;
+  }
+
 }
