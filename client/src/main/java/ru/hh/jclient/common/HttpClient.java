@@ -321,7 +321,8 @@ public abstract class HttpClient {
   public CompletableFuture<Response> unconverted() {
     RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
       if (retryCount > 0) {
-        // not sure why we re-get them here, suppliers supposed to be stateless
+        // due to retry possibly performed in another thread
+        // TODO do not re-get suppliers here
         debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
       }
       return executeRequest(request, retryCount, requestContext);

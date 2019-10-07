@@ -201,7 +201,7 @@ class HttpClientImpl extends HttpClient {
     private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMs) {
       Response debuggedResponse = new Response(response);
       for (RequestDebug debug : requestDebugs) {
-        debuggedResponse = debug.onResponse(new Response(response));
+        debuggedResponse = debug.onResponse(debuggedResponse);
       }
       ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMs);
       // complete promise in a separate thread not to block ning thread
