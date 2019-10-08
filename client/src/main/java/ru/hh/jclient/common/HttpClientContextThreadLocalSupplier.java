@@ -1,8 +1,8 @@
 package ru.hh.jclient.common;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -20,7 +20,13 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
   private final Storages storagesForTransfer;
 
   public HttpClientContextThreadLocalSupplier() {
-    this.storagesForTransfer = StorageUtils.build(Collections.emptySet());
+    this.storagesForTransfer = StorageUtils.build(Set.of());
+    this.requestDebugSuppliers = new CopyOnWriteArrayList<>();
+  }
+
+  public HttpClientContextThreadLocalSupplier(Supplier<HttpClientContext> initialValueSupplier) {
+    super(initialValueSupplier);
+    this.storagesForTransfer = StorageUtils.build(Set.of());
     this.requestDebugSuppliers = new CopyOnWriteArrayList<>();
   }
 
