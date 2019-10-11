@@ -10,13 +10,15 @@ public class ThreadLocalStorage<T> implements Storage<T> {
 
   // can't be static - need instance of storage per instance of this class
   private final ThreadLocal<T> storage;
+  private final boolean hasInitValue;
 
   public ThreadLocalStorage(Supplier<T> initialValueSupplier) {
+    hasInitValue = true;
     storage = ThreadLocal.withInitial(initialValueSupplier);
-
   }
 
   public ThreadLocalStorage() {
+    hasInitValue = false;
     storage = ThreadLocal.withInitial(() -> null);
   }
 
@@ -37,24 +39,28 @@ public class ThreadLocalStorage<T> implements Storage<T> {
 
   @Override
   public Transfer prepareTransferToAnotherThread() {
-    return new PreparedValueTransfer<T>(get(), this);
+    return new PreparedValueTransfer<T>(get(), this, hasInitValue);
   }
 
   public static class PreparedValueTransfer<T> implements Transfer {
 
+    private final boolean parentHasInitValue;
     private T valueForTransfer;
     private Storage<T> parent;
 
-    private PreparedValueTransfer(T value, Storage<T> parent) {
+    private PreparedValueTransfer(T value, Storage<T> parent, boolean parentHasInitValue) {
+      this.parentHasInitValue = parentHasInitValue;
       this.valueForTransfer = value;
       this.parent = parent;
     }
 
     @Override
     public void perform() {
-      T currentValue = parent.get();
-      if (currentValue != null) {
-        LOG.warn("[{}] Replacing existing object {} with {}", parent.getClass().getName(), currentValue, valueForTransfer);
+      if (!parentHasInitValue) {
+        T currentValue = parent.get();
+        if (currentValue != null) {
+          LOG.warn("[{}] Replacing existing object {} with {}", parent.getClass().getName(), currentValue, valueForTransfer);
+        }
       }
       parent.set(valueForTransfer);
     }
