@@ -15,6 +15,18 @@ import static java.util.Optional.ofNullable;
 
 public class GlobalTimeoutCheck implements HttpClientEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalTimeoutCheck.class);
+  private static final Duration DEFAULT_THRESHOLD = Duration.ofMillis(100);
+
+  private final Duration threshold;
+
+  public GlobalTimeoutCheck() {
+    threshold = DEFAULT_THRESHOLD;
+  }
+
+  public GlobalTimeoutCheck(Duration threshold) {
+    this.threshold = threshold;
+  }
+
   @Override
   public void beforeExecute(HttpClient httpClient, Request request) {
     ofNullable(httpClient.getContext().getHeaders())
@@ -25,7 +37,8 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
         var alreadySpentTime = Duration.between(httpClient.getContext().getRequestStart(), getNow());
         var expectedTimeout = outerTimeout.minus(alreadySpentTime);
         var requestTimeout = Duration.ofMillis(request.getRequestTimeout());
-        if (requestTimeout.compareTo(expectedTimeout) > 0) {
+        var diff = requestTimeout.minus(expectedTimeout);
+        if (diff.compareTo(threshold) > 0) {
           var userAgent = ofNullable(httpClient.getContext().getHeaders())
               .map(headers -> headers.get(HttpHeaders.USER_AGENT))
               .flatMap(values -> values.stream().findFirst())
@@ -40,7 +53,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   }
 
   protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
-                                     Duration alreadySpentTime, Duration requestTimeout) {
+                                       Duration alreadySpentTime, Duration requestTimeout) {
     LOGGER.error("Incoming request from <{}> expects timeout={} ms, we have been working already for {} ms " +
       "and now trying to call <{}> with timeout {} ms",
       userAgent,

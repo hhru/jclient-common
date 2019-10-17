@@ -45,7 +45,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
   public void testShouldTriggerIfTimeoutsNotOk() throws ExecutionException, InterruptedException {
     LocalDateTime now = LocalDateTime.now();
     AtomicBoolean triggered = new AtomicBoolean(false);
-    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("50")))
+    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
         .withEventListener(new GlobalTimeoutCheck() {
           @Override
           protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
@@ -59,7 +59,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
           }
         })
         .okRequest(new byte[0], ANY_TYPE);
-    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(100).build();
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(250).build();
     http.with(request).expectEmpty().result().get();
     assertTrue(GlobalTimeoutCheck.class + " not triggered", triggered.get());
   }
@@ -78,7 +78,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
           @Override
           protected LocalDateTime getNow() {
-            return now.plusNanos(TimeUnit.MILLISECONDS.toNanos(100));
+            return now.plusSeconds(1);
           }
         })
         .okRequest(new byte[0], ANY_TYPE);
@@ -87,5 +87,24 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     assertTrue(GlobalTimeoutCheck.class + " not triggered", triggered.get());
   }
 
+  @Test
+  public void testShouldNotTriggerIfInThreshold() throws ExecutionException, InterruptedException {
+    LocalDateTime now = LocalDateTime.now();
+    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
+        .withEventListener(new GlobalTimeoutCheck(Duration.ofMillis(30)) {
+          @Override
+          protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
+                                               Duration alreadySpentTime, Duration requestTimeout) {
+            fail(GlobalTimeoutCheck.class + " false triggered");
+          }
 
+          @Override
+          protected LocalDateTime getNow() {
+            return now.plusNanos(TimeUnit.MILLISECONDS.toNanos(15));
+          }
+        })
+        .okRequest(new byte[0], ANY_TYPE);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(100).build();
+    http.with(request).expectEmpty().result().get();
+  }
 }
