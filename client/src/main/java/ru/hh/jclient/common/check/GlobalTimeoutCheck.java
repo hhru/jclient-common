@@ -10,9 +10,9 @@ import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.Uri;
 
 import javax.annotation.Nullable;
-import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,7 +27,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
 
   private final Duration threshold;
   @Nullable
-  private final ConcurrentMap<WeakReference<LoggingData>, Integer> timeoutCounter;
+  private final ConcurrentMap<LoggingData, Integer> timeoutCounter;
 
   /**
    * per request logging may cause logging system overflow, so
@@ -53,11 +53,12 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   }
 
   protected void logTimeouts(long intervalMs) {
-    timeoutCounter.replaceAll((dataReference, count) -> {
-      if (dataReference == null || count == null || count == 0) {
-        return null;
+    var copy = Map.copyOf(timeoutCounter);
+    timeoutCounter.clear();
+    copy.forEach((data, count) -> {
+      if (count == null || count == 0) {
+        return;
       }
-      ofNullable(dataReference.get()).ifPresent(data -> {
         if (count == 1) {
           logSingleRequest(data);
         }
@@ -70,8 +71,6 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
           data.uri,
           data.requestTimeout.toMillis()
         );
-      });
-      return null;
     });
   }
 
@@ -108,7 +107,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
       logSingleRequest(data);
       return;
     }
-    timeoutCounter.compute(new WeakReference<>(data), (currentData, currentCount) -> {
+    timeoutCounter.compute(data, (currentData, currentCount) -> {
       if (currentCount == null) {
         return  1;
       }
