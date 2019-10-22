@@ -56,7 +56,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
     var copy = Map.copyOf(timeoutCounter);
     timeoutCounter.clear();
     copy.forEach((data, count) -> {
-      if (count == null || count == 0) {
+      if (count == 0) {
         return;
       }
       if (count == 1) {
