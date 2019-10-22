@@ -11,12 +11,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.net.MediaType.ANY_TYPE;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
@@ -91,7 +93,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
   public void testShouldNotTriggerIfInThreshold() throws ExecutionException, InterruptedException {
     LocalDateTime now = LocalDateTime.now();
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
-        .withEventListener(new GlobalTimeoutCheck(Duration.ofMillis(30)) {
+        .withEventListener(new GlobalTimeoutCheck(Duration.ofMillis(30), mock(ScheduledExecutorService.class), 0) {
           @Override
           protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                                Duration alreadySpentTime, Duration requestTimeout) {
