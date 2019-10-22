@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 import static java.util.Optional.ofNullable;
 
@@ -27,7 +28,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
 
   private final Duration threshold;
   @Nullable
-  private final ConcurrentMap<LoggingData, Integer> timeoutCounter;
+  private final ConcurrentMap<LoggingData, LongAdder> timeoutCounter;
 
   /**
    * per request logging may cause logging system overflow, so
@@ -55,17 +56,15 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   protected void logTimeouts(long intervalMs) {
     var copy = Map.copyOf(timeoutCounter);
     timeoutCounter.clear();
-    copy.forEach((data, count) -> {
-      if (count == 0) {
-        return;
-      }
-      if (count == 1) {
+    copy.forEach((data, countHolder) -> {
+      long current = countHolder.sum();
+      if (current <= 1) {
         logSingleRequest(data);
       } else {
         LOGGER.error("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
                 + "but calling <{}> with timeout {} ms",
             intervalMs,
-            count,
+            current,
             data.userAgent,
             data.outerTimeout.toMillis(),
             data.uri,
@@ -108,12 +107,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
       logSingleRequest(data);
       return;
     }
-    timeoutCounter.compute(data, (currentData, currentCount) -> {
-      if (currentCount == null) {
-        return  1;
-      }
-      return currentCount + 1;
-    });
+    timeoutCounter.computeIfAbsent(data, key -> new LongAdder()).increment();
   }
 
   private static void logSingleRequest(LoggingData data) {
