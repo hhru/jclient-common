@@ -59,18 +59,19 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
       if (count == null || count == 0) {
         return;
       }
-        if (count == 1) {
-          logSingleRequest(data);
-        }
+      if (count == 1) {
+        logSingleRequest(data);
+      } else {
         LOGGER.error("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
-                     + "but calling <{}> with timeout {} ms",
-          intervalMs,
-          count,
-          data.userAgent,
-          data.outerTimeout.toMillis(),
-          data.uri,
-          data.requestTimeout.toMillis()
+                + "but calling <{}> with timeout {} ms",
+            intervalMs,
+            count,
+            data.userAgent,
+            data.outerTimeout.toMillis(),
+            data.uri,
+            data.requestTimeout.toMillis()
         );
+      }
     });
   }
 
