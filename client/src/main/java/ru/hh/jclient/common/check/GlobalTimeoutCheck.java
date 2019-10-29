@@ -12,7 +12,6 @@ import ru.hh.jclient.common.Uri;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,26 +20,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.joining;
 
 public class GlobalTimeoutCheck implements HttpClientEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalTimeoutCheck.class);
-
-  static final String SLASH = "/";
-  private static final Pattern SLASH_REGEXP = Pattern.compile(SLASH, Pattern.LITERAL);
-  private static final Collection<Integer> NON_HEX_LETTERS = IntStream.rangeClosed('g', 'z').boxed()
-      .collect(Collectors.toUnmodifiableSet());
-  static final String REPLACEMENT = "[id-or-hash]";
-
   private static final Duration DEFAULT_THRESHOLD = Duration.ofMillis(100);
 
   private final Duration threshold;
-  private final Function<Uri, String> urlCompactionFunction;
+  private final Function<Uri, String> uriCompactionFunction;
   @Nullable
   private final ConcurrentMap<LoggingData, LongAdder> timeoutCounter;
 
@@ -53,7 +41,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   public GlobalTimeoutCheck() {
     threshold = DEFAULT_THRESHOLD;
     this.timeoutCounter = null;
-    this.urlCompactionFunction = (url) -> compactUrl(url, 4, 16);
+    this.uriCompactionFunction = (uri) -> ofNullable(uri).map(Uri::getPath).orElse(null);
   }
 
   /**
@@ -65,7 +53,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService, long intervalMs) {
     this.threshold = threshold;
     this.timeoutCounter = new ConcurrentHashMap<>();
-    this.urlCompactionFunction = (url) -> compactUrl(url, 4, 16);
+    this.uriCompactionFunction = (uri) -> ofNullable(uri).map(Uri::getPath).orElse(null);
     executorService.scheduleAtFixedRate(() -> logTimeouts(intervalMs), 0, intervalMs, TimeUnit.MILLISECONDS);
   }
 
@@ -73,14 +61,14 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
    * Create check instance
    * @param threshold ignore diff between externalTimeout and current request if it is less than threshold
    * @param executorService executor to execut logging task on
-   * @param urlCompactionFunction function to compact same urls with variable parts
+   * @param uriCompactionFunction function to compact same urls with variable parts
    * @param intervalMs logging interval
    */
   public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService,
-                            Function<Uri, String> urlCompactionFunction, long intervalMs) {
+                            Function<Uri, String> uriCompactionFunction, long intervalMs) {
     this.threshold = threshold;
     this.timeoutCounter = new ConcurrentHashMap<>();
-    this.urlCompactionFunction = urlCompactionFunction;
+    this.uriCompactionFunction = uriCompactionFunction;
     executorService.scheduleAtFixedRate(() -> logTimeouts(intervalMs), 0, intervalMs, TimeUnit.MILLISECONDS);
   }
 
@@ -132,34 +120,13 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
 
   protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                        Duration alreadySpentTime, Duration requestTimeout) {
-    var data = new LoggingData(userAgent, urlCompactionFunction.apply(request.getUri()),
+    var data = new LoggingData(userAgent, uriCompactionFunction.apply(request.getUri()),
                                requestTimeout, outerTimeout, alreadySpentTime);
     if (timeoutCounter == null) {
       logSingleRequest(data);
       return;
     }
     timeoutCounter.computeIfAbsent(data, key -> new LongAdder()).increment();
-  }
-
-  public static String compactUrl(Uri uri, int minCompactingLength, int minPossibleHashLength) {
-    return ofNullable(uri).map(Uri::getPath)
-      .map(path -> SLASH_REGEXP.splitAsStream(path).map(pathPart -> {
-        int partLength = pathPart.length();
-        if (partLength < minCompactingLength) {
-          return pathPart;
-        }
-        long digitsCount = pathPart.chars().filter(Character::isDigit).count();
-        if (digitsCount == partLength) {
-          return REPLACEMENT;
-        }
-        if (pathPart.chars().anyMatch(NON_HEX_LETTERS::contains)) {
-          return pathPart;
-        }
-        if (partLength > minPossibleHashLength && digitsCount >= minCompactingLength) {
-          return REPLACEMENT;
-        }
-        return pathPart;
-      }).collect(joining(SLASH))).orElse(null);
   }
 
   private static void logSingleRequest(LoggingData data) {
