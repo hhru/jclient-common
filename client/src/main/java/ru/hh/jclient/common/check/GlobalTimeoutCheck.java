@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
 
 import static java.util.Optional.ofNullable;
 
@@ -27,6 +28,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   private static final Duration DEFAULT_THRESHOLD = Duration.ofMillis(100);
 
   private final Duration threshold;
+  private final Function<Uri, String> uriCompactionFunction;
   @Nullable
   private final ConcurrentMap<LoggingData, LongAdder> timeoutCounter;
 
@@ -39,6 +41,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   public GlobalTimeoutCheck() {
     threshold = DEFAULT_THRESHOLD;
     this.timeoutCounter = null;
+    this.uriCompactionFunction = (uri) -> ofNullable(uri).map(Uri::getPath).orElse(null);
   }
 
   /**
@@ -50,6 +53,22 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService, long intervalMs) {
     this.threshold = threshold;
     this.timeoutCounter = new ConcurrentHashMap<>();
+    this.uriCompactionFunction = (uri) -> ofNullable(uri).map(Uri::getPath).orElse(null);
+    executorService.scheduleAtFixedRate(() -> logTimeouts(intervalMs), 0, intervalMs, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Create check instance
+   * @param threshold ignore diff between externalTimeout and current request if it is less than threshold
+   * @param executorService executor to execut logging task on
+   * @param uriCompactionFunction function to compact same urls with variable parts
+   * @param intervalMs logging interval
+   */
+  public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService,
+                            Function<Uri, String> uriCompactionFunction, long intervalMs) {
+    this.threshold = threshold;
+    this.timeoutCounter = new ConcurrentHashMap<>();
+    this.uriCompactionFunction = uriCompactionFunction;
     executorService.scheduleAtFixedRate(() -> logTimeouts(intervalMs), 0, intervalMs, TimeUnit.MILLISECONDS);
   }
 
@@ -101,7 +120,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
 
   protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                        Duration alreadySpentTime, Duration requestTimeout) {
-    var data = new LoggingData(userAgent, ofNullable(request.getUri()).map(Uri::getPath).orElse(null),
+    var data = new LoggingData(userAgent, uriCompactionFunction.apply(request.getUri()),
                                requestTimeout, outerTimeout, alreadySpentTime);
     if (timeoutCounter == null) {
       logSingleRequest(data);
