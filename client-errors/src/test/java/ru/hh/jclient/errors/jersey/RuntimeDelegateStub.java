@@ -1,6 +1,7 @@
 package ru.hh.jclient.errors.jersey;
 
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.Variant.VariantListBuilder;
@@ -31,6 +32,11 @@ public final class RuntimeDelegateStub extends RuntimeDelegate {
 
   @Override
   public <T> HeaderDelegate<T> createHeaderDelegate(Class<T> type) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Link.Builder createLinkBuilder() {
     throw new UnsupportedOperationException();
   }
 }

@@ -66,10 +66,6 @@ public class ErrorResponseBuilder {
     String message = this.message == null ? null : this.message.get();
     entityCreator.ifPresent(ec -> builder.entity(ec.apply(message, status)));
     Response response = builder.build();
-    CustomWebApplicationException exception = cause
-        .map(c -> new CustomWebApplicationException(c, response))
-        .orElseGet(() -> new CustomWebApplicationException(response));
-    exception.setMessage(message);
-    return exception;
+    return new WebApplicationException(message, cause.orElse(null), response);
   }
 }
