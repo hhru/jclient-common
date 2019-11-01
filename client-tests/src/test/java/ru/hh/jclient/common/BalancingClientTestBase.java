@@ -14,8 +14,8 @@ import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.mockito.invocation.InvocationOnMock;
@@ -357,7 +357,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   static class TestClient extends JClientBase {
-    private boolean adaptive;
+    private final boolean adaptive;
 
     TestClient(HttpClientFactory http, boolean adaptive) {
       super("http://" + TEST_UPSTREAM, http);
@@ -366,12 +366,20 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     void get() throws Exception {
       ru.hh.jclient.common.Request request = get(url("/get")).build();
-      (adaptive ? http.withAdaptive(request) : http.with(request)).expectPlainText().result().get();
+      HttpClient client = http.with(request);
+      if (adaptive) {
+        client = client.adaptive();
+      }
+      client.expectPlainText().result().get();
     }
 
     void post() throws Exception {
       ru.hh.jclient.common.Request request = post(url("/post")).build();
-      (adaptive ? http.withAdaptive(request) : http.with(request)).expectPlainText().result().get();
+      HttpClient client = http.with(request);
+      if (adaptive) {
+        client = client.adaptive();
+      }
+      client.expectPlainText().result().get();
     }
   }
 }

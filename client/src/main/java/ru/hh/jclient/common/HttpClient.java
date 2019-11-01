@@ -68,13 +68,11 @@ public abstract class HttpClient {
              Set<String> hostsWithSession,
              UpstreamManager upstreamManager,
              Storage<HttpClientContext> contextSupplier,
-             List<HttpClientEventListener> eventListeners,
-             boolean adaptive) {
+             List<HttpClientEventListener> eventListeners) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
     this.upstreamManager = upstreamManager;
-    this.adaptive = adaptive;
     this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
