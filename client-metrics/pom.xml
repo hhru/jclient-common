@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>1.6.5</version>
+        <version>1.6.6-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
