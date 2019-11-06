@@ -72,24 +72,6 @@ public class HttpClientFactory {
   }
 
   /**
-   * Same as {@link #with(Request request)}, but is going to be adaptively balanced over available upstreams
-   *
-   * @param request
-   *          to execute
-   */
-  public HttpClient withAdaptive(Request request) {
-    return new HttpClientImpl(
-        http,
-        requireNonNull(request, "request must not be null"),
-        hostsWithSession,
-        upstreamManager,
-        contextSupplier,
-        callbackExecutor,
-      eventListeners,
-        true);
-  }
-
-  /**
    * @return returns copy (within case insensitive map) of headers contained within global (incoming) request
    */
   public Map<String, List<String>> getHeaders() {
