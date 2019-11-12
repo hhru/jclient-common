@@ -9,7 +9,6 @@ import ru.hh.jclient.common.HttpHeaderNames;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.Uri;
 
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -18,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
@@ -25,24 +25,10 @@ import static java.util.Optional.ofNullable;
 
 public class GlobalTimeoutCheck implements HttpClientEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalTimeoutCheck.class);
-  private static final Duration DEFAULT_THRESHOLD = Duration.ofMillis(100);
 
   private final Duration threshold;
   private final Function<Uri, String> uriCompactionFunction;
-  @Nullable
-  private final ConcurrentMap<LoggingData, LongAdder> timeoutCounter;
-
-  /**
-   * per request logging may cause logging system overflow, so
-   * use {@link GlobalTimeoutCheck#GlobalTimeoutCheck(java.time.Duration, java.util.concurrent.ScheduledExecutorService, long)}
-   * which will aggregate info based on request parameters
-   */
-  @Deprecated
-  public GlobalTimeoutCheck() {
-    threshold = DEFAULT_THRESHOLD;
-    this.timeoutCounter = null;
-    this.uriCompactionFunction = (uri) -> ofNullable(uri).map(Uri::getPath).orElse(null);
-  }
+  private final ConcurrentMap<LoggingData, TimeoutCounter> timeoutStatistics;
 
   /**
    * Create check instance
@@ -52,7 +38,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
    */
   public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService, long intervalMs) {
     this.threshold = threshold;
-    this.timeoutCounter = new ConcurrentHashMap<>();
+    this.timeoutStatistics = new ConcurrentHashMap<>();
     this.uriCompactionFunction = (uri) -> ofNullable(uri).map(Uri::getPath).orElse(null);
     executorService.scheduleAtFixedRate(() -> logTimeouts(intervalMs), 0, intervalMs, TimeUnit.MILLISECONDS);
   }
@@ -67,29 +53,30 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService,
                             Function<Uri, String> uriCompactionFunction, long intervalMs) {
     this.threshold = threshold;
-    this.timeoutCounter = new ConcurrentHashMap<>();
+    this.timeoutStatistics = new ConcurrentHashMap<>();
     this.uriCompactionFunction = uriCompactionFunction;
     executorService.scheduleAtFixedRate(() -> logTimeouts(intervalMs), 0, intervalMs, TimeUnit.MILLISECONDS);
   }
 
   protected void logTimeouts(long intervalMs) {
-    var copy = Map.copyOf(timeoutCounter);
-    timeoutCounter.clear();
-    copy.forEach((data, countHolder) -> {
-      long current = countHolder.sum();
-      if (current <= 1) {
-        logSingleRequest(data);
-      } else {
-        LOGGER.error("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
-                + "but calling <{}> with timeout {} ms",
-            intervalMs,
-            current,
-            data.userAgent,
-            data.outerTimeout.toMillis(),
-            data.uri,
-            data.requestTimeout.toMillis()
-        );
-      }
+    var copy = Map.copyOf(timeoutStatistics);
+    timeoutStatistics.clear();
+    copy.forEach((data, timeoutCounter) -> {
+      long currentRequestCount = timeoutCounter.longAdder.sum();
+      long maxAlreadySpentMs = timeoutCounter.maxSpent.get();
+
+      LOGGER.error("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
+                   + "but calling <{}> with timeout {} ms. "
+                   + "Arbitrary we spend up to {} ms before the call",
+          intervalMs,
+          currentRequestCount,
+          data.userAgent,
+          data.outerTimeout.toMillis(),
+          data.uri,
+          data.requestTimeout.toMillis(),
+          maxAlreadySpentMs
+
+      );
     });
   }
 
@@ -121,23 +108,8 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                        Duration alreadySpentTime, Duration requestTimeout) {
     var data = new LoggingData(userAgent, uriCompactionFunction.apply(request.getUri()),
-                               requestTimeout, outerTimeout, alreadySpentTime);
-    if (timeoutCounter == null) {
-      logSingleRequest(data);
-      return;
-    }
-    timeoutCounter.computeIfAbsent(data, key -> new LongAdder()).increment();
-  }
-
-  private static void logSingleRequest(LoggingData data) {
-    LOGGER.error("Incoming request from <{}> expects timeout={} ms, we have been working already for {} ms "
-            + "and now trying to call <{}> with timeout {} ms",
-        data.userAgent,
-        data.outerTimeout.toMillis(),
-        data.alreadySpentTime.toMillis(),
-        data.uri,
-        data.requestTimeout.toMillis()
-    );
+                               requestTimeout, outerTimeout);
+    timeoutStatistics.computeIfAbsent(data, key -> new TimeoutCounter()).increment(alreadySpentTime.toMillis());
   }
 
   private static final class LoggingData {
@@ -145,14 +117,12 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
     private final String uri;
     private final Duration requestTimeout;
     private final Duration outerTimeout;
-    private final Duration alreadySpentTime;
 
-    private LoggingData(String userAgent, String uri, Duration requestTimeout, Duration outerTimeout, Duration alreadySpentTime) {
+    private LoggingData(String userAgent, String uri, Duration requestTimeout, Duration outerTimeout) {
       this.userAgent = userAgent;
       this.uri = uri;
       this.requestTimeout = requestTimeout;
       this.outerTimeout = outerTimeout;
-      this.alreadySpentTime = alreadySpentTime;
     }
 
     @Override
@@ -173,6 +143,21 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
     @Override
     public int hashCode() {
       return Objects.hash(userAgent, uri, requestTimeout, outerTimeout);
+    }
+  }
+
+  private static final class TimeoutCounter {
+    final LongAdder longAdder;
+    final LongAccumulator maxSpent;
+
+    TimeoutCounter() {
+      longAdder = new LongAdder();
+      maxSpent = new LongAccumulator(Long::max, 0);
+    }
+
+    public void increment(long alreadySpentMs) {
+      longAdder.increment();
+      maxSpent.accumulate(alreadySpentMs);
     }
   }
 }

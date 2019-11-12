@@ -22,11 +22,13 @@ import static org.mockito.Mockito.mock;
 
 public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
+  private static final Duration DEFAULT_DURATION = Duration.ofMillis(100);
+
   @Test
   public void testShouldNotTriggerIfTimeoutsOk() throws ExecutionException, InterruptedException {
     LocalDateTime now = LocalDateTime.now();
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
-      .withEventListener(new GlobalTimeoutCheck() {
+      .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
         @Override
         protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                              Duration alreadySpentTime, Duration requestTimeout) {
@@ -48,7 +50,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     LocalDateTime now = LocalDateTime.now();
     AtomicBoolean triggered = new AtomicBoolean(false);
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
-        .withEventListener(new GlobalTimeoutCheck() {
+        .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
           @Override
           protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                                Duration alreadySpentTime, Duration requestTimeout) {
@@ -71,7 +73,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     LocalDateTime now = LocalDateTime.now();
     AtomicBoolean triggered = new AtomicBoolean(false);
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
-        .withEventListener(new GlobalTimeoutCheck() {
+        .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
           @Override
           protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
                                                Duration alreadySpentTime, Duration requestTimeout) {
