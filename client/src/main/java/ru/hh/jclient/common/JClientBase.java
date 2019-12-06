@@ -1,5 +1,7 @@
 package ru.hh.jclient.common;
 
+import ru.hh.jclient.common.util.storage.Storage;
+
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -127,6 +129,10 @@ public abstract class JClientBase {
     }
     builder.addQueryParamMap(queryParams);
     return builder;
+  }
+
+  protected Storage<HttpClientContext> getContextSupplier() {
+    return http.getContextSupplier();
   }
   
   protected static String requireNotEmpty(String arg, String argName) {
