@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.responseconverter;
 
+import java.net.HttpURLConnection;
 import java.util.Collection;
 import java.util.Optional;
 import ru.hh.jclient.common.Response;
@@ -38,11 +39,19 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
 
   @Override
   public FailableFunction<Response, ResultWithResponse<T>, Exception> converterFunction() {
-    FailableFunction<Response, Response, Exception> checkFunction = this::checkContentType;
-    return checkFunction.andThen(singleTypeConverterFunction());
+    return this::convert;
   }
 
-  private Response checkContentType(Response r) throws Exception {
+  private ResultWithResponse<T> convert(Response r) throws Exception {
+    if (r.getStatusCode() == HttpURLConnection.HTTP_NO_CONTENT) {
+      return new ResultWithResponse<>(null, r);
+    }
+
+    checkContentType(r);
+    return singleTypeConverterFunction().apply(r);
+  }
+
+  private void checkContentType(Response r) {
     String contentType = r.getHeader(HttpHeaders.CONTENT_TYPE);
     if (contentType == null) {
       throw new NoContentTypeException(r);
@@ -51,7 +60,6 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
     if (getMediaTypes().stream().noneMatch(m -> mt.is(m))) {
       throw new UnexpectedContentTypeException(r, mt, getMediaTypes());
     }
-    return r;
   }
 
 }

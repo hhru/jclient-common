@@ -168,7 +168,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testJson() throws IOException, InterruptedException, ExecutionException {
+  public void testJson() throws InterruptedException, ExecutionException {
     String responseBody = "{\"name\":\"test тест\"}";
     Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, JSON_UTF_8);
 
@@ -176,6 +176,17 @@ public class HttpClientTest extends HttpClientTestBase {
     XmlTest testOutput = http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
     assertEquals("test тест", testOutput.name);
     assertEqualRequests(request, actualRequest.get());
+  }
+
+  @Test
+  public void testJsonNoContent() throws InterruptedException, ExecutionException {
+    Supplier<Request> actualRequest = withEmptyContext().request(null, 204);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
+    XmlTest testOutput = http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
+    assertNull(testOutput);
+    assertEqualRequests(request, actualRequest.get());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -276,6 +287,16 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testEmpty() throws InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+    Object testOutput = http.with(request).expectEmpty().result().get();
+    assertNull(testOutput);
+    assertEqualRequests(request, actualRequest.get());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void testEmptyNoContent() throws InterruptedException, ExecutionException {
+    Supplier<Request> actualRequest = withEmptyContext().request(null, 204);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).expectEmpty().result().get();
     assertNull(testOutput);
