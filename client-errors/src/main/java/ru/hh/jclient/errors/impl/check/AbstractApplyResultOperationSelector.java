@@ -10,13 +10,18 @@ import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
-public abstract class AbstractApplyResultOperationSelector<T, D extends AbstractApplyResultOperationSelector<T, D>>
+public abstract class AbstractApplyResultOperationSelector<T,
+    D extends AbstractApplyResultOperationSelector<T, D, AO>,
+    AO extends AbstractOperation<T, AO>>
     extends AbstractOperationSelector<T, D> {
 
   protected ResultWithStatus<T> resultWithStatus;
@@ -104,8 +109,8 @@ public abstract class AbstractApplyResultOperationSelector<T, D extends Abstract
   /**
    * Uses {@link Status#INTERNAL_SERVER_ERROR} status code.
    */
-  public ApplyResultOperation<T> throwInternalServerError() {
-    return new ApplyResultOperation<>(
+  public AO throwInternalServerError() {
+    return createApplyOperation(
         resultWithStatus,
         of(INTERNAL_SERVER_ERROR.getStatusCode()),
         ofNullable(proxiedStatusCodes),
@@ -117,8 +122,8 @@ public abstract class AbstractApplyResultOperationSelector<T, D extends Abstract
   /**
    * Uses {@link Status#BAD_GATEWAY} status code.
    */
-  public ApplyResultOperation<T> throwBadGateway() {
-    return new ApplyResultOperation<>(
+  public AO throwBadGateway() {
+    return createApplyOperation(
         resultWithStatus,
         of(HttpStatuses.BAD_GATEWAY),
         ofNullable(proxiedStatusCodes),
@@ -130,8 +135,8 @@ public abstract class AbstractApplyResultOperationSelector<T, D extends Abstract
   /**
    * Uses {@link Status#FORBIDDEN} status code.
    */
-  public ApplyResultOperation<T> throwForbidden() {
-    return new ApplyResultOperation<>(
+  public AO throwForbidden() {
+    return createApplyOperation(
         resultWithStatus,
         of(FORBIDDEN.getStatusCode()),
         ofNullable(proxiedStatusCodes),
@@ -143,8 +148,8 @@ public abstract class AbstractApplyResultOperationSelector<T, D extends Abstract
   /**
    * Uses {@link Status#NOT_FOUND} status code.
    */
-  public ApplyResultOperation<T> throwNotFound() {
-    return new ApplyResultOperation<>(
+  public AO throwNotFound() {
+    return createApplyOperation(
         resultWithStatus,
         of(NOT_FOUND.getStatusCode()),
         ofNullable(proxiedStatusCodes),
@@ -156,8 +161,8 @@ public abstract class AbstractApplyResultOperationSelector<T, D extends Abstract
   /**
    * Uses {@link Status#BAD_REQUEST} status code.
    */
-  public ApplyResultOperation<T> throwBadRequest() {
-    return new ApplyResultOperation<>(
+  public AO throwBadRequest() {
+    return createApplyOperation(
         resultWithStatus,
         of(BAD_REQUEST.getStatusCode()),
         ofNullable(proxiedStatusCodes),
@@ -165,6 +170,13 @@ public abstract class AbstractApplyResultOperationSelector<T, D extends Abstract
         errorMessage,
         predicates);
   }
+
+  protected abstract AO createApplyOperation(ResultWithStatus<T> wrapper,
+      Optional<Integer> errorStatusCode,
+      Optional<List<Integer>> proxiedStatusCodes,
+      Optional<Function<Integer, Integer>> statusCodesConverter,
+      Supplier<String> errorMessage,
+      List<PredicateWithStatus<T>> predicates);
 
   /**
    * <p>

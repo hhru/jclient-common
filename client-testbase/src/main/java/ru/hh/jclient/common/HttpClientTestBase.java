@@ -137,6 +137,10 @@ public class HttpClientTestBase {
     return completedFuture(new ResultWithStatus<>(null, 204));
   }
 
+  public static CompletableFuture<EmptyWithStatus> emptyResponse() {
+    return completedFuture(new EmptyWithStatus(204));
+  }
+
   public static <T> CompletableFuture<ResultWithStatus<T>> error(int status) {
     return completedFuture(new ResultWithStatus<>(null, status));
   }

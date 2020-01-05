@@ -1,15 +1,30 @@
 package ru.hh.jclient.errors.impl.check;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.PredicateWithStatus;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
-public class ApplyResultOperationSelector<T> extends AbstractApplyResultOperationSelector<T, ApplyResultOperationSelector<T>> {
+public class ApplyResultOperationSelector<T>
+    extends AbstractApplyResultOperationSelector<T, ApplyResultOperationSelector<T>, ApplyResultOperation<T>> {
 
   public ApplyResultOperationSelector(ResultWithStatus<T> resultWithStatus, String errorMessage, Object... params) {
     super(resultWithStatus, errorMessage, params);
+  }
+
+  @Override
+  protected ApplyResultOperation<T> createApplyOperation(ResultWithStatus<T> wrapper,
+      Optional<Integer> errorStatusCode,
+      Optional<List<Integer>> proxiedStatusCodes,
+      Optional<Function<Integer, Integer>> statusCodesConverter,
+      Supplier<String> errorMessage,
+      List<PredicateWithStatus<T>> predicates) {
+    return new ApplyResultOperation<>(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates);
   }
 
   /**
