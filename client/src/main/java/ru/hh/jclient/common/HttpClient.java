@@ -297,8 +297,8 @@ public abstract class HttpClient {
   /**
    * Specifies that the result must not be parsed.
    */
-  public ResultProcessor<Void> expectEmpty() {
-    return new ResultProcessor<>(this, new VoidConverter());
+  public EmptyResultProcessor expectEmpty() {
+    return new EmptyResultProcessor(this, new VoidConverter());
   }
 
   /**

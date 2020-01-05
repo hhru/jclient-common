@@ -10,7 +10,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class ResultWithResponse<T> extends ResultWithStatus<T> {
 
-  private Response response;
+  protected Response response;
 
   public ResultWithResponse(T value, org.asynchttpclient.Response response) {
     this(value, new Response(response));
