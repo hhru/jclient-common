@@ -18,6 +18,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.ext.RuntimeDelegate;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.errors.jersey.RuntimeDelegateStub;
@@ -147,6 +148,25 @@ public class MoreErrorsTest {
     result = new ResultWithStatus<>("zxc", OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onPredicate();
     assertEquals(value.get(), "error");
+  }
+
+  // empty value
+
+  @Test
+  public void testEmptyValueOnSomeError() {
+    EmptyWithStatus result;
+    Optional<Void> value;
+
+    // status code
+    result = new EmptyWithStatus(INTERNAL_SERVER_ERROR.getStatusCode());
+    value = MoreErrors.check(result, "error").returnEmpty().onStatusCodeError();
+    assertTrue(value.isEmpty());
+
+    // predicate
+    Predicate<Void> predicate = (v) -> true;
+    result = new EmptyWithStatus(OK.getStatusCode());
+    value = MoreErrors.check(result, "error").failIf(predicate).returnEmpty().onPredicate();
+    assertTrue(value.isEmpty());
   }
 
   // special cases
