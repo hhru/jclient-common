@@ -12,6 +12,9 @@ import ru.hh.jclient.errors.impl.convert.HandleThrowableOperationSelector;
 
 public class MoreErrors {
 
+  private MoreErrors() {
+  }
+
   /**
    * Checks result for errors. Compatible with methods of {@link CompletableFuture} like
    * {@link CompletableFuture#thenApply(java.util.function.Function)}.
