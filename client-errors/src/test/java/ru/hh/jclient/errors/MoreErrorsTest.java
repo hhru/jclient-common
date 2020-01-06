@@ -4,6 +4,7 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.NO_CONTENT;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import static org.junit.Assert.assertEquals;
@@ -129,7 +130,7 @@ public class MoreErrorsTest {
     String realValue;
 
     // any error
-    Predicate<String> predicate = s -> "zxc".equals(s); // zxc value means failure
+    Predicate<String> predicate = "zxc"::equals; // zxc value means failure
     result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
     realValue = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onAnyError();
     assertEquals(realValue, "error");
@@ -257,7 +258,7 @@ public class MoreErrorsTest {
 
     // response error
     result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
-    realValue = MoreErrors.check(result, (Throwable) null, "error").failIf(s -> "zxc".equals(s)).ignore().onAnyError();
+    realValue = MoreErrors.check(result, (Throwable) null, "error").failIf("zxc"::equals).ignore().onAnyError();
     assertFalse(realValue.isPresent());
 
     // provided default value with exception
@@ -282,6 +283,26 @@ public class MoreErrorsTest {
     realValue = MoreErrors.check(result, (Throwable) null, "error").returnDefault("asd").onStatusCodeError();
     assertTrue(realValue.isPresent());
     assertEquals(realValue.get(), "asd");
+  }
+
+  @Test
+  public void testIgnoreForEmptyValue() {
+    EmptyWithStatus result = null;
+    Optional<Void> realValue;
+
+    // exception
+    realValue = MoreErrors.check(result, new NullPointerException(), "error").ignore().onStatusCodeError();
+    assertFalse(realValue.isPresent());
+
+    // response error
+    result = new EmptyWithStatus(INTERNAL_SERVER_ERROR.getStatusCode());
+    realValue = MoreErrors.check(result, (Throwable) null, "error").ignore().onStatusCodeError();
+    assertFalse(realValue.isPresent());
+
+    // success
+    result = new EmptyWithStatus(NO_CONTENT.getStatusCode());
+    realValue = MoreErrors.check(result, (Throwable) null, "error").ignore().onStatusCodeError();
+    assertFalse(realValue.isPresent());
   }
 
   // proxying and converting status

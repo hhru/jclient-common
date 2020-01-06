@@ -9,7 +9,8 @@ import ru.hh.jclient.errors.impl.PredicateWithStatus;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
-public class HandleResultOperationSelector<T> extends AbstractHandleResultOperationSelector<T, HandleResultOperationSelector<T>, HandleResultOperation<T>> {
+public class HandleResultOperationSelector<T>
+    extends AbstractHandleResultOperationSelector<T, HandleResultOperationSelector<T>, HandleResultOperation<T>> {
 
   public HandleResultOperationSelector(ResultWithStatus<T> resultWithStatus, Throwable throwable, String errorMessage, Object... params) {
     super(resultWithStatus, throwable, errorMessage, params);

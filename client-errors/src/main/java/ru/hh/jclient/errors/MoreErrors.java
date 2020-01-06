@@ -7,6 +7,7 @@ import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.check.ApplyEmptyResultOperationSelector;
 import ru.hh.jclient.errors.impl.check.ApplyResultOperationSelector;
 import ru.hh.jclient.errors.impl.check.ApplyResultOrErrorOperationSelector;
+import ru.hh.jclient.errors.impl.check.HandleEmptyResultOperationSelector;
 import ru.hh.jclient.errors.impl.check.HandleResultOperationSelector;
 import ru.hh.jclient.errors.impl.convert.HandleThrowableOperationSelector;
 
@@ -64,6 +65,27 @@ public class MoreErrors {
       String errorMessage,
       Object... errorMessageParams) {
     return new HandleResultOperationSelector<>(resultWithStatus, throwable, errorMessage, errorMessageParams);
+  }
+
+  /**
+   * Checks result / throwable for errors. Compatible with methods of {@link CompletableFuture} like
+   * {@link CompletableFuture#handle(java.util.function.BiFunction)}.
+   *
+   * @param emptyWithStatus
+   *          result to check
+   * @param throwable
+   *          throwable to check
+   * @param errorMessage
+   *          message to include in exception / log if error is detected
+   * @param errorMessageParams
+   *          if specified, used to format errorMessage using {@link String#format(String, Object...)}
+   */
+  public static HandleEmptyResultOperationSelector check(
+      EmptyWithStatus emptyWithStatus,
+      Throwable throwable,
+      String errorMessage,
+      Object... errorMessageParams) {
+    return new HandleEmptyResultOperationSelector(emptyWithStatus, throwable, errorMessage, errorMessageParams);
   }
 
   /**
