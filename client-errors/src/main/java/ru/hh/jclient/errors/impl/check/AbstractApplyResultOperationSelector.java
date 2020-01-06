@@ -187,7 +187,7 @@ public abstract class AbstractApplyResultOperationSelector<T,
    * Calling {@link #proxyOnly(Status...)} or {@link #convertAndProxy(Status, Status)} does nothing when used with this operation.
    * </p>
    */
-  public ApplyResultOperation<T> proxyStatusCode() {
-    return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates);
+  public AO proxyStatusCode() {
+    return createApplyOperation(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates);
   }
 }
