@@ -31,7 +31,7 @@ public class ApplyResultOrErrorOperationSelector<T, E>
    *          default value to set
    */
   public ApplyResultOrErrorOperation<T, E> setDefault(T defaultValue) {
-    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, of(defaultValue));
+    return createOperation(resultOrErrorWithStatus, empty(), errorMessage, predicates, of(defaultValue));
   }
   /**
    * Specifies default value to set to result if error is present.
@@ -40,6 +40,6 @@ public class ApplyResultOrErrorOperationSelector<T, E>
    *          default value to set
    */
   public ApplyResultOrErrorOperation<T, E> setDefault(Supplier<T> defaultValue) {
-    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, of(defaultValue.get()));
+    return createOperation(resultOrErrorWithStatus, empty(), errorMessage, predicates, of(defaultValue.get()));
   }
 }

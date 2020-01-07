@@ -9,41 +9,39 @@ import java.util.function.Supplier;
 import javax.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.ResultOrErrorWithStatus;
-import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.common.EmptyOrErrorWithStatus;
+import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.errors.impl.OperationBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
-public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResultOrErrorOperation<T, E>> {
+public class ApplyEmptyResultOrErrorOperation<E> extends OperationBase<ApplyEmptyResultOrErrorOperation<E>> {
 
-  protected static final Logger logger = LoggerFactory.getLogger(ApplyResultOrErrorOperation.class);
+  protected static final Logger logger = LoggerFactory.getLogger(ApplyEmptyResultOrErrorOperation.class);
 
-  protected ResultOrErrorWithStatus<T, E> wrapper;
-
+  protected EmptyOrErrorWithStatus<E> wrapper;
   protected Optional<List<PredicateWithStatus<E>>> predicates = empty();
-  protected Optional<T> defaultValue = empty();
+  protected boolean returnEmpty;
 
-  public ApplyResultOrErrorOperation(
-      ResultOrErrorWithStatus<T, E> wrapper,
+  public ApplyEmptyResultOrErrorOperation(
+      EmptyOrErrorWithStatus<E> wrapper,
       Optional<Integer> errorStatusCode,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<E>> predicates,
-      Optional<T> defaultValue) {
+      boolean returnEmpty) {
     super(errorStatusCode, errorMessage);
     this.wrapper = wrapper;
-    this.defaultValue = defaultValue;
     this.errorStatusCode = AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty());
     this.predicates = Optional.ofNullable(predicates);
+    this.returnEmpty = returnEmpty;
   }
 
   /**
    * <p>
    * Returns result or throws {@link WebApplicationException} with provided status code on any error including:
    * <ul>
-   * <li>{@link ResultOrErrorWithStatus#isSuccess()} is false</li>
-   * <li>predicate provided with {@link AbstractOperationSelector#failIf(java.util.function.Predicate)} says ResultWithStatus contains incorrect value
+   * <li>{@link EmptyOrErrorWithStatus#isSuccess()} is false</li>
+   * <li>predicate provided with {@link AbstractOperationSelector#failIf(java.util.function.Predicate)} says Error contains incorrect value
    * </li>
-   * <li>{@link ResultOrErrorWithStatus#get()} contains {@link Optional#empty()}</li>
    * </ul>
    * </p>
    * <p>
@@ -54,12 +52,12 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
    *           with provided status code and message in case of error (if default value is not specified)
    * @return unwrapped non null result or default value (if specified) in case of error
    */
-  public ResultWithStatus<T> onAnyError() {
+  public EmptyWithStatus onAnyError() {
     if (wrapper.getError().isEmpty()) {
-      return wrapper;
+      return new EmptyWithStatus(wrapper.getStatusCode());
     }
     checkForPredicates(wrapper.getError().get()); // set proper status if matched
-    return defaultOrThrow("error is not empty");
+    return emptyOrThrow("error is not empty");
   }
 
   protected void checkForPredicates(E error) {
@@ -72,10 +70,10 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
     }
   }
 
-  protected ResultWithStatus<T> defaultOrThrow(String cause) {
-    if (defaultValue.isPresent()) {
+  protected EmptyWithStatus emptyOrThrow(String cause) {
+    if (returnEmpty) {
       logger.warn("Default value is set to result because error happened: {}. Description: {}", cause, errorResponseBuilder.getMessage());
-      return new ResultWithStatus<>(defaultValue.get(), wrapper.getStatusCode());
+      return new EmptyWithStatus(wrapper.getStatusCode());
     }
     throw toException(cause);
   }
@@ -85,7 +83,7 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
   /**
    * Same as {@link #as(BiFunction)}} but accepts function that knows about Error instance for better error creation.
    */
-  public ApplyResultOrErrorOperation<T, E> as(Function<E, BiFunction<String, Integer, Object>> errorEntityCreator) {
+  public ApplyEmptyResultOrErrorOperation<E> as(Function<E, BiFunction<String, Integer, Object>> errorEntityCreator) {
     return super.as(() -> errorEntityCreator.apply(wrapper.getError().get()));
   }
 

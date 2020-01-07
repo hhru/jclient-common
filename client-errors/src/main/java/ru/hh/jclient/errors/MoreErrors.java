@@ -1,10 +1,12 @@
 package ru.hh.jclient.errors;
 
 import java.util.concurrent.CompletableFuture;
+import ru.hh.jclient.common.EmptyOrErrorWithStatus;
 import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.check.ApplyEmptyResultOperationSelector;
+import ru.hh.jclient.errors.impl.check.ApplyEmptyResultOrErrorOperationSelector;
 import ru.hh.jclient.errors.impl.check.ApplyResultOperationSelector;
 import ru.hh.jclient.errors.impl.check.ApplyResultOrErrorOperationSelector;
 import ru.hh.jclient.errors.impl.check.HandleEmptyResultOperationSelector;
@@ -104,6 +106,24 @@ public class MoreErrors {
       String errorMessage,
       Object... errorMessageParams) {
     return new ApplyResultOrErrorOperationSelector<>(resultOrErrorWithStatus, errorMessage, errorMessageParams);
+  }
+
+  /**
+   * Checks result error if present. Compatible with methods of {@link CompletableFuture} like
+   * {@link CompletableFuture#thenApply(java.util.function.Function)}.
+   *
+   * @param emptyOrErrorWithStatus
+   *          result to check
+   * @param errorMessage
+   *          message to include in exception / log if error is detected
+   * @param errorMessageParams
+   *          if specified, used to format errorMessage using {@link String#format(String, Object...)}
+   */
+  public static <E> ApplyEmptyResultOrErrorOperationSelector<E> checkError(
+      EmptyOrErrorWithStatus<E> emptyOrErrorWithStatus,
+      String errorMessage,
+      Object... errorMessageParams) {
+    return new ApplyEmptyResultOrErrorOperationSelector<>(emptyOrErrorWithStatus, errorMessage, errorMessageParams);
   }
 
   /**

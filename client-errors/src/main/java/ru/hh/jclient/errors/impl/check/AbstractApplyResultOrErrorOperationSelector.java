@@ -13,11 +13,12 @@ import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
+import ru.hh.jclient.errors.impl.OperationBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
 public abstract class AbstractApplyResultOrErrorOperationSelector<T,
     D extends AbstractOperationSelector<E, D>,
-    AO extends ApplyResultOrErrorOperation<T, E>,
+    AO extends OperationBase<AO>,
     E>
     extends AbstractOperationSelector<E, D> {
 
