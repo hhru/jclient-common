@@ -22,7 +22,7 @@ public class EmptyResultProcessor extends ResultProcessor<Void> {
   }
 
   public CompletableFuture<EmptyWithStatus> emptyWithStatus() {
-    return super.resultWithStatus().thenApply(rws -> (EmptyWithStatus)rws);
+    return super.resultWithStatus().thenApply(rws -> new EmptyWithStatus(rws.getStatusCode()));
   }
 
   /**

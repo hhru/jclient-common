@@ -13,6 +13,6 @@ public class EmptyWithStatus extends ResultWithStatus<Void> {
    */
   @Override
   public Optional<Void> get() {
-    return super.get();
+    return Optional.empty();
   }
 }
