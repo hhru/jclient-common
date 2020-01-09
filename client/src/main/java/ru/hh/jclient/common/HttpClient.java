@@ -297,8 +297,18 @@ public abstract class HttpClient {
   /**
    * Specifies that the result must not be parsed.
    */
-  public EmptyResultProcessor expectEmpty() {
+  public EmptyResultProcessor expectNoContent() {
     return new EmptyResultProcessor(this, new VoidConverter());
+  }
+
+  /**
+   * Specifies that the result must not be parsed.
+   *
+   * @deprecated use {@link #expectNoContent()}
+   */
+  @Deprecated // use #expectNoContent()
+  public ResultProcessor<Void> expectEmpty() {
+    return new ResultProcessor<>(this, new VoidConverter());
   }
 
   /**
