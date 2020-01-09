@@ -35,7 +35,7 @@ public abstract class AbstractApplyResultOperationSelector<T,
 
   /**
    * <p>
-   * Specifies what statuses to proxy in case of error. All other statuses will be converted to specified THROW_* status. Calling this method second
+   * Specifies what statuses to proxy in case of error. All other statuses will be converted to specified throw_* status. Calling this method second
    * time will override previous value.
    * </p>
    * <code>
@@ -52,7 +52,7 @@ public abstract class AbstractApplyResultOperationSelector<T,
 
   /**
    * <p>
-   * Specifies what statuses to proxy in case of error. All other statuses will be converted to specified THROW_* status. Calling this method second
+   * Specifies what statuses to proxy in case of error. All other statuses will be converted to specified throw_* status. Calling this method second
    * time will override previous value.
    * </p>
    * <code>
@@ -70,7 +70,7 @@ public abstract class AbstractApplyResultOperationSelector<T,
   /**
    * <p>
    * Specifies how matching response status code must be converted in case of error. If status code is converted it will be proxied (overriding
-   * THROW_* status code). This method can be called multiple times and will chain conversion in the corresponding order.
+   * throw_* status code). This method can be called multiple times and will chain conversion in the corresponding order.
    * </p>
    * <code>
    * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.convertAndProxy(400, 409)</b>.throwForbidden().onAnyError();
@@ -93,7 +93,7 @@ public abstract class AbstractApplyResultOperationSelector<T,
   /**
    * <p>
    * Specifies how matching response status code must be converted in case of error. If status code is converted it will be proxied (overriding
-   * THROW_* status code). This method can be called multiple times and will chain conversion in the corresponding order.
+   * throw_* status code). This method can be called multiple times and will chain conversion in the corresponding order.
    * </p>
    * <code>
    * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.convertAndProxy(BAD_REQUEST, CONFLICT)</b>.throwForbidden().onAnyError();

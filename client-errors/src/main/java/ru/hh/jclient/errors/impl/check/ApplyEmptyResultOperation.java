@@ -8,7 +8,7 @@ import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
-public class ApplyEmptyResultOperation  extends AbstractOperation<Void, ApplyEmptyResultOperation> {
+public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmptyResultOperation> {
 
   private boolean returnEmpty;
 

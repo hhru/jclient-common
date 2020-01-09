@@ -294,11 +294,13 @@ public abstract class HttpClient {
     return new ResultProcessor<>(this, new PlainTextConverter(charset));
   }
 
+  private static final VoidConverter VOID_CONVERTER = new VoidConverter();
+
   /**
    * Specifies that the result must not be parsed.
    */
   public EmptyResultProcessor expectNoContent() {
-    return new EmptyResultProcessor(this, new VoidConverter());
+    return new EmptyResultProcessor(this, VOID_CONVERTER);
   }
 
   /**
@@ -308,7 +310,7 @@ public abstract class HttpClient {
    */
   @Deprecated // use #expectNoContent()
   public ResultProcessor<Void> expectEmpty() {
-    return new ResultProcessor<>(this, new VoidConverter());
+    return new ResultProcessor<>(this, VOID_CONVERTER);
   }
 
   /**
