@@ -5,23 +5,40 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.Before;
 import org.junit.Test;
 import com.google.common.base.Throwables;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(ThreadLocalStorage.class)
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*"})
 public class ThreadLocalStorageTest {
+
+  private Logger logMock;
+
+  @Before
+  public void setUp() throws Exception {
+    logMock = spy(Logger.class);
+    Whitebox.setInternalState(ThreadLocalStorage.class, "LOG", logMock);
+  }
 
   @Test
   public void testThreadLocalTransfer() throws InterruptedException {
@@ -37,8 +54,8 @@ public class ThreadLocalStorageTest {
     });
   }
 
-  private void checkInThread(Storage<String> storage, Storages storages, String data, Callable<Void> additionalStep)
-      throws InterruptedException {
+  private static void checkInThread(Storage<String> storage, Storages storages, String data,
+                                    Callable<Void> additionalStep) throws InterruptedException {
     AtomicBoolean emptyBefore = new AtomicBoolean();
     AtomicBoolean setCorrectly = new AtomicBoolean();
     AtomicBoolean emptyAfter = new AtomicBoolean();
@@ -100,11 +117,8 @@ public class ThreadLocalStorageTest {
   }
 
   @Test
-  public void testThreadLocalStorageNotLoggingIfInitValuePassed()
-      throws NoSuchFieldException, IllegalAccessException, InterruptedException {
-    var logMock = spy(Logger.class);
-    var storage = new ThreadLocalStorage<>(() -> "value");
-    setLoggerField(ThreadLocalStorage.class, logMock);
+  public void testThreadLocalStorageNotLoggingIfInitValuePassed() throws InterruptedException {
+    var storage = new ThreadLocalStorage<>(() -> "default");
 
     Transfer transfer = storage.prepareTransferToAnotherThread();
     var exchanger = new Exchanger<>();
@@ -118,16 +132,6 @@ public class ThreadLocalStorageTest {
     });
     thread.start();
     exchanger.exchange(null);
-    verify(logMock, times(0)).warn(anyString());
-  }
-
-  private static void setLoggerField(Class<?> clazz, Logger logMock) throws NoSuchFieldException, IllegalAccessException {
-    var logField = clazz.getDeclaredField("LOG");
-    logField.setAccessible(true);
-    logField.setAccessible(true);
-    Field modifiers = Field.class.getDeclaredField("modifiers");
-    modifiers.setAccessible(true);
-    modifiers.setInt(logField, logField.getModifiers() & ~Modifier.FINAL);
-    logField.set(null, logMock);
+    verify(logMock, times(0)).warn(anyString(), anyString(), anyString(), nullable(String.class));
   }
 }
