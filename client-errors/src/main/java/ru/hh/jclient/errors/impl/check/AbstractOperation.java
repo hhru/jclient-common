@@ -7,7 +7,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.errors.impl.OperationBase;
@@ -103,7 +102,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   }
 
   protected boolean useDefault() {
-    return defaultValue.isPresent() || wrapper instanceof EmptyWithStatus;
+    return defaultValue.isPresent();
   }
 
   protected static Optional<Integer> getStatusCodeIfAbsent(

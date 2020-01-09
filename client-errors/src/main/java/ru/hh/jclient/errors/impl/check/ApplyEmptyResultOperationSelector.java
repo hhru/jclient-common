@@ -26,7 +26,7 @@ public class ApplyEmptyResultOperationSelector
    * </p>
    */
   public ApplyEmptyResultOperation returnEmpty() {
-    return new ApplyEmptyResultOperation(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, empty());
+    return new ApplyEmptyResultOperation(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, empty(), true);
   }
 
   @Override
