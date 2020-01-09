@@ -133,12 +133,17 @@ public class HttpClientTestBase {
     return completedFuture(new ResultWithStatus<>(value, 200));
   }
 
+  @Deprecated // use #emptyResponse()
   public static CompletableFuture<ResultWithStatus<Void>> noContent() {
     return completedFuture(new ResultWithStatus<>(null, 204));
   }
 
   public static CompletableFuture<EmptyWithStatus> emptyResponse() {
     return completedFuture(new EmptyWithStatus(204));
+  }
+
+  public static CompletableFuture<EmptyWithStatus> emptyResponse(int status) {
+    return completedFuture(new EmptyWithStatus(status));
   }
 
   public static <T> CompletableFuture<ResultWithStatus<T>> error(int status) {
@@ -149,12 +154,21 @@ public class HttpClientTestBase {
     return completedFuture(new ResultOrErrorWithStatus<>(ofNullable(value), empty(), 200));
   }
 
+  @Deprecated // use #orErrorEmpty()
   public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orErrorNoContent() {
     return completedFuture(new ResultOrErrorWithStatus<>(empty(), empty(), 204));
   }
 
+  public static <E> CompletableFuture<EmptyOrErrorWithStatus<E>> orErrorEmpty() {
+    return completedFuture(new EmptyOrErrorWithStatus<>(empty(), 204));
+  }
+
   public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orError(int status, E error) {
     return completedFuture(new ResultOrErrorWithStatus<>(empty(), of(error), status));
+  }
+
+  public static <E> CompletableFuture<EmptyOrErrorWithStatus<E>> orErrorEmpty(int status, E error) {
+    return completedFuture(new EmptyOrErrorWithStatus<>(of(error), status));
   }
 
   public HttpClientTestBase withNoListeners() {
