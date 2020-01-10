@@ -1,27 +1,35 @@
 package ru.hh.jclient.errors.impl.check;
 
-import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.PredicateWithStatus;
+import ru.hh.jclient.common.EmptyWithStatus;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 
-public class HandleEmptyResultOperationSelector
-    extends AbstractHandleResultOperationSelector<Void, HandleEmptyResultOperationSelector, HandleEmptyResultOperation> {
+public class HandleEmptyResultOperationSelector extends AbstractOperationSelector<Void, HandleEmptyResultOperationSelector> {
 
+  private EmptyWithStatus emptyWithStatus;
+  private Throwable throwable;
 
-  public HandleEmptyResultOperationSelector(ResultWithStatus<Void> resultWithStatus, Throwable throwable, String errorMessage, Object... params) {
-    super(resultWithStatus, throwable, errorMessage, params);
+  public HandleEmptyResultOperationSelector(EmptyWithStatus emptyWithStatus, Throwable throwable, String errorMessage, Object... params) {
+    super(errorMessage, params);
+    this.emptyWithStatus = emptyWithStatus;
+    this.throwable = throwable;
   }
 
-  @Override
-  protected HandleEmptyResultOperation createOperation(ResultWithStatus<Void> wrapper,
-      Throwable throwable,
-      Supplier<String> errorMessage,
-      List<PredicateWithStatus<Void>> predicates,
-      Optional<Void> defaultValue,
-      Optional<Consumer<Throwable>> errorConsumer) {
-    return new HandleEmptyResultOperation(wrapper, throwable, errorMessage, predicates, errorConsumer);
+  /**
+   * Specifies that any errors (incorrect result or exception) should be ignored and empty result returned.
+   */
+  public HandleEmptyResultOperation ignore() {
+    return new HandleEmptyResultOperation(emptyWithStatus, throwable, errorMessage, predicates, empty());
+  }
+
+  /**
+   * Specifies error consumer to call if exception has occurred. Empty result will be returned in that case.
+   *
+   * @param consumer
+   *          error consumer
+   */
+  public HandleEmptyResultOperation acceptError(Consumer<Throwable> consumer) {
+    return new HandleEmptyResultOperation(emptyWithStatus, throwable, errorMessage, predicates, of(consumer));
   }
 }

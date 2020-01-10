@@ -1,29 +1,27 @@
 package ru.hh.jclient.errors.impl.check;
 
-import java.util.List;
-import java.util.Optional;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.PredicateWithStatus;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 
-public class HandleResultOperationSelector<T>
-    extends AbstractHandleResultOperationSelector<T, HandleResultOperationSelector<T>, HandleResultOperation<T>> {
+public class HandleResultOperationSelector<T> extends AbstractOperationSelector<T, HandleResultOperationSelector<T>> {
+
+  private ResultWithStatus<T> resultWithStatus;
+  private Throwable throwable;
 
   public HandleResultOperationSelector(ResultWithStatus<T> resultWithStatus, Throwable throwable, String errorMessage, Object... params) {
-    super(resultWithStatus, throwable, errorMessage, params);
+    super(errorMessage, params);
+    this.resultWithStatus = resultWithStatus;
+    this.throwable = throwable;
   }
 
-  @Override
-  protected HandleResultOperation<T> createOperation(ResultWithStatus<T> wrapper,
-      Throwable throwable,
-      Supplier<String> errorMessage,
-      List<PredicateWithStatus<T>> predicates,
-      Optional<T> defaultValue,
-      Optional<Consumer<Throwable>> errorConsumer) {
-    return new HandleResultOperation<>(wrapper, throwable, errorMessage, predicates, defaultValue, errorConsumer);
+  /**
+   * Specifies that any errors (incorrect result or exception) should be ignored and empty result returned.
+   */
+  public HandleResultOperation<T> ignore() {
+    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), empty());
   }
 
   /**
@@ -33,7 +31,7 @@ public class HandleResultOperationSelector<T>
    *          default value to return
    */
   public HandleResultOperation<T> returnDefault(T defaultValue) {
-    return createOperation(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue), empty());
+    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue), empty());
   }
 
   /**
@@ -43,7 +41,16 @@ public class HandleResultOperationSelector<T>
    *          default value to return
    */
   public HandleResultOperation<T> returnDefault(Supplier<T> defaultValue) {
-    return createOperation(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue.get()), empty());
+    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue.get()), empty());
   }
 
+  /**
+   * Specifies error consumer to call if exception has occurred. Empty result will be returned in that case.
+   *
+   * @param consumer
+   *          error consumer
+   */
+  public HandleResultOperation<T> acceptError(Consumer<Throwable> consumer) {
+    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), of(consumer));
+  }
 }
