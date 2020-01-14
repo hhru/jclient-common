@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>1.6.8-SNAPSHOT</version>
+        <version>1.6.9-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -11,7 +11,7 @@
 
     <properties>
         <jackson.version>2.9.10</jackson.version>
-        <jackson.databind.version>2.9.10</jackson.databind.version>
+        <jackson.databind.version>2.9.10.1</jackson.databind.version>
     </properties>
     
     <dependencies>
