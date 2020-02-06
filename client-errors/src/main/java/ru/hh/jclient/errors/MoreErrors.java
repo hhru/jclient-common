@@ -1,6 +1,7 @@
 package ru.hh.jclient.errors;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import ru.hh.jclient.common.EmptyOrErrorWithStatus;
 import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
@@ -145,5 +146,30 @@ public class MoreErrors {
       String errorMessage,
       Object... errorMessageParams) {
     return new HandleThrowableOperationSelector<>(result, throwable, errorMessage, errorMessageParams);
+  }
+
+  /**
+   * Block until future complestes and get the result.
+   *
+   * If waiting for result was interrupted, set the interrupted flag and rethrow it wrapped in {@link RuntimeException}.
+   * If future completed exceptionally with {@link RuntimeException} - rethrow it.
+   * If future completed with checked exception, wrap it in {@link RuntimeException} and rethrow it too.
+   *
+   * @param future future to get the result from
+   * @return result or throw RuntimeException
+   */
+  public static <T> T getOrThrow(CompletableFuture<T> future) {
+    try {
+      return future.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted while waiting for completable future to complete", e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof RuntimeException) {
+        throw (RuntimeException) cause;
+      }
+      throw new RuntimeException("Completable future completed exceptionally", cause);
+    }
   }
 }
