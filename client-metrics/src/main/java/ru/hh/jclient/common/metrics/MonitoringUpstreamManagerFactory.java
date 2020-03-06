@@ -17,10 +17,20 @@ public class MonitoringUpstreamManagerFactory {
                                        StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
                                        ScheduledExecutorService scheduledExecutorService,
                                        Consumer<BalancingUpstreamManager> upstreamUpdater) {
+    return create(serviceName, dc,
+            allowCrossDCRequests, false,
+            statsDSender, kafkaUpstreamMonitoringProperties,
+            scheduledExecutorService, upstreamUpdater);
+
+  }
+  public static UpstreamManager create(String serviceName, String dc, boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection,
+                                       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
+                                       ScheduledExecutorService scheduledExecutorService,
+                                       Consumer<BalancingUpstreamManager> upstreamUpdater) {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       scheduledExecutorService,
       buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
-      dc, allowCrossDCRequests
+      dc, allowCrossDCRequests, skipAdaptiveProfileSelection
     );
 
     upstreamUpdater.accept(balancingUpstreamManager);
