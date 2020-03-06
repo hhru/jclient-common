@@ -180,11 +180,12 @@ public class BalancingClientTest extends BalancingClientTestBase {
     getTestClient().get();
     assertHostEquals(request[0], "server1");
 
-    upstreamManager.updateUpstream(TEST_UPSTREAM, "| server=http://server2");
+    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM, "| server=http://server2");
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
-    upstreamManager.updateUpstream(TEST_UPSTREAM, "| server=http://server2 | server=http://server3");
+    requestingStrategy.getUpstreamManager()
+        .updateUpstream(TEST_UPSTREAM, "| server=http://server2 | server=http://server3");
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
@@ -247,7 +248,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     http.with(new RequestBuilder("GET").setUrl("http://backend/path?query").build())
       .expectPlainText().result().get();
 
-    Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
+    Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
       eq("backend"), eq("DC1"), eq("http://server1"), eq(200), anyLong(), eq(true)
     );
@@ -266,7 +267,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     http.with(new RequestBuilder("GET").setUrl("http://not-balanced-backend/path?query").build())
       .expectPlainText().result().get();
 
-    Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
+    Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
       eq("http://not-balanced-backend"), eq(null), eq("http://not-balanced-backend"), eq(200), anyLong(), eq(true)
     );
@@ -295,7 +296,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     getTestClient().get();
     assertHostEquals(request[0], "server1");
 
-    upstreamManager.updateUpstream(TEST_UPSTREAM, "| server=http://server2 dc=DC2");
+    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM, "| server=http://server2 dc=DC2");
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");

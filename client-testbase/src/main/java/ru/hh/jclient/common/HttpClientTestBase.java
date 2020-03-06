@@ -185,7 +185,7 @@ public class HttpClientTestBase {
     return new HttpClientFactory(httpClient, singleton("http://localhost"),
         new SingletonStorage<>(() -> httpClientContext),
         Runnable::run,
-        new DefaultUpstreamManager(),
+        new DefaultRequestingStrategy(new DefaultUpstreamManager()),
         eventListeners
     );
   }

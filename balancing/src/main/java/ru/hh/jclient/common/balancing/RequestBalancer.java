@@ -7,6 +7,8 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
+import ru.hh.jclient.common.RequestEngine;
+import ru.hh.jclient.common.RequestingStrategy;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
 
@@ -15,7 +17,6 @@ import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MS;
 
 import ru.hh.jclient.common.ResponseWrapper;
-import ru.hh.jclient.common.UpstreamManager;
 import ru.hh.jclient.common.Uri;
 
 import java.util.HashSet;
@@ -26,11 +27,11 @@ import java.util.concurrent.CompletableFuture;
 
 import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
 
-public class RequestBalancer {
+public class RequestBalancer implements RequestEngine {
   private final Request request;
   private final Upstream upstream;
-  private final UpstreamManager upstreamManager;
-  private final RequestExecutor requestExecutor;
+  private final BalancingUpstreamManager upstreamManager;
+  private final RequestingStrategy.RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
   private final int maxTries;
   private final boolean adaptive;
@@ -44,8 +45,8 @@ public class RequestBalancer {
   private String upstreamName;
 
   public RequestBalancer(Request request,
-                         UpstreamManager upstreamManager,
-                         RequestExecutor requestExecutor,
+                         BalancingUpstreamManager upstreamManager,
+                         RequestingStrategy.RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,
                          boolean adaptive,
@@ -211,8 +212,8 @@ public class RequestBalancer {
     return uri.getPort() > -1 ? baseUri : baseUri.substring(0, baseUri.lastIndexOf(":"));
   }
 
-  @FunctionalInterface
-  public interface RequestExecutor {
-    CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
+  @Override
+  public CompletableFuture<? extends Response> execute() {
+    return requestWithRetry();
   }
 }

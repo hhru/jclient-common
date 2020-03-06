@@ -12,7 +12,6 @@ import static org.mockito.Mockito.mock;
 
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.UpstreamManager;
 
 import java.util.List;
 import java.util.Set;
@@ -37,7 +36,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void updateUpstreams() {
-    UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 retry_policy=timeout | server=a | server=b");
+    BalancingUpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 retry_policy=timeout | server=a | server=b");
 
     manager.updateUpstream(TEST_BACKEND, "max_fails=6 | server=a");
     manager.updateUpstream(TEST_BACKEND, "max_fails=6 retry_policy=http_503,non_idempotent_503,http_500 | server=a | server=c");
@@ -72,7 +71,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void testGetUpstream() {
-    UpstreamManager upstreamManager = createUpstreamManager(TEST_BACKEND, "|server=server");
+    BalancingUpstreamManager upstreamManager = createUpstreamManager(TEST_BACKEND, "|server=server");
 
     assertNotNull(upstreamManager.getUpstream(TEST_BACKEND));
 

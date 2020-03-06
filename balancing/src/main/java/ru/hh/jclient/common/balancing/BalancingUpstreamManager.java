@@ -33,12 +33,14 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final boolean allowCrossDCRequests;
   private final Function<HttpClientContext, UpstreamProfileSelector> upstreamProfileSelectorProvider;
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter,
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor,
+                                  Set<Monitoring> monitoring, String datacenter,
                                   boolean allowCrossDCRequests) {
     this(scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, false);
   }
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter,
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
+                                  String datacenter,
                                   boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
     this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection);
   }
@@ -86,7 +88,9 @@ public class BalancingUpstreamManager extends UpstreamManager {
       if (existingGroup == null) {
         return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
       }
-      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig, (profileName, config) -> createUpstream(upstreamKey, newConfig));
+      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig,
+          (profileName, config) -> createUpstream(upstreamKey, newConfig)
+      );
     });
   }
 
@@ -94,14 +98,16 @@ public class BalancingUpstreamManager extends UpstreamManager {
     return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true);
   }
 
-  @Override
+  public Upstream getUpstream(String serviceName) {
+    return getUpstream(serviceName, null);
+  }
+
   public Upstream getUpstream(String serviceName, @Nullable String profile) {
     return ofNullable(upstreams.get(getNameWithoutScheme(serviceName)))
         .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);
   }
 
   @Nonnull
-  @Override
   protected UpstreamProfileSelector getProfileSelector(HttpClientContext ctx) {
     return upstreamProfileSelectorProvider.apply(ctx);
   }

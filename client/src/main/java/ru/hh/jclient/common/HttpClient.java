@@ -11,9 +11,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.function.Supplier;
 import org.asynchttpclient.AsyncHttpClient;
-import ru.hh.jclient.common.balancing.UpstreamProfileSelector;
-import ru.hh.jclient.common.balancing.RequestBalancer;
-import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
 import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
@@ -47,37 +44,39 @@ public abstract class HttpClient {
   private final Set<String> hostsWithSession;
   private final HttpClientContext context;
   private final Storages storages;
-  private final UpstreamManager upstreamManager;
+//  private final UpstreamManager upstreamManager;
+  private final RequestEngineBuilder<?> requestEngineBuilder;
   private final List<HttpClientEventListener> eventListeners;
 
   private List<RequestDebug> debugs;
   private Request request;
   private Optional<?> requestBodyEntity = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
-  private Integer maxRequestTimeoutTries;
-  private boolean forceIdempotence = false;
+//  private Integer maxRequestTimeoutTries;
+//  private boolean forceIdempotence = false;
 
   private boolean readOnlyReplica;
   private boolean noSession;
   private boolean noDebug;
   private boolean externalRequest;
-  private boolean adaptive;
-  private UpstreamProfileSelector upstreamProfileSelector;
+//  private boolean adaptive;
+//  private UpstreamProfileSelector upstreamProfileSelector;
 
   HttpClient(AsyncHttpClient http,
              Request request,
              Set<String> hostsWithSession,
-             UpstreamManager upstreamManager,
+             RequestingStrategy requestingStrategy,
              Storage<HttpClientContext> contextSupplier,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
-    this.upstreamManager = upstreamManager;
+//    this.upstreamManager = requestingStrategy.getUpstreamManager();
+    this.requestEngineBuilder = requestingStrategy.getRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
-    this.upstreamProfileSelector = upstreamManager.getProfileSelector(context);
+//    this.upstreamProfileSelector = upstreamManager.getProfileSelector(context);
     storages = context.getStorages().copy().add(contextSupplier);
     debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
   }
@@ -114,37 +113,37 @@ public abstract class HttpClient {
     return this;
   }
 
-  /**
-   * Use adaptive balancing.
-   */
-  public HttpClient adaptive() {
-    adaptive = true;
-    return this;
-  }
+//  /**
+//   * Use adaptive balancing.
+//   */
+//  public HttpClient adaptive() {
+//    adaptive = true;
+//    return this;
+//  }
+//
+//  /**
+//   * Sets profile do select upstream precisely
+//   */
+//  public HttpClient withProfile(String profile) {
+//    this.upstreamProfileSelector = UpstreamProfileSelector.forProfile(profile);
+//    return this;
+//  }
 
-  /**
-   * Sets profile to select upstream precisely
-   */
-  public HttpClient withProfile(String profile) {
-    this.upstreamProfileSelector = UpstreamProfileSelector.forProfile(profile);
-    return this;
-  }
+//  /**
+//   * Overrides {@link ru.hh.jclient.common.balancing.UpstreamConfig#getMaxTimeoutTries() when using {@link RequestBalancer}}
+//   */
+//  public HttpClient withMaxRequestTimeoutTries(Integer maxRequestTimeoutTries) {
+//    this.maxRequestTimeoutTries = maxRequestTimeoutTries;
+//    return this;
+//  }
 
-  /**
-   * Overrides {@link ru.hh.jclient.common.balancing.UpstreamConfig#getMaxTimeoutTries() when using {@link RequestBalancer}}
-   */
-  public HttpClient withMaxRequestTimeoutTries(Integer maxRequestTimeoutTries) {
-    this.maxRequestTimeoutTries = maxRequestTimeoutTries;
-    return this;
-  }
-
-  /**
-   * Force request idempotence, default false
-   */
-  public HttpClient forceIdempotence(boolean forceIdempotence) {
-    this.forceIdempotence = forceIdempotence;
-    return this;
-  }
+//  /**
+//   * Force request idempotence, default false
+//   */
+//  public HttpClient forceIdempotence(boolean forceIdempotence) {
+//    this.forceIdempotence = forceIdempotence;
+//    return this;
+//  }
 
   /**
    * Convenience method that sets protobuf object as request body as well as corresponding "Content-type" header. Provided object will be used in
@@ -325,13 +324,17 @@ public abstract class HttpClient {
     return new ResultProcessor<>(this, converter);
   }
 
+  public <T extends RequestEngineBuilder<?>> T configureRequestEngine(Class<T> clazz) {
+    return (T) requestEngineBuilder;
+  }
+
   /**
    * Returns unconverted, raw response. Avoid using this method, use "converter" methods instead.
    *
    * @return response
    */
-  public CompletableFuture<Response> unconverted() {
-    RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
+  public CompletableFuture<? extends Response> unconverted() {
+    RequestingStrategy.RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
       if (retryCount > 0) {
         // due to retry possibly performed in another thread
         // TODO do not re-get suppliers here
@@ -339,9 +342,10 @@ public abstract class HttpClient {
       }
       return executeRequest(request, retryCount, requestContext);
     };
-    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
-      maxRequestTimeoutTries, forceIdempotence, adaptive, upstreamProfileSelector);
-    return requestBalancer.requestWithRetry();
+//    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
+//      maxRequestTimeoutTries, forceIdempotence, adaptive, upstreamProfileSelector);
+    return requestEngineBuilder.build(request, requestExecutor).execute();
+//    return requestBalancer.requestWithRetry();
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
