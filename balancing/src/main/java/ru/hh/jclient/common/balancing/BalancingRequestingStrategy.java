@@ -6,9 +6,9 @@ import ru.hh.jclient.common.RequestingStrategy;
 
 public class BalancingRequestingStrategy implements RequestingStrategy<RequestBalancer> {
 
-  private final BalancingUpstreamManager upstreamManager;
+  private final UpstreamManager upstreamManager;
 
-  public BalancingRequestingStrategy(BalancingUpstreamManager upstreamManager) {
+  public BalancingRequestingStrategy(UpstreamManager upstreamManager) {
     this.upstreamManager = upstreamManager;
   }
 
@@ -17,7 +17,7 @@ public class BalancingRequestingStrategy implements RequestingStrategy<RequestBa
     return new RequestBalancerBuilder(upstreamManager, client);
   }
 
-  public BalancingUpstreamManager getUpstreamManager() {
+  public UpstreamManager getUpstreamManager() {
     return upstreamManager;
   }
 

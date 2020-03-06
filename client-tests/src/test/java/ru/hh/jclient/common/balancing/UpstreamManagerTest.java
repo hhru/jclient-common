@@ -21,7 +21,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void createUpstreamManager() {
-    BalancingUpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
+    UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
 
     assertEquals(1, manager.getUpstreams().size());
 
@@ -36,7 +36,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void updateUpstreams() {
-    BalancingUpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 retry_policy=timeout | server=a | server=b");
+    UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 retry_policy=timeout | server=a | server=b");
 
     manager.updateUpstream(TEST_BACKEND, "max_fails=6 | server=a");
     manager.updateUpstream(TEST_BACKEND, "max_fails=6 retry_policy=http_503,non_idempotent_503,http_500 | server=a | server=c");
@@ -61,7 +61,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void testRemoveUpstream() {
-    BalancingUpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
+    UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
 
     manager.updateUpstream(TEST_BACKEND, null);
 
@@ -71,7 +71,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void testGetUpstream() {
-    BalancingUpstreamManager upstreamManager = createUpstreamManager(TEST_BACKEND, "|server=server");
+    UpstreamManager upstreamManager = createUpstreamManager(TEST_BACKEND, "|server=server");
 
     assertNotNull(upstreamManager.getUpstream(TEST_BACKEND));
 
@@ -82,7 +82,7 @@ public class UpstreamManagerTest {
     assertNull(upstreamManager.getUpstream("missing_upstream"));
   }
 
-  private static BalancingUpstreamManager createUpstreamManager(String backend, String configString) {
+  private static UpstreamManager createUpstreamManager(String backend, String configString) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(
       singletonMap(backend, configString), newSingleThreadScheduledExecutor(), Set.of(monitoring), null, false

@@ -30,7 +30,7 @@ import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEP
 public class RequestBalancer implements RequestEngine {
   private final Request request;
   private final Upstream upstream;
-  private final BalancingUpstreamManager upstreamManager;
+  private final UpstreamManager upstreamManager;
   private final RequestingStrategy.RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
   private final int maxTries;
@@ -45,7 +45,7 @@ public class RequestBalancer implements RequestEngine {
   private String upstreamName;
 
   public RequestBalancer(Request request,
-                         BalancingUpstreamManager upstreamManager,
+                         UpstreamManager upstreamManager,
                          RequestingStrategy.RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,

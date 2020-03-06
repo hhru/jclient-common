@@ -104,6 +104,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
         .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);
   }
 
+  @Override
   @Nonnull
   protected UpstreamProfileSelector getProfileSelector(HttpClientContext ctx) {
     return upstreamProfileSelectorProvider.apply(ctx);
@@ -123,6 +124,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
     return beginIndex > 2 ? host.substring(beginIndex) : host;
   }
 
+  @Override
   @VisibleForTesting
   Map<String, UpstreamGroup> getUpstreams() {
     return upstreams;
