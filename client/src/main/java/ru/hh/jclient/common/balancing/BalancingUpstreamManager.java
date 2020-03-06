@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 public class BalancingUpstreamManager extends UpstreamManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
-  private static final String SCHEMA_SEPARATOR = "://";
+  static final String SCHEMA_SEPARATOR = "://";
   private static final int SCHEMA_SEPARATOR_LEN = 3;
 
   private final Map<String, UpstreamGroup> upstreams = new ConcurrentHashMap<>();

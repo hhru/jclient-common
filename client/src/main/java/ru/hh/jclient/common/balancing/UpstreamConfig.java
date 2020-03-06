@@ -170,7 +170,7 @@ final class UpstreamConfig {
     return Arrays.stream(configStr.split(" "))
         .map(String::trim)
         .filter(s -> !s.isEmpty())
-        .map(s -> s.split("="))
+        .map(s -> s.split("=", 2))
         .collect(toMap(p -> p[0], p -> p[1]));
   }
 
@@ -179,7 +179,9 @@ final class UpstreamConfig {
   }
 
   private static int parseAndConvertToMillisOrFallback(String value, int defaultValue) {
-    return value != null ? Math.round(Float.parseFloat(value) * TimeUnit.SECONDS.toMillis(1)) : defaultValue;
+    return Optional.ofNullable(value)
+      .map(nonNullValue -> Math.round(Float.parseFloat(nonNullValue) * TimeUnit.SECONDS.toMillis(1)))
+      .orElse(defaultValue);
   }
 
   private UpstreamConfig() {

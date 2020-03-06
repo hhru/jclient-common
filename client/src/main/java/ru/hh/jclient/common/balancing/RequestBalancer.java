@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
+
 public class RequestBalancer {
   private final Request request;
   private final Upstream upstream;
@@ -205,8 +207,8 @@ public class RequestBalancer {
 
   private static String getOriginalServer(Request request) {
     Uri uri = request.getUri();
-    String port = uri.getPort() > -1 ? ":" + uri.getPort() : "";
-    return uri.getScheme() + "://" + uri.getHost() + port;
+    var baseUri = uri.getScheme() + SCHEMA_SEPARATOR + uri.getHost() + ":" + uri.getPort();
+    return uri.getPort() > -1 ? baseUri : baseUri.substring(0, baseUri.lastIndexOf(":"));
   }
 
   @FunctionalInterface
