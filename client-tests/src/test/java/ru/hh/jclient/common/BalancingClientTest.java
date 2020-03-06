@@ -59,7 +59,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
   }
 
-  @Test
+  @Test(expected = IllegalStateException.class)
   public void requestWithProfileDefaultMissing() throws Exception {
     var upstreamConfigs = Map.of(
             new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
@@ -75,7 +75,6 @@ public class BalancingClientTest extends BalancingClientTestBase {
               return null;
             });
     getTestClient().withProfile("notExistingProfile").get();
-    assertHostEquals(request[0], TEST_UPSTREAM); //upstream not found
   }
 
   @Test

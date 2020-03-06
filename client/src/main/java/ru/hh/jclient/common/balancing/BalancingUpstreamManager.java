@@ -94,9 +94,9 @@ public class BalancingUpstreamManager extends UpstreamManager {
       return;
     }
     var newConfig = UpstreamConfig.parse(configString);
-    upstreams.compute(upstreamKey.getServiceName(), (key, existingGroup) -> {
+    upstreams.compute(upstreamKey.getServiceName(), (serviceName, existingGroup) -> {
       if (existingGroup == null) {
-        return new UpstreamGroup(upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
+        return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
       }
       return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig, (profileName, config) -> createUpstream(upstreamKey, newConfig));
     });

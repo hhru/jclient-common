@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.util.Optional.ofNullable;
 
@@ -17,8 +18,10 @@ public class UpstreamGroup {
   static final String DEFAULT_PROFILE = "default";
   private final Map<String, Upstream> upstreamsByProfile;
   private final SortedMap<ProfileKey, String> profilesByMaxResponseTime;
+  private final Supplier<IllegalStateException> noDefaultProfileExSupplier;
 
-  public UpstreamGroup(String profileName, Upstream upstream) {
+  public UpstreamGroup(String serviceName, String profileName, Upstream upstream) {
+    this.noDefaultProfileExSupplier = () -> new IllegalStateException("No " + DEFAULT_PROFILE + " profile for service <" + serviceName + '>');
     this.upstreamsByProfile = new ConcurrentHashMap<>();
     this.profilesByMaxResponseTime = new ConcurrentSkipListMap<>();
     var profileOrDefault = ofNullable(profileName).orElse(DEFAULT_PROFILE);
@@ -42,10 +45,8 @@ public class UpstreamGroup {
   }
 
   public Upstream getUpstreamOrDefault(@Nullable String profile) {
-    if (profile != null) {
-      return ofNullable(upstreamsByProfile.get(profile)).orElseGet(() -> upstreamsByProfile.get(DEFAULT_PROFILE));
-    }
-    return upstreamsByProfile.get(DEFAULT_PROFILE);
+    return ofNullable(profile).map(upstreamsByProfile::get).or(() -> ofNullable(upstreamsByProfile.get(DEFAULT_PROFILE)))
+      .orElseThrow(noDefaultProfileExSupplier);
   }
 
   public boolean isEmpty() {
