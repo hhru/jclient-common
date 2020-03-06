@@ -8,6 +8,6 @@ public interface RequestingStrategy<T extends RequestEngine> {
   interface RequestExecutor {
     CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
   }
-  UpstreamManager getUpstreamManager();
   RequestEngineBuilder<T> getRequestEngineBuilder(HttpClient client);
+  void setTimeoutMultiplier(double timeoutMultiplier);
 }

@@ -47,7 +47,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   static final String TEST_UPSTREAM = "backend";
   AsyncHttpClient httpClient;
-  RequestingStrategy requestingStrategy;
+  BalancingRequestingStrategy requestingStrategy;
 
   @Before
   public void setUpTest() {

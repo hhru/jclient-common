@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpHeaderNames;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.UpstreamManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -22,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 public class BalancingUpstreamManager extends UpstreamManager {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
   static final String SCHEMA_SEPARATOR = "://";
   private static final int SCHEMA_SEPARATOR_LEN = 3;
@@ -98,10 +98,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
     return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true);
   }
 
-  public Upstream getUpstream(String serviceName) {
-    return getUpstream(serviceName, null);
-  }
-
+  @Override
   public Upstream getUpstream(String serviceName, @Nullable String profile) {
     return ofNullable(upstreams.get(getNameWithoutScheme(serviceName)))
         .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);

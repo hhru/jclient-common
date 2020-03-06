@@ -3,7 +3,6 @@ package ru.hh.jclient.common.balancing;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.RequestEngineBuilder;
 import ru.hh.jclient.common.RequestingStrategy;
-import ru.hh.jclient.common.UpstreamManager;
 
 public class BalancingRequestingStrategy implements RequestingStrategy<RequestBalancer> {
 
@@ -14,12 +13,16 @@ public class BalancingRequestingStrategy implements RequestingStrategy<RequestBa
   }
 
   @Override
-  public UpstreamManager getUpstreamManager() {
+  public RequestEngineBuilder<RequestBalancer> getRequestEngineBuilder(HttpClient client) {
+    return new RequestBalancerBuilder(upstreamManager, client);
+  }
+
+  public BalancingUpstreamManager getUpstreamManager() {
     return upstreamManager;
   }
 
   @Override
-  public RequestEngineBuilder<RequestBalancer> getRequestEngineBuilder(HttpClient client) {
-    return new RequestBalancerBuilder(upstreamManager, client);
+  public void setTimeoutMultiplier(double timeoutMultiplier) {
+    upstreamManager.setTimeoutMultiplier(timeoutMultiplier);
   }
 }

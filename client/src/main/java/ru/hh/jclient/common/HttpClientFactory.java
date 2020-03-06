@@ -30,7 +30,7 @@ public class HttpClientFactory {
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor,
-        new DefaultRequestingStrategy(new DefaultUpstreamManager()));
+        new DefaultRequestingStrategy());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
