@@ -44,7 +44,6 @@ public abstract class HttpClient {
   private final Set<String> hostsWithSession;
   private final HttpClientContext context;
   private final Storages storages;
-//  private final UpstreamManager upstreamManager;
   private final RequestEngineBuilder<?> requestEngineBuilder;
   private final List<HttpClientEventListener> eventListeners;
 
@@ -52,15 +51,11 @@ public abstract class HttpClient {
   private Request request;
   private Optional<?> requestBodyEntity = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
-//  private Integer maxRequestTimeoutTries;
-//  private boolean forceIdempotence = false;
 
   private boolean readOnlyReplica;
   private boolean noSession;
   private boolean noDebug;
   private boolean externalRequest;
-//  private boolean adaptive;
-//  private UpstreamProfileSelector upstreamProfileSelector;
 
   HttpClient(AsyncHttpClient http,
              Request request,
@@ -71,12 +66,10 @@ public abstract class HttpClient {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
-//    this.upstreamManager = requestingStrategy.getUpstreamManager();
     this.requestEngineBuilder = requestingStrategy.getRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
-//    this.upstreamProfileSelector = upstreamManager.getProfileSelector(context);
     storages = context.getStorages().copy().add(contextSupplier);
     debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
   }
@@ -112,38 +105,6 @@ public abstract class HttpClient {
     noDebug = true;
     return this;
   }
-
-//  /**
-//   * Use adaptive balancing.
-//   */
-//  public HttpClient adaptive() {
-//    adaptive = true;
-//    return this;
-//  }
-//
-//  /**
-//   * Sets profile do select upstream precisely
-//   */
-//  public HttpClient withProfile(String profile) {
-//    this.upstreamProfileSelector = UpstreamProfileSelector.forProfile(profile);
-//    return this;
-//  }
-
-//  /**
-//   * Overrides {@link ru.hh.jclient.common.balancing.UpstreamConfig#getMaxTimeoutTries() when using {@link RequestBalancer}}
-//   */
-//  public HttpClient withMaxRequestTimeoutTries(Integer maxRequestTimeoutTries) {
-//    this.maxRequestTimeoutTries = maxRequestTimeoutTries;
-//    return this;
-//  }
-
-//  /**
-//   * Force request idempotence, default false
-//   */
-//  public HttpClient forceIdempotence(boolean forceIdempotence) {
-//    this.forceIdempotence = forceIdempotence;
-//    return this;
-//  }
 
   /**
    * Convenience method that sets protobuf object as request body as well as corresponding "Content-type" header. Provided object will be used in
@@ -324,6 +285,11 @@ public abstract class HttpClient {
     return new ResultProcessor<>(this, converter);
   }
 
+  /**
+   * Entrypoint to configure engine-specific properties of the client
+   * @param clazz specific implementation type of {@link RequestEngineBuilder}
+   * @return requestEngineBuilder casted to specific type
+   */
   public <T extends RequestEngineBuilder<?>> T configureRequestEngine(Class<T> clazz) {
     return (T) requestEngineBuilder;
   }
@@ -342,10 +308,7 @@ public abstract class HttpClient {
       }
       return executeRequest(request, retryCount, requestContext);
     };
-//    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
-//      maxRequestTimeoutTries, forceIdempotence, adaptive, upstreamProfileSelector);
     return requestEngineBuilder.build(request, requestExecutor).execute();
-//    return requestBalancer.requestWithRetry();
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
