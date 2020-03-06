@@ -123,7 +123,7 @@ public abstract class HttpClient {
   }
 
   /**
-   * Sets profile do select upstream precisely
+   * Sets profile to select upstream precisely
    */
   public HttpClient withProfile(String profile) {
     this.upstreamProfileSelector = UpstreamProfileSelector.forProfile(profile);

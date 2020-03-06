@@ -93,7 +93,8 @@ public class BalancingUpstreamManager extends UpstreamManager {
       return ofNullable(ctx.getHeaders())
           .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
           .flatMap(values -> values.stream().findFirst())
-          .map(Long::valueOf).map(Duration::ofMillis)
+          .map(Long::valueOf)
+          .map(Duration::ofMillis)
           .map(outerTimeout -> {
             var alreadySpentTime = Duration.between(ctx.getRequestStart(), getNow());
             var expectedTimeout = outerTimeout.minus(alreadySpentTime);
