@@ -255,15 +255,20 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   void createHttpClientFactory(String upstreamConfig) {
-    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false);
+    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false, false);
   }
 
   void createHttpClientFactory(String upstreamConfig, String datacenter, boolean allowCrossDCRequests) {
-    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests);
+    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests, false);
   }
 
   void createHttpClientFactory(Map<String, String> upstreamConfigs, String datacenter, boolean allowCrossDCRequests) {
-    http = createHttpClientFactory(httpClient, upstreamConfigs, datacenter, allowCrossDCRequests);
+    http = createHttpClientFactory(httpClient, upstreamConfigs, datacenter, allowCrossDCRequests, false);
+  }
+
+  void createHttpClientFactory(Map<String, String> upstreamConfigs, String datacenter,
+                               boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
+    http = createHttpClientFactory(httpClient, upstreamConfigs, datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection);
   }
 
   Request completeWith(int status, InvocationOnMock iom) throws Exception {
@@ -286,10 +291,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter,
-                                                    boolean allowCrossDCRequests) {
+                                                    boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
     Monitoring monitoring = mock(Monitoring.class);
     upstreamManager = new BalancingUpstreamManager(
-      upstreamConfigs, newSingleThreadScheduledExecutor(), Set.of(monitoring), datacenter, allowCrossDCRequests) {
+      upstreamConfigs, newSingleThreadScheduledExecutor(), Set.of(monitoring), datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection) {
       @Override
       protected LocalDateTime getNow() {
         return BalancingClientTestBase.this.getNow();

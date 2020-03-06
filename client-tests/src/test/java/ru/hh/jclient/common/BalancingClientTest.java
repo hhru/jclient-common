@@ -52,11 +52,30 @@ public class BalancingClientTest extends BalancingClientTestBase {
           return null;
         });
     getTestClient().get();
-    assertHostEquals(request[0], "server1");
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
     getTestClient().withProfile("foo").get();
-    assertHostEquals(request[0], "server1");
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(1));
+    getTestClient().withProfile("notExistingProfile").get();
+    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
+  }
+
+  @Test
+  public void requestWithProfileDefaultMissing() throws Exception {
+    var upstreamConfigs = Map.of(
+            new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
+            "request_timeout_sec=2 | server=http://server1 | server=http://server2",
+            new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
+            "request_timeout_sec=1 | server=http://server1 | server=http://server2"
+    );
+    createHttpClientFactory(upstreamConfigs, null, false);
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+            .then(iom -> {
+              request[0] = completeWith(200, iom);
+              return null;
+            });
+    getTestClient().withProfile("notExistingProfile").get();
+    assertHostEquals(request[0], TEST_UPSTREAM); //upstream not found
   }
 
   @Test
@@ -82,29 +101,6 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Test
-  public void requestWithAdaptiveProfileSelectionNow() throws Exception {
-    var upstreamConfigs = Map.of(
-        UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
-        "request_timeout_sec=6 | server=http://server6",
-        new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
-        "request_timeout_sec=4 | server=http://server4 ",
-        new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
-        "request_timeout_sec=2 | server=http://server2"
-    );
-    createHttpClientFactory(upstreamConfigs, null, false);
-    Request[] request = new Request[1];
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          request[0] = completeWith(200, iom);
-          return null;
-        });
-    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(Long.toString(TimeUnit.SECONDS.toMillis(6)))));
-    setNow(LocalDateTime.now().plusSeconds(3));
-    getTestClient().get();
-    assertHostEquals(request[0], "server2");
-  }
-
-  @Test
   public void requestWithAdaptiveProfileSelectionSelectFastest() throws Exception {
     var upstreamConfigs = Map.of(
         UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
@@ -122,6 +118,51 @@ public class BalancingClientTest extends BalancingClientTestBase {
           return null;
         });
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(Long.toString(TimeUnit.SECONDS.toMillis(1)))));
+    getTestClient().get();
+    assertHostEquals(request[0], "server2");
+  }
+
+  @Test
+  public void requestWithAdaptiveProfileSelectionDisabled() throws Exception {
+    var upstreamConfigs = Map.of(
+            UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
+            "request_timeout_sec=6 | server=http://server6",
+            new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
+            "request_timeout_sec=4 | server=http://server4 ",
+            new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
+            "request_timeout_sec=2 | server=http://server2"
+    );
+    createHttpClientFactory(upstreamConfigs, null, false, true);
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+            .then(iom -> {
+              request[0] = completeWith(200, iom);
+              return null;
+            });
+    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(Long.toString(TimeUnit.SECONDS.toMillis(1)))));
+    getTestClient().get();
+    assertHostEquals(request[0], "server6");
+  }
+
+  @Test
+  public void requestWithAdaptiveProfileSelectionNow() throws Exception {
+    var upstreamConfigs = Map.of(
+            UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
+            "request_timeout_sec=6 | server=http://server6",
+            new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
+            "request_timeout_sec=4 | server=http://server4 ",
+            new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
+            "request_timeout_sec=2 | server=http://server2"
+    );
+    createHttpClientFactory(upstreamConfigs, null, false);
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+            .then(iom -> {
+              request[0] = completeWith(200, iom);
+              return null;
+            });
+    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(Long.toString(TimeUnit.SECONDS.toMillis(6)))));
+    setNow(LocalDateTime.now().plusSeconds(3));
     getTestClient().get();
     assertHostEquals(request[0], "server2");
   }
