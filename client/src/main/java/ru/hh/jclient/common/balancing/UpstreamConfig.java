@@ -1,16 +1,18 @@
 package ru.hh.jclient.common.balancing;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 final class UpstreamConfig {
   static final int DEFAULT_MAX_TRIES = 2;
@@ -52,7 +54,7 @@ final class UpstreamConfig {
       }
 
       for (int i = 1; i < configs.length; i++) {
-        if (!isNullOrEmpty(configs[i].trim())) {
+        if (configs[i] != null && !configs[i].isBlank()) {
           upstreamConfig.addServer(parseServerConfig(configs[i]));
         }
       }
@@ -60,7 +62,7 @@ final class UpstreamConfig {
       return upstreamConfig;
 
     } catch (Exception e) {
-      throw new UpstreamConfigFormatException("failed to parse upstream config: '" + configString + "'", e);
+      throw new UpstreamConfigFormatException("failed to parse upstream config: '" + configString + '\'', e);
     }
   }
 
@@ -135,7 +137,7 @@ final class UpstreamConfig {
   }
 
   List<Server> getServers() {
-    return servers;
+    return Collections.unmodifiableList(servers);
   }
 
   @Override
@@ -149,16 +151,11 @@ final class UpstreamConfig {
         + ", request_timeout_ms=" + requestTimeoutMs
         + ", servers=" + servers.size()
         + "| " + serversStr
-        + "}";
+        + '}';
   }
 
   private int getFirstFreeServerIndex() {
-    for (int i = 0; i < servers.size(); i++) {
-      if (servers.get(i) == null) {
-        return i;
-      }
-    }
-    return -1;
+    return IntStream.range(0, servers.size()).filter(i -> servers.get(i) == null).findFirst().orElse(-1);
   }
 
   private static Server parseServerConfig(String configStr) {
@@ -178,15 +175,17 @@ final class UpstreamConfig {
   }
 
   private static int parseIntOrFallback(String value, int defaultValue) {
-    return value != null ? Integer.parseInt(value) : defaultValue;
+    return Optional.ofNullable(value).map(Integer::parseInt).orElse(defaultValue);
   }
 
   private static int parseAndConvertToMillisOrFallback(String value, int defaultValue) {
-    return value != null
-        ? Math.round(Float.parseFloat(value) * TimeUnit.SECONDS.toMillis(1))
-        : defaultValue;
+    return value != null ? Math.round(Float.parseFloat(value) * TimeUnit.SECONDS.toMillis(1)) : defaultValue;
   }
 
   private UpstreamConfig() {
+  }
+
+  public int getAllowedTimeoutMs() {
+    return maxTimeoutTries * requestTimeoutMs;
   }
 }
