@@ -18,16 +18,27 @@ public class UpstreamGroup {
   private final Map<String, Upstream> upstreamsByProfile;
   private final SortedMap<ProfileKey, String> profilesByMaxResponseTime;
 
-  public UpstreamGroup() {
+  public UpstreamGroup(String profileName, Upstream upstream) {
     this.upstreamsByProfile = new ConcurrentHashMap<>();
     this.profilesByMaxResponseTime = new ConcurrentSkipListMap<>();
+    var profileOrDefault = ofNullable(profileName).orElse(DEFAULT_PROFILE);
+    this.upstreamsByProfile.put(profileOrDefault, upstream);
+    this.profilesByMaxResponseTime.put(new ProfileKey(profileOrDefault, upstream.getConfig().getAllowedTimeoutMs()), profileOrDefault);
   }
 
   public String getFittingProfile(int timeoutToFit) {
     var boundary = new ProfileKey(null, timeoutToFit);
-    var key = Optional.of(profilesByMaxResponseTime.headMap(boundary))
-        .filter(Predicate.not(Map::isEmpty)).map(SortedMap::lastKey).orElseGet(profilesByMaxResponseTime::firstKey);
-    return profilesByMaxResponseTime.get(key);
+    return Optional.of(profilesByMaxResponseTime)
+      .filter(Predicate.not(Map::isEmpty))
+      .map(notEmptyMap -> getSlowestFittingOrFastest(notEmptyMap, boundary))
+      .orElse(null);
+  }
+
+  private static String getSlowestFittingOrFastest(SortedMap<ProfileKey, String> profilesByResponseTime, ProfileKey boundary) {
+    return Optional.of(profilesByResponseTime.headMap(boundary))
+      .filter(Predicate.not(Map::isEmpty))
+      .map(headMap -> headMap.get(headMap.lastKey()))
+      .orElseGet(() -> profilesByResponseTime.get(profilesByResponseTime.firstKey()));
   }
 
   public Upstream getUpstreamOrDefault(@Nullable String profile) {
@@ -41,10 +52,10 @@ public class UpstreamGroup {
     return upstreamsByProfile.isEmpty();
   }
 
-  public void addOrUpdate(@Nullable String profileName, UpstreamConfig config,
+  public UpstreamGroup addOrUpdate(@Nullable String profileName, UpstreamConfig config,
                           BiFunction<String, UpstreamConfig, Upstream> upstreamFactory) {
     var profileOrDefault = ofNullable(profileName).orElse(DEFAULT_PROFILE);
-    var updateUpstream = upstreamsByProfile.compute(profileOrDefault, (name, existingUpstream) -> {
+    var updatedUpstream = upstreamsByProfile.compute(profileOrDefault, (name, existingUpstream) -> {
       if (existingUpstream != null) {
         existingUpstream.updateConfig(config);
         return existingUpstream;
@@ -54,9 +65,10 @@ public class UpstreamGroup {
     });
     // no atomicity - eventual consistency is ok
     profilesByMaxResponseTime.put(
-        new ProfileKey(profileOrDefault, updateUpstream.getConfig().getAllowedTimeoutMs()),
+        new ProfileKey(profileOrDefault, updatedUpstream.getConfig().getAllowedTimeoutMs()),
         profileOrDefault
     );
+    return this;
   }
 
   public void remove(@Nullable String profileName) {

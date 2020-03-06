@@ -95,17 +95,15 @@ public class BalancingUpstreamManager extends UpstreamManager {
     }
     var newConfig = UpstreamConfig.parse(configString);
     upstreams.compute(upstreamKey.getServiceName(), (key, existingGroup) -> {
-      var upstreamGroup = ofNullable(existingGroup).orElseGet(UpstreamGroup::new);
-      upstreamGroup.addOrUpdate(
-          upstreamKey.getProfileName(), newConfig,
-          (profileName, config) -> new Upstream(
-              upstreamKey,
-              newConfig,
-              scheduledExecutor, datacenter, allowCrossDCRequests, true
-          )
-      );
-      return upstreamGroup;
+      if (existingGroup == null) {
+        return new UpstreamGroup(upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
+      }
+      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig, (profileName, config) -> createUpstream(upstreamKey, newConfig));
     });
+  }
+
+  private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config) {
+    return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true);
   }
 
   @Override
