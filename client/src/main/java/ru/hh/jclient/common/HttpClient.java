@@ -60,7 +60,7 @@ public abstract class HttpClient {
   HttpClient(AsyncHttpClient http,
              Request request,
              Set<String> hostsWithSession,
-             RequestStrategy<RequestEngine> requestStrategy,
+             RequestStrategy<? extends RequestEngine> requestStrategy,
              Storage<HttpClientContext> contextSupplier,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;

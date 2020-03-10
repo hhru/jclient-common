@@ -18,7 +18,7 @@ public class HttpClientFactory {
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final RequestStrategy<RequestEngine> requestStrategy;
+  private final RequestStrategy<? extends RequestEngine> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
@@ -37,7 +37,7 @@ public class HttpClientFactory {
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestStrategy<RequestEngine> requestStrategy) {
+                           RequestStrategy<? extends RequestEngine> requestStrategy) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of());
   }
 
@@ -45,7 +45,7 @@ public class HttpClientFactory {
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestStrategy<RequestEngine> requestStrategy,
+                           RequestStrategy<? extends RequestEngine> requestStrategy,
                            List<HttpClientEventListener> eventListeners) {
     this.http = requireNonNull(http, "http must not be null");
     this.hostsWithSession = requireNonNull(hostsWithSession, "hostsWithSession must not be null");
