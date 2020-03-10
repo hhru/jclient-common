@@ -7,6 +7,8 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
+import ru.hh.jclient.common.RequestEngine;
+import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
 
@@ -15,7 +17,6 @@ import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MS;
 
 import ru.hh.jclient.common.ResponseWrapper;
-import ru.hh.jclient.common.UpstreamManager;
 import ru.hh.jclient.common.Uri;
 
 import java.util.HashSet;
@@ -26,11 +27,11 @@ import java.util.concurrent.CompletableFuture;
 
 import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
 
-public class RequestBalancer {
+public class RequestBalancer implements RequestEngine {
   private final Request request;
   private final Upstream upstream;
   private final UpstreamManager upstreamManager;
-  private final RequestExecutor requestExecutor;
+  private final RequestStrategy.RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
   private final int maxTries;
   private final boolean adaptive;
@@ -45,7 +46,7 @@ public class RequestBalancer {
 
   public RequestBalancer(Request request,
                          UpstreamManager upstreamManager,
-                         RequestExecutor requestExecutor,
+                         RequestStrategy.RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,
                          boolean adaptive,
@@ -70,7 +71,8 @@ public class RequestBalancer {
     triesLeft = upstream != null ? upstream.getConfig().getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
   }
 
-  public CompletableFuture<Response> requestWithRetry() {
+  @Override
+  public CompletableFuture<Response> execute() {
     Request balancedRequest = request;
     RequestContext context = RequestContext.EMPTY_CONTEXT;
     if (isUpstreamAvailable()) {
@@ -98,7 +100,7 @@ public class RequestBalancer {
         triedServers.add(currentServer.getIndex());
         currentServer = null;
       }
-      return requestWithRetry();
+      return execute();
     }
     return completedFuture(response);
   }
@@ -209,10 +211,5 @@ public class RequestBalancer {
     Uri uri = request.getUri();
     var baseUri = uri.getScheme() + SCHEMA_SEPARATOR + uri.getHost() + ":" + uri.getPort();
     return uri.getPort() > -1 ? baseUri : baseUri.substring(0, baseUri.lastIndexOf(":"));
-  }
-
-  @FunctionalInterface
-  public interface RequestExecutor {
-    CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
   }
 }

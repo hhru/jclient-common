@@ -24,7 +24,7 @@ public final class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
-  private UpstreamManager upstreamManager = new DefaultUpstreamManager();
+  private RequestStrategy<? extends RequestEngine> requestStrategy = new DefaultRequestStrategy();
   private Executor callbackExecutor;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
@@ -86,8 +86,8 @@ public final class HttpClientFactoryBuilder {
     return this;
   }
 
-  public HttpClientFactoryBuilder withUpstreamManager(UpstreamManager upstreamManager) {
-    this.upstreamManager = upstreamManager;
+  public HttpClientFactoryBuilder withRequestStrategy(RequestStrategy<? extends RequestEngine> requestStrategy) {
+    this.requestStrategy = requestStrategy;
     return this;
   }
 
@@ -137,7 +137,7 @@ public final class HttpClientFactoryBuilder {
       Set.copyOf(hostsWithSession),
       contextSupplier,
       callbackExecutor,
-      buildUpstreamManager(),
+      initStrategy(),
       eventListeners
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
@@ -152,9 +152,9 @@ public final class HttpClientFactoryBuilder {
     return MDCCopy.doWithoutContext(() -> new DefaultAsyncHttpClient(clientConfig));
   }
 
-  private UpstreamManager buildUpstreamManager() {
-    upstreamManager.setTimeoutMultiplier(timeoutMultiplier);
-    return upstreamManager;
+  private RequestStrategy<? extends RequestEngine> initStrategy() {
+    requestStrategy.setTimeoutMultiplier(timeoutMultiplier);
+    return requestStrategy;
   }
 
   private DefaultAsyncHttpClientConfig.Builder applyTimeoutMultiplier(DefaultAsyncHttpClientConfig.Builder clientConfigBuilder) {

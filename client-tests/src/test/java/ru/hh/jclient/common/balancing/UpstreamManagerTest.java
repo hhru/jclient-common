@@ -12,7 +12,6 @@ import static org.mockito.Mockito.mock;
 
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.UpstreamManager;
 
 import java.util.List;
 import java.util.Set;
@@ -22,7 +21,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void createUpstreamManager() {
-    BalancingUpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
+    UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
 
     assertEquals(1, manager.getUpstreams().size());
 
@@ -62,7 +61,7 @@ public class UpstreamManagerTest {
 
   @Test
   public void testRemoveUpstream() {
-    BalancingUpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
+    UpstreamManager manager = createUpstreamManager(TEST_BACKEND, "max_fails=5 | server=a");
 
     manager.updateUpstream(TEST_BACKEND, null);
 
@@ -83,7 +82,7 @@ public class UpstreamManagerTest {
     assertNull(upstreamManager.getUpstream("missing_upstream"));
   }
 
-  private static BalancingUpstreamManager createUpstreamManager(String backend, String configString) {
+  private static UpstreamManager createUpstreamManager(String backend, String configString) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(
       singletonMap(backend, configString), newSingleThreadScheduledExecutor(), Set.of(monitoring), null, false

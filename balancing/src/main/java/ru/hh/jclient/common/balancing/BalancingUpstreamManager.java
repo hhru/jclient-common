@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpHeaderNames;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.UpstreamManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -22,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 public class BalancingUpstreamManager extends UpstreamManager {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
   static final String SCHEMA_SEPARATOR = "://";
   private static final int SCHEMA_SEPARATOR_LEN = 3;
@@ -33,12 +33,14 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final boolean allowCrossDCRequests;
   private final Function<HttpClientContext, UpstreamProfileSelector> upstreamProfileSelectorProvider;
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter,
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor,
+                                  Set<Monitoring> monitoring, String datacenter,
                                   boolean allowCrossDCRequests) {
     this(scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, false);
   }
 
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring, String datacenter,
+  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
+                                  String datacenter,
                                   boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
     this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection);
   }
@@ -86,7 +88,9 @@ public class BalancingUpstreamManager extends UpstreamManager {
       if (existingGroup == null) {
         return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
       }
-      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig, (profileName, config) -> createUpstream(upstreamKey, newConfig));
+      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig,
+          (profileName, config) -> createUpstream(upstreamKey, newConfig)
+      );
     });
   }
 
@@ -100,8 +104,8 @@ public class BalancingUpstreamManager extends UpstreamManager {
         .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);
   }
 
-  @Nonnull
   @Override
+  @Nonnull
   protected UpstreamProfileSelector getProfileSelector(HttpClientContext ctx) {
     return upstreamProfileSelectorProvider.apply(ctx);
   }
@@ -120,6 +124,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
     return beginIndex > 2 ? host.substring(beginIndex) : host;
   }
 
+  @Override
   @VisibleForTesting
   Map<String, UpstreamGroup> getUpstreams() {
     return upstreams;
