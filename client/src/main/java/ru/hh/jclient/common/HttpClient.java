@@ -299,7 +299,7 @@ public abstract class HttpClient {
    *
    * @return response
    */
-  public CompletableFuture<? extends Response> unconverted() {
+  public CompletableFuture<Response> unconverted() {
     RequestStrategy.RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
       if (retryCount > 0) {
         // due to retry possibly performed in another thread

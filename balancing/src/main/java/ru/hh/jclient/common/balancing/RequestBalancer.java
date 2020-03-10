@@ -71,7 +71,8 @@ public class RequestBalancer implements RequestEngine {
     triesLeft = upstream != null ? upstream.getConfig().getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
   }
 
-  public CompletableFuture<Response> requestWithRetry() {
+  @Override
+  public CompletableFuture<Response> execute() {
     Request balancedRequest = request;
     RequestContext context = RequestContext.EMPTY_CONTEXT;
     if (isUpstreamAvailable()) {
@@ -99,7 +100,7 @@ public class RequestBalancer implements RequestEngine {
         triedServers.add(currentServer.getIndex());
         currentServer = null;
       }
-      return requestWithRetry();
+      return execute();
     }
     return completedFuture(response);
   }
@@ -210,10 +211,5 @@ public class RequestBalancer implements RequestEngine {
     Uri uri = request.getUri();
     var baseUri = uri.getScheme() + SCHEMA_SEPARATOR + uri.getHost() + ":" + uri.getPort();
     return uri.getPort() > -1 ? baseUri : baseUri.substring(0, baseUri.lastIndexOf(":"));
-  }
-
-  @Override
-  public CompletableFuture<? extends Response> execute() {
-    return requestWithRetry();
   }
 }

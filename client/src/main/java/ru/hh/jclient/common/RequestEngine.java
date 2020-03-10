@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import java.util.concurrent.CompletableFuture;
 
+@FunctionalInterface
 public interface RequestEngine {
-  CompletableFuture<? extends Response> execute();
+  CompletableFuture<Response> execute();
 }
