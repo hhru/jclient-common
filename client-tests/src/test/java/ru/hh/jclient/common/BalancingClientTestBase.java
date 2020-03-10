@@ -31,8 +31,8 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -255,11 +255,20 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   void createHttpClientFactory(String upstreamConfig) {
-    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false);
+    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), null, false, false);
   }
 
   void createHttpClientFactory(String upstreamConfig, String datacenter, boolean allowCrossDCRequests) {
-    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests);
+    http = createHttpClientFactory(httpClient, singletonMap(TEST_UPSTREAM, upstreamConfig), datacenter, allowCrossDCRequests, false);
+  }
+
+  void createHttpClientFactory(Map<String, String> upstreamConfigs, String datacenter, boolean allowCrossDCRequests) {
+    http = createHttpClientFactory(httpClient, upstreamConfigs, datacenter, allowCrossDCRequests, false);
+  }
+
+  void createHttpClientFactory(Map<String, String> upstreamConfigs, String datacenter,
+                               boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
+    http = createHttpClientFactory(httpClient, upstreamConfigs, datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection);
   }
 
   Request completeWith(int status, InvocationOnMock iom) throws Exception {
@@ -277,12 +286,20 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   static void assertHostEquals(Request request, String host) {
     assertEquals(host, request.getUri().getHost());
   }
+  static void assertRequestTimeoutEquals(Request request, long timeoutMs) {
+    assertEquals(request.getRequestTimeout(), (int) timeoutMs);
+  }
 
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter,
-                                                    boolean allowCrossDCRequests) {
+                                                    boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
     Monitoring monitoring = mock(Monitoring.class);
     upstreamManager = new BalancingUpstreamManager(
-      upstreamConfigs, newSingleThreadScheduledExecutor(), Collections.singleton(monitoring), datacenter, allowCrossDCRequests);
+      upstreamConfigs, newSingleThreadScheduledExecutor(), Set.of(monitoring), datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection) {
+      @Override
+      protected LocalDateTime getNow() {
+        return BalancingClientTestBase.this.getNow();
+      }
+    };
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, upstreamManager);
   }
@@ -295,6 +312,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   protected abstract boolean isAdaptive();
+  protected LocalDateTime getNow() {
+    return LocalDateTime.now();
+  }
 
   void assertRequestEquals(Request[] request, String... actual) {
     if (isAdaptive()) {
@@ -358,15 +378,24 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   static class TestClient extends JClientBase {
     private final boolean adaptive;
+    private String profile;
 
     TestClient(HttpClientFactory http, boolean adaptive) {
       super("http://" + TEST_UPSTREAM, http);
       this.adaptive = adaptive;
     }
 
+    public TestClient withProfile(String profile) {
+      this.profile = profile;
+      return this;
+    }
+
     void get() throws Exception {
       ru.hh.jclient.common.Request request = get(url("/get")).build();
       HttpClient client = http.with(request);
+      if (profile != null) {
+        client = client.withProfile(profile);
+      }
       if (adaptive) {
         client = client.adaptive();
       }
@@ -376,6 +405,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     void post() throws Exception {
       ru.hh.jclient.common.Request request = post(url("/post")).build();
       HttpClient client = http.with(request);
+      if (profile != null) {
+        client = client.withProfile(profile);
+      }
       if (adaptive) {
         client = client.adaptive();
       }

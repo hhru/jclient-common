@@ -2,13 +2,13 @@ package ru.hh.jclient.common.balancing;
 
 import ru.hh.jclient.common.Response;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.REQUEST_TIMEOUT;
@@ -28,18 +28,18 @@ final class RetryPolicy {
   }
 
   void update(String configString) {
-    this.rules = Arrays.stream(configString.split(","))
-      .map(c -> {
-        if ("timeout".equals(c)) {
+    this.rules = Stream.of(configString.split(","))
+      .map(configElement -> {
+        if ("timeout".equals(configElement)) {
           return new CodeIdempotence(REQUEST_TIMEOUT, false);
         }
 
-        Matcher httpRetry = HTTP_RETRY.matcher(c);
+        Matcher httpRetry = HTTP_RETRY.matcher(configElement);
         if (httpRetry.matches()) {
           return new CodeIdempotence(Integer.parseInt(httpRetry.group(1)), false);
         }
 
-        Matcher nonIdempotentRetry = NON_IDEMPOTENT_RETRY.matcher(c);
+        Matcher nonIdempotentRetry = NON_IDEMPOTENT_RETRY.matcher(configElement);
         if (nonIdempotentRetry.matches()) {
           return new CodeIdempotence(Integer.parseInt(nonIdempotentRetry.group(1)), true);
         }
@@ -76,15 +76,15 @@ final class RetryPolicy {
   }
 
   Map<Integer, Boolean> getRules() {
-    return this.rules;
+    return Map.copyOf(this.rules);
   }
 
   @Override
   public String toString() {
-    return "RetryPolicy {" +  rules.toString() + '}';
+    return "RetryPolicy {" + rules + '}';
   }
 
-  private static class CodeIdempotence {
+  private static final class CodeIdempotence {
     final int code;
     final boolean idempotent;
 

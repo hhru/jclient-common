@@ -11,6 +11,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.function.Supplier;
 import org.asynchttpclient.AsyncHttpClient;
+import ru.hh.jclient.common.balancing.UpstreamProfileSelector;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
 import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
@@ -61,7 +62,7 @@ public abstract class HttpClient {
   private boolean noDebug;
   private boolean externalRequest;
   private boolean adaptive;
-  private String dynamicUpstreamKey;
+  private UpstreamProfileSelector upstreamProfileSelector;
 
   HttpClient(AsyncHttpClient http,
              Request request,
@@ -76,6 +77,7 @@ public abstract class HttpClient {
     this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
+    this.upstreamProfileSelector = upstreamManager.getProfileSelector(context);
     storages = context.getStorages().copy().add(contextSupplier);
     debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
   }
@@ -121,10 +123,10 @@ public abstract class HttpClient {
   }
 
   /**
-   * Sets dynamic upstream key to allow flexible upstream selection.
+   * Sets profile to select upstream precisely
    */
-  public HttpClient setDynamicUpstreamKey(String key) {
-    dynamicUpstreamKey = key;
+  public HttpClient withProfile(String profile) {
+    this.upstreamProfileSelector = UpstreamProfileSelector.forProfile(profile);
     return this;
   }
 
@@ -338,7 +340,7 @@ public abstract class HttpClient {
       return executeRequest(request, retryCount, requestContext);
     };
     RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
-      maxRequestTimeoutTries, forceIdempotence, adaptive, dynamicUpstreamKey);
+      maxRequestTimeoutTries, forceIdempotence, adaptive, upstreamProfileSelector);
     return requestBalancer.requestWithRetry();
   }
 

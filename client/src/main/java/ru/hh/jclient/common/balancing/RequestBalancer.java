@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+
 import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
@@ -9,20 +10,23 @@ import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
 
+import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MS;
 
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.UpstreamManager;
 import ru.hh.jclient.common.Uri;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
+
 public class RequestBalancer {
-  private final String host;
   private final Request request;
   private final Upstream upstream;
   private final UpstreamManager upstreamManager;
@@ -30,12 +34,12 @@ public class RequestBalancer {
   private final Set<Integer> triedServers = new HashSet<>();
   private final int maxTries;
   private final boolean adaptive;
+  private final boolean forceIdempotence;
 
-  private ServerEntry currentServer = null;
+  private ServerEntry currentServer;
   private int triesLeft;
-  private long requestTimeLeftMs;
+  private int requestTimeLeftMs;
   private int firstStatusCode;
-  private boolean forceIdempotence;
   private Iterator<ServerEntry> serverEntryIterator;
   private String upstreamName;
 
@@ -45,18 +49,19 @@ public class RequestBalancer {
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,
                          boolean adaptive,
-                         String dynamicUpstreamKey) {
+                         UpstreamProfileSelector upstreamProfileSelector) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
     this.adaptive = adaptive;
     this.forceIdempotence = forceIdempotence;
 
-    host = request.getUri().getHost();
-    upstream = upstreamManager.getDynamicUpstream(host, dynamicUpstreamKey);
+    String host = request.getUri().getHost();
+    upstream = upstreamManager.getUpstream(host, upstreamProfileSelector.getProfile(host));
     upstreamName = upstream == null ? null : upstream.getName();
     int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
       upstream != null ? upstream.getConfig().getRequestTimeoutMs() : UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS;
+
     int requestTimeoutTries = maxRequestTimeoutTries != null ? maxRequestTimeoutTries :
       upstream != null ? upstream.getConfig().getMaxTimeoutTries() : UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
     requestTimeLeftMs = requestTimeoutMs * requestTimeoutTries;
@@ -127,7 +132,9 @@ public class RequestBalancer {
 
   private static Response getServerNotAvailableResponse(Request request, String upstreamName) {
     Uri uri = request.getUri();
-    return ResponseConverterUtils.convert(new MappedTransportErrorResponse(502, "No available servers for upstream: " + upstreamName, uri));
+    return ResponseConverterUtils.convert(
+        new MappedTransportErrorResponse(BAD_GATEWAY, "No available servers for upstream: " + upstreamName, uri)
+    );
   }
 
   private Request getBalancedRequest(Request request) {
@@ -136,7 +143,8 @@ public class RequestBalancer {
       return request;
     }
 
-    int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : upstream.getConfig().getRequestTimeoutMs();
+    int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout()
+        : upstream.getConfig().getRequestTimeoutMs();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
     requestBuilder.setUrl(getBalancedUrl(request, currentServer.getAddress()));
@@ -157,7 +165,7 @@ public class RequestBalancer {
     long timeToLastByteMs = WARM_UP_DEFAULT_TIME_MS;
     if (wrapper != null) {
       timeToLastByteMs = wrapper.getTimeToLastByteMs();
-      updateLeftTriesAndTime(timeToLastByteMs);
+      updateLeftTriesAndTime((int) timeToLastByteMs);
     }
 
     if (isServerAvailable()) {
@@ -166,7 +174,7 @@ public class RequestBalancer {
     }
   }
 
-  private void updateLeftTriesAndTime(long responseTimeMs) {
+  private void updateLeftTriesAndTime(int responseTimeMs) {
     requestTimeLeftMs = requestTimeLeftMs >= responseTimeMs ? requestTimeLeftMs - responseTimeMs: 0;
     if (triesLeft > 0) {
       triesLeft--;
@@ -180,7 +188,8 @@ public class RequestBalancer {
     if (triesLeft == 0 || requestTimeLeftMs == 0) {
       return false;
     }
-    return upstream.getConfig().getRetryPolicy().isRetriable(response, forceIdempotence || !HTTP_POST.equals(request.getMethod()));
+    boolean isIdempotent = forceIdempotence || !HTTP_POST.equals(request.getMethod());
+    return upstream.getConfig().getRetryPolicy().isRetriable(response, isIdempotent);
   }
 
   private boolean isServerAvailable() {
@@ -198,7 +207,8 @@ public class RequestBalancer {
 
   private static String getOriginalServer(Request request) {
     Uri uri = request.getUri();
-    return String.format("%s://%s%s", uri.getScheme(), uri.getHost(), uri.getPort() > -1 ? ":" + uri.getPort() : "");
+    var baseUri = uri.getScheme() + SCHEMA_SEPARATOR + uri.getHost() + ":" + uri.getPort();
+    return uri.getPort() > -1 ? baseUri : baseUri.substring(0, baseUri.lastIndexOf(":"));
   }
 
   @FunctionalInterface

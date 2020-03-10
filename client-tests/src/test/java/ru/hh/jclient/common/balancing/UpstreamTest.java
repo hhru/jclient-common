@@ -18,13 +18,25 @@ import java.util.concurrent.ScheduledExecutorService;
 public class UpstreamTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamTest.class);
   private static final String TEST_HOST = "backend";
+  private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
   private static final String TEST_CONFIG = "| server=a weight=1 | server=b weight=2";
 
   @Test
-  public void createUpstream() {
+  public void createUpstreamServiceOnly() {
     Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
 
     assertEquals(TEST_HOST, upstream.getName());
+
+    assertServerCounters(upstream, 0, 0, 0, 0);
+    assertServerCounters(upstream, 1, 0, 0, 0);
+  }
+
+  @Test
+  public void createUpstreamFull() {
+    Upstream.UpstreamKey upstreamKey = new Upstream.UpstreamKey(TEST_HOST, TEST_HOST_CUSTOM_PROFILE);
+    Upstream upstream = createTestUpstream(String.join(":", TEST_HOST, TEST_HOST_CUSTOM_PROFILE), TEST_CONFIG);
+
+    assertEquals(upstreamKey, upstream.getKey());
 
     assertServerCounters(upstream, 0, 0, 0, 0);
     assertServerCounters(upstream, 1, 0, 0, 0);
