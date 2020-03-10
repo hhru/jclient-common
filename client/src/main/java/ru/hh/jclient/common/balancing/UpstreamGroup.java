@@ -29,15 +29,22 @@ public class UpstreamGroup {
     this.profilesByMaxResponseTime.put(new ProfileKey(profileOrDefault, upstream.getConfig().getAllowedTimeoutMs()), profileOrDefault);
   }
 
-  public String getFittingProfile(int timeoutToFit) {
-    var boundary = new ProfileKey(null, timeoutToFit);
+  /**
+   * returns closest to boundary awailable profile
+   * The profile can have {@link UpstreamConfig#getAllowedTimeoutMs()} lessThan or equal to boundary timeout
+   * If no profiles lessThan or equal to boundary found - return closest greaterThan
+   * @param boundaryTimeoutMs boundary timeout to select profile for
+   * @return profile key if found else null
+   */
+  public String getFittingProfile(int boundaryTimeoutMs) {
+    var boundary = new ProfileKey(null, boundaryTimeoutMs);
     return Optional.of(profilesByMaxResponseTime)
       .filter(Predicate.not(Map::isEmpty))
-      .map(notEmptyMap -> getSlowestFittingOrFastest(notEmptyMap, boundary))
+      .map(notEmptyMap -> getClosestOrFastest(notEmptyMap, boundary))
       .orElse(null);
   }
 
-  private static String getSlowestFittingOrFastest(SortedMap<ProfileKey, String> profilesByResponseTime, ProfileKey boundary) {
+  private static String getClosestOrFastest(SortedMap<ProfileKey, String> profilesByResponseTime, ProfileKey boundary) {
     return Optional.of(profilesByResponseTime.headMap(boundary))
       .filter(Predicate.not(Map::isEmpty))
       .map(headMap -> headMap.get(headMap.lastKey()))

@@ -60,20 +60,8 @@ public class BalancingUpstreamManager extends UpstreamManager {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
-    this.upstreamProfileSelectorProvider = skipAdaptiveProfileSelection ? ctx -> UpstreamProfileSelector.EMPTY
-      : (HttpClientContext ctx) -> serviceName -> {
-        var upstreamGroup = upstreams.get(serviceName);
-        return ofNullable(ctx.getHeaders())
-          .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
-          .flatMap(values -> values.stream().findFirst())
-          .map(Long::valueOf)
-          .map(Duration::ofMillis)
-          .map(outerTimeout -> {
-            var alreadySpentTime = Duration.between(ctx.getRequestStart(), getNow());
-            var expectedTimeout = outerTimeout.minus(alreadySpentTime);
-            return upstreamGroup.getFittingProfile((int) expectedTimeout.toMillis());
-          }).orElse(null);
-      };
+    this.upstreamProfileSelectorProvider = skipAdaptiveProfileSelection ?
+        ctx -> UpstreamProfileSelector.EMPTY : AdaptiveUpstreamProfileSelector::new;
 
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);
@@ -135,5 +123,28 @@ public class BalancingUpstreamManager extends UpstreamManager {
   @VisibleForTesting
   Map<String, UpstreamGroup> getUpstreams() {
     return upstreams;
+  }
+
+  private final class AdaptiveUpstreamProfileSelector implements UpstreamProfileSelector {
+    private final HttpClientContext ctx;
+
+    private AdaptiveUpstreamProfileSelector(HttpClientContext ctx) {
+      this.ctx = ctx;
+    }
+
+    @Override
+    public String getProfile(String serviceName) {
+      var upstreamGroup = upstreams.get(serviceName);
+      return ofNullable(ctx.getHeaders())
+          .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
+          .flatMap(values -> values.stream().findFirst())
+          .map(Long::valueOf)
+          .map(Duration::ofMillis)
+          .map(outerTimeout -> {
+            var alreadySpentTime = Duration.between(ctx.getRequestStart(), getNow());
+            var expectedTimeout = outerTimeout.minus(alreadySpentTime);
+            return upstreamGroup.getFittingProfile((int) expectedTimeout.toMillis());
+          }).orElse(null);
+    }
   }
 }
