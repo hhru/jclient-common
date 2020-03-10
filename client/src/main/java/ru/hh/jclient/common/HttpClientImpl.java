@@ -64,10 +64,10 @@ class HttpClientImpl extends HttpClient {
     Request request = addHeadersAndParams(originalRequest);
     if (retryCount > 0) {
       LOGGER.info("ASYNC_HTTP_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
-      getDebugs().forEach(d -> d.onRetry(request, getRequestBodyEntity(), retryCount, context));
+      getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity(), retryCount, context));
     } else {
       LOGGER.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
-      getDebugs().forEach(d -> d.onRequest(request, getRequestBodyEntity(), context));
+      getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity(), context));
     }
 
     Transfers transfers = getStorages().prepare();
@@ -131,21 +131,21 @@ class HttpClientImpl extends HttpClient {
   }
 
   static class CompletionHandler extends AsyncCompletionHandler<ResponseWrapper> {
-    private MDCCopy mdcCopy;
-    private CompletableFuture<ResponseWrapper> promise;
-    private Request request;
-    private Instant requestStart;
-    private List<RequestDebug> requestDebugs;
-    private Transfers contextTransfers;
+    private final MDCCopy mdcCopy;
+    private final CompletableFuture<ResponseWrapper> promise;
+    private final Request request;
+    private final Instant requestStart;
+    private final List<RequestDebug> requestDebugs;
+    private final Transfers contextTransfers;
     private final Executor callbackExecutor;
 
     CompletionHandler(CompletableFuture<ResponseWrapper> promise, Request request, Instant requestStart,
                       List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor) {
       this.requestStart = requestStart;
-      this.mdcCopy = MDCCopy.capture();
+      mdcCopy = MDCCopy.capture();
       this.promise = promise;
       this.request = request;
-      this.requestDebugs = requestDebugs;
+      this.requestDebugs = List.copyOf(requestDebugs);
       this.contextTransfers = contextTransfers;
       this.callbackExecutor = callbackExecutor;
     }
@@ -173,7 +173,7 @@ class HttpClientImpl extends HttpClient {
               timeToLastByteMs,
               request.getMethod(),
               request.getUri(),
-              t.toString(),
+              t,
               response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
 
       if (response != null) {
@@ -181,7 +181,7 @@ class HttpClientImpl extends HttpClient {
         return;
       }
 
-      requestDebugs.forEach(d -> d.onClientProblem(t));
+      requestDebugs.forEach(debug -> debug.onClientProblem(t));
       requestDebugs.forEach(RequestDebug::onProcessingFinished);
 
       completeExceptionally(t);
@@ -226,7 +226,7 @@ class HttpClientImpl extends HttpClient {
           if (e instanceof RejectedExecutionException) {
             LOGGER.warn("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString());
           } else {
-            LOGGER.error("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString(), e);
+            LOGGER.error("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e, e);
           }
         });
         completeExceptionallyTask.run();
