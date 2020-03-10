@@ -400,7 +400,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).withProfile(profile).backToClient();
       }
       if (adaptive) {
-        client = client.configureRequestEngine(RequestBalancerBuilder.class).withAdaptive(adaptive).backToClient();
+        client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
       client.expectPlainText().result().get();
     }
@@ -412,7 +412,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).withProfile(profile).backToClient();
       }
       if (adaptive) {
-        client = client.configureRequestEngine(RequestBalancerBuilder.class).withAdaptive(adaptive).backToClient();
+        client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
       client.expectPlainText().result().get();
     }

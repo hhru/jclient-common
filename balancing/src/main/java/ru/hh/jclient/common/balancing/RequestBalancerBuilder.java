@@ -33,18 +33,18 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     return httpClient;
   }
 
-  public RequestBalancerBuilder withMaxTimeoutTries(Integer maxTimeoutTries) {
+  public RequestBalancerBuilder withMaxTimeoutTries(int maxTimeoutTries) {
     this.maxTimeoutTries = maxTimeoutTries;
     return this;
   }
 
-  public RequestBalancerBuilder withForceIdempotence(boolean forceIdempotence) {
-    this.forceIdempotence = forceIdempotence;
+  public RequestBalancerBuilder forceIdempotence() {
+    this.forceIdempotence = true;
     return this;
   }
 
-  public RequestBalancerBuilder withAdaptive(boolean adaptive) {
-    this.adaptive = adaptive;
+  public RequestBalancerBuilder makeAdaptive() {
+    this.adaptive = true;
     return this;
   }
 
