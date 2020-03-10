@@ -8,7 +8,7 @@ public class DefaultEngineBuilder implements RequestEngineBuilder<RequestEngine>
   }
 
   @Override
-  public RequestEngine build(Request request, RequestingStrategy.RequestExecutor executor) {
+  public RequestEngine build(Request request, RequestStrategy.RequestExecutor executor) {
     return () -> executor.executeRequest(request, 0, RequestContext.EMPTY_CONTEXT)
         .thenApply(ResponseWrapper::getResponse);
   }

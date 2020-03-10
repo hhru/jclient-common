@@ -2,13 +2,13 @@ package ru.hh.jclient.common.balancing;
 
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.RequestEngineBuilder;
-import ru.hh.jclient.common.RequestingStrategy;
+import ru.hh.jclient.common.RequestStrategy;
 
-public class BalancingRequestingStrategy implements RequestingStrategy<RequestBalancer> {
+public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer> {
 
   private final UpstreamManager upstreamManager;
 
-  public BalancingRequestingStrategy(UpstreamManager upstreamManager) {
+  public BalancingRequestStrategy(UpstreamManager upstreamManager) {
     this.upstreamManager = upstreamManager;
   }
 

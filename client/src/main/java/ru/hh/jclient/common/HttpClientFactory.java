@@ -18,7 +18,7 @@ public class HttpClientFactory {
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final RequestingStrategy requestingStrategy;
+  private final RequestStrategy<RequestEngine> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
@@ -30,28 +30,28 @@ public class HttpClientFactory {
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor,
-        new DefaultRequestingStrategy());
+        new DefaultRequestStrategy());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestingStrategy requestingStrategy) {
-    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestingStrategy, List.of());
+                           RequestStrategy<RequestEngine> requestStrategy) {
+    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestingStrategy requestingStrategy,
+                           RequestStrategy<RequestEngine> requestStrategy,
                            List<HttpClientEventListener> eventListeners) {
     this.http = requireNonNull(http, "http must not be null");
     this.hostsWithSession = requireNonNull(hostsWithSession, "hostsWithSession must not be null");
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
     this.callbackExecutor = requireNonNull(callbackExecutor, "callbackExecutor must not be null");
-    this.requestingStrategy = requireNonNull(requestingStrategy, "upstreamManager must not be null");
+    this.requestStrategy = requireNonNull(requestStrategy, "upstreamManager must not be null");
     this.eventListeners = eventListeners;
   }
 
@@ -66,7 +66,7 @@ public class HttpClientFactory {
         http,
         requireNonNull(request, "request must not be null"),
         hostsWithSession,
-        requestingStrategy,
+        requestStrategy,
         contextSupplier,
         callbackExecutor,
       eventListeners);

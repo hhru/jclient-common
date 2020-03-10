@@ -60,13 +60,13 @@ public abstract class HttpClient {
   HttpClient(AsyncHttpClient http,
              Request request,
              Set<String> hostsWithSession,
-             RequestingStrategy requestingStrategy,
+             RequestStrategy<RequestEngine> requestStrategy,
              Storage<HttpClientContext> contextSupplier,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
-    this.requestEngineBuilder = requestingStrategy.getRequestEngineBuilder(this);
+    this.requestEngineBuilder = requestStrategy.getRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
@@ -300,7 +300,7 @@ public abstract class HttpClient {
    * @return response
    */
   public CompletableFuture<? extends Response> unconverted() {
-    RequestingStrategy.RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
+    RequestStrategy.RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
       if (retryCount > 0) {
         // due to retry possibly performed in another thread
         // TODO do not re-get suppliers here

@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.metrics;
 
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.RequestingStrategy;
-import ru.hh.jclient.common.balancing.BalancingRequestingStrategy;
+import ru.hh.jclient.common.RequestStrategy;
+import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.nab.metrics.StatsDSender;
@@ -15,7 +15,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 public class MonitoringUpstreamManagerFactory {
-  public static RequestingStrategy<RequestBalancer> create(
+  public static RequestStrategy<RequestBalancer> create(
       String serviceName, String dc, boolean allowCrossDCRequests,
       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
       ScheduledExecutorService scheduledExecutorService,
@@ -26,7 +26,7 @@ public class MonitoringUpstreamManagerFactory {
             scheduledExecutorService, upstreamUpdater);
 
   }
-  public static RequestingStrategy<RequestBalancer> create(
+  public static RequestStrategy<RequestBalancer> create(
       String serviceName, String dc,
       boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection,
       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
@@ -40,7 +40,7 @@ public class MonitoringUpstreamManagerFactory {
 
     upstreamUpdater.accept(balancingUpstreamManager);
 
-    return new BalancingRequestingStrategy(balancingUpstreamManager);
+    return new BalancingRequestStrategy(balancingUpstreamManager);
   }
 
   private static Set<Monitoring> buildMonitoring(String serviceName, String dc, StatsDSender statsDSender,

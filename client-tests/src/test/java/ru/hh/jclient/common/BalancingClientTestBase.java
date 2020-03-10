@@ -26,7 +26,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 
-import ru.hh.jclient.common.balancing.BalancingRequestingStrategy;
+import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.exception.ClientResponseException;
@@ -47,7 +47,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   static final String TEST_UPSTREAM = "backend";
   AsyncHttpClient httpClient;
-  BalancingRequestingStrategy requestingStrategy;
+  BalancingRequestStrategy requestingStrategy;
 
   @Before
   public void setUpTest() {
@@ -296,7 +296,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, Map<String, String> upstreamConfigs, String datacenter,
                                                     boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
     Monitoring monitoring = mock(Monitoring.class);
-    requestingStrategy = new BalancingRequestingStrategy(new BalancingUpstreamManager(
+    requestingStrategy = new BalancingRequestStrategy(new BalancingUpstreamManager(
       upstreamConfigs, newSingleThreadScheduledExecutor(), Set.of(monitoring), datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection) {
       @Override
       protected LocalDateTime getNow() {

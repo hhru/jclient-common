@@ -3,7 +3,7 @@ package ru.hh.jclient.common.balancing;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngineBuilder;
-import ru.hh.jclient.common.RequestingStrategy;
+import ru.hh.jclient.common.RequestStrategy;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancer> {
 
@@ -21,7 +21,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   private UpstreamProfileSelector upstreamProfileSelector;
 
   @Override
-  public RequestBalancer build(Request request, RequestingStrategy.RequestExecutor requestExecutor) {
+  public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
     return new RequestBalancer(request, upstreamManager, requestExecutor, maxTimeoutTries, forceIdempotence, adaptive,
         upstreamProfileSelector != null ? upstreamProfileSelector
             : upstreamManager.getProfileSelector(httpClient.getContext())

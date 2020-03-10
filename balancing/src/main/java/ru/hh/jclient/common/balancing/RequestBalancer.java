@@ -8,7 +8,7 @@ import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestEngine;
-import ru.hh.jclient.common.RequestingStrategy;
+import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
 
@@ -31,7 +31,7 @@ public class RequestBalancer implements RequestEngine {
   private final Request request;
   private final Upstream upstream;
   private final UpstreamManager upstreamManager;
-  private final RequestingStrategy.RequestExecutor requestExecutor;
+  private final RequestStrategy.RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
   private final int maxTries;
   private final boolean adaptive;
@@ -46,7 +46,7 @@ public class RequestBalancer implements RequestEngine {
 
   public RequestBalancer(Request request,
                          UpstreamManager upstreamManager,
-                         RequestingStrategy.RequestExecutor requestExecutor,
+                         RequestStrategy.RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,
                          boolean adaptive,

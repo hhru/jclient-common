@@ -2,7 +2,7 @@ package ru.hh.jclient.common;
 
 import java.util.concurrent.CompletableFuture;
 
-public interface RequestingStrategy<T extends RequestEngine> {
+public interface RequestStrategy<T extends RequestEngine> {
 
   @FunctionalInterface
   interface RequestExecutor {

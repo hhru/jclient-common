@@ -1,8 +1,8 @@
 package ru.hh.jclient.common;
 
-public class DefaultRequestingStrategy implements RequestingStrategy<RequestEngine> {
+public class DefaultRequestStrategy implements RequestStrategy<RequestEngine> {
 
-  public DefaultRequestingStrategy() {
+  public DefaultRequestStrategy() {
   }
 
   @Override
