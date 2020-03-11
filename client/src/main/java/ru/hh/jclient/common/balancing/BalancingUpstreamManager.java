@@ -135,6 +135,9 @@ public class BalancingUpstreamManager extends UpstreamManager {
     @Override
     public String getProfile(String serviceName) {
       var upstreamGroup = upstreams.get(serviceName);
+      if (upstreamGroup == null) {
+        return null;
+      }
       return ofNullable(ctx.getHeaders())
           .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
           .flatMap(values -> values.stream().findFirst())

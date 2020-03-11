@@ -100,6 +100,28 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Test
+  public void requestWithAdaptiveProfileSelectionNoUpstream() throws Exception {
+    var upstreamConfigs = Map.of(
+        UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
+        "request_timeout_sec=6 | server=http://server6",
+        new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
+        "request_timeout_sec=4 | server=http://server4 ",
+        new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
+        "request_timeout_sec=2 | server=http://server2"
+    );
+    createHttpClientFactory(upstreamConfigs, null, false);
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+    withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(Long.toString(TimeUnit.SECONDS.toMillis(1)))));
+    getTestClient().get("http://foo/get");
+    assertHostEquals(request[0], "foo");
+  }
+
+  @Test
   public void requestWithAdaptiveProfileSelectionSelectFastest() throws Exception {
     var upstreamConfigs = Map.of(
         UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
