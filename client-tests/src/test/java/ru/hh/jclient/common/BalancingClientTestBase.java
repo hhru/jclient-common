@@ -397,10 +397,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       ru.hh.jclient.common.Request request = super.get(url("/get")).build();
       HttpClient client = http.with(request);
       if (profile != null) {
-        client = client.withProfile(profile);
+        client = client.configureRequestEngine(RequestBalancerBuilder.class).withProfile(profile).backToClient();
       }
       if (adaptive) {
-        client = client.adaptive();
+        client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
       client.expectPlainText().result().get();
     }
