@@ -394,7 +394,19 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     }
 
     void get() throws Exception {
-      ru.hh.jclient.common.Request request = get(url("/get")).build();
+      ru.hh.jclient.common.Request request = super.get(url("/get")).build();
+      HttpClient client = http.with(request);
+      if (profile != null) {
+        client = client.withProfile(profile);
+      }
+      if (adaptive) {
+        client = client.adaptive();
+      }
+      client.expectPlainText().result().get();
+    }
+
+    void get(String url) throws Exception {
+      ru.hh.jclient.common.Request request = super.get(url).build();
       HttpClient client = http.with(request);
       if (profile != null) {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).withProfile(profile).backToClient();
