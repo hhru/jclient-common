@@ -1,7 +1,5 @@
 package ru.hh.jclient.common;
 
-import static java.util.Objects.requireNonNull;
-
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metrics.MetricsProvider;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -11,6 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
+import java.util.function.UnaryOperator;
+
+import static java.util.Objects.requireNonNull;
 
 public class HttpClientFactory {
 
@@ -18,7 +19,7 @@ public class HttpClientFactory {
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final RequestStrategy<? extends RequestEngine> requestStrategy;
+  private final RequestStrategy<?, ?> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
@@ -29,15 +30,14 @@ public class HttpClientFactory {
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor) {
-    this(http, hostsWithSession, contextSupplier, callbackExecutor,
-        new DefaultRequestStrategy());
+    this(http, hostsWithSession, contextSupplier, callbackExecutor, new DefaultRequestStrategy());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestStrategy<? extends RequestEngine> requestStrategy) {
+                           RequestStrategy<?, ?> requestStrategy) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of());
   }
 
@@ -45,7 +45,7 @@ public class HttpClientFactory {
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestStrategy<? extends RequestEngine> requestStrategy,
+                           RequestStrategy<?, ?> requestStrategy,
                            List<HttpClientEventListener> eventListeners) {
     this.http = requireNonNull(http, "http must not be null");
     this.hostsWithSession = requireNonNull(hostsWithSession, "hostsWithSession must not be null");
@@ -91,5 +91,11 @@ public class HttpClientFactory {
 
   Storage<HttpClientContext> getContextSupplier() {
     return contextSupplier;
+  }
+
+  public HttpClientFactory customized(UnaryOperator<? extends RequestEngineBuilder<? extends RequestEngine>> mapper) {
+    return new HttpClientFactory(this.http, this.hostsWithSession, this.contextSupplier, this.callbackExecutor,
+                                 this.requestStrategy.customized((UnaryOperator) mapper),
+                                 this.eventListeners);
   }
 }

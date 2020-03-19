@@ -42,7 +42,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
       })
       .okRequest(new byte[0], ANY_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(50).build();
-    http.with(request).expectEmpty().result().get();
+    http.with(request).expectNoContent().result().get();
   }
 
   @Test
@@ -64,7 +64,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
         })
         .okRequest(new byte[0], ANY_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(250).build();
-    http.with(request).expectEmpty().result().get();
+    http.with(request).expectNoContent().result().get();
     assertTrue(GlobalTimeoutCheck.class + " not triggered", triggered.get());
   }
 
@@ -87,7 +87,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
         })
         .okRequest(new byte[0], ANY_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(50).build();
-    http.with(request).expectEmpty().result().get();
+    http.with(request).expectNoContent().result().get();
     assertTrue(GlobalTimeoutCheck.class + " not triggered", triggered.get());
   }
 
@@ -109,6 +109,6 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
         })
         .okRequest(new byte[0], ANY_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(100).build();
-    http.with(request).expectEmpty().result().get();
+    http.with(request).expectNoContent().result().get();
   }
 }

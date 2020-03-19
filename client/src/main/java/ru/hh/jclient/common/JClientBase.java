@@ -3,12 +3,13 @@ package ru.hh.jclient.common;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
-public abstract class JClientBase {
+public abstract class JClientBase<T extends JClientBase<T>> {
 
   public static final String HTTP_GET = "GET";
   public static final String HTTP_POST = "POST";
@@ -22,6 +23,9 @@ public abstract class JClientBase {
     this.host = requireNotEmpty(host, "host");
     this.http = requireNotNull(http, "http");
   }
+
+  public abstract <REB extends RequestEngineBuilder<? extends RequestEngine>> T withPreconfiguredEngine(Class<REB> engineClass,
+                                                                                                        UnaryOperator<REB> mapper);
 
   protected JClientBase(String host, String path, HttpClientFactory http) {
     this(requireNotEmpty(host, "host") + ofNullable(path).orElse(""), http);
@@ -141,6 +145,6 @@ public abstract class JClientBase {
   }
   
   protected static <T> T requireNotNull(T arg, String argName) {
-    return requireNonNull(arg, () -> argName + "is null");
+    return requireNonNull(arg, () -> argName + " is null");
   }
 }

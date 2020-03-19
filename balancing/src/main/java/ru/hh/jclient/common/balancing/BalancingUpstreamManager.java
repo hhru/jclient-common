@@ -1,24 +1,19 @@
 package ru.hh.jclient.common.balancing;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.HttpClientContext;
-import ru.hh.jclient.common.HttpHeaderNames;
 import ru.hh.jclient.common.Monitoring;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Function;
+
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 
 public class BalancingUpstreamManager extends UpstreamManager {
 
@@ -31,18 +26,12 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
-  private final Function<HttpClientContext, UpstreamProfileSelector> upstreamProfileSelectorProvider;
-
-  public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor,
-                                  Set<Monitoring> monitoring, String datacenter,
-                                  boolean allowCrossDCRequests) {
-    this(scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, false);
-  }
+  private UpstreamProfileSelector upstreamProfileSelector;
 
   public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
-    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, skipAdaptiveProfileSelection);
+                                  boolean allowCrossDCRequests) {
+    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
   }
 
   public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
@@ -50,20 +39,11 @@ public class BalancingUpstreamManager extends UpstreamManager {
                                   Set<Monitoring> monitoring,
                                   String datacenter,
                                   boolean allowCrossDCRequests) {
-    this(upstreamConfigs, scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, false);
-  }
-
-  public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
-                                  ScheduledExecutorService scheduledExecutor,
-                                  Set<Monitoring> monitoring,
-                                  String datacenter,
-                                  boolean allowCrossDCRequests, boolean skipAdaptiveProfileSelection) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
-    this.upstreamProfileSelectorProvider = skipAdaptiveProfileSelection ?
-        ctx -> UpstreamProfileSelector.EMPTY : AdaptiveUpstreamProfileSelector::new;
+    this.upstreamProfileSelector = UpstreamProfileSelector.EMPTY;
 
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);
@@ -105,16 +85,6 @@ public class BalancingUpstreamManager extends UpstreamManager {
   }
 
   @Override
-  @Nonnull
-  protected UpstreamProfileSelector getProfileSelector(HttpClientContext ctx) {
-    return upstreamProfileSelectorProvider.apply(ctx);
-  }
-
-  protected LocalDateTime getNow() {
-    return LocalDateTime.now();
-  }
-
-  @Override
   public Set<Monitoring> getMonitoring() {
     return Set.copyOf(monitoring);
   }
@@ -128,31 +98,5 @@ public class BalancingUpstreamManager extends UpstreamManager {
   @VisibleForTesting
   Map<String, UpstreamGroup> getUpstreams() {
     return upstreams;
-  }
-
-  private final class AdaptiveUpstreamProfileSelector implements UpstreamProfileSelector {
-    private final HttpClientContext ctx;
-
-    private AdaptiveUpstreamProfileSelector(HttpClientContext ctx) {
-      this.ctx = ctx;
-    }
-
-    @Override
-    public String getProfile(String serviceName) {
-      var upstreamGroup = upstreams.get(serviceName);
-      if (upstreamGroup == null) {
-        return null;
-      }
-      return ofNullable(ctx.getHeaders())
-          .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
-          .flatMap(values -> values.stream().findFirst())
-          .map(Long::valueOf)
-          .map(Duration::ofMillis)
-          .map(outerTimeout -> {
-            var alreadySpentTime = Duration.between(ctx.getRequestStart(), getNow());
-            var expectedTimeout = outerTimeout.minus(alreadySpentTime);
-            return upstreamGroup.getFittingProfile((int) expectedTimeout.toMillis());
-          }).orElse(null);
-    }
   }
 }
