@@ -30,7 +30,7 @@ public class UpstreamManagerTest {
     assertEquals(5, upstream.getConfig().getMaxFails());
     assertEquals("a", upstream.getConfig().getServers().get(0).getAddress());
 
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.REQUEST_TIMEOUT));
+    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
     assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
   }
 
@@ -50,7 +50,7 @@ public class UpstreamManagerTest {
     assertEquals("a", servers.get(0).getAddress());
     assertEquals("c", servers.get(1).getAddress());
 
-    assertNull(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.REQUEST_TIMEOUT));
+    assertNull(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
     assertTrue(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
     assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.INTERNAL_SERVER_ERROR));
 
