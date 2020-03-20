@@ -366,7 +366,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     return new TestClient(http, isAdaptive());
   }
 
-  static class TestClient extends JClientBase<TestClient> {
+  static class TestClient extends ConfigurableJClientBase<TestClient> {
     private final boolean adaptive;
 
     TestClient(HttpClientFactory http, boolean adaptive) {
@@ -376,13 +376,13 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     void getWrongEngineBuilderClass() throws Exception {
       ru.hh.jclient.common.Request request = super.get(url("/get")).build();
-      HttpClient client = http.with(request).configureRequestEngine(NotValidEngineBuilder.class).withSmth().backToClient();
+      HttpClient client = getHttp().with(request).configureRequestEngine(NotValidEngineBuilder.class).withSmth().backToClient();
       client.expectPlainText().result().get();
     }
 
     void get() throws Exception {
       ru.hh.jclient.common.Request request = super.get(url("/get")).build();
-      HttpClient client = http.with(request);
+      HttpClient client = getHttp().with(request);
       if (adaptive) {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
@@ -391,7 +391,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     void get(String url) throws Exception {
       ru.hh.jclient.common.Request request = super.get(url).build();
-      HttpClient client = http.with(request);
+      HttpClient client = getHttp().with(request);
       if (adaptive) {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
@@ -400,7 +400,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     void post() throws Exception {
       ru.hh.jclient.common.Request request = post(url("/post")).build();
-      HttpClient client = http.with(request);
+      HttpClient client = getHttp().with(request);
       if (adaptive) {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
@@ -408,9 +408,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     }
 
     @Override
-    public <REB extends RequestEngineBuilder<? extends RequestEngine>> TestClient withPreconfiguredEngine(Class<REB> engineClass,
-                                                                                                          UnaryOperator<REB> mapper) {
-      return new TestClient(http.customized(mapper), adaptive);
+    public <REB extends RequestEngineBuilder<? extends RequestEngine>> TestClient createCustomizedCopy(Class<REB> engineClass,
+                                                                                                       UnaryOperator<REB> mapper) {
+      return new TestClient(getHttp().customized(mapper), adaptive);
     }
   }
 

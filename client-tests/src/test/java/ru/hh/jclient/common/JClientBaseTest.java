@@ -3,8 +3,6 @@ package ru.hh.jclient.common;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.function.UnaryOperator;
-
 import static org.mockito.Mockito.mock;
 
 public class JClientBaseTest {
@@ -13,12 +11,7 @@ public class JClientBaseTest {
 
   @Before
   public void setUp() {
-    jClientBase = new JClientBase("test", mock(HttpClientFactory.class)) {
-      @Override
-      public JClientBase withPreconfiguredEngine(Class engineClass, UnaryOperator mapper) {
-        return this;
-      }
-    };
+    jClientBase = new JClientBase("test", mock(HttpClientFactory.class)) {};
   }
 
   @Test(expected = IllegalArgumentException.class)
