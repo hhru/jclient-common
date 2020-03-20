@@ -374,14 +374,17 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       this.adaptive = adaptive;
     }
 
-    void getWrongEngineBuilderClass() throws Exception {
+    void get() throws Exception {
       ru.hh.jclient.common.Request request = super.get(url("/get")).build();
-      HttpClient client = getHttp().with(request).configureRequestEngine(NotValidEngineBuilder.class).withSmth().backToClient();
+      HttpClient client = getHttp().with(request);
+      if (adaptive) {
+        client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
+      }
       client.expectPlainText().result().get();
     }
 
-    void get() throws Exception {
-      ru.hh.jclient.common.Request request = super.get(url("/get")).build();
+    void post() throws Exception {
+      ru.hh.jclient.common.Request request = post(url("/post")).build();
       HttpClient client = getHttp().with(request);
       if (adaptive) {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
@@ -398,12 +401,15 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       client.expectPlainText().result().get();
     }
 
-    void post() throws Exception {
-      ru.hh.jclient.common.Request request = post(url("/post")).build();
-      HttpClient client = getHttp().with(request);
-      if (adaptive) {
-        client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
-      }
+    void getWrongEngineBuilderClass() throws Exception {
+      ru.hh.jclient.common.Request request = super.get(url("/get")).build();
+      HttpClient client = getHttp().with(request).configureRequestEngine(NotValidEngineBuilder.class).withSmth().backToClient();
+      client.expectPlainText().result().get();
+    }
+
+    void getWithProfileInsideClient(String profile) throws Exception {
+      ru.hh.jclient.common.Request request = super.get(url("/get")).build();
+      HttpClient client = getHttp().with(request).configureRequestEngine(RequestBalancerBuilder.class).withProfile(profile).backToClient();
       client.expectPlainText().result().get();
     }
 

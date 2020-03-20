@@ -27,9 +27,11 @@ public class BalancingClientTest extends BalancingClientTestBase {
   public void requestWithProfile() throws Exception {
     var upstreamConfigs = Map.of(
         UpstreamKey.ofComplexName(TEST_UPSTREAM).getWholeName(),
-        "request_timeout_sec=2 | server=http://server1 | server=http://server2",
+        "request_timeout_sec=3 | server=http://server3",
         new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
-        "request_timeout_sec=1 | server=http://server1 | server=http://server2"
+        "request_timeout_sec=2 | server=http://server2",
+        new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
+        "request_timeout_sec=1 | server=http://server1"
     );
     createHttpClientFactory(upstreamConfigs, null, false);
     Request[] request = new Request[1];
@@ -39,13 +41,13 @@ public class BalancingClientTest extends BalancingClientTestBase {
           return null;
         });
     getTestClient().get();
-    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
+    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(3));
     getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("foo")).get();
+    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("foo")).getWithProfileInsideClient("bar");
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(1));
-    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("not existing")).get();
-    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
-    getTestClient().get();
-    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("not existing profile")).get();
+    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(3));
   }
 
   @Test(expected = ClassCastException.class)
