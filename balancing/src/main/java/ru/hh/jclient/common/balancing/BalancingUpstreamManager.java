@@ -26,7 +26,6 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
-  private UpstreamProfileSelector upstreamProfileSelector;
 
   public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
                                   String datacenter,
@@ -43,7 +42,6 @@ public class BalancingUpstreamManager extends UpstreamManager {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
-    this.upstreamProfileSelector = UpstreamProfileSelector.EMPTY;
 
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);

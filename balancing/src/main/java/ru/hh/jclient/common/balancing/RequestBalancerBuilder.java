@@ -10,7 +10,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
 
-  public RequestBalancerBuilder(UpstreamManager upstreamManager, HttpClient httpClient) {
+  RequestBalancerBuilder(UpstreamManager upstreamManager, HttpClient httpClient) {
     this.upstreamManager = upstreamManager;
     this.httpClient = httpClient;
   }
@@ -18,13 +18,11 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   private Integer maxTimeoutTries;
   private boolean forceIdempotence;
   private boolean adaptive;
-  private UpstreamProfileSelector upstreamProfileSelector;
+  private String profile;
 
   @Override
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
-    return new RequestBalancer(request, upstreamManager, requestExecutor, maxTimeoutTries, forceIdempotence, adaptive,
-        upstreamProfileSelector != null ? upstreamProfileSelector : UpstreamProfileSelector.EMPTY
-    );
+    return new RequestBalancer(request, upstreamManager, requestExecutor, maxTimeoutTries, forceIdempotence, adaptive, profile);
   }
 
   @Override
@@ -48,7 +46,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   }
 
   public RequestBalancerBuilder withProfile(String profile) {
-    this.upstreamProfileSelector = serviceName -> profile;
+    this.profile = profile;
     return this;
   }
 }
