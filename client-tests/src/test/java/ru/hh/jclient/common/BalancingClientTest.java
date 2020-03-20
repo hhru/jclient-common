@@ -50,6 +50,24 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(3));
   }
 
+  @Test(expected = IllegalStateException.class)
+  public void requestWithProfileDefaultMissing() throws Exception {
+    var upstreamConfigs = Map.of(
+            new UpstreamKey(TEST_UPSTREAM, "foo").getWholeName(),
+            "request_timeout_sec=2 | server=http://server1 | server=http://server2",
+            new UpstreamKey(TEST_UPSTREAM, "bar").getWholeName(),
+            "request_timeout_sec=1 | server=http://server1 | server=http://server2"
+    );
+    createHttpClientFactory(upstreamConfigs, null, false);
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+            .then(iom -> {
+              request[0] = completeWith(200, iom);
+              return null;
+            });
+    getTestClient().get();
+  }
+
   @Test(expected = ClassCastException.class)
   public void preconfiguredWithWrongClass() throws Exception {
     var upstreamConfigs = Map.of(
