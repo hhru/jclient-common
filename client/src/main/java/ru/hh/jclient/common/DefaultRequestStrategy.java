@@ -17,7 +17,7 @@ public class DefaultRequestStrategy implements RequestStrategy<RequestEngine, Re
   }
 
   @Override
-  public RequestStrategy<RequestEngine, RequestEngineBuilder<RequestEngine>> customized(
+  public RequestStrategy<RequestEngine, RequestEngineBuilder<RequestEngine>> createCustomizedCopy(
       UnaryOperator<RequestEngineBuilder<RequestEngine>> configAction
   ) {
     throw new IllegalCallerException("There is no customization for default strategy");

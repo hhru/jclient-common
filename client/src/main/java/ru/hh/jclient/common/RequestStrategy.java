@@ -11,5 +11,5 @@ public interface RequestStrategy<RE extends RequestEngine, REB extends RequestEn
   }
   REB createRequestEngineBuilder(HttpClient client);
   void setTimeoutMultiplier(double timeoutMultiplier);
-  RequestStrategy<RE, REB> customized(UnaryOperator<REB> configAction);
+  RequestStrategy<RE, REB> createCustomizedCopy(UnaryOperator<REB> configAction);
 }

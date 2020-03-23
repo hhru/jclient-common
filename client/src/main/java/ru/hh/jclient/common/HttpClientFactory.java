@@ -93,9 +93,16 @@ public class HttpClientFactory {
     return contextSupplier;
   }
 
-  public HttpClientFactory customized(UnaryOperator<? extends RequestEngineBuilder<? extends RequestEngine>> mapper) {
+  /**
+   * create customized copy of the factory
+   * @param mapper action to customize {@link RequestStrategy}
+   * @return new instance of httpClientFactory
+   * @throws ClassCastException if strategy type differs from required customization
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder<? extends RequestEngine>> mapper) {
     return new HttpClientFactory(this.http, this.hostsWithSession, this.contextSupplier, this.callbackExecutor,
-                                 this.requestStrategy.customized((UnaryOperator) mapper),
+                                 this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
                                  this.eventListeners);
   }
 }

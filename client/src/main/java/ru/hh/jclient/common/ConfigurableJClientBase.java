@@ -30,7 +30,12 @@ public abstract class ConfigurableJClientBase<T extends ConfigurableJClientBase<
      */
     public <REB extends RequestEngineBuilder<? extends RequestEngine>> T withPreconfiguredEngine(Class<REB> engineBuilderClass,
                                                                                                  UnaryOperator<REB> configurator) {
-        T copy = createCustomizedCopy(engineBuilderClass, configurator);
+        T copy;
+        try {
+            copy = createCustomizedCopy(configurator);
+        } catch (Exception e) {
+          throw new IllegalStateException("Failed to create client copy", e);
+        }
         if (copy == this || copy.getHttp() == this.getHttp()) {
             throw new IllegalStateException(
                 "You returned an instance with same ru.hh.jclient.common.HttpClientFactory. "
@@ -43,14 +48,11 @@ public abstract class ConfigurableJClientBase<T extends ConfigurableJClientBase<
 
     /**
      * The method should return a customized copy of the current client
-     * We assume you will use {@link HttpClientFactory#customized(java.util.function.UnaryOperator)}
+     * We assume you will use {@link HttpClientFactory#createCustomizedCopy(java.util.function.UnaryOperator)}
      * to get a new instance of {@link HttpClientFactory}
-     * @param engineBuilderClass class of {@link RequestEngineBuilder} which is currently used in client
-     * @param <REB> type definition of {@link RequestEngineBuilder} specific subtype
      * @param configurator configurationAction to apply to engineBuilder instance *before* passing into {@link HttpClient} instance
      * All manipulations with builder from {@link HttpClient} instance have priority over configurator
      * @return NEW instance of the same type as this, but with customized {@link HttpClientFactory}
      */
-    protected abstract <REB extends RequestEngineBuilder<? extends RequestEngine>> T createCustomizedCopy(Class<REB> engineBuilderClass,
-                                                                                                          UnaryOperator<REB> configurator);
+    protected abstract T createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder<? extends RequestEngine>> configurator) throws Exception;
 }

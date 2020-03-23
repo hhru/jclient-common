@@ -414,9 +414,8 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     }
 
     @Override
-    public <REB extends RequestEngineBuilder<? extends RequestEngine>> TestClient createCustomizedCopy(Class<REB> engineClass,
-                                                                                                       UnaryOperator<REB> mapper) {
-      return new TestClient(getHttp().customized(mapper), adaptive);
+    public TestClient createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder<? extends RequestEngine>> mapper) {
+      return new TestClient(getHttp().createCustomizedCopy(mapper), adaptive);
     }
   }
 
