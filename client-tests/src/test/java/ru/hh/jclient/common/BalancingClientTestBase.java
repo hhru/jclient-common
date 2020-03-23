@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
@@ -414,8 +413,8 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     }
 
     @Override
-    public TestClient createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder<? extends RequestEngine>> mapper) {
-      return new TestClient(getHttp().createCustomizedCopy(mapper), adaptive);
+    protected TestClient createCustomizedCopy(HttpClientFactoryConfigurator configurator) {
+      return new TestClient(configurator.configure(getHttp()), adaptive);
     }
   }
 
