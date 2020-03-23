@@ -6,6 +6,7 @@ import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
+import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.nab.metrics.StatsDSender;
 
 import javax.annotation.Nullable;
@@ -21,7 +22,7 @@ public class MonitoringUpstreamManagerFactory {
       boolean allowCrossDCRequests,
       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
       ScheduledExecutorService scheduledExecutorService,
-      Consumer<BalancingUpstreamManager> upstreamUpdater) {
+      Consumer<UpstreamManager> upstreamUpdater) {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       scheduledExecutorService,
       buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
