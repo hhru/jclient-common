@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.Monitoring;
 
 import javax.annotation.Nonnull;
@@ -24,8 +23,6 @@ public abstract class UpstreamManager {
   abstract Map<String, UpstreamGroup> getUpstreams();
 
   public abstract Set<Monitoring> getMonitoring();
-
-  protected abstract UpstreamProfileSelector getProfileSelector(HttpClientContext ctx);
 
   public double getTimeoutMultiplier() {
     return timeoutMultiplier;

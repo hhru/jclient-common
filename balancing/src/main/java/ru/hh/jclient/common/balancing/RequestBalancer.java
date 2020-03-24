@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+import com.sun.istack.Nullable;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
@@ -44,13 +45,13 @@ public class RequestBalancer implements RequestEngine {
   private Iterator<ServerEntry> serverEntryIterator;
   private String upstreamName;
 
-  public RequestBalancer(Request request,
+  RequestBalancer(Request request,
                          UpstreamManager upstreamManager,
                          RequestStrategy.RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
                          boolean forceIdempotence,
                          boolean adaptive,
-                         UpstreamProfileSelector upstreamProfileSelector) {
+                         @Nullable String profile) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
@@ -58,7 +59,7 @@ public class RequestBalancer implements RequestEngine {
     this.forceIdempotence = forceIdempotence;
 
     String host = request.getUri().getHost();
-    upstream = upstreamManager.getUpstream(host, upstreamProfileSelector.getProfile(host));
+    upstream = upstreamManager.getUpstream(host, profile);
     upstreamName = upstream == null ? null : upstream.getName();
     int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
       upstream != null ? upstream.getConfig().getRequestTimeoutMs() : UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS;

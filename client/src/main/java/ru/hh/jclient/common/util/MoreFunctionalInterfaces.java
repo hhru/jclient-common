@@ -152,4 +152,9 @@ public class MoreFunctionalInterfaces {
     T call() throws E;
   }
 
+  @FunctionalInterface
+  public interface FailableRunnable<E extends Throwable> {
+    void run() throws E;
+  }
+
 }

@@ -141,6 +141,6 @@ public abstract class JClientBase {
   }
   
   protected static <T> T requireNotNull(T arg, String argName) {
-    return requireNonNull(arg, () -> argName + "is null");
+    return requireNonNull(arg, () -> argName + " is null");
   }
 }
