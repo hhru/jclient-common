@@ -44,7 +44,7 @@ public abstract class HttpClient {
   private final Set<String> hostsWithSession;
   private final HttpClientContext context;
   private final Storages storages;
-  private final RequestEngineBuilder<?> requestEngineBuilder;
+  private final RequestEngineBuilder requestEngineBuilder;
   private final List<HttpClientEventListener> eventListeners;
 
   private List<RequestDebug> debugs;
@@ -60,7 +60,7 @@ public abstract class HttpClient {
   HttpClient(AsyncHttpClient http,
              Request request,
              Set<String> hostsWithSession,
-             RequestStrategy<? extends RequestEngine, ? extends RequestEngineBuilder<?>> requestStrategy,
+             RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
              Storage<HttpClientContext> contextSupplier,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;
@@ -290,7 +290,7 @@ public abstract class HttpClient {
    * @param clazz specific implementation type of {@link RequestEngineBuilder}
    * @return requestEngineBuilder casted to specific type
    */
-  public <T extends RequestEngineBuilder<?>> T configureRequestEngine(Class<T> clazz) {
+  public <T extends RequestEngineBuilder> T configureRequestEngine(Class<T> clazz) {
     return (T) requestEngineBuilder;
   }
 

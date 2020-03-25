@@ -5,7 +5,7 @@ import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngineBuilder;
 import ru.hh.jclient.common.RequestStrategy;
 
-public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancer> {
+public class RequestBalancerBuilder implements RequestEngineBuilder {
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;

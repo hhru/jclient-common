@@ -418,7 +418,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     }
   }
 
-  static final class NotValidEngineBuilder implements RequestEngineBuilder<RequestEngine> {
+  static final class NotValidEngineBuilder implements RequestEngineBuilder {
 
     @Override
     public RequestEngine build(ru.hh.jclient.common.Request request, RequestStrategy.RequestExecutor executor) {

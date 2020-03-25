@@ -4,7 +4,6 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
-import ru.hh.jclient.common.balancing.RequestBalancer;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.nab.metrics.StatsDSender;
@@ -17,7 +16,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 public class MonitoringUpstreamManagerFactory {
-  public static RequestStrategy<RequestBalancer, RequestBalancerBuilder> create(
+  public static RequestStrategy<RequestBalancerBuilder> create(
       String serviceName, String dc,
       boolean allowCrossDCRequests,
       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
