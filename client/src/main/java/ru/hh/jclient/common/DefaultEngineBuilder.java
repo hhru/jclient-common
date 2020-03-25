@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-public class DefaultEngineBuilder implements RequestEngineBuilder<RequestEngine> {
+public class DefaultEngineBuilder implements RequestEngineBuilder {
   private final HttpClient httpClient;
 
   public DefaultEngineBuilder(HttpClient httpClient) {

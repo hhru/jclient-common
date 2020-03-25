@@ -28,8 +28,7 @@ public abstract class ConfigurableJClientBase<T extends ConfigurableJClientBase<
    * @return copy of the client with preconfigured engine
    * @throws IllegalStateException if copy is the same instance or has the same {@link HttpClientFactory} instance
    */
-  public <REB extends RequestEngineBuilder<? extends RequestEngine>> T withPreconfiguredEngine(Class<REB> engineBuilderClass,
-                                                                                               UnaryOperator<REB> configurator) {
+  public <REB extends RequestEngineBuilder> T withPreconfiguredEngine(Class<REB> engineBuilderClass, UnaryOperator<REB> configurator) {
     T copy;
     try {
       copy = createCustomizedCopy(new HttpClientFactoryConfigurator() {

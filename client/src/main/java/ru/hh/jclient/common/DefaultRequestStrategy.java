@@ -2,13 +2,13 @@ package ru.hh.jclient.common;
 
 import java.util.function.UnaryOperator;
 
-public class DefaultRequestStrategy implements RequestStrategy<RequestEngine, RequestEngineBuilder<RequestEngine>> {
+public class DefaultRequestStrategy implements RequestStrategy<RequestEngineBuilder> {
 
   public DefaultRequestStrategy() {
   }
 
   @Override
-  public RequestEngineBuilder<RequestEngine> createRequestEngineBuilder(HttpClient client) {
+  public RequestEngineBuilder createRequestEngineBuilder(HttpClient client) {
     return new DefaultEngineBuilder(client);
   }
 
@@ -17,9 +17,7 @@ public class DefaultRequestStrategy implements RequestStrategy<RequestEngine, Re
   }
 
   @Override
-  public RequestStrategy<RequestEngine, RequestEngineBuilder<RequestEngine>> createCustomizedCopy(
-      UnaryOperator<RequestEngineBuilder<RequestEngine>> configAction
-  ) {
+  public RequestStrategy<RequestEngineBuilder> createCustomizedCopy(UnaryOperator<RequestEngineBuilder> configAction) {
     throw new IllegalCallerException("There is no customization for default strategy");
   }
 }

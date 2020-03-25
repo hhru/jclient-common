@@ -5,7 +5,7 @@ import ru.hh.jclient.common.RequestStrategy;
 
 import java.util.function.UnaryOperator;
 
-public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer, RequestBalancerBuilder> {
+public class BalancingRequestStrategy implements RequestStrategy<RequestBalancerBuilder> {
 
   private final UpstreamManager upstreamManager;
   private final UnaryOperator<RequestBalancerBuilder> configAction;
@@ -35,7 +35,7 @@ public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer
   }
 
   @Override
-  public RequestStrategy<RequestBalancer, RequestBalancerBuilder> createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
+  public RequestStrategy<RequestBalancerBuilder> createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
     return new BalancingRequestStrategy(this.upstreamManager, configAction);
   }
 }
