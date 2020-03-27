@@ -10,8 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static ru.hh.jclient.common.HttpStatuses.CONNECT_ERROR;
-import static ru.hh.jclient.common.HttpStatuses.REQUEST_TIMEOUT;
+import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
 
@@ -23,7 +22,7 @@ final class RetryPolicy {
   private Map<Integer, Boolean> rules = new HashMap<>();
 
   RetryPolicy() {
-    rules.put(REQUEST_TIMEOUT, false);
+    rules.put(CONNECT_TIMEOUT_ERROR, false);
     rules.put(SERVICE_UNAVAILABLE, false);
   }
 
@@ -31,7 +30,7 @@ final class RetryPolicy {
     this.rules = Arrays.stream(configString.split(","))
       .map(c -> {
         if ("timeout".equals(c)) {
-          return new CodeIdempotence(REQUEST_TIMEOUT, false);
+          return new CodeIdempotence(CONNECT_TIMEOUT_ERROR, false);
         }
 
         Matcher httpRetry = HTTP_RETRY.matcher(c);
@@ -53,7 +52,7 @@ final class RetryPolicy {
   boolean isRetriable(Response response, boolean idempotent) {
     int statusCode = response.getStatusCode();
 
-    if (statusCode == CONNECT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
+    if (statusCode == CONNECT_TIMEOUT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
       return true;
     }
 
@@ -68,7 +67,7 @@ final class RetryPolicy {
   boolean isServerError(Response response) {
     int statusCode = response.getStatusCode();
 
-    if (statusCode == CONNECT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
+    if (statusCode == CONNECT_TIMEOUT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
       return true;
     }
 

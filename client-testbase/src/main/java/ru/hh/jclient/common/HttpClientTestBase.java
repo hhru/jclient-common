@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
@@ -113,6 +114,7 @@ public class HttpClientTestBase {
     assertEquals(request1.getMethod(), request2.getMethod());
     ru.hh.jclient.common.HttpHeaders headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
+    headers2.remove(X_HH_ACCEPT_ERRORS);
     headers2.remove(HttpHeaderNames.X_OUTER_TIMEOUT_MS);
     assertEquals(request1.getHeaders(), headers2);
   }

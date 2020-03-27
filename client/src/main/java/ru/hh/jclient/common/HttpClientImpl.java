@@ -15,11 +15,13 @@ import java.util.stream.Collectors;
 
 import static java.lang.Boolean.TRUE;
 
+import com.google.common.net.MediaType;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
@@ -106,6 +108,22 @@ class HttpClientImpl extends HttpClient {
       requestBuilder.addHeader(ACCEPT, getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")));
     }
 
+    if (!areAllowedMediaTypesForResponseAndErrorCompatible()) {
+      LOGGER.warn("Different MediaTypes for successful answer and for errors on {} {} s: {} e: {} ",
+          request.getMethod(),
+          request.getUri(),
+          getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")),
+          getExpectedMediaTypesForErrors().get().stream().map(Object::toString).collect(Collectors.joining(","))
+      );
+    }
+
+    if (!headers.contains(X_HH_ACCEPT_ERRORS) && getExpectedMediaTypesForErrors().isPresent()) {
+      requestBuilder.addHeader(
+          X_HH_ACCEPT_ERRORS,
+          getExpectedMediaTypesForErrors().get().stream().map(Object::toString).collect(Collectors.joining(","))
+      );
+    }
+
     // add readonly param
     if (useReadOnlyReplica() && !isExternalRequest()) {
       requestBuilder.addQueryParam(READ_ONLY_REPLICA, TRUE.toString());
@@ -128,6 +146,18 @@ class HttpClientImpl extends HttpClient {
       }
     }
     return requestBuilder.build();
+  }
+
+  private boolean areAllowedMediaTypesForResponseAndErrorCompatible() {
+    if (getExpectedMediaTypes().isEmpty() || getExpectedMediaTypesForErrors().isEmpty()) {
+      return true;
+    }
+
+    if (getExpectedMediaTypes().get().size() == 1 && getExpectedMediaTypes().get().contains(MediaType.ANY_TYPE)) {
+      return true;
+    }
+
+    return getExpectedMediaTypes().get().equals(getExpectedMediaTypesForErrors().get());
   }
 
   static class CompletionHandler extends AsyncCompletionHandler<ResponseWrapper> {
