@@ -11,9 +11,21 @@
 
     <properties>
         <powermock.version>2.0.2</powermock.version>
+        <jmh.version>1.23</jmh.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common-testbase</artifactId>
