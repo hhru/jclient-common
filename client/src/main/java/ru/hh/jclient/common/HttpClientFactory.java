@@ -100,7 +100,7 @@ public class HttpClientFactory {
    * @throws ClassCastException if strategy type differs from required customization
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
+  public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
     return new HttpClientFactory(this.http, this.hostsWithSession, this.contextSupplier, this.callbackExecutor,
                                  this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
                                  this.eventListeners);
