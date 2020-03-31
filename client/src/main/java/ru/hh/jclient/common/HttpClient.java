@@ -51,6 +51,9 @@ public abstract class HttpClient {
   private Request request;
   private Optional<?> requestBodyEntity = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
+  private Optional<Collection<MediaType>> expectedMediaTypesForErrors = Optional.empty();
+  private Integer maxRequestTimeoutTries;
+  private boolean forceIdempotence = false;
 
   private boolean readOnlyReplica;
   private boolean noSession;
@@ -342,6 +345,14 @@ public abstract class HttpClient {
 
   Optional<Collection<MediaType>> getExpectedMediaTypes() {
     return expectedMediaTypes;
+  }
+
+  Optional<Collection<MediaType>> getExpectedMediaTypesForErrors() {
+    return expectedMediaTypesForErrors;
+  }
+
+  void setExpectedMediaTypesForErrors(Optional<Collection<MediaType>> mediaTypes) {
+    expectedMediaTypesForErrors = mediaTypes;
   }
 
   List<RequestDebug> getDebugs() {

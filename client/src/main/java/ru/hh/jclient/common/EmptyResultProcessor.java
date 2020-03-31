@@ -36,41 +36,56 @@ public class EmptyResultProcessor extends ResultProcessor<Void> {
 
   @Override
   public <E> EmptyOrErrorProcessor<E> orXmlError(JAXBContext context, Class<E> xmlClass) {
-    return new EmptyOrErrorProcessor<>(this, new XmlConverter<>(context, xmlClass));
+    XmlConverter<E> converter = new XmlConverter<>(context, xmlClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public <E> EmptyOrErrorProcessor<E> orJsonError(ObjectMapper mapper, Class<E> jsonClass) {
-    return new EmptyOrErrorProcessor<>(this, new JsonConverter<>(mapper, jsonClass));
+    JsonConverter<E> converter = new JsonConverter<>(mapper, jsonClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public <E> EmptyOrErrorProcessor<Collection<E>> orJsonCollectionError(ObjectMapper mapper, Class<E> jsonClass) {
-    return new EmptyOrErrorProcessor<>(this, new JsonCollectionConverter<>(mapper, jsonClass));
+    JsonCollectionConverter<E> converter = new JsonCollectionConverter<>(mapper, jsonClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public <K, V> EmptyOrErrorProcessor<Map<K, V>> orJsonMapError(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
-    return new EmptyOrErrorProcessor<>(this, new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass));
+    JsonMapConverter<K, V> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public <E extends GeneratedMessageV3> EmptyOrErrorProcessor<E> orProtobufError(Class<E> protobufClass) {
-    return new EmptyOrErrorProcessor<>(this, new ProtobufConverter<>(protobufClass));
+    ProtobufConverter<E> converter = new ProtobufConverter<>(protobufClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public EmptyOrErrorProcessor<String> orPlainTextError() {
-    return new EmptyOrErrorProcessor<>(this, new PlainTextConverter());
+    PlainTextConverter converter = new PlainTextConverter();
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public EmptyOrErrorProcessor<String> orPlainTextError(Charset charset) {
-    return new EmptyOrErrorProcessor<>(this, new PlainTextConverter(charset));
+    PlainTextConverter converter = new PlainTextConverter(charset);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new EmptyOrErrorProcessor<>(this, converter);
   }
 
   @Override
   public <E> EmptyOrErrorProcessor<E> orError(TypeConverter<E> converter) {
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
     return new EmptyOrErrorProcessor<>(this, converter);
   }
 }

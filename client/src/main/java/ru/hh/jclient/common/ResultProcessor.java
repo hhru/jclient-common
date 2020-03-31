@@ -115,7 +115,9 @@ public class ResultProcessor<T> {
    * @param xmlClass type of ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orXmlError(JAXBContext context, Class<E> xmlClass) {
-    return new ResultOrErrorProcessor<>(this, new XmlConverter<>(context, xmlClass));
+    XmlConverter<E> converter = new XmlConverter<>(context, xmlClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
@@ -125,7 +127,9 @@ public class ResultProcessor<T> {
    * @param jsonClass type of ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orJsonError(ObjectMapper mapper, Class<E> jsonClass) {
-    return new ResultOrErrorProcessor<>(this, new JsonConverter<>(mapper, jsonClass));
+    JsonConverter<E> converter = new JsonConverter<>(mapper, jsonClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
@@ -135,7 +139,9 @@ public class ResultProcessor<T> {
    * @param jsonClass type of ERROR result
    */
   public <E> ResultOrErrorProcessor<T, Collection<E>> orJsonCollectionError(ObjectMapper mapper, Class<E> jsonClass) {
-    return new ResultOrErrorProcessor<>(this, new JsonCollectionConverter<>(mapper, jsonClass));
+    JsonCollectionConverter<E> converter = new JsonCollectionConverter<>(mapper, jsonClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
@@ -146,7 +152,9 @@ public class ResultProcessor<T> {
    * @param jsonValueClass type of Value of the ERROR
    */
   public <K, V> ResultOrErrorProcessor<T, Map<K, V>> orJsonMapError(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
-    return new ResultOrErrorProcessor<>(this, new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass));
+    JsonMapConverter<K, V> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
@@ -155,14 +163,18 @@ public class ResultProcessor<T> {
    * @param protobufClass type of ERROR result
    */
   public <E extends GeneratedMessageV3> ResultOrErrorProcessor<T, E> orProtobufError(Class<E> protobufClass) {
-    return new ResultOrErrorProcessor<>(this, new ProtobufConverter<>(protobufClass));
+    ProtobufConverter<E> converter = new ProtobufConverter<>(protobufClass);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
    * Specifies that the type of ERROR result must be plain text with {@link PlainTextConverter#DEFAULT default} encoding.
    */
   public ResultOrErrorProcessor<T, String> orPlainTextError() {
-    return new ResultOrErrorProcessor<>(this, new PlainTextConverter());
+    PlainTextConverter converter = new PlainTextConverter();
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
@@ -171,7 +183,9 @@ public class ResultProcessor<T> {
    * @param charset used to decode response
    */
   public ResultOrErrorProcessor<T, String> orPlainTextError(Charset charset) {
-    return new ResultOrErrorProcessor<>(this, new PlainTextConverter(charset));
+    PlainTextConverter converter = new PlainTextConverter(charset);
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
+    return new ResultOrErrorProcessor<>(this, converter);
   }
 
   /**
@@ -180,6 +194,7 @@ public class ResultProcessor<T> {
    * @param converter used to convert response to expected ERROR result
    */
   public <E> ResultOrErrorProcessor<T, E> orError(TypeConverter<E> converter) {
+    getHttpClient().setExpectedMediaTypesForErrors(converter.getSupportedMediaTypes());
     return new ResultOrErrorProcessor<>(this, converter);
   }
 }
