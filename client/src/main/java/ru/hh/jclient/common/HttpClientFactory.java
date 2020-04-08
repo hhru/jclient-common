@@ -1,7 +1,5 @@
 package ru.hh.jclient.common;
 
-import static java.util.Objects.requireNonNull;
-
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metrics.MetricsProvider;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -11,6 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
+import java.util.function.UnaryOperator;
+
+import static java.util.Objects.requireNonNull;
 
 public class HttpClientFactory {
 
@@ -18,7 +19,7 @@ public class HttpClientFactory {
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final UpstreamManager upstreamManager;
+  private final RequestStrategy<?> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {
@@ -29,28 +30,28 @@ public class HttpClientFactory {
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor) {
-    this(http, hostsWithSession, contextSupplier, callbackExecutor, new DefaultUpstreamManager());
+    this(http, hostsWithSession, contextSupplier, callbackExecutor, new DefaultRequestStrategy());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           UpstreamManager upstreamManager) {
-    this(http, hostsWithSession, contextSupplier, callbackExecutor, upstreamManager, List.of());
+                           RequestStrategy<?> requestStrategy) {
+    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           UpstreamManager upstreamManager,
+                           RequestStrategy<?> requestStrategy,
                            List<HttpClientEventListener> eventListeners) {
     this.http = requireNonNull(http, "http must not be null");
     this.hostsWithSession = requireNonNull(hostsWithSession, "hostsWithSession must not be null");
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
     this.callbackExecutor = requireNonNull(callbackExecutor, "callbackExecutor must not be null");
-    this.upstreamManager = requireNonNull(upstreamManager, "upstreamManager must not be null");
+    this.requestStrategy = requireNonNull(requestStrategy, "upstreamManager must not be null");
     this.eventListeners = eventListeners;
   }
 
@@ -65,7 +66,7 @@ public class HttpClientFactory {
         http,
         requireNonNull(request, "request must not be null"),
         hostsWithSession,
-        upstreamManager,
+        requestStrategy,
         contextSupplier,
         callbackExecutor,
       eventListeners);
@@ -90,5 +91,18 @@ public class HttpClientFactory {
 
   Storage<HttpClientContext> getContextSupplier() {
     return contextSupplier;
+  }
+
+  /**
+   * create customized copy of the factory
+   * @param mapper action to customize {@link RequestStrategy}
+   * @return new instance of httpClientFactory
+   * @throws ClassCastException if strategy type differs from required customization
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
+    return new HttpClientFactory(this.http, this.hostsWithSession, this.contextSupplier, this.callbackExecutor,
+                                 this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
+                                 this.eventListeners);
   }
 }

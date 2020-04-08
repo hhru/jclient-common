@@ -10,11 +10,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 
+import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.UpstreamManager;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class UpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";
@@ -30,8 +30,8 @@ public class UpstreamManagerTest {
     assertEquals(5, upstream.getConfig().getMaxFails());
     assertEquals("a", upstream.getConfig().getServers().get(0).getAddress());
 
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(599));
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(503));
+    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
+    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
   }
 
   @Test
@@ -50,9 +50,9 @@ public class UpstreamManagerTest {
     assertEquals("a", servers.get(0).getAddress());
     assertEquals("c", servers.get(1).getAddress());
 
-    assertNull(upstream.getConfig().getRetryPolicy().getRules().get(599));
-    assertTrue(upstream.getConfig().getRetryPolicy().getRules().get(503));
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(500));
+    assertNull(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
+    assertTrue(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
+    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.INTERNAL_SERVER_ERROR));
 
     upstream = manager.getUpstream("new_backend");
 
@@ -85,7 +85,7 @@ public class UpstreamManagerTest {
   private static UpstreamManager createUpstreamManager(String backend, String configString) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(
-      singletonMap(backend, configString), newSingleThreadScheduledExecutor(), Collections.singleton(monitoring), null, false
+      singletonMap(backend, configString), newSingleThreadScheduledExecutor(), Set.of(monitoring), null, false
     );
   }
 }

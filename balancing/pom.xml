@@ -7,6 +7,15 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jclient-common-api</artifactId>
+    <artifactId>jclient-balancing</artifactId>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>ru.hh.jclient-common</groupId>
+            <artifactId>jclient-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

@@ -1,7 +1,9 @@
-package ru.hh.jclient.common;
+package ru.hh.jclient.common.balancing;
 
-import ru.hh.jclient.common.balancing.Upstream;
+import ru.hh.jclient.common.Monitoring;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,15 +12,15 @@ import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULT
 public abstract class UpstreamManager {
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
 
-  public abstract Upstream getUpstream(String host);
+  public abstract void updateUpstream(@Nonnull String upstreamName, String configString);
 
-  public Upstream getDynamicUpstream(String host, String key) {
-    return getUpstream(host);
-  };
+  public abstract Upstream getUpstream(String serviceName, @Nullable String profile);
 
-  public abstract Map<String, Upstream> getUpstreams();
+  public Upstream getUpstream(String serviceName) {
+    return getUpstream(serviceName, null);
+  }
 
-  public abstract void updateUpstream(String name, String configString);
+  abstract Map<String, UpstreamGroup> getUpstreams();
 
   public abstract Set<Monitoring> getMonitoring();
 

@@ -28,17 +28,17 @@ final class RetryPolicy {
 
   void update(String configString) {
     this.rules = Arrays.stream(configString.split(","))
-      .map(c -> {
-        if ("timeout".equals(c)) {
+      .map(configElement -> {
+        if ("timeout".equals(configElement)) {
           return new CodeIdempotence(CONNECT_TIMEOUT_ERROR, false);
         }
 
-        Matcher httpRetry = HTTP_RETRY.matcher(c);
+        Matcher httpRetry = HTTP_RETRY.matcher(configElement);
         if (httpRetry.matches()) {
           return new CodeIdempotence(Integer.parseInt(httpRetry.group(1)), false);
         }
 
-        Matcher nonIdempotentRetry = NON_IDEMPOTENT_RETRY.matcher(c);
+        Matcher nonIdempotentRetry = NON_IDEMPOTENT_RETRY.matcher(configElement);
         if (nonIdempotentRetry.matches()) {
           return new CodeIdempotence(Integer.parseInt(nonIdempotentRetry.group(1)), true);
         }
@@ -75,15 +75,15 @@ final class RetryPolicy {
   }
 
   Map<Integer, Boolean> getRules() {
-    return this.rules;
+    return Map.copyOf(this.rules);
   }
 
   @Override
   public String toString() {
-    return "RetryPolicy {" +  rules.toString() + '}';
+    return "RetryPolicy {" + rules + '}';
   }
 
-  private static class CodeIdempotence {
+  private static final class CodeIdempotence {
     final int code;
     final boolean idempotent;
 

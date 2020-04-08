@@ -1,5 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
+import javax.annotation.Nullable;
+
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
 
@@ -13,9 +16,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Upstream {
-  private final String name;
+  private final UpstreamKey upstreamKey;
   private final UpstreamConfig upstreamConfig;
   private final ScheduledExecutorService scheduledExecutor;
   private final String datacenter;
@@ -26,21 +31,17 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  Upstream(String name, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor) {
-    this(name, upstreamConfig, scheduledExecutor, null, false);
+  Upstream(String upstreamName, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor) {
+    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, scheduledExecutor, null, false, true);
   }
 
-  Upstream(String name, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor, String datacenter, boolean allowCrossDCRequests) {
-    this(name, upstreamConfig, scheduledExecutor, datacenter, allowCrossDCRequests, true);
-  }
-
-  Upstream(String name,
+  Upstream(UpstreamKey upstreamKey,
            UpstreamConfig upstreamConfig,
            ScheduledExecutorService scheduledExecutor,
            String datacenter,
            boolean allowCrossDCRequests,
            boolean enabled) {
-    this.name = name;
+    this.upstreamKey = upstreamKey;
     this.upstreamConfig = upstreamConfig;
     this.scheduledExecutor = scheduledExecutor;
     this.datacenter = datacenter;
@@ -49,8 +50,8 @@ public class Upstream {
   }
 
   ServerEntry acquireServer(Set<Integer> excludedServers) {
+    configReadLock.lock();
     try {
-      configReadLock.lock();
       List<Server> servers = upstreamConfig.getServers();
       int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests);
       if (index >= 0) {
@@ -65,8 +66,8 @@ public class Upstream {
   }
 
   List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
+    configReadLock.lock();
     try {
-      configReadLock.lock();
       List<Server> servers = upstreamConfig.getServers();
       List<Server> allowedServers = new ArrayList<>();
       List<Integer> allowedIds = new ArrayList<>();
@@ -129,17 +130,17 @@ public class Upstream {
   }
 
   private void rescale(List<Server> servers) {
-    boolean[] rescale = new boolean[] {true, allowCrossDCRequests};
-    iterateServers(servers, s -> {
-      int localOrRemote = Objects.equals(s.getDatacenter(), datacenter) ? 0 : 1;
-      rescale[localOrRemote] = rescale[localOrRemote] && s.getStatsRequests() >= s.getWeight();
+    boolean[] rescale = {true, allowCrossDCRequests};
+    iterateServers(servers, server -> {
+      int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
+      rescale[localOrRemote] &= server.getStatsRequests() >= server.getWeight();
     });
 
     if (rescale[0] || rescale[1]) {
-      iterateServers(servers, s -> {
-        int localOrRemote = Objects.equals(s.getDatacenter(), datacenter) ? 0 : 1;
+      iterateServers(servers, server -> {
+        int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
         if (rescale[localOrRemote]) {
-          s.rescaleStatsRequests();
+          server.rescaleStatsRequests();
         }
       });
     }
@@ -155,7 +156,11 @@ public class Upstream {
   }
 
   String getName() {
-    return name;
+    return upstreamKey.getWholeName();
+  }
+
+  public UpstreamKey getKey() {
+    return upstreamKey;
   }
 
   public boolean isEnabled() {
@@ -172,12 +177,63 @@ public class Upstream {
   }
 
   private static void iterateServers(List<Server> servers, Consumer<Server> function) {
-    servers.forEach(s -> {
-      if (s == null || !s.isActive()) {
+    servers.forEach(server -> {
+      if (server == null || !server.isActive()) {
         return;
       }
 
-      function.accept(s);
+      function.accept(server);
     });
+  }
+
+  public static final class UpstreamKey {
+    private static final String SEP = ":";
+    private final String serviceName;
+    private final String profileName;
+
+    public static UpstreamKey ofComplexName(String wholeName) {
+      String[] parts = wholeName.split(SEP, 2);
+      return new UpstreamKey(parts[0], parts.length == 2 ? parts[1] : null);
+    }
+
+    public UpstreamKey(String serviceName, @Nullable String profileName) {
+      this.serviceName = requireNonNull(serviceName);
+      this.profileName = UpstreamGroup.DEFAULT_PROFILE.equals(profileName) ? null : profileName;
+    }
+
+    public String getServiceName() {
+      return serviceName;
+    }
+
+    public String getProfileName() {
+      return profileName;
+    }
+
+    public String getWholeName() {
+      return Stream.of(serviceName, profileName).filter(Objects::nonNull).collect(Collectors.joining(SEP));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      var thatKey = (UpstreamKey) o;
+      return Objects.equals(serviceName, thatKey.serviceName) &&
+          Objects.equals(profileName, thatKey.profileName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(serviceName, profileName);
+    }
+
+    @Override
+    public String toString() {
+      return "UpstreamKey{" + getWholeName() + '}';
+    }
   }
 }

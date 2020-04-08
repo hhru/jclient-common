@@ -11,8 +11,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.function.Supplier;
 import org.asynchttpclient.AsyncHttpClient;
-import ru.hh.jclient.common.balancing.RequestBalancer;
-import ru.hh.jclient.common.balancing.RequestBalancer.RequestExecutor;
 import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
@@ -46,7 +44,7 @@ public abstract class HttpClient {
   private final Set<String> hostsWithSession;
   private final HttpClientContext context;
   private final Storages storages;
-  private final UpstreamManager upstreamManager;
+  private final RequestEngineBuilder requestEngineBuilder;
   private final List<HttpClientEventListener> eventListeners;
 
   private List<RequestDebug> debugs;
@@ -61,19 +59,17 @@ public abstract class HttpClient {
   private boolean noSession;
   private boolean noDebug;
   private boolean externalRequest;
-  private boolean adaptive;
-  private String dynamicUpstreamKey;
 
   HttpClient(AsyncHttpClient http,
              Request request,
              Set<String> hostsWithSession,
-             UpstreamManager upstreamManager,
+             RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
              Storage<HttpClientContext> contextSupplier,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;
     this.request = request;
     this.hostsWithSession = hostsWithSession;
-    this.upstreamManager = upstreamManager;
+    this.requestEngineBuilder = requestStrategy.createRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
 
     context = contextSupplier.get();
@@ -110,38 +106,6 @@ public abstract class HttpClient {
    */
   public HttpClient noDebug() {
     noDebug = true;
-    return this;
-  }
-
-  /**
-   * Use adaptive balancing.
-   */
-  public HttpClient adaptive() {
-    adaptive = true;
-    return this;
-  }
-
-  /**
-   * Sets dynamic upstream key to allow flexible upstream selection.
-   */
-  public HttpClient setDynamicUpstreamKey(String key) {
-    dynamicUpstreamKey = key;
-    return this;
-  }
-
-  /**
-   * Overrides {@link ru.hh.jclient.common.balancing.UpstreamConfig#getMaxTimeoutTries() when using {@link RequestBalancer}}
-   */
-  public HttpClient withMaxRequestTimeoutTries(Integer maxRequestTimeoutTries) {
-    this.maxRequestTimeoutTries = maxRequestTimeoutTries;
-    return this;
-  }
-
-  /**
-   * Force request idempotence, default false
-   */
-  public HttpClient forceIdempotence(boolean forceIdempotence) {
-    this.forceIdempotence = forceIdempotence;
     return this;
   }
 
@@ -325,12 +289,21 @@ public abstract class HttpClient {
   }
 
   /**
+   * Entrypoint to configure engine-specific properties of the client
+   * @param clazz specific implementation type of {@link RequestEngineBuilder}
+   * @return requestEngineBuilder casted to specific type
+   */
+  public <T extends RequestEngineBuilder> T configureRequestEngine(Class<T> clazz) {
+    return (T) requestEngineBuilder;
+  }
+
+  /**
    * Returns unconverted, raw response. Avoid using this method, use "converter" methods instead.
    *
    * @return response
    */
   public CompletableFuture<Response> unconverted() {
-    RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
+    RequestStrategy.RequestExecutor requestExecutor = (request, retryCount, requestContext) -> {
       if (retryCount > 0) {
         // due to retry possibly performed in another thread
         // TODO do not re-get suppliers here
@@ -338,9 +311,7 @@ public abstract class HttpClient {
       }
       return executeRequest(request, retryCount, requestContext);
     };
-    RequestBalancer requestBalancer = new RequestBalancer(request, upstreamManager, requestExecutor,
-      maxRequestTimeoutTries, forceIdempotence, adaptive, dynamicUpstreamKey);
-    return requestBalancer.requestWithRetry();
+    return requestEngineBuilder.build(request, requestExecutor).execute();
   }
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
