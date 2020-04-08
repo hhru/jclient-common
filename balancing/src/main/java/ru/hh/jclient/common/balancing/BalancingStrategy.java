@@ -3,6 +3,7 @@ package ru.hh.jclient.common.balancing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -34,15 +35,12 @@ final class BalancingStrategy {
       if (!excludedServers.isEmpty()) {
         triedRacks = excludedServers.stream().map(servers::get).filter(Objects::nonNull).map(Server::getAddress).collect(Collectors.toSet());
       }
-
-      Weight weight = new Weight();
-      weight.differentDC = isDifferentDC;
-      weight.sameRack = triedRacks.contains(server.getRack());
-      weight.currentLoad = (float) server.getRequests() / server.getWeight();
-      weight.statLoad = (float) server.getStatsRequests() / server.getWeight();
+      float currentLoad = (float) server.getRequests() / server.getWeight();
+      float statLoad = (float) server.getStatsRequests() / server.getWeight();
+      Weight weight = new Weight(isDifferentDC, triedRacks.contains(server.getRack()), currentLoad, statLoad);
 
       LOGGER.debug("static balancer stats for {}, differentDC:{}, sameRack:{}, load:{}, stat_load:{}", server,
-        weight.differentDC, weight.sameRack, weight.currentLoad, weight.statLoad);
+        weight.isDifferentDC(), weight.isSameRack(), weight.getCurrentLoad(), weight.getStatLoad());
 
       if (!excludedServers.contains(index) && (minIndex < 0 || minWeight.compareTo(weight) > 0)) {
         minIndex = index;
@@ -52,11 +50,10 @@ final class BalancingStrategy {
 
     if (minIndex != -1) {
       LOGGER.debug("static balancer pick for {}, differentDC:{}, sameRack:{}, load:{}, stat_load:{}", minIndex,
-        minWeight.differentDC, minWeight.sameRack, minWeight.currentLoad, minWeight.statLoad);
+        minWeight.isDifferentDC(), minWeight.isSameRack(), minWeight.getCurrentLoad(), minWeight.getStatLoad());
     } else {
       LOGGER.debug("no server available");
     }
-
     return minIndex;
   }
 
@@ -64,18 +61,41 @@ final class BalancingStrategy {
   }
 
   private static class Weight implements Comparable<Weight> {
-    boolean differentDC;
-    boolean sameRack;
-    float currentLoad;
-    float statLoad;
+    private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isDifferentDC)
+        .thenComparing(Weight::isSameRack)
+        .thenComparingDouble(Weight::getCurrentLoad)
+        .thenComparingDouble(Weight::getStatLoad);
+    private final boolean differentDC;
+    private final boolean sameRack;
+    private final float currentLoad;
+    private final float statLoad;
+
+    Weight(boolean differentDC, boolean sameRack, float currentLoad, float statLoad) {
+      this.differentDC = differentDC;
+      this.sameRack = sameRack;
+      this.currentLoad = currentLoad;
+      this.statLoad = statLoad;
+    }
+
+    public boolean isDifferentDC() {
+      return differentDC;
+    }
+
+    public boolean isSameRack() {
+      return sameRack;
+    }
+
+    public float getCurrentLoad() {
+      return currentLoad;
+    }
+
+    public float getStatLoad() {
+      return statLoad;
+    }
 
     @Override
-    public int compareTo(Weight other) {
-      return Comparator.comparing((Weight weight) -> weight.differentDC)
-        .thenComparing(weight -> weight.sameRack)
-        .thenComparingDouble(weight -> weight.currentLoad)
-        .thenComparingDouble(weight -> weight.statLoad)
-        .compare(this, other);
+    public int compareTo(@Nonnull Weight other) {
+      return weightComparator.compare(this, other);
     }
   }
 }
