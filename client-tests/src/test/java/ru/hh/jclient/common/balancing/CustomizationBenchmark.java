@@ -19,6 +19,7 @@ import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
+import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
@@ -124,7 +125,17 @@ public class CustomizationBenchmark {
 
     @Override
     public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
-      return super.build(request, (request1, retryCount, context) -> CompletableFuture.completedFuture(new ResponseWrapper(null, 1)));
+      return super.build(request, new RequestStrategy.RequestExecutor() {
+        @Override
+        public CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context) {
+          return CompletableFuture.completedFuture(new ResponseWrapper(null, 1));
+        }
+
+        @Override
+        public int getDefaultRequestTimeoutMs() {
+          return httpClient.getConfig().getRequestTimeout();
+        }
+      });
     }
   }
 
