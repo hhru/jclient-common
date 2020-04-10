@@ -28,14 +28,8 @@ public class HttpClientFactoryBuilderTest {
 
   @Test
   public void testMutableCopy() {
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).createModifiableCopy();
+    var initial = new HttpClientFactoryBuilder(new HttpClientFactoryBuilder(mock(Storage.class), List.of()), true);
     testBuilderMethods(initial, equalTo(initial));
-  }
-
-  @Test
-  public void testMutableCopyProtectEnable() {
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).createModifiableCopy().protectFromModification();
-    testBuilderMethods(initial, not(equalTo(initial)));
   }
 
   private void testBuilderMethods(HttpClientFactoryBuilder initial, Matcher<Object> matcher) {

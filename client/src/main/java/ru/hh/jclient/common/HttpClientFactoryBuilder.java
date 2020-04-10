@@ -30,7 +30,7 @@ public final class HttpClientFactoryBuilder {
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private MetricsConsumer metricsConsumer;
-  private boolean skipCopying;
+  private final boolean skipCopying;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
@@ -40,7 +40,7 @@ public final class HttpClientFactoryBuilder {
     this.skipCopying = false;
   }
 
-  private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
+  public HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype, boolean mutable) {
     this(new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
         prototype.requestStrategy, prototype.callbackExecutor,
         ofNullable(prototype.hostsWithSession).map(Set::copyOf).orElse(null),
@@ -48,7 +48,7 @@ public final class HttpClientFactoryBuilder {
         prototype.timeoutMultiplier,
         prototype.metricsConsumer,
         new ArrayList<>(prototype.eventListeners),
-        false
+        mutable
     );
   }
 
@@ -68,24 +68,6 @@ public final class HttpClientFactoryBuilder {
     this.metricsConsumer = metricsConsumer;
     this.eventListeners = eventListeners;
     this.skipCopying = skipCopying;
-  }
-  /**
-   * creates copy of the current instance which is allowed to be modified
-   * @return modifiable copy of the current instance
-   */
-  public HttpClientFactoryBuilder createModifiableCopy() {
-    HttpClientFactoryBuilder copy = new HttpClientFactoryBuilder(this);
-    copy.skipCopying = true;
-    return copy;
-  }
-
-  /**
-   * changes current instance state so next builder call will return copy and not change state of the current instance
-   * @return current instance
-   */
-  public HttpClientFactoryBuilder protectFromModification() {
-    this.skipCopying = false;
-    return this;
   }
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
@@ -229,7 +211,7 @@ public final class HttpClientFactoryBuilder {
   }
   
   private HttpClientFactoryBuilder getCopyOrSelf() {
-    return skipCopying ? this : new HttpClientFactoryBuilder(this);
+    return skipCopying ? this : new HttpClientFactoryBuilder(this, skipCopying);
   }
 
   public HttpClientFactoryBuilder withUserAgent(String userAgent) {
