@@ -26,12 +26,6 @@ public class HttpClientFactoryBuilderTest {
     testBuilderMethods(initial, not(equalTo(initial)));
   }
 
-  @Test
-  public void testMutableCopy() {
-    var initial = new HttpClientFactoryBuilder(new HttpClientFactoryBuilder(mock(Storage.class), List.of()), true);
-    testBuilderMethods(initial, equalTo(initial));
-  }
-
   private void testBuilderMethods(HttpClientFactoryBuilder initial, Matcher<Object> matcher) {
     var methods = HttpClientFactoryBuilder.class.getDeclaredMethods();
     Stream.of(methods)

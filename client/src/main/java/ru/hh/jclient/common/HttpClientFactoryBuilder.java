@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadFactory;
 
 import static java.util.Optional.ofNullable;
 
-public final class HttpClientFactoryBuilder {
+public class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
@@ -30,25 +30,22 @@ public final class HttpClientFactoryBuilder {
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private MetricsConsumer metricsConsumer;
-  private final boolean skipCopying;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
     this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
     this.contextSupplier = contextSupplier;
     this.eventListeners = new ArrayList<>(eventListeners);
-    this.skipCopying = false;
   }
 
-  public HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype, boolean mutable) {
+  HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
     this(new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
         prototype.requestStrategy, prototype.callbackExecutor,
         ofNullable(prototype.hostsWithSession).map(Set::copyOf).orElse(null),
         prototype.contextSupplier,
         prototype.timeoutMultiplier,
         prototype.metricsConsumer,
-        new ArrayList<>(prototype.eventListeners),
-        mutable
+        new ArrayList<>(prototype.eventListeners)
     );
   }
 
@@ -58,7 +55,7 @@ public final class HttpClientFactoryBuilder {
                                    Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier,
                                    double timeoutMultiplier,
                                    MetricsConsumer metricsConsumer,
-                                   List<HttpClientEventListener> eventListeners, boolean skipCopying) {
+                                   List<HttpClientEventListener> eventListeners) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
     this.callbackExecutor = callbackExecutor;
@@ -67,11 +64,10 @@ public final class HttpClientFactoryBuilder {
     this.timeoutMultiplier = timeoutMultiplier;
     this.metricsConsumer = metricsConsumer;
     this.eventListeners = eventListeners;
-    this.skipCopying = skipCopying;
   }
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
       .ifPresent(target::withMaxConnections);
     ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
@@ -107,7 +103,7 @@ public final class HttpClientFactoryBuilder {
    * @return instance of HttpClientFactoryBuilder based on passed config to continue building
    */
   public HttpClientFactoryBuilder withNativeConfig(Object asyncClientConfig) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     if (!(asyncClientConfig instanceof AsyncHttpClientConfig)) {
       throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.class.getName());
     }
@@ -116,61 +112,61 @@ public final class HttpClientFactoryBuilder {
   }
 
   public HttpClientFactoryBuilder addEventListener(HttpClientEventListener eventListener) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.eventListeners.add(eventListener);
     return target;
   }
 
   public HttpClientFactoryBuilder withRequestStrategy(RequestStrategy<? extends RequestEngineBuilder> requestStrategy) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.requestStrategy = requestStrategy;
     return target;
   }
 
   public HttpClientFactoryBuilder withThreadFactory(ThreadFactory threadFactory) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setThreadFactory(threadFactory);
     return target;
   }
 
   public HttpClientFactoryBuilder withCallbackExecutor(Executor callbackExecutor) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.callbackExecutor = callbackExecutor;
     return target;
   }
 
   public HttpClientFactoryBuilder withHostsWithSession(Collection<String> hostsWithSession) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.hostsWithSession = new HashSet<>(hostsWithSession);
     return target;
   }
 
   public HttpClientFactoryBuilder withStorage(Storage<HttpClientContext> contextSupplier) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.contextSupplier = contextSupplier;
     return target;
   }
 
   public HttpClientFactoryBuilder withMetricsConsumer(MetricsConsumer metricsConsumer) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.metricsConsumer = metricsConsumer;
     return target;
   }
 
   public HttpClientFactoryBuilder withSSLContext(SslContext sslContext) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setSslContext(sslContext);
     return target;
   }
 
   public HttpClientFactoryBuilder acceptAnyCertificate(boolean enabled) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setUseInsecureTrustManager(enabled);
     return target;
   }
 
   public HttpClientFactoryBuilder withTimeoutMultiplier(double timeoutMultiplier) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.timeoutMultiplier = timeoutMultiplier;
     return target;
   }
@@ -210,42 +206,42 @@ public final class HttpClientFactoryBuilder {
     return builder;
   }
   
-  private HttpClientFactoryBuilder getCopyOrSelf() {
-    return skipCopying ? this : new HttpClientFactoryBuilder(this, skipCopying);
+  HttpClientFactoryBuilder getCopy() {
+    return new HttpClientFactoryBuilder(this);
   }
 
   public HttpClientFactoryBuilder withUserAgent(String userAgent) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setUserAgent(userAgent);
     return target;
   }
 
   public HttpClientFactoryBuilder withMaxConnections(int maxConnections) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setMaxConnections(maxConnections);
     return target;
   }
 
   public HttpClientFactoryBuilder withMaxRequestRetries(int maxRequestRetries) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setMaxRequestRetry(maxRequestRetries);
     return target;
   }
 
   public HttpClientFactoryBuilder withConnectTimeoutMs(int connectTimeoutMs) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setConnectTimeout(connectTimeoutMs);
     return target;
   }
 
   public HttpClientFactoryBuilder withReadTimeoutMs(int readTimeoutMs) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setReadTimeout(readTimeoutMs);
     return target;
   }
 
   public HttpClientFactoryBuilder withRequestTimeoutMs(int requestTimeoutMs) {
-    var target = getCopyOrSelf();
+    var target = getCopy();
     target.configBuilder.setRequestTimeout(requestTimeoutMs);
     return target;
   }
