@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadFactory;
 
 import static java.util.Optional.ofNullable;
 
-public final class HttpClientFactoryBuilder {
+public class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
@@ -30,7 +30,7 @@ public final class HttpClientFactoryBuilder {
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private MetricsConsumer metricsConsumer;
-  private List<HttpClientEventListener> eventListeners = new ArrayList<>();
+  private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
     this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
@@ -38,34 +38,63 @@ public final class HttpClientFactoryBuilder {
     this.eventListeners = new ArrayList<>(eventListeners);
   }
 
+  HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
+    this(new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
+        prototype.requestStrategy, prototype.callbackExecutor,
+        ofNullable(prototype.hostsWithSession).map(Set::copyOf).orElse(null),
+        prototype.contextSupplier,
+        prototype.timeoutMultiplier,
+        prototype.metricsConsumer,
+        new ArrayList<>(prototype.eventListeners)
+    );
+  }
+
+  private HttpClientFactoryBuilder(DefaultAsyncHttpClientConfig.Builder configBuilder,
+                                   RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
+                                   Executor callbackExecutor,
+                                   Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier,
+                                   double timeoutMultiplier,
+                                   MetricsConsumer metricsConsumer,
+                                   List<HttpClientEventListener> eventListeners) {
+    this.configBuilder = configBuilder;
+    this.requestStrategy = requestStrategy;
+    this.callbackExecutor = callbackExecutor;
+    this.hostsWithSession = hostsWithSession;
+    this.contextSupplier = contextSupplier;
+    this.timeoutMultiplier = timeoutMultiplier;
+    this.metricsConsumer = metricsConsumer;
+    this.eventListeners = eventListeners;
+  }
+
   public HttpClientFactoryBuilder withProperties(Properties properties) {
+    var target = getCopy();
     ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
-      .ifPresent(this::withMaxConnections);
+      .ifPresent(target::withMaxConnections);
     ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
-      .ifPresent(this::withMaxRequestRetries);
+      .ifPresent(target::withMaxRequestRetries);
     ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(this::withConnectTimeoutMs);
+      .ifPresent(target::withConnectTimeoutMs);
     ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(this::withReadTimeoutMs);
+      .ifPresent(target::withReadTimeoutMs);
     ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(this::withRequestTimeoutMs);
+      .ifPresent(target::withRequestTimeoutMs);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble)
-      .ifPresent(this::withTimeoutMultiplier);
+      .ifPresent(target::withTimeoutMultiplier);
     ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
-      .ifPresent(this::withUserAgent);
+      .ifPresent(target::withUserAgent);
 
     ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean)
-      .ifPresent(configBuilder::setFollowRedirect);
+      .ifPresent(target.configBuilder::setFollowRedirect);
     ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean)
-      .ifPresent(configBuilder::setCompressionEnforced);
+      .ifPresent(target.configBuilder::setCompressionEnforced);
     ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
-      .ifPresent(configBuilder::setUseInsecureTrustManager);
+      .ifPresent(target.configBuilder::setUseInsecureTrustManager);
     ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean)
-      .ifPresent(configBuilder::setKeepAlive);
+      .ifPresent(target.configBuilder::setKeepAlive);
     ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt)
-      .ifPresent(configBuilder::setIoThreadsCount);
+      .ifPresent(target.configBuilder::setIoThreadsCount);
 
-    return this;
+    return target;
   }
 
   /**
@@ -74,71 +103,82 @@ public final class HttpClientFactoryBuilder {
    * @return instance of HttpClientFactoryBuilder based on passed config to continue building
    */
   public HttpClientFactoryBuilder withNativeConfig(Object asyncClientConfig) {
+    var target = getCopy();
     if (!(asyncClientConfig instanceof AsyncHttpClientConfig)) {
       throw new IllegalArgumentException("Argument must be of " + AsyncHttpClientConfig.class.getName());
     }
-    this.configBuilder = new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig);
-    return this;
+    target.configBuilder = new DefaultAsyncHttpClientConfig.Builder((AsyncHttpClientConfig) asyncClientConfig);
+    return target;
   }
 
   public HttpClientFactoryBuilder addEventListener(HttpClientEventListener eventListener) {
-    this.eventListeners.add(eventListener);
-    return this;
+    var target = getCopy();
+    target.eventListeners.add(eventListener);
+    return target;
   }
 
   public HttpClientFactoryBuilder withRequestStrategy(RequestStrategy<? extends RequestEngineBuilder> requestStrategy) {
-    this.requestStrategy = requestStrategy;
-    return this;
+    var target = getCopy();
+    target.requestStrategy = requestStrategy;
+    return target;
   }
 
   public HttpClientFactoryBuilder withThreadFactory(ThreadFactory threadFactory) {
-    this.configBuilder.setThreadFactory(threadFactory);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setThreadFactory(threadFactory);
+    return target;
   }
 
   public HttpClientFactoryBuilder withCallbackExecutor(Executor callbackExecutor) {
-    this.callbackExecutor = callbackExecutor;
-    return this;
+    var target = getCopy();
+    target.callbackExecutor = callbackExecutor;
+    return target;
   }
 
   public HttpClientFactoryBuilder withHostsWithSession(Collection<String> hostsWithSession) {
-    this.hostsWithSession = new HashSet<>(hostsWithSession);
-    return this;
+    var target = getCopy();
+    target.hostsWithSession = new HashSet<>(hostsWithSession);
+    return target;
   }
 
   public HttpClientFactoryBuilder withStorage(Storage<HttpClientContext> contextSupplier) {
-    this.contextSupplier = contextSupplier;
-    return this;
+    var target = getCopy();
+    target.contextSupplier = contextSupplier;
+    return target;
   }
 
   public HttpClientFactoryBuilder withMetricsConsumer(MetricsConsumer metricsConsumer) {
-    this.metricsConsumer = metricsConsumer;
-    return this;
+    var target = getCopy();
+    target.metricsConsumer = metricsConsumer;
+    return target;
   }
 
   public HttpClientFactoryBuilder withSSLContext(SslContext sslContext) {
-    this.configBuilder.setSslContext(sslContext);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setSslContext(sslContext);
+    return target;
   }
 
   public HttpClientFactoryBuilder acceptAnyCertificate(boolean enabled) {
-    this.configBuilder.setUseInsecureTrustManager(enabled);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setUseInsecureTrustManager(enabled);
+    return target;
   }
 
   public HttpClientFactoryBuilder withTimeoutMultiplier(double timeoutMultiplier) {
-    this.timeoutMultiplier = timeoutMultiplier;
-    return this;
+    var target = getCopy();
+    target.timeoutMultiplier = timeoutMultiplier;
+    return target;
   }
 
   public HttpClientFactory build() {
     HttpClientFactory httpClientFactory = new HttpClientFactory(
       buildClient(),
-      Set.copyOf(hostsWithSession),
+      ofNullable(hostsWithSession).map(Set::copyOf).orElseGet(Set::of),
       contextSupplier,
       callbackExecutor,
       initStrategy(),
-      eventListeners
+      List.copyOf(eventListeners)
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
     return httpClientFactory;
@@ -165,35 +205,45 @@ public final class HttpClientFactoryBuilder {
     builder.setRequestTimeout(config.getRequestTimeout() > 0 ? (int)(config.getRequestTimeout() * timeoutMultiplier) : config.getRequestTimeout());
     return builder;
   }
+  
+  HttpClientFactoryBuilder getCopy() {
+    return new HttpClientFactoryBuilder(this);
+  }
 
   public HttpClientFactoryBuilder withUserAgent(String userAgent) {
-    configBuilder.setUserAgent(userAgent);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setUserAgent(userAgent);
+    return target;
   }
 
   public HttpClientFactoryBuilder withMaxConnections(int maxConnections) {
-    configBuilder.setMaxConnections(maxConnections);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setMaxConnections(maxConnections);
+    return target;
   }
 
   public HttpClientFactoryBuilder withMaxRequestRetries(int maxRequestRetries) {
-    configBuilder.setMaxRequestRetry(maxRequestRetries);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setMaxRequestRetry(maxRequestRetries);
+    return target;
   }
 
   public HttpClientFactoryBuilder withConnectTimeoutMs(int connectTimeoutMs) {
-    configBuilder.setConnectTimeout(connectTimeoutMs);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setConnectTimeout(connectTimeoutMs);
+    return target;
   }
 
   public HttpClientFactoryBuilder withReadTimeoutMs(int readTimeoutMs) {
-    configBuilder.setReadTimeout(readTimeoutMs);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setReadTimeout(readTimeoutMs);
+    return target;
   }
 
   public HttpClientFactoryBuilder withRequestTimeoutMs(int requestTimeoutMs) {
-    configBuilder.setRequestTimeout(requestTimeoutMs);
-    return this;
+    var target = getCopy();
+    target.configBuilder.setRequestTimeout(requestTimeoutMs);
+    return target;
   }
 
   public static final class ConfigKeys {

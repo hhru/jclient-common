@@ -62,7 +62,7 @@ public class RequestBalancer implements RequestEngine {
     upstream = upstreamManager.getUpstream(host, profile);
     upstreamName = upstream == null ? null : upstream.getName();
     int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
-      upstream != null ? upstream.getConfig().getRequestTimeoutMs() : UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS;
+      upstream != null ? upstream.getConfig().getRequestTimeoutMs() : requestExecutor.getDefaultRequestTimeoutMs();
 
     int requestTimeoutTries = maxRequestTimeoutTries != null ? maxRequestTimeoutTries :
       upstream != null ? upstream.getConfig().getMaxTimeoutTries() : UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
