@@ -38,7 +38,7 @@ public class HttpClientFactoryBuilder {
     this.eventListeners = new ArrayList<>(eventListeners);
   }
 
-  HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
+  private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
     this(new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
         prototype.requestStrategy, prototype.callbackExecutor,
         ofNullable(prototype.hostsWithSession).map(Set::copyOf).orElse(null),
@@ -69,19 +69,19 @@ public class HttpClientFactoryBuilder {
   public HttpClientFactoryBuilder withProperties(Properties properties) {
     var target = getCopy();
     ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
-      .ifPresent(target::withMaxConnections);
+      .ifPresent(target.configBuilder::setMaxConnections);
     ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
-      .ifPresent(target::withMaxRequestRetries);
+      .ifPresent(target.configBuilder::setMaxRequestRetry);
     ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(target::withConnectTimeoutMs);
+      .ifPresent(target.configBuilder::setConnectTimeout);
     ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(target::withReadTimeoutMs);
+      .ifPresent(target.configBuilder::setReadTimeout);
     ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(target::withRequestTimeoutMs);
+      .ifPresent(target.configBuilder::setRequestTimeout);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble)
-      .ifPresent(target::withTimeoutMultiplier);
+      .ifPresent(timeoutMultiplier -> target.timeoutMultiplier = timeoutMultiplier);
     ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
-      .ifPresent(target::withUserAgent);
+      .ifPresent(target.configBuilder::setUserAgent);
 
     ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean)
       .ifPresent(target.configBuilder::setFollowRedirect);

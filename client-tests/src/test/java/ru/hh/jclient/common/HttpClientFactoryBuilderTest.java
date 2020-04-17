@@ -10,10 +10,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -24,6 +28,17 @@ public class HttpClientFactoryBuilderTest {
   public void testImmutableByDefault() {
     var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of());
     testBuilderMethods(initial, not(equalTo(initial)));
+  }
+
+  @Test
+  public void testMultiplierApplication() {
+    Properties properties = new Properties();
+    properties.put("requestTimeoutMs", "1000");
+    properties.put("timeoutMultiplier", "5.0");
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).withCallbackExecutor(Executors.newSingleThreadExecutor());
+    var client = initial.withProperties(properties).withHostsWithSession(List.of("localhost")).build();
+    assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
+    assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());
   }
 
   private void testBuilderMethods(HttpClientFactoryBuilder initial, Matcher<Object> matcher) {
