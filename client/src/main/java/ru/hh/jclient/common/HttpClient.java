@@ -52,8 +52,6 @@ public abstract class HttpClient {
   private Optional<?> requestBodyEntity = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
   private Optional<Collection<MediaType>> expectedMediaTypesForErrors = Optional.empty();
-  private Integer maxRequestTimeoutTries;
-  private boolean forceIdempotence = false;
 
   private boolean readOnlyReplica;
   private boolean noSession;
