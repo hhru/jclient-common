@@ -65,10 +65,10 @@ class HttpClientImpl extends HttpClient {
 
     Request request = addHeadersAndParams(originalRequest);
     if (retryCount > 0) {
-      LOGGER.info("ASYNC_HTTP_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
+      LOGGER.info("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
       getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity(), retryCount, context));
     } else {
-      LOGGER.debug("ASYNC_HTTP_START: Starting {} {}", request.getMethod(), request.getUri());
+      LOGGER.debug("HTTP_CLIENT_START: Starting {} {}", request.getMethod(), request.getUri());
       getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity(), context));
     }
 
@@ -186,7 +186,7 @@ class HttpClientImpl extends HttpClient {
       String responseStatusText = response.getStatusText();
 
       long timeToLastByteMs = getTimeToLastByte();
-      mdcCopy.doInContext(() -> LOGGER.info("ASYNC_HTTP_RESPONSE: {} {} in {} ms on {} {}",
+      mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} ms on {} {}",
           responseStatusCode, responseStatusText, timeToLastByteMs, request.getMethod(), request.getUri()));
 
       return proceedWithResponse(response, timeToLastByteMs);
@@ -199,7 +199,7 @@ class HttpClientImpl extends HttpClient {
 
       mdcCopy.doInContext(
           () -> LOGGER.warn(
-              "ASYNC_HTTP_ERROR: client error after {} ms on {} {}: {}{}",
+              "HTTP_CLIENT_ERROR: client error after {} ms on {} {}: {}{}",
               timeToLastByteMs,
               request.getMethod(),
               request.getUri(),
