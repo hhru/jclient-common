@@ -4,7 +4,6 @@ import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.MediaType.PROTOBUF;
 import static java.util.Objects.requireNonNull;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Set;
 
@@ -28,8 +27,15 @@ public class ProtobufConverter<T extends GeneratedMessageV3> extends SingleTypeC
   @Override
   public FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction() {
     return r -> {
-      Method parseFromMethod = protobufClass.getMethod("parseFrom", InputStream.class);
-      return new ResultWithResponse<>((T) parseFromMethod.invoke(null, r.getResponseBodyAsStream()), r);
+      T value;
+      var inputStream = r.getResponseBodyAsStream();
+      if (inputStream.available() > 0) {
+        var parseFromMethod = protobufClass.getMethod("parseFrom", InputStream.class);
+        value = (T) parseFromMethod.invoke(null, inputStream);
+      } else {
+        value = null;
+      }
+      return new ResultWithResponse<>(value, r);
     };
   }
 
