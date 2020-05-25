@@ -64,7 +64,7 @@ final class AdaptiveBalancingStrategy {
     long total = 0;
     for (int j = 0; j < n; j++) {
       long invertedTime = scores[j];
-      int health = healths[j] <= lowestHealth ? lowestHealth : healths[j];
+      int health = Math.max(healths[j], lowestHealth);
       long score = invertedTime * health;
       LOGGER.debug("balancer stats for {}, health:{}, inverted_time_score:{}, final_score:{}", servers.get(j), health, invertedTime, score);
       total += score;

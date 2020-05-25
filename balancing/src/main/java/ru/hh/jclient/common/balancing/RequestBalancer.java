@@ -3,6 +3,8 @@ package ru.hh.jclient.common.balancing;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 import com.sun.istack.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
@@ -29,6 +31,8 @@ import java.util.concurrent.CompletableFuture;
 import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
 
 public class RequestBalancer implements RequestEngine {
+  private static final Logger logger = LoggerFactory.getLogger(RequestBalancer.class);
+
   private final Request request;
   private final Upstream upstream;
   private final UpstreamManager upstreamManager;
@@ -44,6 +48,7 @@ public class RequestBalancer implements RequestEngine {
   private int firstStatusCode;
   private Iterator<ServerEntry> serverEntryIterator;
   private String upstreamName;
+  private boolean adaptiveFailed;
 
   RequestBalancer(Request request,
                          UpstreamManager upstreamManager,
@@ -141,7 +146,17 @@ public class RequestBalancer implements RequestEngine {
   }
 
   private Request getBalancedRequest(Request request) {
-    currentServer = adaptive ? acquireAdaptiveServer() : upstream.acquireServer(triedServers);
+    if (adaptive && !adaptiveFailed) {
+      try {
+        currentServer = acquireAdaptiveServer();
+      } catch (RuntimeException e) {
+        logger.error("failed to acquire adaptive servers", e);
+        adaptiveFailed = true;
+        currentServer = upstream.acquireServer(triedServers);
+      }
+    } else {
+      currentServer = upstream.acquireServer(triedServers);
+    }
     if (currentServer == null) {
       return request;
     }
@@ -173,7 +188,7 @@ public class RequestBalancer implements RequestEngine {
 
     if (isServerAvailable()) {
       boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
-      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs, adaptive);
+      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs, adaptive && !adaptiveFailed);
     }
   }
 
