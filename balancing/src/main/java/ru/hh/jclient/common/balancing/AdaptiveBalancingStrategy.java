@@ -11,7 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
 final class AdaptiveBalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdaptiveBalancingStrategy.class);
 
-  static final int WARM_UP_DEFAULT_TIME_MS = 100;
+  static final int WARM_UP_DEFAULT_TIME_MICROS = 100_000;
   static final int DOWNTIME_DETECTOR_WINDOW = 100;
   static final int RESPONSE_TIME_TRACKER_WINDOW = 500;
   private static final int lowestHealthPercent = 2;
@@ -40,13 +40,13 @@ final class AdaptiveBalancingStrategy {
     for (Server server : servers) {
       healths[i] = server.getDowntimeDetector().successCount();
 
-      ResponseTimeTracker tracker = server.getResponseTimeTracker();
+      var tracker = server.getResponseTimeTracker();
       LOGGER.debug("gathering stats {}, warmUp:{}, time:{}, successCount:{}", server, tracker.isWarmUp(),
           tracker.mean(), server.getDowntimeDetector().successCount());
       if (tracker.isWarmUp()) {
         isAnyWarmingUp = true;
       } else {
-        long mean = tracker.mean();
+        long mean = Math.max(1, tracker.mean());
         scores[i] = mean;
         min = Math.min(min, mean);
         max = Math.max(max, mean);
@@ -56,7 +56,7 @@ final class AdaptiveBalancingStrategy {
     }
 
     for (int j = 0; j < n; j++) {
-      long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MS : scores[j];
+      long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MICROS : scores[j];
       scores[j] = isAnyWarmingUp ? time : (long) Math.round((float) min * max / time);
     }
 

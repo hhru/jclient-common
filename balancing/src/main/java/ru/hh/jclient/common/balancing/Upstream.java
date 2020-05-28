@@ -96,11 +96,11 @@ public class Upstream {
     return acquireServer(Collections.emptySet());
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMs) {
-    releaseServer(serverIndex, isError, responseTimeMs, false);
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros) {
+    releaseServer(serverIndex, isError, responseTimeMicros, false);
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMs, boolean adaptive) {
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive) {
     configReadLock.lock();
     try {
       List<Server> servers = upstreamConfig.getServers();
@@ -110,9 +110,9 @@ public class Upstream {
       Server server = servers.get(serverIndex);
       if (server != null) {
         if (adaptive) {
-          server.releaseAdaptive(isError, responseTimeMs);
+          server.releaseAdaptive(isError, responseTimeMicros);
         } else {
-          server.release(isError, responseTimeMs);
+          server.release(isError, responseTimeMicros);
           if (isError) {
             if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
               server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);

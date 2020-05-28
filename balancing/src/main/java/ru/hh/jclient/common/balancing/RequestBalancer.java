@@ -17,7 +17,7 @@ import ru.hh.jclient.common.ResponseConverterUtils;
 
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.JClientBase.HTTP_POST;
-import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MS;
+import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.WARM_UP_DEFAULT_TIME_MICROS;
 
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
@@ -115,7 +115,7 @@ public class RequestBalancer implements RequestEngine {
     Set<Monitoring> monitoringSet = upstreamManager.getMonitoring();
     for (Monitoring monitoring : monitoringSet) {
       int statusCode = wrapper.getResponse().getStatusCode();
-      long requestTimeMs = wrapper.getTimeToLastByteMs();
+      long requestTimeMicros = wrapper.getTimeToLastByteMicros();
 
       String serverAddress;
       String dcName = null;
@@ -129,8 +129,8 @@ public class RequestBalancer implements RequestEngine {
         upstreamName = upstreamName == null ? serverAddress : upstreamName;
       }
 
-      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMs, !doRetry);
-      monitoring.countRequestTime(upstreamName, dcName, requestTimeMs);
+      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMicros, !doRetry);
+      monitoring.countRequestTime(upstreamName, dcName, requestTimeMicros);
 
       if (!triedServers.isEmpty()) {
         monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, firstStatusCode, triedServers.size());
@@ -180,19 +180,20 @@ public class RequestBalancer implements RequestEngine {
   }
 
   private void finishRequest(ResponseWrapper wrapper) {
-    long timeToLastByteMs = WARM_UP_DEFAULT_TIME_MS;
+    long timeToLastByteMicros = WARM_UP_DEFAULT_TIME_MICROS;
     if (wrapper != null) {
-      timeToLastByteMs = wrapper.getTimeToLastByteMs();
-      updateLeftTriesAndTime((int) timeToLastByteMs);
+      timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
+      updateLeftTriesAndTime((int) timeToLastByteMicros);
     }
 
     if (isServerAvailable()) {
       boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
-      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMs, adaptive && !adaptiveFailed);
+      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMicros, adaptive && !adaptiveFailed);
     }
   }
 
-  private void updateLeftTriesAndTime(int responseTimeMs) {
+  private void updateLeftTriesAndTime(int responseTimeMicros) {
+    var responseTimeMs = responseTimeMicros / 1000;
     requestTimeLeftMs = requestTimeLeftMs >= responseTimeMs ? requestTimeLeftMs - responseTimeMs: 0;
     if (triesLeft > 0) {
       triesLeft--;
