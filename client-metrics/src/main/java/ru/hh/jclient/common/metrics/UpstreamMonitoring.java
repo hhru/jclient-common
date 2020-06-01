@@ -28,7 +28,7 @@ public class UpstreamMonitoring implements Monitoring {
   public void countRequest(String upstreamName, String serverDatacenter,
                            String serverAddress,
                            int statusCode,
-                           long requestTimeMs,
+                           long requestTimeMicros,
                            boolean isRequestFinal) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     tags.put("status", String.valueOf(statusCode));
@@ -37,9 +37,9 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMs) {
+  public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMicros) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
-    statsDSender.sendTime("http.client.request.time", requestTimeMs, toTagsArray(tags));
+    statsDSender.sendTime("http.client.request.time", requestTimeMicros / 1000, toTagsArray(tags));
   }
 
   @Override

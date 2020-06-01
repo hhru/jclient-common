@@ -43,7 +43,7 @@ public final class Server {
     statsRequests++;
   }
 
-  synchronized void release(boolean isError, long responseTimeMs) {
+  synchronized void release(boolean isError, long responseTimeMicros) {
     if (requests > 0) {
       requests--;
     }
@@ -54,12 +54,12 @@ public final class Server {
     }
   }
 
-  void releaseAdaptive(boolean isError, long responseTimeMs) {
+  void releaseAdaptive(boolean isError, long responseTimeMicros) {
     if (isError) {
       downtimeDetector.failed();
     } else {
       downtimeDetector.success();
-      responseTimeTracker.time(responseTimeMs);
+      responseTimeTracker.time(responseTimeMicros);
     }
   }
 

@@ -185,11 +185,11 @@ class HttpClientImpl extends HttpClient {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
 
-      long timeToLastByteMs = getTimeToLastByte();
-      mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} ms on {} {}",
-          responseStatusCode, responseStatusText, timeToLastByteMs, request.getMethod(), request.getUri()));
+      long timeToLastByteMicros = getTimeToLastByte();
+      mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} micros on {} {}",
+          responseStatusCode, responseStatusText, timeToLastByteMicros, request.getMethod(), request.getUri()));
 
-      return proceedWithResponse(response, timeToLastByteMs);
+      return proceedWithResponse(response, timeToLastByteMicros);
     }
 
     @Override
@@ -217,12 +217,12 @@ class HttpClientImpl extends HttpClient {
       completeExceptionally(t);
     }
 
-    private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMs) {
+    private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMicros) {
       Response debuggedResponse = new Response(response);
       for (RequestDebug debug : requestDebugs) {
         debuggedResponse = debug.onResponse(debuggedResponse);
       }
-      ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMs);
+      ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMicros);
       // complete promise in a separate thread not to block ning thread
       callbackExecutor.execute(() -> {
         try {
@@ -264,7 +264,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     private long getTimeToLastByte() {
-      return requestStart.until(now(), ChronoUnit.MILLIS);
+      return requestStart.until(now(), ChronoUnit.MICROS);
     }
   }
 }
