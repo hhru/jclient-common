@@ -91,8 +91,11 @@ class HttpClientImpl extends HttpClient {
         .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }
 
-    // debug header is passed through by default, but should be removed before final check at the end if client specifies so
-    if (isNoDebug() || isExternalRequest() || !getContext().isDebugMode()) {
+    boolean canUnwrapDebugResponse = getDebugs().stream().anyMatch(RequestDebug::canUnwrapDebugResponse);
+    boolean enableDebug = !isNoDebug() && !isExternalRequest() && getContext().isDebugMode() && canUnwrapDebugResponse;
+
+    // debug header is passed through by default, but should be removed if debug is not enabled
+    if (!enableDebug) {
       headers.remove(X_HH_DEBUG);
     }
 
@@ -130,13 +133,13 @@ class HttpClientImpl extends HttpClient {
     }
 
     // add both debug param and debug header (for backward compatibility)
-    if (getContext().isDebugMode() && !isNoDebug() && !isExternalRequest()) {
+    if (enableDebug) {
       requestBuilder.setHeader(X_HH_DEBUG, "true");
       requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
     }
 
     // sanity check for debug header/param if debug is not enabled
-    if (isNoDebug() || isExternalRequest() || !getContext().isDebugMode()) {
+    if (!enableDebug) {
       if (headers.contains(X_HH_DEBUG)) {
         throw new IllegalStateException("Debug header in request when debug is disabled");
       }

@@ -46,7 +46,6 @@ import javax.xml.bind.JAXBException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.asynchttpclient.AsyncHttpClient;
-import org.junit.Before;
 import org.junit.Test;
 
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
@@ -69,11 +68,6 @@ public class HttpClientTest extends HttpClientTestBase {
 
   public HttpClientTest() throws JAXBException {
     jaxbContext = JAXBContext.newInstance(XmlTest.class, XmlError.class);
-  }
-
-  @Before
-  public void before() {
-    debug.reset();
   }
 
   @Test
@@ -315,6 +309,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = IllegalStateException.class)
   public void testDebugManualHeaderWithNoDebug() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, true);
+
     // situation when manually building mockRequest with debug header, it should be removed
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
@@ -329,6 +325,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = IllegalStateException.class)
   public void testDebugManualParamWithNoDebug() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, true);
+
     // situation when manually building mockRequest with debug param
     Request request = new RequestBuilder("GET")
         .setUrl("http://localhost/empty")
@@ -342,9 +340,10 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
-  public void testDebug() throws InterruptedException, ExecutionException {
+  public void testDebugViaHeader() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, true);
+
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    Supplier<Request> actualRequest;
 
     // debug is on via header, headers are passed
     Map<String, List<String>> headers = new HashMap<>();
@@ -353,7 +352,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Map<String, List<String>> queryParams = new HashMap<>();
 
-    actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
@@ -362,15 +361,22 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void testDebugViaParam() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, true);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on via query param, headers are passed
-    headers.clear();
+    Map<String, List<String>> headers = new HashMap<>();
     headers.put(AUTHORIZATION, singletonList("someauth"));
 
-    queryParams.clear();
+    Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
@@ -383,6 +389,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testExternalRequestWithDebugOn() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, true);
+
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on but for 'external' but header / param should not be passed
@@ -406,6 +414,8 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testNoDebugRequestWithDebugOn() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, true);
+
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
     // debug is on but for 'external' but header / param should not be passed
@@ -420,6 +430,31 @@ public class HttpClientTest extends HttpClientTestBase {
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).noDebug().expectEmpty().result().get();
+
+    assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
+    assertTrue(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // passed through because it might be auth not related to debug
+    assertTrue(actualRequest.get().getQueryParams().isEmpty());
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void testDebugIfCantUnwrap() throws InterruptedException, ExecutionException {
+    debug = new TestRequestDebug(true, false);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+
+    // debug is on, but we can't unwrap response, so header/param should not be passed
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(X_HH_DEBUG, singletonList("true"));
+    headers.put(AUTHORIZATION, singletonList("someauth"));
+
+    Map<String, List<String>> queryParams = new HashMap<>();
+    queryParams.put(DEBUG, singletonList("123"));
+
+    Supplier<Request> actualRequest = withContext(headers, queryParams).noContentRequest();
+    assertTrue(httpClientContext.isDebugMode());
+
+    http.with(request).expectNoContent().result().get();
 
     assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
     assertTrue(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // passed through because it might be auth not related to debug

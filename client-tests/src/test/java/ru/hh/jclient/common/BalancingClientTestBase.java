@@ -52,7 +52,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     withEmptyContext();
     httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
-    debug.reset();
   }
 
   @Test

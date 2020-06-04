@@ -36,12 +36,14 @@ import com.google.common.net.MediaType;
 
 public class HttpClientTestBase {
 
-  static AsyncHttpClientConfig httpClientConfig = new DefaultAsyncHttpClientConfig.Builder().build();
-  public static HttpClientFactory http;
-  static HttpClientContext httpClientContext;
-  static TestRequestDebug debug = new TestRequestDebug(true);
-  static List<Supplier<RequestDebug>> debugs = List.of(() -> debug);
-  static List<HttpClientEventListener> eventListeners = new ArrayList<>();
+  private static final AsyncHttpClientConfig defaultHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder().build();
+
+  protected AsyncHttpClientConfig httpClientConfig = defaultHttpClientConfig;
+  protected HttpClientFactory http;
+  protected HttpClientContext httpClientContext;
+  protected TestRequestDebug debug = new TestRequestDebug(true);
+  protected List<Supplier<RequestDebug>> debugs = List.of(() -> debug);
+  protected List<HttpClientEventListener> eventListeners = new ArrayList<>();
 
   public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), debugs);
@@ -69,6 +71,10 @@ public class HttpClientTestBase {
 
   public Supplier<Request> okRequest(byte[] data, MediaType contentType) {
     return request(data, contentType, 200);
+  }
+
+  public Supplier<Request> noContentRequest() {
+    return request(null, 204);
   }
 
   public Supplier<Request> request(byte[] data, MediaType contentType, int status) {

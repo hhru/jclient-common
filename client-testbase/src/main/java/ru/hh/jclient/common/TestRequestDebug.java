@@ -13,12 +13,19 @@ public class TestRequestDebug implements RequestDebug {
 
   private final List<Call> calls = new ArrayList<>();
   private final boolean recordCalls;
+  private final boolean canUnwrapDebugResponse;
+
   public TestRequestDebug() {
     this(false);
   }
 
   public TestRequestDebug(boolean recordCalls) {
+    this(recordCalls, false);
+  }
+
+  public TestRequestDebug(boolean recordCalls, boolean canUnwrapDebugResponse) {
     this.recordCalls = recordCalls;
+    this.canUnwrapDebugResponse = canUnwrapDebugResponse;
   }
 
   public List<Call> getCalls() {
@@ -49,6 +56,11 @@ public class TestRequestDebug implements RequestDebug {
   public ru.hh.jclient.common.Response onResponse(ru.hh.jclient.common.Response response) {
     record(Call.RESPONSE);
     return response;
+  }
+
+  @Override
+  public boolean canUnwrapDebugResponse() {
+    return canUnwrapDebugResponse;
   }
 
   @Override
