@@ -23,6 +23,11 @@ public interface RequestDebug {
     }
 
     @Override
+    public boolean canUnwrapDebugResponse() {
+      return false;
+    }
+
+    @Override
     public void onResponseConverted(Optional<?> result) {
     }
 
@@ -54,6 +59,14 @@ public interface RequestDebug {
    * purposes.
    */
   Response onResponse(Response response);
+
+  /**
+   * Tells if {@link #onResponse(Response)} can extract actual response from a debug response envelope
+   * (see {@link HttpHeaderNames#X_HH_DEBUG})
+   */
+  default boolean canUnwrapDebugResponse() {
+    return false;
+  }
 
   /**
    * Called once response is successfully converted.
