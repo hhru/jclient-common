@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.41</version>
+        <version>1.43</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -159,9 +159,10 @@
         <repository>
             <id>hh-public</id>
             <name>hh public releases repository</name>
-            <url>http://m2.hh.ru/content/repositories/public-releases</url>
+            <url>https://m2.hh.ru/content/repositories/public-releases</url>
             <releases>
                 <enabled>true</enabled>
+                <checksumPolicy>fail</checksumPolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
