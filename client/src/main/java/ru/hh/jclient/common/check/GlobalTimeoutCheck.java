@@ -65,7 +65,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
       long currentRequestCount = timeoutCounter.longAdder.sum();
       long maxAlreadySpentMs = timeoutCounter.maxSpent.get();
 
-      LOGGER.error("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
+      LOGGER.warn("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
                    + "but calling <{}> with timeout {} ms. "
                    + "Arbitrary we spend up to {} ms before the call",
           intervalMs,
