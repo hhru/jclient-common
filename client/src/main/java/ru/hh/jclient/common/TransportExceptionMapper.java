@@ -9,6 +9,7 @@ import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.util.concurrent.TimeoutException;
 
 final class TransportExceptionMapper {
@@ -28,6 +29,9 @@ final class TransportExceptionMapper {
       return createErrorResponse(CONNECT_TIMEOUT_ERROR, CONNECT_ERROR_MESSAGE, uri);
     }
     if (t instanceof IOException && errorMessage.contains("reset by peer")) {
+      return createErrorResponse(CONNECT_TIMEOUT_ERROR, CONNECTION_RESET_MESSAGE, uri);
+    }
+    if (t instanceof SocketException && errorMessage.contains("Connection reset")) {
       return createErrorResponse(CONNECT_TIMEOUT_ERROR, CONNECTION_RESET_MESSAGE, uri);
     }
     if (t instanceof TimeoutException) {
