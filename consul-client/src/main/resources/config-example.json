@@ -1,0 +1,39 @@
+{
+  "upstream": {
+    "service": {
+      "hhid": {
+        "upstream": ["hh-data", "hh-hh"]
+      }
+    },
+    "host": {
+      "default": {
+        "upstream": {
+          "hhid": {
+            "enabledDC": ["safedata", "datapro"],
+            "activeProfile": "default",
+            "profile": {
+              "default": {
+                "max_tries": 3
+              },
+              "slow": {
+              }
+            }
+          }
+        }
+      },
+      "ts86": {
+        "upstream": {
+          "hhid": {
+            "profile": {
+              "default": {
+                "max_tries": 3
+              },
+              "slow": {
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
