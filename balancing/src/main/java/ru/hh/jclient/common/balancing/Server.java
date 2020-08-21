@@ -7,6 +7,7 @@ import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +29,7 @@ public final class Server {
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
 
-  Server(String address, int weight, String rack, String datacenter) {
+  public Server(String address, int weight, String rack, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
     this.weight = weight;
     this.rack = rack;
@@ -62,7 +63,13 @@ public final class Server {
       responseTimeTracker.time(responseTimeMicros);
     }
   }
-
+  public void setAvailable(boolean available){
+    if(available){
+      activate();
+    }else {
+      deactivate(5000, Executors.newScheduledThreadPool(1)); //todo
+    }
+  }
   synchronized void deactivate(int timeoutMs, ScheduledExecutorService executor) {
     LOGGER.info("deactivate server: {} for {}ms", address, timeoutMs);
     active = false;
@@ -103,7 +110,7 @@ public final class Server {
     return datacenter;
   }
 
-  boolean isActive() {
+  public boolean isActive() {
     return active;
   }
 

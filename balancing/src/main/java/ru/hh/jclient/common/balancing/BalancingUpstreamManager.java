@@ -1,6 +1,10 @@
 package ru.hh.jclient.common.balancing;
 
+import ru.hh.jclient.consul.ConsulConfigService;
+import ru.hh.jclient.consul.ConsulUpstreamService;
 import com.google.common.annotations.VisibleForTesting;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
@@ -11,9 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 
 public class BalancingUpstreamManager extends UpstreamManager {
 
@@ -26,22 +27,28 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
+  private final ConsulConfigService consulConfigService;
+  private final ConsulUpstreamService consulUpstreamService;
 
   public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests) {
-    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
+                                  boolean allowCrossDCRequests, ConsulConfigService consulConfigService,
+                                  ConsulUpstreamService consulUpstreamService) {
+    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, consulConfigService, consulUpstreamService);
   }
 
   public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
                                   ScheduledExecutorService scheduledExecutor,
                                   Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests) {
+                                  boolean allowCrossDCRequests, ConsulConfigService consulConfigService
+  , ConsulUpstreamService consulUpstreamService) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.consulUpstreamService = consulUpstreamService;
+    this.consulConfigService = consulConfigService;
 
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);
@@ -61,7 +68,10 @@ public class BalancingUpstreamManager extends UpstreamManager {
       });
       return;
     }
-    var newConfig = UpstreamConfig.parse(configString);
+    Map<String, Object> upstreamConfig = consulConfigService.getUpstreamConfig(upstreamKey.getServiceName(), upstreamKey.getProfileName());
+
+    //todo host
+    var newConfig = UpstreamConfig.fromMap(upstreamKey.getServiceName(), upstreamKey.getProfileName(), "default", upstreamConfig);
     upstreams.compute(upstreamKey.getServiceName(), (serviceName, existingGroup) -> {
       if (existingGroup == null) {
         return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
@@ -80,6 +90,11 @@ public class BalancingUpstreamManager extends UpstreamManager {
   public Upstream getUpstream(String serviceName, @Nullable String profile) {
     return ofNullable(upstreams.get(getNameWithoutScheme(serviceName)))
         .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);
+  }
+
+  @Override
+  public ConsulUpstreamService getConsulUpstreamService() {
+    return consulUpstreamService;
   }
 
   @Override

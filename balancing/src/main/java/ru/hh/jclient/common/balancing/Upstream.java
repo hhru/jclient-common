@@ -1,11 +1,10 @@
 package ru.hh.jclient.common.balancing;
 
-import javax.annotation.Nullable;
-
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +30,7 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
+  //todo передавать список серверов в конструктор?
   Upstream(String upstreamName, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor) {
     this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, scheduledExecutor, null, false, true);
   }
@@ -49,10 +49,9 @@ public class Upstream {
     this.enabled = enabled;
   }
 
-  ServerEntry acquireServer(Set<Integer> excludedServers) {
+  ServerEntry acquireServer(Set<Integer> excludedServers, List<Server> servers) {
     configReadLock.lock();
     try {
-      List<Server> servers = upstreamConfig.getServers();
       int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests);
       if (index >= 0) {
         Server server = servers.get(index);
@@ -65,10 +64,9 @@ public class Upstream {
     }
   }
 
-  List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
+  List<ServerEntry> acquireAdaptiveServers(int retriesCount,  List<Server> servers) {
     configReadLock.lock();
     try {
-      List<Server> servers = upstreamConfig.getServers();
       List<Server> allowedServers = new ArrayList<>();
       List<Integer> allowedIds = new ArrayList<>();
       for (int i = 0; i < servers.size(); i++) {
@@ -93,17 +91,16 @@ public class Upstream {
   }
 
   ServerEntry acquireServer() {
-    return acquireServer(Collections.emptySet());
+    return acquireServer(Collections.emptySet(), List.of()); //todo
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros) {
-    releaseServer(serverIndex, isError, responseTimeMicros, false);
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, List<Server> servers) {
+    releaseServer(serverIndex, isError, responseTimeMicros, false, servers);
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive) {
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive, List<Server> servers) {
     configReadLock.lock();
     try {
-      List<Server> servers = upstreamConfig.getServers();
       if (serverIndex < 0 || serverIndex >= servers.size()) {
         return;
       }

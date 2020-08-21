@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import ru.hh.jclient.consul.ConsulUpstreamService;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 import com.sun.istack.Nullable;
@@ -36,6 +37,7 @@ public class RequestBalancer implements RequestEngine {
   private final Request request;
   private final Upstream upstream;
   private final UpstreamManager upstreamManager;
+  private final ConsulUpstreamService consulUpstreamService;
   private final RequestStrategy.RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
   private final int maxTries;
@@ -48,6 +50,7 @@ public class RequestBalancer implements RequestEngine {
   private int firstStatusCode;
   private Iterator<ServerEntry> serverEntryIterator;
   private String upstreamName;
+  private String upstreamShortName;
   private boolean adaptiveFailed;
 
   RequestBalancer(Request request,
@@ -62,10 +65,11 @@ public class RequestBalancer implements RequestEngine {
     this.requestExecutor = requestExecutor;
     this.adaptive = adaptive;
     this.forceIdempotence = forceIdempotence;
-
+    this.consulUpstreamService = upstreamManager.getConsulUpstreamService();
     String host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host, profile);
     upstreamName = upstream == null ? null : upstream.getName();
+    upstreamShortName = upstream == null ? null : upstream.getKey().getServiceName();
     int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
       upstream != null ? upstream.getConfig().getRequestTimeoutMs() : requestExecutor.getDefaultRequestTimeoutMs();
 
@@ -146,16 +150,17 @@ public class RequestBalancer implements RequestEngine {
   }
 
   private Request getBalancedRequest(Request request) {
+    List<Server> servers = consulUpstreamService.getServers(upstreamShortName);
     if (adaptive && !adaptiveFailed) {
       try {
         currentServer = acquireAdaptiveServer();
       } catch (RuntimeException e) {
         logger.error("failed to acquire adaptive servers", e);
         adaptiveFailed = true;
-        currentServer = upstream.acquireServer(triedServers);
+        currentServer = upstream.acquireServer(triedServers, servers);
       }
     } else {
-      currentServer = upstream.acquireServer(triedServers);
+      currentServer = upstream.acquireServer(triedServers, servers);
     }
     if (currentServer == null) {
       return request;
@@ -172,7 +177,7 @@ public class RequestBalancer implements RequestEngine {
 
   private ServerEntry acquireAdaptiveServer() {
     if (serverEntryIterator == null) {
-      List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries);
+      List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries, consulUpstreamService.getServers(upstreamShortName));
       serverEntryIterator = entries.iterator();
     }
 
@@ -188,7 +193,8 @@ public class RequestBalancer implements RequestEngine {
 
     if (isServerAvailable()) {
       boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
-      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMicros, adaptive && !adaptiveFailed);
+      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMicros,
+              adaptive && !adaptiveFailed, consulUpstreamService.getServers(upstreamShortName));
     }
   }
 
