@@ -15,7 +15,7 @@ public abstract class UpstreamManager {
 
   public abstract ConsulUpstreamService getConsulUpstreamService();
 
-  public abstract void updateUpstream(@Nonnull String upstreamName, String configString);
+  public abstract void updateUpstream(@Nonnull String upstreamName);
 
   public abstract Upstream getUpstream(String serviceName, @Nullable String profile);
 

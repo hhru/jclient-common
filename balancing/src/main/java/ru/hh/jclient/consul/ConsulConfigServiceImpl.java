@@ -6,11 +6,16 @@ import com.orbitz.consul.cache.KVCache;
 import com.orbitz.consul.model.kv.Value;
 import ru.hh.jclient.consul.model.ValueNode;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.function.Consumer;
 
 public class ConsulConfigServiceImpl implements ConsulConfigService {
   private static final String ROOT_PATH = "upstream";
+  private final List<String> services = new ArrayList<>();
+  private Consumer<String> callback;
   private volatile ValueNode cache = new ValueNode(ROOT_PATH);
   private final KeyValueClient kvClient;
 
@@ -35,15 +40,14 @@ public class ConsulConfigServiceImpl implements ConsulConfigService {
     return rootNode.getMap().get(ROOT_PATH);
   }
 
-  @Override
-  public ValueNode getUpstreamConfig(String serviceName, String profile) {
-    return cache;
-  }
-
   private synchronized void updateCache(ValueNode map) {
     this.cache = map;
+    updateListeners();
   }
 
+  private void updateListeners() {
+    services.forEach(s -> callback.accept(s));
+  }
 
   private void initCache() {
     KVCache cache = KVCache.newCache(kvClient, ROOT_PATH);
@@ -51,5 +55,17 @@ public class ConsulConfigServiceImpl implements ConsulConfigService {
       updateCache(convertToTree(newValues.values()));
     });
     cache.start();
+  }
+
+  //todo get service
+  @Override
+  public ValueNode getUpstreamConfig(String serviceName) {
+    return cache;
+  }
+
+  @Override
+  public void addListener(List<String> services, Consumer<String> callback) {
+    this.services.addAll(services);
+    this.callback = callback;
   }
 }
