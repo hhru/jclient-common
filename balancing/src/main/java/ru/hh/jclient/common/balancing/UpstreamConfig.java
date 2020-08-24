@@ -53,7 +53,7 @@ public final class UpstreamConfig {
       return upstreamConfig;
 
     } catch (Exception e) {
-      throw new UpstreamConfigFormatException("failed to parse upstream config: '"  + '\'', e);
+      throw new UpstreamConfigFormatException("failed to get upstream config: '", e);
     }
   }
 

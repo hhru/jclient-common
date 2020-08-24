@@ -56,7 +56,7 @@ public class ValueNode {
   @Override
   public String toString() {
     return "ValueNode{" +
-            "typeFlag=" + valueNode +
+            "valueNode=" + valueNode +
             ", map=" + map +
             ", value='" + value + '\'' +
             '}';
