@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import ru.hh.jclient.consul.ConsulConfigService;
 import ru.hh.jclient.consul.ConsulUpstreamService;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -51,6 +52,7 @@ public class RequestBalancer implements RequestEngine {
   private Iterator<ServerEntry> serverEntryIterator;
   private String upstreamName;
   private String upstreamShortName;
+  private UpstreamConfig upstreamConfig;
   private boolean adaptiveFailed;
 
   RequestBalancer(Request request,
@@ -68,17 +70,19 @@ public class RequestBalancer implements RequestEngine {
     this.consulUpstreamService = upstreamManager.getConsulUpstreamService();
     String host = request.getUri().getHost();
     upstream = upstreamManager.getUpstream(host, profile);
+    ConsulConfigService consulConfigService = upstreamManager.getConsulConfigService();
     upstreamName = upstream == null ? null : upstream.getName();
     upstreamShortName = upstream == null ? null : upstream.getKey().getServiceName();
+    upstreamConfig = consulConfigService.getUpstreamConfig(upstreamShortName, profile);
     int requestTimeoutMs = request.getRequestTimeout() > 0 ? request.getRequestTimeout() :
-      upstream != null ? upstream.getConfig().getRequestTimeoutMs() : requestExecutor.getDefaultRequestTimeoutMs();
+      upstream != null ? upstreamConfig.getRequestTimeoutMs() : requestExecutor.getDefaultRequestTimeoutMs();
 
     int requestTimeoutTries = maxRequestTimeoutTries != null ? maxRequestTimeoutTries :
-      upstream != null ? upstream.getConfig().getMaxTimeoutTries() : UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
+      upstream != null ? upstreamConfig.getMaxTimeoutTries() : UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES;
     requestTimeLeftMs = requestTimeoutMs * requestTimeoutTries;
-    maxTries = upstream != null ? upstream.getConfig().getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
+    maxTries = upstream != null ? upstreamConfig.getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
 
-    triesLeft = upstream != null ? upstream.getConfig().getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
+    triesLeft = upstream != null ? upstreamConfig.getMaxTries() : UpstreamConfig.DEFAULT_MAX_TRIES;
   }
 
   @Override
@@ -167,7 +171,7 @@ public class RequestBalancer implements RequestEngine {
     }
 
     int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout()
-        : upstream.getConfig().getRequestTimeoutMs();
+        : upstreamConfig.getRequestTimeoutMs();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
     requestBuilder.setUrl(getBalancedUrl(request, currentServer.getAddress()));
@@ -192,9 +196,9 @@ public class RequestBalancer implements RequestEngine {
     }
 
     if (isServerAvailable()) {
-      boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
+      boolean isError = wrapper != null && upstreamConfig.getRetryPolicy().isServerError(wrapper.getResponse());
       upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMicros,
-              adaptive && !adaptiveFailed, consulUpstreamService.getServers(upstreamShortName));
+              adaptive && !adaptiveFailed, consulUpstreamService.getServers(upstreamShortName), upstreamConfig);
     }
   }
 
@@ -214,7 +218,7 @@ public class RequestBalancer implements RequestEngine {
       return false;
     }
     boolean isIdempotent = forceIdempotence || !HTTP_POST.equals(request.getMethod());
-    return upstream.getConfig().getRetryPolicy().isRetriable(response, isIdempotent);
+    return upstreamConfig.getRetryPolicy().isRetriable(response, isIdempotent);
   }
 
   private boolean isServerAvailable() {

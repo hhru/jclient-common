@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import ru.hh.jclient.consul.ConsulConfigService;
 import ru.hh.jclient.consul.ConsulUpstreamService;
 import ru.hh.jclient.common.Monitoring;
 
@@ -14,6 +15,8 @@ public abstract class UpstreamManager {
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
 
   public abstract ConsulUpstreamService getConsulUpstreamService();
+
+  public abstract ConsulConfigService getConsulConfigService();
 
   public abstract void updateUpstream(@Nonnull String upstreamName);
 

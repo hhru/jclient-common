@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 public class Upstream {
   private final UpstreamKey upstreamKey;
-  private final UpstreamConfig upstreamConfig;
+//  private final UpstreamConfig upstreamConfig;
   private final ScheduledExecutorService scheduledExecutor;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
@@ -42,7 +42,7 @@ public class Upstream {
            boolean allowCrossDCRequests,
            boolean enabled) {
     this.upstreamKey = upstreamKey;
-    this.upstreamConfig = upstreamConfig;
+//    this.upstreamConfig = upstreamConfig;
     this.scheduledExecutor = scheduledExecutor;
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
@@ -94,11 +94,12 @@ public class Upstream {
     return acquireServer(Collections.emptySet(), List.of()); //todo
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, List<Server> servers) {
-    releaseServer(serverIndex, isError, responseTimeMicros, false, servers);
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, List<Server> servers, UpstreamConfig upstreamConfig) {
+    releaseServer(serverIndex, isError, responseTimeMicros, false, servers, upstreamConfig);
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive, List<Server> servers) {
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive, List<Server> servers,
+                     UpstreamConfig upstreamConfig) {
     configReadLock.lock();
     try {
       if (serverIndex < 0 || serverIndex >= servers.size()) {
@@ -142,15 +143,15 @@ public class Upstream {
       });
     }
   }
-
-  void updateConfig(UpstreamConfig newConfig) {
-    configWriteLock.lock();
-    try {
-      upstreamConfig.update(newConfig);
-    } finally {
-      configWriteLock.unlock();
-    }
-  }
+//
+//  void updateConfig(UpstreamConfig newConfig) {
+//    configWriteLock.lock();
+//    try {
+//      upstreamConfig.update(newConfig);
+//    } finally {
+//      configWriteLock.unlock();
+//    }
+//  }
 
   String getName() {
     return upstreamKey.getWholeName();
@@ -164,14 +165,14 @@ public class Upstream {
     return enabled;
   }
 
-  UpstreamConfig getConfig() {
-    configReadLock.lock();
-    try {
-      return upstreamConfig;
-    } finally {
-      configReadLock.unlock();
-    }
-  }
+//  UpstreamConfig getConfig() {
+//    configReadLock.lock();
+//    try {
+//      return upstreamConfig;
+//    } finally {
+//      configReadLock.unlock();
+//    }
+//  }
 
   private static void iterateServers(List<Server> servers, Consumer<Server> function) {
     servers.forEach(server -> {

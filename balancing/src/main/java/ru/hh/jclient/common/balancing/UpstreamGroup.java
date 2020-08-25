@@ -34,7 +34,7 @@ public class UpstreamGroup {
     var profileOrDefault = ofNullable(profileName).orElse(DEFAULT_PROFILE);
     upstreamsByProfile.compute(profileOrDefault, (name, existingUpstream) -> {
       if (existingUpstream != null) {
-        existingUpstream.updateConfig(config);
+//        existingUpstream.updateConfig(config);
         return existingUpstream;
       } else {
         return upstreamFactory.apply(name, config);

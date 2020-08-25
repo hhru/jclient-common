@@ -92,6 +92,11 @@ public class BalancingUpstreamManager extends UpstreamManager {
   }
 
   @Override
+  public ConsulConfigService getConsulConfigService() {
+    return consulConfigService;
+  }
+
+  @Override
   public Set<Monitoring> getMonitoring() {
     return Set.copyOf(monitoring);
   }

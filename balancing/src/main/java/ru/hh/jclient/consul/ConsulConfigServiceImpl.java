@@ -4,12 +4,15 @@ import com.orbitz.consul.Consul;
 import com.orbitz.consul.KeyValueClient;
 import com.orbitz.consul.cache.KVCache;
 import com.orbitz.consul.model.kv.Value;
+import ru.hh.jclient.common.balancing.Upstream;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.consul.model.ValueNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class ConsulConfigServiceImpl implements ConsulConfigService {
@@ -18,6 +21,7 @@ public class ConsulConfigServiceImpl implements ConsulConfigService {
   private Consumer<String> callback;
   private volatile ValueNode cache = new ValueNode(ROOT_PATH);
   private final KeyValueClient kvClient;
+  private Map<Upstream.UpstreamKey, UpstreamConfig> configMap;
 
   public ConsulConfigServiceImpl(Consul consulClient) {
     this.kvClient = consulClient.keyValueClient();
@@ -42,6 +46,15 @@ public class ConsulConfigServiceImpl implements ConsulConfigService {
 
   private synchronized void updateCache(ValueNode map) {
     this.cache = map;
+    for (Map.Entry<String, ValueNode> entry : map.getMap().entrySet()) {
+      entry.getKey();
+      entry.getValue();//host
+      for (Map.Entry<String, ValueNode> entry2 : entry.getValue().getMap().entrySet()) {
+        //////
+      }
+
+    }
+
     updateListeners();
   }
 
@@ -61,6 +74,11 @@ public class ConsulConfigServiceImpl implements ConsulConfigService {
   @Override
   public ValueNode getUpstreamConfig(String serviceName) {
     return cache;
+  }
+
+  @Override
+  public UpstreamConfig getUpstreamConfig(String serviceName, String profile) {
+    return configMap.get(new  Upstream.UpstreamKey(serviceName, profile));
   }
 
   @Override
