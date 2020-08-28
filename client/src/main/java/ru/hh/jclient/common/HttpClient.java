@@ -70,7 +70,15 @@ public abstract class HttpClient {
     this.requestEngineBuilder = requestStrategy.createRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
 
-    context = contextSupplier.get();
+    context = Optional.ofNullable(contextSupplier)
+        .map(Supplier::get)
+        .orElseThrow(() -> new RuntimeException(
+            "Context for HttpClient is not provided. Usually this happens when a) jclient is called from a thread that has no context - " +
+                "provide context, i.e. using HttpClientContextThreadLocalSupplier.addContext(...) / .clear() methods; " +
+                " b) HttpClientFactoryBuilder was not created properly - ensure HttpClientContextThreadLocalSupplier is provided at creation time;" +
+                " c) HttpClientContextThreadLocalSupplier.addContext(...) is not being called from corresponding (servlet) filter during " +
+                " request handling - ensure proper filter is set up correctly."));
+
     storages = context.getStorages().copy().add(contextSupplier);
     debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
   }
