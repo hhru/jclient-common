@@ -198,19 +198,19 @@ class HttpClientImpl extends HttpClient {
     @Override
     public void onThrowable(Throwable t) {
       org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri());
-      long timeToLastByteMs = getTimeToLastByte();
+      long timeToLastByteMicros = getTimeToLastByte();
 
       mdcCopy.doInContext(
           () -> LOGGER.warn(
               "HTTP_CLIENT_ERROR: client error after {} micros on {} {}: {}{}",
-              timeToLastByteMs,
+              timeToLastByteMicros,
               request.getMethod(),
               request.getUri(),
               t,
               response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
 
       if (response != null) {
-        proceedWithResponse(response, timeToLastByteMs);
+        proceedWithResponse(response, timeToLastByteMicros);
         return;
       }
 
