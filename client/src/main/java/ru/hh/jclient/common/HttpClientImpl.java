@@ -202,7 +202,7 @@ class HttpClientImpl extends HttpClient {
 
       mdcCopy.doInContext(
           () -> LOGGER.warn(
-              "HTTP_CLIENT_ERROR: client error after {} ms on {} {}: {}{}",
+              "HTTP_CLIENT_ERROR: client error after {} micros on {} {}: {}{}",
               timeToLastByteMs,
               request.getMethod(),
               request.getUri(),
