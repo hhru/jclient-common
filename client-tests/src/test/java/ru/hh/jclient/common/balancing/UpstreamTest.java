@@ -6,153 +6,130 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
+import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+import ru.hh.jclient.consul.ValueNode;
 
-import static org.mockito.Mockito.mock;
-
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class UpstreamTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamTest.class);
-  private static final String TEST_HOST = "backend";
+  private static final String TEST_SERVICE_NAME = "backend";
+
   private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
-  private static final String TEST_CONFIG = "| server=a weight=1 | server=b weight=2";
+  UpstreamConfig config = UpstreamConfig.fromTree(DEFAULT, DEFAULT, DEFAULT, new ValueNode());
 
   @Test
   public void createUpstreamServiceOnly() {
-    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
-
-    assertEquals(TEST_HOST, upstream.getName());
-
-    assertServerCounters(upstream, 0, 0, 0, 0);
-    assertServerCounters(upstream, 1, 0, 0, 0);
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME);
+    assertEquals(TEST_SERVICE_NAME, upstream.getName());
   }
 
   @Test
   public void createUpstreamFull() {
-    Upstream.UpstreamKey upstreamKey = new Upstream.UpstreamKey(TEST_HOST, TEST_HOST_CUSTOM_PROFILE);
-    Upstream upstream = createTestUpstream(String.join(":", TEST_HOST, TEST_HOST_CUSTOM_PROFILE), TEST_CONFIG);
+    Upstream.UpstreamKey upstreamKey = new Upstream.UpstreamKey(TEST_SERVICE_NAME, TEST_HOST_CUSTOM_PROFILE);
+    Upstream upstream = createTestUpstream(String.join(":", TEST_SERVICE_NAME, TEST_HOST_CUSTOM_PROFILE));
 
     assertEquals(upstreamKey, upstream.getKey());
-
-    assertServerCounters(upstream, 0, 0, 0, 0);
-    assertServerCounters(upstream, 1, 0, 0, 0);
   }
 
   @Test
   public void acquireServer() {
-    Upstream upstream = createTestUpstream(TEST_HOST, "| server=a weight=1 | server=b weight=2");
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME);
+    List<Server> servers = buildServers();
+    assertEquals("a", upstream.acquireServer(servers).getAddress());
+    assertServerCounters(servers, 0, 1, 1, 0);
+    assertServerCounters(servers, 1, 0, 0, 0);
 
-    assertEquals("a", upstream.acquireServer().getAddress());
-    assertServerCounters(upstream, 0, 1, 1, 0);
-    assertServerCounters(upstream, 1, 0, 0, 0);
+    assertEquals("b", upstream.acquireServer(servers).getAddress());
+    assertServerCounters(servers, 1, 1, 1, 0);
 
-    assertEquals("b", upstream.acquireServer().getAddress());
-    assertServerCounters(upstream, 1, 1, 1, 0);
+    assertEquals("b", upstream.acquireServer(servers).getAddress());
+    assertServerCounters(servers, 1, 2, 2, 0);
 
-    assertEquals("b", upstream.acquireServer().getAddress());
-    assertServerCounters(upstream, 1, 2, 2, 0);
+    upstream.releaseServer(0, false, 100, servers);
+    upstream.releaseServer(1, false, 100, servers);
 
-    upstream.releaseServer(0, false, 100);
-    upstream.releaseServer(1, false, 100);
+    assertServerCounters(servers, 0, 0, 0, 0);
+    assertServerCounters(servers, 1, 1, 0, 0);
 
-    assertServerCounters(upstream, 0, 0, 0, 0);
-    assertServerCounters(upstream, 1, 1, 0, 0);
+    upstream.releaseServer(1, false, 100, servers);
 
-    upstream.releaseServer(1, false, 100);
-
-    assertServerCounters(upstream, 0, 0, 0, 0);
-    assertServerCounters(upstream, 1, 0, 0, 0);
+    assertServerCounters(servers, 0, 0, 0, 0);
+    assertServerCounters(servers, 1, 0, 0, 0);
   }
 
   @Test
   public void acquireInactiveServer() {
-    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME);
+    List<Server> servers = buildServers();
+    servers.forEach(server -> server.deactivate(1, mock(ScheduledExecutorService.class)));
 
-    upstream.getConfig().getServers().forEach(server -> server.deactivate(1, mock(ScheduledExecutorService.class)));
+    assertNull(upstream.acquireServer(servers));
 
-    assertNull(upstream.acquireServer());
+    assertServerCounters(servers, 0, 0, 0, 0);
+    assertServerCounters(servers, 1, 0, 0, 0);
 
-    assertServerCounters(upstream, 0, 0, 0, 0);
-    assertServerCounters(upstream, 1, 0, 0, 0);
+    servers.get(1).activate();
 
-    upstream.getConfig().getServers().get(1).activate();
+    assertEquals("b", upstream.acquireServer(servers).getAddress());
 
-    assertEquals("b", upstream.acquireServer().getAddress());
-
-    assertServerCounters(upstream, 1, 1, 1, 0);
+    assertServerCounters(servers, 1, 1, 1, 0);
   }
 
   @Test
   public void acquireExcludedServer() {
-    Upstream upstream = createTestUpstream(TEST_HOST, TEST_CONFIG);
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME);
+    List<Server> servers = buildServers();
 
     int excludedServerIndex = 0;
 
-    ServerEntry serverEntry = upstream.acquireServer(singleton(excludedServerIndex));
+    ServerEntry serverEntry = upstream.acquireServer(singleton(excludedServerIndex), servers);
 
     assertEquals("b", serverEntry.getAddress());
 
-    List<Server> servers = upstream.getConfig().getServers();
     assertEquals(0, servers.get(0).getRequests());
     assertEquals(1, servers.get(1).getRequests());
   }
 
   @Test
   public void acquireReleaseServerWithFails() {
-    Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=1 fail_timeout_sec=0.1 | server=a");
-
+    Map<String, ValueNode> values = new HashMap<>();
+    List<Server> servers = List.of(new Server("a", 1, null));
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, buildValueNode(values));
     int serverIndex = 0;
-    Server server = upstream.getConfig().getServers().get(serverIndex);
+    Server server = servers.get(serverIndex);
     assertEquals(0, server.getFails());
 
-    assertEquals(serverIndex, upstream.acquireServer().getIndex());
-    upstream.releaseServer(serverIndex, true, 100);
+    assertEquals(serverIndex, upstream.acquireServer(servers).getIndex());
+    upstream.releaseServer(serverIndex, true, 100, servers);
 
     assertFalse(server.isActive());
 
     assertEquals(1, server.getFails());
 
-    assertNull(upstream.acquireServer());
+    assertNull(upstream.acquireServer(servers));
   }
 
   @Test
   public void acquireReleaseWhenMaxFailsIsZero() {
-    Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=0 fail_timeout_sec=0.1 | server=a");
+    List<Server> servers = List.of(new Server("a", 1, null));
+    Map<String, ValueNode> values = new HashMap<>();
+    values.put("max_fails", new ValueNode("0"));
+    values.put("fail_timeout_sec", new ValueNode("0.1"));
 
-    upstream.releaseServer(upstream.acquireServer().getIndex(), true, 100);
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, buildValueNode(values));
+    int index = upstream.acquireServer(servers).getIndex();
+    upstream.releaseServer(index, true, 100, servers);
 
     int serverIndex = 0;
 
-    assertEquals(serverIndex, upstream.acquireServer().getIndex());
-  }
-
-  @Test
-  public void acquireReleaseWithDeletedServers() {
-    UpstreamConfig config = UpstreamConfig.parse("| server=a | server=b | server=c");
-    Upstream upstream = new Upstream(TEST_HOST, config, mock(ScheduledExecutorService.class));
-
-    ServerEntry serverA = upstream.acquireServer();
-    ServerEntry serverB = upstream.acquireServer();
-    ServerEntry serverC = upstream.acquireServer();
-
-    upstream.updateConfig(UpstreamConfig.parse("| server=b | server=c | server=d"));
-
-    upstream.releaseServer(serverA.getIndex(), false, 1);
-    upstream.releaseServer(serverB.getIndex(), false, 1);
-
-    assertEquals(0, getServerByAddress(config, "b").getRequests());
-    assertEquals(1, getServerByAddress(config, "c").getRequests());
-    assertEquals(0, getServerByAddress(config, "d").getRequests());
-
-    upstream.releaseServer(serverC.getIndex(), false, 1);
-
-    assertEquals(0, getServerByAddress(config, "b").getRequests());
-    assertEquals(0, getServerByAddress(config, "c").getRequests());
-    assertEquals(0, getServerByAddress(config, "d").getRequests());
+    assertEquals(serverIndex, upstream.acquireServer(servers).getIndex());
   }
 
   @Test
@@ -160,18 +137,20 @@ public class UpstreamTest {
     int numOfRequests = 100_000;
     int tests = 100;
     int weight = numOfRequests * tests * 2 + 1;
+    List<Server> servers = List.of(new Server("a", weight, null));
 
-    Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=2 fail_timeout_sec=0.1 | server=a weight=" + weight);
-    Server server = upstream.getConfig().getServers().get(0);
+    Upstream upstream = new Upstream(TEST_SERVICE_NAME, config,
+            mock(ScheduledExecutorService.class));
+    Server server = servers.get(0);
 
-    Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests);
+    Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests, servers);
 
     for (int t = 1; t <= tests; t++) {
       long start = currentTimeMillis();
       Thread thread = new Thread(acquireReleaseTask);
       thread.start();
 
-      acquireReleaseUpstream(upstream, numOfRequests);
+      acquireReleaseUpstream(upstream, numOfRequests, servers);
 
       thread.join();
 
@@ -184,29 +163,42 @@ public class UpstreamTest {
     assertEquals("stats requests", weight - 1, server.getStatsRequests());
   }
 
-  private static void assertServerCounters(Upstream upstream, int serverIndex, int requests, int statsRequests, int fails) {
-    List<Server> servers = upstream.getConfig().getServers();
+  private static void assertServerCounters(List<Server> servers, int serverIndex, int requests, int statsRequests, int fails) {
 
     assertEquals("requests", requests, servers.get(serverIndex).getRequests());
     assertEquals("statsRequests", statsRequests, servers.get(serverIndex).getStatsRequests());
     assertEquals("fails", fails, servers.get(serverIndex).getFails());
   }
 
-  private static void acquireReleaseUpstream(Upstream upstream, int times) {
+  private static void acquireReleaseUpstream(Upstream upstream, int times, List<Server> servers) {
     for (int i = 0; i < times; i++) {
-      ServerEntry serverEntry = upstream.acquireServer();
+      ServerEntry serverEntry = upstream.acquireServer(servers);
       if (serverEntry != null) {
-        upstream.releaseServer(serverEntry.getIndex(), false, 100);
+        upstream.releaseServer(serverEntry.getIndex(), false, 100, servers);
       }
     }
   }
 
-  private static Upstream createTestUpstream(String host, String configStr) {
-    UpstreamConfig config = UpstreamConfig.parse(configStr);
-    return new Upstream(host, config, mock(ScheduledExecutorService.class));
+  private static Upstream createTestUpstream(String serviceName) {
+    return createTestUpstream(serviceName, new ValueNode());
   }
 
-  private static Server getServerByAddress(UpstreamConfig config, String address) {
-    return config.getServers().stream().filter(Objects::nonNull).filter(server -> server.getAddress().equals(address)).findFirst().get();
+  private static Upstream createTestUpstream(String serviceName, ValueNode valueNode) {
+    UpstreamConfig config = UpstreamConfig.fromTree(serviceName, DEFAULT, DEFAULT, valueNode);
+    return new Upstream(serviceName, config, mock(ScheduledExecutorService.class));
+  }
+
+  private static List<Server> buildServers(){
+    return List.of(new Server("a", 1, null), new Server("b", 2, null));
+  }
+
+  private ValueNode buildValueNode(Map<String, ValueNode> values) {
+    ValueNode rootNode = new ValueNode();
+    ValueNode serviceNode = rootNode.computeMapIfAbsent(TEST_SERVICE_NAME);
+    ValueNode hostNode = serviceNode.computeMapIfAbsent(DEFAULT);
+    ValueNode profileNode = hostNode.computeMapIfAbsent(UpstreamConfig.PROFILE_NODE);
+    ValueNode defaultProfile = profileNode.computeMapIfAbsent(DEFAULT);
+    defaultProfile.putAll(values);
+    return rootNode;
   }
 }

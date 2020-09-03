@@ -3,9 +3,12 @@ package ru.hh.jclient.consul;
 import ru.hh.jclient.common.balancing.Server;
 
 import java.util.List;
+import java.util.function.Consumer;
 
-public interface ConsulUpstreamService {
-  void registerUpstream(String serviceName, boolean allowCrossDC); //сделать регу
+public interface UpstreamService {
+
+  void setupListener(Consumer<String> callback);
 
   List<Server> getServers(String serviceName);
+
 }

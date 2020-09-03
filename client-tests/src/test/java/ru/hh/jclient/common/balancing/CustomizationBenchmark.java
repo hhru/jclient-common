@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import static java.util.Collections.singleton;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -23,6 +24,8 @@ import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
+import ru.hh.jclient.consul.UpstreamService;
+import ru.hh.jclient.consul.ValueNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,13 +35,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-
-import static java.util.Collections.singleton;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 public class CustomizationBenchmark {
+  private static final String UPSTREAM = "up1";
+  private static final List<Server> servers = List.of(new Server("server1", 1, null),
+          new Server("server2", 1, null));
+  private static final CustomUpstreamService CUSTOM_UPSTREAM_SERVICE = new CustomUpstreamService();
 
   public static void main(String[] args) throws RunnerException {
     var opt = new OptionsBuilder()
@@ -48,12 +54,17 @@ public class CustomizationBenchmark {
     new Runner(opt).run();
   }
 
-  private static final Upstream upstream = new Upstream("test",
-      UpstreamConfig.parse("request_timeout_sec=2 | server=http://server1 | server=http://server2"), Executors.newScheduledThreadPool(1)
+  private static final Upstream upstream = new Upstream(UPSTREAM,
+      UpstreamConfig.fromTree(UPSTREAM, null, null, new ValueNode()), Executors.newScheduledThreadPool(1)
   );
   private static final UpstreamManager manager = new UpstreamManager() {
     @Override
-    public void updateUpstream(@Nonnull String upstreamName, String configString) {
+    public UpstreamService getUpstreamService() {
+      return CUSTOM_UPSTREAM_SERVICE;
+    }
+
+    @Override
+    public void updateUpstream(@Nonnull String upstreamName) {
 
     }
 
@@ -64,7 +75,7 @@ public class CustomizationBenchmark {
 
     @Override
     Map<String, UpstreamGroup> getUpstreams() {
-      return Map.of(upstream.getName(), new UpstreamGroup("test", "test", upstream));
+      return Map.of(upstream.getName(), new UpstreamGroup(UPSTREAM, "test", upstream));
     }
 
     @Override
@@ -163,6 +174,18 @@ public class CustomizationBenchmark {
     @Override
     public RequestStrategy<RequestBalancerBuilder> createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
       return new CustomStrategy(upstreamManager, configAction);
+    }
+  }
+  private static final class CustomUpstreamService implements UpstreamService{
+
+    @Override
+    public void setupListener(Consumer<String> callback) {
+
+    }
+
+    @Override
+    public List<Server> getServers(String serviceName) {
+      return servers;
     }
   }
 }

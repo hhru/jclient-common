@@ -5,16 +5,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import ru.hh.jclient.consul.ValueNode;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UpstreamConfigParserTest {
+  private static final String SERVICE_NAME = "backend1";
+  private static final String DEFAULT = "default";
+  private static final String PROFILE = "profile";
 
   @Test
-  public void parseOneServer() {
-    String configStr = "max_tries=3 max_timeout_tries=2 max_fails=30  connect_timeout_sec=0.2 request_timeout_sec=2   " +
-        "fail_timeout_sec=1.5 |server=localhost:9090   weight=42 ";
-    UpstreamConfig config = UpstreamConfig.parse(configStr);
+  public void testOneProfile() {
+
+    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, buildValueNode());
 
     assertEquals(3, config.getMaxTries());
     assertEquals(30, config.getMaxFails());
@@ -22,34 +26,34 @@ public class UpstreamConfigParserTest {
     assertEquals(1500, config.getFailTimeoutMs());
     assertEquals(200, config.getConnectTimeoutMs());
     assertEquals(2000, config.getRequestTimeoutMs());
-
-    List<Server> servers = config.getServers();
-    assertEquals(1, servers.size());
-    assertEquals("localhost:9090", servers.get(0).getAddress());
-    assertEquals(42, servers.get(0).getWeight());
   }
 
   @Test
-  public void parseMultipleServers() {
-    String configStr = "max_tries=1 max_fails=1 fail_timeout_sec=1 | server=local-host:9090 weight=5   |server=host:9091 weight=2 | ";
-    UpstreamConfig config = UpstreamConfig.parse(configStr);
+  public void testTwoProfiles() {
+    String profileName = "secondProfile";
 
-    assertEquals(1, config.getMaxTries());
-    assertEquals(1, config.getMaxFails());
-    assertEquals(1_000, config.getFailTimeoutMs());
+    ValueNode rootNode = buildValueNode();
+    ValueNode profiles = rootNode
+            .getNode(SERVICE_NAME)
+            .getNode(DEFAULT)
+            .getNode(PROFILE);
+    profiles.computeMapIfAbsent("firstProfile");
 
-    List<Server> servers = config.getServers();
-    assertEquals(2, servers.size());
-    assertEquals("local-host:9090", servers.get(0).getAddress());
-    assertEquals(5, servers.get(0).getWeight());
+    ValueNode secondProfile = profiles.computeMapIfAbsent(profileName);
 
-    assertEquals("host:9091", servers.get(1).getAddress());
-    assertEquals(2, servers.get(1).getWeight());
+    secondProfile.putValue("max_tries", "7");
+    secondProfile.putValue("request_timeout_sec", "8");
+
+    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, profileName, DEFAULT, rootNode);
+
+    assertEquals(7, config.getMaxTries());
+    assertEquals(8000, config.getRequestTimeoutMs());
   }
 
   @Test
-  public void parseEmptyConfig() {
-    UpstreamConfig config = UpstreamConfig.parse("");
+  public void testDefaultConfig() {
+    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, new ValueNode());
+
 
     assertEquals(UpstreamConfig.DEFAULT_MAX_TRIES, config.getMaxTries());
     assertEquals(UpstreamConfig.DEFAULT_MAX_FAILS, config.getMaxFails());
@@ -59,21 +63,19 @@ public class UpstreamConfigParserTest {
     assertEquals(UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS, config.getRequestTimeoutMs());
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertFalse(config.getRetryPolicy().getRules().get(503));
-    assertEquals(0, config.getServers().size());
-  }
-
-  @Test
-  public void parseConfigWithOneServer() {
-    UpstreamConfig config = UpstreamConfig.parse("|server=test ");
-
-    List<Server> servers = config.getServers();
-    assertEquals("test", servers.get(0).getAddress());
-    assertEquals(Server.DEFAULT_WEIGHT, servers.get(0).getWeight());
   }
 
   @Test
   public void parseRetryPolicy() {
-    UpstreamConfig config = UpstreamConfig.parse("retry_policy=timeout,http_503,non_idempotent_503 | server=test");
+    ValueNode rootNode = buildValueNode();
+    ValueNode profile = rootNode
+            .getNode(SERVICE_NAME)
+            .getNode(DEFAULT)
+            .getNode(PROFILE)
+            .getNode(DEFAULT);
+    profile.putValue("retry_policy", "timeout,http_503,non_idempotent_503");
+
+    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, rootNode);
 
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertTrue(config.getRetryPolicy().getRules().get(503));
@@ -81,23 +83,38 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void parseUnknownRetryPolicy() {
-    UpstreamConfig config = UpstreamConfig.parse("retry_policy=timeout,unknown | server=test");
+    ValueNode rootNode = buildValueNode();
+    ValueNode profile = rootNode
+            .getNode(SERVICE_NAME)
+            .getNode(DEFAULT)
+            .getNode(PROFILE)
+            .getNode(DEFAULT);
+    profile.putValue("retry_policy", "timeout,unknown");
 
+    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, rootNode);
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertNull(config.getRetryPolicy().getRules().get(503));
   }
 
-  @Test
-  public void parseConfigWithNoServers() {
-    UpstreamConfig config = UpstreamConfig.parse(" | ");
-
-    List<Server> servers = config.getServers();
-    assertEquals(0, servers.size());
+  private ValueNode buildValueNode() {
+    ValueNode rootNode = new ValueNode();
+    ValueNode serviceNode = rootNode.computeMapIfAbsent(SERVICE_NAME);
+    ValueNode hostNode = serviceNode.computeMapIfAbsent("default");
+    ValueNode profileNode = hostNode.computeMapIfAbsent(PROFILE);
+    ValueNode defaultProfile = profileNode.computeMapIfAbsent("default");
+    defaultProfile.putAll(buildValues());
+    return rootNode;
   }
 
-  @Test(expected = UpstreamConfigFormatException.class)
-  public void parseShouldFailIfServerPrefixIsMissed() {
-
-    UpstreamConfig.parse("| http://test");
+  private Map<String, ValueNode> buildValues() {
+    Map<String, ValueNode> values = new HashMap<>();
+    values.put("max_tries", new ValueNode("3"));
+    values.put("max_timeout_tries", new ValueNode("2"));
+    values.put("max_fails", new ValueNode("30"));
+    values.put("connect_timeout_sec", new ValueNode("0.2"));
+    values.put("request_timeout_sec", new ValueNode("2"));
+    values.put("fail_timeout_sec", new ValueNode("1.5"));
+    return values;
   }
+
 }

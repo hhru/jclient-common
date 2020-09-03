@@ -1,15 +1,14 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import ru.hh.jclient.consul.model.ValueNode;
+import ru.hh.jclient.consul.ValueNode;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public final class UpstreamConfig {
-  private static final String DEFAULT = "default";
-  private static final String PROFILE_NODE = "profile";
+  public static final String DEFAULT = "default";
+  public static final String PROFILE_NODE = "profile";
   static final int DEFAULT_MAX_TRIES = 2;
   static final int DEFAULT_MAX_FAILS = 1;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;
@@ -29,12 +28,15 @@ public final class UpstreamConfig {
   private RetryPolicy retryPolicy = new RetryPolicy();
 
   public static UpstreamConfig fromTree(String serviceName, String profileName, String hostName, ValueNode rootNode) {
-    serviceName = Objects.requireNonNullElseGet(serviceName, () -> DEFAULT);
-    profileName = Objects.requireNonNullElseGet(profileName, () -> DEFAULT);
-    hostName = Objects.requireNonNullElseGet(hostName, () -> DEFAULT);
 
-    ValueNode service = rootNode.getOrDefault(serviceName, rootNode.getNode(DEFAULT));
+    ValueNode service = rootNode.getNode(serviceName);
+    if (service == null) {
+      return getDefaultConfig();
+    }
     ValueNode host = service.getOrDefault(hostName, service.getNode(DEFAULT));
+    if (host == null) {
+      return getDefaultConfig();
+    }
     ValueNode profiles = host.getNode(PROFILE_NODE);
     ValueNode configMap = profiles.getOrDefault(profileName, profiles.getNode(DEFAULT));
     try {
@@ -55,6 +57,17 @@ public final class UpstreamConfig {
     } catch (Exception e) {
       throw new UpstreamConfigFormatException("failed to get upstream config: '", e);
     }
+  }
+
+  private static UpstreamConfig getDefaultConfig() {
+    UpstreamConfig upstreamConfig = new UpstreamConfig();
+    upstreamConfig.maxTries = DEFAULT_MAX_TRIES;
+    upstreamConfig.maxFails = DEFAULT_MAX_FAILS;
+    upstreamConfig.maxTimeoutTries = DEFAULT_MAX_TIMEOUT_TRIES;
+    upstreamConfig.failTimeoutMs = DEFAULT_FAIL_TIMEOUT_MS;
+    upstreamConfig.connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS;
+    upstreamConfig.requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
+    return upstreamConfig;
   }
 
   void update(UpstreamConfig newConfig) {
@@ -120,9 +133,5 @@ public final class UpstreamConfig {
   }
 
   private UpstreamConfig() {
-  }
-
-  public int getAllowedTimeoutMs() {
-    return maxTimeoutTries * requestTimeoutMs;
   }
 }

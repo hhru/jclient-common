@@ -1,4 +1,4 @@
-package ru.hh.jclient.consul.model;
+package ru.hh.jclient.consul;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,17 +8,17 @@ public class ValueNode {
   private Map<String, ValueNode> map;
   private String value;
 
+  public ValueNode() {
+    this.map = new HashMap<>();
+    this.valueNode = false;
+  }
+
   public ValueNode(String value) {
     this.value = value;
     this.valueNode = true;
   }
 
-  public ValueNode(Map<String, ValueNode> map) {
-    this.map = map;
-    this.valueNode = false;
-  }
-
-  public Map<String, ValueNode> getMap() {
+  Map<String, ValueNode> getMap() {
     return map;
   }
 
@@ -32,9 +32,14 @@ public class ValueNode {
     map.put(key, new ValueNode(value));
   }
 
+  public void putAll(Map<String, ValueNode> valueNodeMap) {
+    checkTypeAndThrow(false);
+    map.putAll(valueNodeMap);
+  }
+
   public ValueNode computeMapIfAbsent(String key) {
     checkTypeAndThrow(false);
-    return map.computeIfAbsent(key, ignore -> new ValueNode(new HashMap<>()));
+    return map.computeIfAbsent(key, ignore -> new ValueNode());
   }
 
   public ValueNode getOrDefault(String key, ValueNode valueNode) {

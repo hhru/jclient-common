@@ -1,13 +1,13 @@
 package ru.hh.jclient.common.metrics;
 
-import ru.hh.jclient.consul.ConsulConfigService;
-import ru.hh.jclient.consul.ConsulUpstreamService;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.consul.UpstreamConfigService;
+import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.nab.metrics.StatsDSender;
 
 import javax.annotation.Nullable;
@@ -24,12 +24,12 @@ public class MonitoringUpstreamManagerFactory {
       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
       ScheduledExecutorService scheduledExecutorService,
       Consumer<UpstreamManager> upstreamUpdater,
-  ConsulConfigService consulConfigService
-          , ConsulUpstreamService consulUpstreamService) {
+      UpstreamConfigService upstreamConfigService,
+      UpstreamService upstreamService) {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       scheduledExecutorService,
       buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
-      dc, allowCrossDCRequests, consulConfigService, consulUpstreamService
+      dc, allowCrossDCRequests, upstreamConfigService, upstreamService
     );
 
     upstreamUpdater.accept(balancingUpstreamManager);

@@ -6,7 +6,6 @@ import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedSer
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -30,8 +29,8 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  //todo передавать список серверов в конструктор?
-  Upstream(String upstreamName, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor) {
+  Upstream(String upstreamName, UpstreamConfig upstreamConfig,
+           ScheduledExecutorService scheduledExecutor) {
     this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, scheduledExecutor, null, false, true);
   }
 
@@ -56,7 +55,7 @@ public class Upstream {
       if (index >= 0) {
         Server server = servers.get(index);
         server.acquire();
-        return new ServerEntry(index, server.getAddress(), server.getRack(), server.getDatacenter());
+        return new ServerEntry(index, server.getAddress(), server.getDatacenter());
       }
       return null;
     } finally {
@@ -82,7 +81,7 @@ public class Upstream {
           .stream()
           .map(id -> {
             Server server = allowedServers.get(id);
-            return new ServerEntry(allowedIds.get(id), server.getAddress(), server.getRack(), server.getDatacenter());
+            return new ServerEntry(allowedIds.get(id), server.getAddress(), server.getDatacenter());
           })
           .collect(toList());
     } finally {
@@ -90,8 +89,8 @@ public class Upstream {
     }
   }
 
-  ServerEntry acquireServer() {
-    return acquireServer(Collections.emptySet(), List.of()); //todo
+  ServerEntry acquireServer(List<Server> servers) {
+    return acquireServer(Set.of(), servers);
   }
 
   void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, List<Server> servers) {

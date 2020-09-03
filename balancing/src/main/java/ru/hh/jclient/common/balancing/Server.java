@@ -1,24 +1,21 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
-
-  static final int DEFAULT_WEIGHT = 1;
+  private static final String DELIMITER = ":";
+  static final int DEFAULT_FAIL_TIMEOUT_MS = 10_000;
 
   private final String address;
   private volatile int weight;
-  private volatile String rack;
   private volatile String datacenter;
 
   private volatile boolean active = true;
@@ -29,14 +26,17 @@ public final class Server {
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
 
-  public Server(String address, int weight, String rack, String datacenter) {
+  public Server(String address, int weight, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
     this.weight = weight;
-    this.rack = rack;
     this.datacenter = datacenter;
 
     this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW);
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
+  }
+
+  public static String addressFromHostPort(String host, int port) {
+    return host + DELIMITER + port;
   }
 
   synchronized void acquire() {
@@ -63,14 +63,16 @@ public final class Server {
       responseTimeTracker.time(responseTimeMicros);
     }
   }
-  public void setAvailable(boolean available){
-    if(available){
+
+  public void setAvailable(boolean available, ScheduledExecutorService executor) {
+    if (available) {
       activate();
-    }else {
-      deactivate(5000, Executors.newScheduledThreadPool(1)); //todo
+    } else {
+      deactivate(DEFAULT_FAIL_TIMEOUT_MS, executor);
     }
   }
-  synchronized void deactivate(int timeoutMs, ScheduledExecutorService executor) {
+
+  public synchronized void deactivate(int timeoutMs, ScheduledExecutorService executor) {
     LOGGER.info("deactivate server: {} for {}ms", address, timeoutMs);
     active = false;
     executor.schedule(this::activate, timeoutMs, TimeUnit.MILLISECONDS);
@@ -88,22 +90,12 @@ public final class Server {
     statsRequests -= weight;
   }
 
-  void update(Server server) {
-    weight = server.weight;
-    rack = server.rack;
-    datacenter = server.datacenter;
-  }
-
-  String getAddress() {
+  public String getAddress() {
     return address;
   }
 
-  int getWeight() {
+  public int getWeight() {
     return weight;
-  }
-
-  public String getRack() {
-    return rack;
   }
 
   public String getDatacenter() {
@@ -136,6 +128,6 @@ public final class Server {
 
   @Override
   public String toString() {
-    return address + " (weight=" + weight + ", rack=" + rack + ", datacenter=" + datacenter + ")";
+    return address + " (weight=" + weight + ", datacenter=" + datacenter + ")";
   }
 }
