@@ -75,6 +75,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     cache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);
       updateCache(convertToTree(newValues.values()));
+      LOGGER.debug("new config:{}", rootConfigNode);
       notifyListeners();
     });
     cache.start();

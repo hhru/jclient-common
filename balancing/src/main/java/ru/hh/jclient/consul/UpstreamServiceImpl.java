@@ -1,6 +1,5 @@
 package ru.hh.jclient.consul;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.HealthClient;
@@ -28,64 +27,64 @@ import java.util.function.Consumer;
 public class UpstreamServiceImpl implements UpstreamService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
   private final HealthClient healthClient;
-  private final List<String> datacenterList;
   private final ScheduledExecutorService scheduledExecutor;
-  private Map<String, ConcurrentMap<String, Server>> serverMap = new HashMap<>();
-  private ConcurrentMap<String, List<Server>> serverList = new ConcurrentHashMap<>();
+
+  private final List<String> upstreamList;
+  private final List<String> datacenterList;
+  private final String currentDC;
 
   private final int watchSeconds;
-  private final String datacenter;
   private final boolean allowCrossDC;
-
-  private final List<String> services;
   private Consumer<String> callback;
 
+  private ConcurrentMap<String, List<Server>> serverList = new ConcurrentHashMap<>();
+  private Map<String, ConcurrentMap<String, Server>> serverMap = new HashMap<>();
+
   public UpstreamServiceImpl(List<String> upstreamList, List<String> datacenterList, Consul consulClient, ScheduledExecutorService scheduledExecutor,
-                             int watchSeconds, String datacenter, boolean allowCrossDC) {
+                             int watchSeconds, String currentDC, boolean allowCrossDC) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
     Preconditions.checkState(!datacenterList.isEmpty(), "DatacenterList can't be empty");
 
-    this.datacenterList = datacenterList;
     this.scheduledExecutor = scheduledExecutor;
     this.healthClient = consulClient.healthClient();
-    this.watchSeconds = watchSeconds;
-    this.services = upstreamList;
-    this.datacenter = datacenter;
+    this.datacenterList = datacenterList;
+    this.upstreamList = upstreamList;
+    this.currentDC = currentDC;
     this.allowCrossDC = allowCrossDC;
+    this.watchSeconds = watchSeconds;
   }
 
   @Override
   public void setupListener(Consumer<String> callback) {
     setListener(callback);
-    services.forEach(s -> subscribeToUpstream(s, allowCrossDC));
+    upstreamList.forEach(s -> subscribeToUpstream(s, allowCrossDC));
   }
 
-  @VisibleForTesting
   public void setListener(Consumer<String> callback) {
     this.callback = callback;
   }
 
   void notifyListeners() {
-    services.forEach(callback);
+    upstreamList.forEach(callback);
   }
 
   private void subscribeToUpstream(String serviceName, boolean allowCrossDC) {
     if (allowCrossDC) {
       for (String dataCenter : datacenterList) {
-        QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(dataCenter).build();
-        initializeCache(serviceName, queryOptions);
+        initializeCache(serviceName, dataCenter);
       }
     } else {
-      initializeCache(serviceName, QueryOptions.BLANK);
+      initializeCache(serviceName, currentDC);
     }
   }
 
-  private void initializeCache(String serviceName, QueryOptions queryOptions) {
+  private void initializeCache(String serviceName, String datacenter) {
+    QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(currentDC).build();
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, false, watchSeconds, queryOptions);
-    String dc = queryOptions.getDatacenter().orElse(datacenter);
-    LOGGER.debug("subscribe to service {}; dc {}", serviceName, dc);
+
+    LOGGER.debug("subscribe to service {}; dc {}", serviceName, datacenter);
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
-      updateUpstreams(newValues, serviceName, dc);
+      updateUpstreams(newValues, serviceName, datacenter);
       notifyListeners();
     });
     svHealth.start();
@@ -101,37 +100,40 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<String> newServers = new HashSet<>();
-    Map<String, Server> servers = serverMap.computeIfAbsent(serviceName, k -> new ConcurrentHashMap<>());
+    Set<String> serversFromUpdate = new HashSet<>();
+    Map<String, Server> storedServers = serverMap.computeIfAbsent(serviceName, k -> new ConcurrentHashMap<>());
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
       Service service = serviceHealth.getService();
-      String address = Server.addressFromHostPort(service.getAddress(), service.getPort());
-      newServers.add(address);
-      Server server = servers.get(address);
+
       List<HealthCheck> checks = serviceHealth.getChecks();
-      String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
       boolean serviceFailed = checks.stream().anyMatch(check -> !check.getStatus().equals("passing"));
+
+      String address = Server.addressFromHostPort(service.getAddress(), service.getPort());
+      Server server = storedServers.get(address);
+
       if (server != null) {
         if (serviceFailed && server.isActive()) {
           server.setAvailable(false, scheduledExecutor);
         }
       } else {
+        String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
+
         server = new Server(address,
                 service.getWeights().get().getPassing(),
                 nodeDatacenter);
         server.setAvailable(!serviceFailed, scheduledExecutor);
       }
-      servers.put(address, server);
+      serversFromUpdate.add(address);
+      storedServers.put(address, server);
     }
-    serverList.put(serviceName, List.copyOf(servers.values()));
-    LOGGER.debug("upstreams for service: {} were updated; DC: {}; count :{} ", serviceName, datacenter, newServers.size());
-    disableDeregistredServices(servers, datacenter, newServers);
+    serverList.put(serviceName, List.copyOf(storedServers.values()));
+    LOGGER.debug("upstreams for service: {} were updated; DC: {}; count :{} ", serviceName, datacenter, serversFromUpdate.size());
+    disableDeregistredServices(storedServers, datacenter, serversFromUpdate);
   }
 
 
   private void disableDeregistredServices(Map<String, Server> servers, String datacenter, Set<String> newServers) {
-    //todo передавать датацентр из конфигов
     servers.values().stream()
             .filter(s -> datacenter.equals(s.getDatacenter()))
             .filter(s -> !newServers.contains(s.getAddress()))

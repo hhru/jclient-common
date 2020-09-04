@@ -39,7 +39,8 @@ public class UpstreamConfigServiceImplTest {
     assertEquals("56", valueNode.getNode("app-name").getNode("some-profile").getValue("key2"));
 
     //another length
-    assertEquals("137", valueNode.getNode("second-app").getNode("some-profile").getValue("key1"));
+    assertEquals("137", valueNode.getNode("second-app").getNode("some-profile")
+            .getNode("additional-level").getValue("key1"));
   }
 
   @Test
@@ -69,7 +70,7 @@ public class UpstreamConfigServiceImplTest {
             .withValue(BaseEncoding.base64().encode("42".getBytes())));
     values.add(ImmutableValue.copyOf(template).withKey("upstream/app-name/some-profile/key2")
             .withValue(BaseEncoding.base64().encode("56".getBytes())));
-    values.add(ImmutableValue.copyOf(template).withKey("upstream/second-app/some-profile/key1")
+    values.add(ImmutableValue.copyOf(template).withKey("upstream/second-app/some-profile/additional-level/key1")
             .withValue(BaseEncoding.base64().encode("137".getBytes())));
     return values;
   }

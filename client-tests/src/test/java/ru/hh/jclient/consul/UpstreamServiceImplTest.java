@@ -40,6 +40,7 @@ public class UpstreamServiceImplTest {
   static boolean allowCrossDC = false;
 
   @Before
+
   public void init() {
     upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
             watchSeconds, DATA_CENTER, allowCrossDC);

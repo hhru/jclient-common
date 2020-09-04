@@ -79,7 +79,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config) {
-    return new Upstream(key, config,  scheduledExecutor, datacenter, allowCrossDCRequests, true);
+    return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true);
   }
 
   @Override

@@ -29,8 +29,7 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  Upstream(String upstreamName, UpstreamConfig upstreamConfig,
-           ScheduledExecutorService scheduledExecutor) {
+  Upstream(String upstreamName, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor) {
     this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, scheduledExecutor, null, false, true);
   }
 
