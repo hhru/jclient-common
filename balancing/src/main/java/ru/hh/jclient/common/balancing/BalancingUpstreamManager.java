@@ -58,6 +58,11 @@ public class BalancingUpstreamManager extends UpstreamManager {
   }
 
   @Override
+  public List<Server> getServersForService(String serviceName) {
+    return upstreamService.getServers(serviceName);
+  }
+
+  @Override
   public void updateUpstream(@Nonnull String upstreamName) {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
@@ -81,11 +86,6 @@ public class BalancingUpstreamManager extends UpstreamManager {
   public Upstream getUpstream(String serviceName, @Nullable String profile) {
     return ofNullable(upstreams.get(getNameWithoutScheme(serviceName)))
         .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);
-  }
-
-  @Override
-  public UpstreamService getUpstreamService() {
-    return upstreamService;
   }
 
   @Override

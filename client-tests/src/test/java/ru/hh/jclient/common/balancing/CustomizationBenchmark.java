@@ -58,9 +58,10 @@ public class CustomizationBenchmark {
       UpstreamConfig.fromTree(UPSTREAM, null, null, new ValueNode()), Executors.newScheduledThreadPool(1)
   );
   private static final UpstreamManager manager = new UpstreamManager() {
+
     @Override
-    public UpstreamService getUpstreamService() {
-      return CUSTOM_UPSTREAM_SERVICE;
+    public List<Server> getServersForService(String upstreamName) {
+      return servers;
     }
 
     @Override

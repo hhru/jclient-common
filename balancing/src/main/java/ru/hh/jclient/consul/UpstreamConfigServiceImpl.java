@@ -35,13 +35,8 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   @Override
   public void setupListener(Consumer<String> callback) {
-    setListener(callback);
-    initConfigCache();
-  }
-
-  @VisibleForTesting
-  void setListener(Consumer<String> callback){
     this.callback = callback;
+    initConfigCache();
   }
 
   ValueNode convertToTree(Collection<Value> values) {
@@ -65,7 +60,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     return Objects.requireNonNullElse(resultRootNode, new ValueNode());
   }
 
-  private synchronized void updateCache(ValueNode map) {
+  private void updateCache(ValueNode map) {
     this.rootConfigNode = map;
   }
 
