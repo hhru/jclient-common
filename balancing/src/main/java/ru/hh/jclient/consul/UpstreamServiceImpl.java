@@ -5,6 +5,8 @@ import com.orbitz.consul.Consul;
 import com.orbitz.consul.HealthClient;
 import com.orbitz.consul.cache.ServiceHealthCache;
 import com.orbitz.consul.cache.ServiceHealthKey;
+import com.orbitz.consul.model.catalog.ImmutableServiceWeights;
+import com.orbitz.consul.model.catalog.ServiceWeights;
 import com.orbitz.consul.model.health.HealthCheck;
 import com.orbitz.consul.model.health.Service;
 import com.orbitz.consul.model.health.ServiceHealth;
@@ -26,6 +28,8 @@ import java.util.function.Consumer;
 
 public class UpstreamServiceImpl implements UpstreamService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
+
+  private final ServiceWeights defaultWeight;
   private final HealthClient healthClient;
   private final ScheduledExecutorService scheduledExecutor;
 
@@ -52,16 +56,13 @@ public class UpstreamServiceImpl implements UpstreamService {
     this.currentDC = currentDC;
     this.allowCrossDC = allowCrossDC;
     this.watchSeconds = watchSeconds;
+    this.defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
   }
 
   @Override
   public void setupListener(Consumer<String> callback) {
-    setListener(callback);
-    upstreamList.forEach(s -> subscribeToUpstream(s, allowCrossDC));
-  }
-
-  public void setListener(Consumer<String> callback) {
     this.callback = callback;
+    upstreamList.forEach(s -> subscribeToUpstream(s, allowCrossDC));
   }
 
   void notifyListeners() {
@@ -120,16 +121,18 @@ public class UpstreamServiceImpl implements UpstreamService {
         String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
 
         server = new Server(address,
-                service.getWeights().get().getPassing(),
+                service.getWeights().orElse(defaultWeight).getPassing(),
                 nodeDatacenter);
         server.setAvailable(!serviceFailed, scheduledExecutor);
       }
       serversFromUpdate.add(address);
       storedServers.put(address, server);
     }
+
+    disableDeregistredServices(storedServers, datacenter, serversFromUpdate);
+
     serverList.put(serviceName, List.copyOf(storedServers.values()));
     LOGGER.debug("upstreams for service: {} were updated; DC: {}; count :{} ", serviceName, datacenter, serversFromUpdate.size());
-    disableDeregistredServices(storedServers, datacenter, serversFromUpdate);
   }
 
 

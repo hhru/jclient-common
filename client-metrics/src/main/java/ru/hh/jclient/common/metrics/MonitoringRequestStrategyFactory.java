@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
-public class MonitoringUpstreamManagerFactory {
+public class MonitoringRequestStrategyFactory {
   public static RequestStrategy<RequestBalancerBuilder> create(
       String serviceName, String dc,
       boolean allowCrossDCRequests,
