@@ -24,11 +24,6 @@
             <artifactId>jclient-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>ru.hh.jclient-common</groupId>
-            <artifactId>consul-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
 </project>
