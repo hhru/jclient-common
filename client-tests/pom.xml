@@ -10,11 +10,19 @@
     <packaging>jar</packaging>
 
     <properties>
-        <powermock.version>2.0.2</powermock.version>
+        <powermock.version>2.0.7</powermock.version>
         <jmh.version>1.23</jmh.version>
+        <immutables.version>2.5.6</immutables.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>${immutables.version}</version>
+            <classifier>annotations</classifier>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
@@ -67,7 +75,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>18.0</version>
+            <version>${guava.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

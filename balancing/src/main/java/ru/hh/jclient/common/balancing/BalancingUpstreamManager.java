@@ -1,19 +1,23 @@
 package ru.hh.jclient.common.balancing;
 
 import com.google.common.annotations.VisibleForTesting;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
+import ru.hh.jclient.consul.UpstreamConfigService;
+import ru.hh.jclient.consul.UpstreamService;
+import ru.hh.jclient.consul.ValueNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
-
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 
 public class BalancingUpstreamManager extends UpstreamManager {
 
@@ -26,42 +30,44 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
+  private final UpstreamConfigService upstreamConfigService;
+  private final UpstreamService upstreamService;
 
   public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests) {
-    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
+                                  boolean allowCrossDCRequests, UpstreamConfigService upstreamConfigService,
+                                  UpstreamService upstreamService) {
+    this(List.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService);
   }
 
-  public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
+  public BalancingUpstreamManager(Collection<String> upstreamsList,
                                   ScheduledExecutorService scheduledExecutor,
                                   Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests) {
+                                  boolean allowCrossDCRequests, UpstreamConfigService upstreamConfigService,
+                                  UpstreamService upstreamService) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.upstreamService = upstreamService;
+    this.upstreamConfigService = upstreamConfigService;
 
-    requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
-    upstreamConfigs.forEach(this::updateUpstream);
+    requireNonNull(upstreamsList, "upstreamsList must not be null");
+    upstreamsList.forEach(this::updateUpstream);
   }
 
   @Override
-  public void updateUpstream(@Nonnull String upstreamName, String configString) {
+  public List<Server> getServersForService(String serviceName) {
+    return upstreamService.getServers(serviceName);
+  }
+
+  @Override
+  public void updateUpstream(@Nonnull String upstreamName) {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
-    if (configString == null) {
-      LOGGER.info("removing upstream: {}", upstreamName);
-      upstreams.computeIfPresent(upstreamKey.getServiceName(), (key, upstreamGroup) -> {
-        upstreamGroup.remove(upstreamKey.getProfileName());
-        if (upstreamGroup.isEmpty()) {
-          return null;
-        }
-        return upstreamGroup;
-      });
-      return;
-    }
-    var newConfig = UpstreamConfig.parse(configString);
+
+    ValueNode upstreamConfig = upstreamConfigService.getUpstreamConfig();
+    var newConfig = UpstreamConfig.fromTree(upstreamKey.getServiceName(), upstreamKey.getProfileName(), UpstreamConfig.DEFAULT, upstreamConfig);
     upstreams.compute(upstreamKey.getServiceName(), (serviceName, existingGroup) -> {
       if (existingGroup == null) {
         return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
