@@ -108,7 +108,6 @@ public class UpstreamServiceImpl implements UpstreamService {
     Map<String, Server> storedServers = serverMap.computeIfAbsent(serviceName, k -> new ConcurrentHashMap<>());
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
-      LOGGER.debug("currentNode :{}; ", currentNode);
       if (notSameNode(serviceHealth.getNode().getNode())) {
         continue;
       }
@@ -129,8 +128,8 @@ public class UpstreamServiceImpl implements UpstreamService {
         String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
 
         server = new Server(address,
-                service.getWeights().orElse(defaultWeight).getPassing(),
-                nodeDatacenter);
+            service.getWeights().orElse(defaultWeight).getPassing(),
+            nodeDatacenter);
         server.setAvailable(!serviceFailed, scheduledExecutor);
       }
       serversFromUpdate.add(address);
