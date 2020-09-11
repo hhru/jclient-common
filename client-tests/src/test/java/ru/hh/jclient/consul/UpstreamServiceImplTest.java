@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class UpstreamServiceImplTest {
   static UpstreamServiceImpl upstreamService;
   static String SERVICE_NAME = "upstream1";
+  static String NODE_NAME = "node123";
   static String DATA_CENTER = "DC1";
   static List<String> upstreamList = List.of(SERVICE_NAME);
   static List<String> datacenterList = List.of(DATA_CENTER);
@@ -43,7 +44,7 @@ public class UpstreamServiceImplTest {
 
   public void init() {
     upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
-            watchSeconds, DATA_CENTER, allowCrossDC);
+            watchSeconds, DATA_CENTER, null,  allowCrossDC);
   }
 
   @Test
@@ -70,8 +71,8 @@ public class UpstreamServiceImplTest {
     int port1 = 124;
     int port2 = 126;
 
-    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, weight, true);
-    ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, weight, true);
+    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
+    ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, NODE_NAME, weight, true);
 
     Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
     upstreams.put(buildKey(address1), serviceHealth);
@@ -98,7 +99,7 @@ public class UpstreamServiceImplTest {
     int port = 125;
 
     //create
-    ServiceHealth serviceHealth = buildServiceHealth(address1, port, DATA_CENTER, weight, true);
+    ServiceHealth serviceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, true);
     Map<ServiceHealthKey, ServiceHealth> upstreams = Map.of(buildKey(address1), serviceHealth);
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
@@ -106,7 +107,7 @@ public class UpstreamServiceImplTest {
     assertTrue(server.isActive());
 
     //update
-    ServiceHealth updateServiceHealth = buildServiceHealth(address1, port, DATA_CENTER, weight, false);
+    ServiceHealth updateServiceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, false);
     Map<ServiceHealthKey, ServiceHealth> updateUpstreams = Map.of(buildKey(address1), updateServiceHealth);
     upstreamService.updateUpstreams(updateUpstreams, SERVICE_NAME, DATA_CENTER);
 
@@ -117,12 +118,54 @@ public class UpstreamServiceImplTest {
 
   }
 
+  @Test
+  public void testSameNode() {
+    String address1 = "a1";
+    int weight = 12;
+    int port1 = 124;
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
+        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC);
 
-  private ServiceHealth buildServiceHealth(String address, int port, String datacenter, int weight, boolean passing) {
+    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
+
+    Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
+    upstreams.put(buildKey(address1), serviceHealth);
+
+    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
+
+    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    assertEquals(1, servers.size());
+  }
+
+  @Test
+  public void testDifferentNodes() {
+
+    String address1 = "a1";
+    String address2 = "a2";
+    int weight = 12;
+    int port1 = 124;
+    int port2 = 126;
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
+        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC);
+
+    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
+    ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
+
+    Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
+    upstreams.put(buildKey(address1), serviceHealth);
+    upstreams.put(buildKey(address2), serviceHealth2);
+
+    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
+
+    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    assertEquals(1, servers.size());
+  }
+
+  private ServiceHealth buildServiceHealth(String address, int port, String datacenter, String nodeName, int weight, boolean passing) {
     Service service = buildService(address, port, buildWeight(weight));
     HealthCheck healthCheck = buildHealthCheck(passing);
     return ImmutableServiceHealth.builder()
-            .node(buildNode(datacenter))
+            .node(buildNode(datacenter, nodeName))
             .service(service)
             .addChecks(healthCheck)
             .build();
@@ -153,7 +196,7 @@ public class UpstreamServiceImplTest {
             .build();
   }
 
-  private Node buildNode(String datacenter) {
-    return ImmutableNode.builder().node("node1").address("address1").datacenter(datacenter).build();
+  private Node buildNode(String datacenter, String nodeName) {
+    return ImmutableNode.builder().node(nodeName).address("address1").datacenter(datacenter).build();
   }
 }
