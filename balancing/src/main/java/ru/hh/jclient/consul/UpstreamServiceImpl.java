@@ -108,7 +108,8 @@ public class UpstreamServiceImpl implements UpstreamService {
     Map<String, Server> storedServers = serverMap.computeIfAbsent(serviceName, k -> new ConcurrentHashMap<>());
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
-      if (notSameNode(serviceHealth.getNode().getNode())) {
+      String nodeName = serviceHealth.getNode().getNode();
+      if (!isProd() && notSameNode(nodeName)) {
         continue;
       }
 
@@ -140,6 +141,10 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     serverList.put(serviceName, List.copyOf(storedServers.values()));
     LOGGER.debug("upstreams for service: {} were updated; DC: {}; count :{} ", serviceName, datacenter, serversFromUpdate.size());
+  }
+
+  private boolean isProd() {
+    return Strings.isNullOrEmpty(currentNode);
   }
 
   private boolean notSameNode(String nodeName) {
