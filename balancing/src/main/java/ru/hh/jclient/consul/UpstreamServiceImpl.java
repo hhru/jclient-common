@@ -1,6 +1,7 @@
 package ru.hh.jclient.consul;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.orbitz.consul.Consul;
 import com.orbitz.consul.HealthClient;
 import com.orbitz.consul.cache.ServiceHealthCache;
@@ -36,6 +37,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final List<String> upstreamList;
   private final List<String> datacenterList;
   private final String currentDC;
+  private final String currentNode;
 
   private final int watchSeconds;
   private final boolean allowCrossDC;
@@ -45,7 +47,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   private Map<String, ConcurrentMap<String, Server>> serverMap = new HashMap<>();
 
   public UpstreamServiceImpl(List<String> upstreamList, List<String> datacenterList, Consul consulClient, ScheduledExecutorService scheduledExecutor,
-                             int watchSeconds, String currentDC, boolean allowCrossDC) {
+                             int watchSeconds, String currentDC, String currentNode, boolean allowCrossDC) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
     Preconditions.checkState(!datacenterList.isEmpty(), "DatacenterList can't be empty");
 
@@ -54,6 +56,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     this.datacenterList = datacenterList;
     this.upstreamList = upstreamList;
     this.currentDC = currentDC;
+    this.currentNode = currentNode;
     this.allowCrossDC = allowCrossDC;
     this.watchSeconds = watchSeconds;
     this.defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
@@ -105,6 +108,11 @@ public class UpstreamServiceImpl implements UpstreamService {
     Map<String, Server> storedServers = serverMap.computeIfAbsent(serviceName, k -> new ConcurrentHashMap<>());
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
+      String nodeName = serviceHealth.getNode().getNode();
+      if (!isProd() && notSameNode(nodeName)) {
+        continue;
+      }
+
       Service service = serviceHealth.getService();
 
       List<HealthCheck> checks = serviceHealth.getChecks();
@@ -121,8 +129,8 @@ public class UpstreamServiceImpl implements UpstreamService {
         String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
 
         server = new Server(address,
-                service.getWeights().orElse(defaultWeight).getPassing(),
-                nodeDatacenter);
+            service.getWeights().orElse(defaultWeight).getPassing(),
+            nodeDatacenter);
         server.setAvailable(!serviceFailed, scheduledExecutor);
       }
       serversFromUpdate.add(address);
@@ -135,6 +143,13 @@ public class UpstreamServiceImpl implements UpstreamService {
     LOGGER.debug("upstreams for service: {} were updated; DC: {}; count :{} ", serviceName, datacenter, serversFromUpdate.size());
   }
 
+  private boolean isProd() {
+    return Strings.isNullOrEmpty(currentNode);
+  }
+
+  private boolean notSameNode(String nodeName) {
+    return !Strings.isNullOrEmpty(currentNode) && !currentNode.equalsIgnoreCase(nodeName);
+  }
 
   private void disableDeregistredServices(Map<String, Server> servers, String datacenter, Set<String> newServers) {
     servers.values().stream()
