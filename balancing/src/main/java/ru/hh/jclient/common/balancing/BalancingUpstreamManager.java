@@ -48,7 +48,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
                                   UpstreamService upstreamService) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
-    this.datacenter = datacenter;
+    this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.upstreamService = upstreamService;
     this.upstreamConfigService = upstreamConfigService;

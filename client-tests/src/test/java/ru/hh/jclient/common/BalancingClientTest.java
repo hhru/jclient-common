@@ -209,7 +209,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-      eq("backend"), eq("DC1"), eq("server1"), eq(200), anyLong(), eq(true)
+      eq("backend"), eq(datacenter.toLowerCase()), eq("server1"), eq(200), anyLong(), eq(true)
     );
   }
 

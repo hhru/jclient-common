@@ -86,7 +86,7 @@ public class UpstreamServiceImplTest {
     Server server = servers.get(0);
     assertEquals(Server.addressFromHostPort(address1, port1), server.getAddress());
     assertEquals(weight, server.getWeight());
-    assertEquals(DATA_CENTER, server.getDatacenter());
+    assertEquals(DATA_CENTER.toLowerCase(), server.getDatacenter());
 
     Server server2 = servers.get(1);
     assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
