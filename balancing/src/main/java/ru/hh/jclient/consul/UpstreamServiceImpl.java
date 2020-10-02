@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class UpstreamServiceImpl implements UpstreamService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
@@ -53,9 +54,9 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     this.scheduledExecutor = scheduledExecutor;
     this.healthClient = consulClient.healthClient();
-    this.datacenterList = datacenterList;
+    this.datacenterList = datacenterList.stream().map(String::toLowerCase).collect(Collectors.toList());
     this.upstreamList = upstreamList;
-    this.currentDC = currentDC;
+    this.currentDC = currentDC.toLowerCase();
     this.currentNode = currentNode;
     this.allowCrossDC = allowCrossDC;
     this.watchSeconds = watchSeconds;

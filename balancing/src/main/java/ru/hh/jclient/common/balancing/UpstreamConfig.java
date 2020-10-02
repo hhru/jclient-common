@@ -59,7 +59,7 @@ public final class UpstreamConfig {
     }
   }
 
-  private static UpstreamConfig getDefaultConfig() {
+  public static UpstreamConfig getDefaultConfig() {
     UpstreamConfig upstreamConfig = new UpstreamConfig();
     upstreamConfig.maxTries = DEFAULT_MAX_TRIES;
     upstreamConfig.maxFails = DEFAULT_MAX_FAILS;

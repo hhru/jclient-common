@@ -42,7 +42,7 @@ public class Upstream {
     this.upstreamKey = upstreamKey;
     this.upstreamConfig = upstreamConfig;
     this.scheduledExecutor = scheduledExecutor;
-    this.datacenter = datacenter;
+    this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
   }
