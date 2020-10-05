@@ -14,7 +14,6 @@ import com.orbitz.consul.model.health.Node;
 import com.orbitz.consul.model.health.Service;
 import com.orbitz.consul.model.health.ServiceHealth;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,11 +21,10 @@ import static org.mockito.Mockito.mock;
 import ru.hh.jclient.common.balancing.Server;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class UpstreamServiceImplTest {
   static UpstreamServiceImpl upstreamService;
@@ -36,15 +34,12 @@ public class UpstreamServiceImplTest {
   static List<String> upstreamList = List.of(SERVICE_NAME);
   static List<String> datacenterList = List.of(DATA_CENTER);
   static Consul consulClient = mock(Consul.class);
-  static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
   static int watchSeconds = 7;
   static boolean allowCrossDC = false;
 
   @Before
-
   public void init() {
-    upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
-            watchSeconds, DATA_CENTER, null,  allowCrossDC);
+    upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, watchSeconds, DATA_CENTER, null,  allowCrossDC);
   }
 
   @Test
@@ -81,6 +76,7 @@ public class UpstreamServiceImplTest {
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    servers.sort(Comparator.comparing(Server::getAddress));
     assertEquals(2, servers.size());
 
     Server server = servers.get(0);
@@ -101,7 +97,7 @@ public class UpstreamServiceImplTest {
     //create
     ServiceHealth serviceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, true);
     Map<ServiceHealthKey, ServiceHealth> upstreams = Map.of(buildKey(address1), serviceHealth);
-    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
+    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER.toLowerCase());
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     Server server = servers.get(0);
     assertTrue(server.isActive());
@@ -109,13 +105,10 @@ public class UpstreamServiceImplTest {
     //update
     ServiceHealth updateServiceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, false);
     Map<ServiceHealthKey, ServiceHealth> updateUpstreams = Map.of(buildKey(address1), updateServiceHealth);
-    upstreamService.updateUpstreams(updateUpstreams, SERVICE_NAME, DATA_CENTER);
+    upstreamService.updateUpstreams(updateUpstreams, SERVICE_NAME, DATA_CENTER.toLowerCase());
 
     List<Server> updatedServers = upstreamService.getServers(SERVICE_NAME);
-    assertEquals(1, updatedServers.size());
-    Server updatedServer = updatedServers.get(0);
-    assertFalse(updatedServer.isActive());
-
+    assertEquals(0, updatedServers.size());
   }
 
   @Test
@@ -123,7 +116,7 @@ public class UpstreamServiceImplTest {
     String address1 = "a1";
     int weight = 12;
     int port1 = 124;
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient,
         watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
@@ -145,7 +138,7 @@ public class UpstreamServiceImplTest {
     int weight = 12;
     int port1 = 124;
     int port2 = 126;
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, scheduledExecutorService,
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient,
         watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);

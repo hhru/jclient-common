@@ -17,14 +17,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -33,7 +33,6 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final ServiceWeights defaultWeight;
   private final HealthClient healthClient;
-  private final ScheduledExecutorService scheduledExecutor;
 
   private final List<String> upstreamList;
   private final List<String> datacenterList;
@@ -44,15 +43,13 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final boolean allowCrossDC;
   private Consumer<String> callback;
 
-  private ConcurrentMap<String, List<Server>> serverList = new ConcurrentHashMap<>();
-  private Map<String, ConcurrentMap<String, Server>> serverMap = new HashMap<>();
+  private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
-  public UpstreamServiceImpl(List<String> upstreamList, List<String> datacenterList, Consul consulClient, ScheduledExecutorService scheduledExecutor,
+  public UpstreamServiceImpl(List<String> upstreamList, List<String> datacenterList, Consul consulClient,
                              int watchSeconds, String currentDC, String currentNode, boolean allowCrossDC) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
     Preconditions.checkState(!datacenterList.isEmpty(), "DatacenterList can't be empty");
 
-    this.scheduledExecutor = scheduledExecutor;
     this.healthClient = consulClient.healthClient();
     this.datacenterList = datacenterList.stream().map(String::toLowerCase).collect(Collectors.toList());
     this.upstreamList = upstreamList;
@@ -61,6 +58,10 @@ public class UpstreamServiceImpl implements UpstreamService {
     this.allowCrossDC = allowCrossDC;
     this.watchSeconds = watchSeconds;
     this.defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
+
+    if (!this.datacenterList.contains(this.currentDC)) {
+      this.datacenterList.add(this.currentDC);
+    }
   }
 
   @Override
@@ -99,14 +100,14 @@ public class UpstreamServiceImpl implements UpstreamService {
   public List<Server> getServers(String serviceName) {
     List<Server> servers = serverList.get(serviceName);
     if (servers == null) {
-      throw new IllegalStateException("Empty server list for service: " + serviceName);
+      return Collections.emptyList();
     }
     return servers;
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<String> serversFromUpdate = new HashSet<>();
-    Map<String, Server> storedServers = serverMap.computeIfAbsent(serviceName, k -> new ConcurrentHashMap<>());
+    Set<String> aliveServers = new HashSet<>();
+    CopyOnWriteArrayList<Server> currentServers = serverList.computeIfAbsent(serviceName, k -> new CopyOnWriteArrayList<>());
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
@@ -119,29 +120,31 @@ public class UpstreamServiceImpl implements UpstreamService {
       List<HealthCheck> checks = serviceHealth.getChecks();
       boolean serviceFailed = checks.stream().anyMatch(check -> !check.getStatus().equals("passing"));
 
-      String address = Server.addressFromHostPort(service.getAddress(), service.getPort());
-      Server server = storedServers.get(address);
-
-      if (server != null) {
-        if (serviceFailed && server.isActive()) {
-          server.setAvailable(false, scheduledExecutor);
-        }
-      } else {
-        String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
-
-        server = new Server(address,
-            service.getWeights().orElse(defaultWeight).getPassing(),
-            nodeDatacenter);
-        server.setAvailable(!serviceFailed, scheduledExecutor);
+      if (serviceFailed) {
+        continue;
       }
-      serversFromUpdate.add(address);
-      storedServers.put(address, server);
+
+      String address = Server.addressFromHostPort(getAddress(serviceHealth), service.getPort());
+      String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
+
+      Server server = currentServers.stream()
+        .filter(s -> address.equals(s.getAddress()))
+        .findFirst().orElse(null);
+
+      if (server == null) {
+        server = new Server(address, service.getWeights().orElse(defaultWeight).getPassing(), nodeDatacenter);
+        currentServers.add(server);
+      }
+
+      server.setMeta(service.getMeta());
+      server.setTags(service.getTags());
+
+      aliveServers.add(address);
     }
 
-    disableDeregistredServices(storedServers, datacenter, serversFromUpdate);
+    disableDeadServices(currentServers, serviceName, datacenter, aliveServers);
 
-    serverList.put(serviceName, List.copyOf(storedServers.values()));
-    LOGGER.debug("upstreams for service: {} were updated; DC: {}; count :{} ", serviceName, datacenter, serversFromUpdate.size());
+    LOGGER.debug("upstreams for {} were updated in DC {}: {} ", serviceName, datacenter, currentServers);
   }
 
   private boolean isProd() {
@@ -149,13 +152,26 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private boolean notSameNode(String nodeName) {
-    return !Strings.isNullOrEmpty(currentNode) && !currentNode.equalsIgnoreCase(nodeName);
+    return !Strings.isNullOrEmpty(currentNode) && (!currentNode.equalsIgnoreCase(nodeName));
   }
 
-  private void disableDeregistredServices(Map<String, Server> servers, String datacenter, Set<String> newServers) {
-    servers.values().stream()
-            .filter(s -> datacenter.equals(s.getDatacenter()))
-            .filter(s -> !newServers.contains(s.getAddress()))
-            .filter(Server::isActive).forEach(s -> s.setAvailable(false, scheduledExecutor));
+  private static void disableDeadServices(CopyOnWriteArrayList<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
+    List<Server> deadServers = servers.stream()
+      .filter(s -> datacenter.equals(s.getDatacenter()))
+      .filter(s -> !aliveServers.contains(s.getAddress()))
+      .collect(Collectors.toList());
+
+    LOGGER.debug("removing dead servers for {} in DC {}: {} ", serviceName, datacenter, deadServers);
+
+    servers.removeAll(deadServers);
+  }
+
+  private static String getAddress(ServiceHealth serviceHealth) {
+    String address = serviceHealth.getService().getAddress();
+    if (!Strings.isNullOrEmpty(address)) {
+      return address;
+    }
+
+    return serviceHealth.getNode().getAddress();
   }
 }

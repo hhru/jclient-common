@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +19,8 @@ public final class Server {
   private final String address;
   private volatile int weight;
   private volatile String datacenter;
+  private volatile Map<String, String> meta;
+  private volatile List<String> tags;
 
   private volatile boolean active = true;
   private volatile int requests = 0;
@@ -61,14 +65,6 @@ public final class Server {
     } else {
       downtimeDetector.success();
       responseTimeTracker.time(responseTimeMicros);
-    }
-  }
-
-  public void setAvailable(boolean available, ScheduledExecutorService executor) {
-    if (available) {
-      activate();
-    } else {
-      deactivate(DEFAULT_FAIL_TIMEOUT_MS, executor);
     }
   }
 
@@ -124,6 +120,22 @@ public final class Server {
 
   public ResponseTimeTracker getResponseTimeTracker() {
     return responseTimeTracker;
+  }
+
+  public Map<String, String> getMeta() {
+    return meta;
+  }
+
+  public void setMeta(Map<String, String> meta) {
+    this.meta = meta;
+  }
+
+  public List<String> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<String> tags) {
+    this.tags = tags;
   }
 
   @Override
