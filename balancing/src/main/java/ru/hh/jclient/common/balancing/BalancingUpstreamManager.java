@@ -3,8 +3,6 @@ package ru.hh.jclient.common.balancing;
 import com.google.common.annotations.VisibleForTesting;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
@@ -21,7 +19,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class BalancingUpstreamManager extends UpstreamManager {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
   static final String SCHEMA_SEPARATOR = "://";
   private static final int SCHEMA_SEPARATOR_LEN = 3;
 
