@@ -85,7 +85,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private void initializeCache(String serviceName, String datacenter) {
-    QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(currentDC).build();
+    QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(datacenter).build();
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, false, watchSeconds, queryOptions);
 
     LOGGER.debug("subscribe to service {}; dc {}", serviceName, datacenter);
