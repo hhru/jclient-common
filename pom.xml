@@ -27,7 +27,7 @@
 
     <properties>
         <jdk.version>11</jdk.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <surefire.encoding>UTF-8</surefire.encoding>
         <guava.version>29.0-jre</guava.version>
     </properties>
