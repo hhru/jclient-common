@@ -69,7 +69,7 @@ public class Upstream {
       List<Integer> allowedIds = new ArrayList<>();
       for (int i = 0; i < servers.size(); i++) {
         Server server = servers.get(i);
-        if (server != null && (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenter()))) {
+        if (server != null && (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenterLowerCased()))) {
           allowedIds.add(i);
           allowedServers.add(server);
         }
@@ -127,13 +127,13 @@ public class Upstream {
   private void rescale(List<Server> servers) {
     boolean[] rescale = {true, allowCrossDCRequests};
     iterateServers(servers, server -> {
-      int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
+      int localOrRemote = Objects.equals(server.getDatacenterLowerCased(), datacenter) ? 0 : 1;
       rescale[localOrRemote] &= server.getStatsRequests() >= server.getWeight();
     });
 
     if (rescale[0] || rescale[1]) {
       iterateServers(servers, server -> {
-        int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
+        int localOrRemote = Objects.equals(server.getDatacenterLowerCased(), datacenter) ? 0 : 1;
         if (rescale[localOrRemote]) {
           server.rescaleStatsRequests();
         }

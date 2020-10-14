@@ -12,13 +12,13 @@ public class ServerTest {
 
   @Test
   public void testCreateServer() {
-    Server server = new Server("test", 1,  "dc1");
+    Server server = new Server("test", 1,  "DC1");
 
     assertEquals(0, server.getRequests());
     assertEquals(0, server.getStatsRequests());
     assertEquals(0, server.getFails());
     assertEquals(1, server.getWeight());
-    assertEquals("dc1", server.getDatacenter());
+    assertEquals("dc1", server.getDatacenterLowerCased());
     assertTrue(server.isActive());
   }
 

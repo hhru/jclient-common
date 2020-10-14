@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.Optional;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 import com.sun.istack.Nullable;
@@ -88,7 +89,7 @@ public class RequestBalancer implements RequestEngine {
       if (!isServerAvailable()) {
         return completedFuture(getServerNotAvailableResponse(request, upstreamName));
       }
-      context = new RequestContext(upstreamName, currentServer.getDatacenter());
+      context = new RequestContext(upstreamName, Optional.ofNullable(currentServer.getDatacenter()).map(String::toLowerCase).orElse(null));
     }
 
     return requestExecutor.executeRequest(balancedRequest, triedServers.size(), context)

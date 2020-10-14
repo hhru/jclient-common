@@ -33,7 +33,7 @@ public final class Server {
   public Server(String address, int weight, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
     this.weight = weight;
-    this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
+    this.datacenter = datacenter;
 
     this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW);
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
@@ -96,6 +96,10 @@ public final class Server {
 
   public String getDatacenter() {
     return datacenter;
+  }
+
+  public String getDatacenterLowerCased() {
+    return datacenter == null ? null : datacenter.toLowerCase();
   }
 
   public boolean isActive() {
