@@ -157,7 +157,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private static void disableDeadServices(CopyOnWriteArrayList<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
     List<Server> deadServers = servers.stream()
-      .filter(s -> datacenter.equals(s.getDatacenter()))
+      .filter(s -> datacenter.equals(s.getDatacenterLowerCased()))
       .filter(s -> !aliveServers.contains(s.getAddress()))
       .collect(Collectors.toList());
 
