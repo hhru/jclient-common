@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.metrics;
 
 import io.netty.util.internal.StringUtil;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -11,12 +12,11 @@ import ru.hh.jclient.common.Monitoring;
 
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Optional.ofNullable;
 
 public class KafkaUpstreamMonitoring implements Monitoring {
-  private static final Logger log = LoggerFactory.getLogger(KafkaUpstreamMonitoring.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(KafkaUpstreamMonitoring.class);
 
   private final String serviceName;
   private final String localDc;
@@ -44,10 +44,12 @@ public class KafkaUpstreamMonitoring implements Monitoring {
       jsonBuilder.put("hostname", hostname);
       jsonBuilder.put("status", statusCode);
       jsonBuilder.put("requestId", requestId);
-      ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.requestsCountTopicName, jsonBuilder.build());
+      String json = jsonBuilder.build();
+      LOGGER.debug("Sending countRequest with json {}", json);
+      ProducerRecord<String, String> record = new ProducerRecord<>(monitoringConfig.requestsCountTopicName, json);
       kafkaProducer.send(record, (recordMetadata, e) -> {
         if (e != null) {
-          log.warn(e.getMessage(), e);
+          LOGGER.warn(e.getMessage(), e);
         }
       });
     }
