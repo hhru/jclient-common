@@ -51,9 +51,9 @@ public class UpstreamServiceImpl implements UpstreamService {
     Preconditions.checkState(!datacenterList.isEmpty(), "DatacenterList can't be empty");
 
     this.healthClient = consulClient.healthClient();
-    this.datacenterList = datacenterList.stream().map(String::toLowerCase).collect(Collectors.toList());
+    this.datacenterList = datacenterList;
     this.upstreamList = upstreamList;
-    this.currentDC = currentDC.toLowerCase();
+    this.currentDC = currentDC;
     this.currentNode = currentNode;
     this.allowCrossDC = allowCrossDC;
     this.watchSeconds = watchSeconds;
@@ -85,7 +85,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private void initializeCache(String serviceName, String datacenter) {
-    QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(datacenter).build();
+    QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(datacenter.toLowerCase()).build();
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, false, watchSeconds, queryOptions);
 
     LOGGER.debug("subscribe to service {}; dc {}", serviceName, datacenter);
@@ -125,7 +125,7 @@ public class UpstreamServiceImpl implements UpstreamService {
       }
 
       String address = Server.addressFromHostPort(getAddress(serviceHealth), service.getPort());
-      String nodeDatacenter = serviceHealth.getNode().getDatacenter().orElse(null);
+      String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
 
       Server server = currentServers.stream()
         .filter(s -> address.equals(s.getAddress()))
@@ -155,9 +155,19 @@ public class UpstreamServiceImpl implements UpstreamService {
     return !Strings.isNullOrEmpty(currentNode) && (!currentNode.equalsIgnoreCase(nodeName));
   }
 
+  private String restoreOriginalDataCenterName(String lowerCasedDcName) {
+    for (String dcName : datacenterList) {
+      if (dcName.toLowerCase().equals(lowerCasedDcName)) {
+        return dcName;
+      }
+    }
+    LOGGER.warn("Unable to restore original datacenter name for: {}", lowerCasedDcName);
+    return lowerCasedDcName;
+  }
+
   private static void disableDeadServices(CopyOnWriteArrayList<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
     List<Server> deadServers = servers.stream()
-      .filter(s -> datacenter.equals(s.getDatacenterLowerCased()))
+      .filter(s -> datacenter.equals(s.getDatacenter()))
       .filter(s -> !aliveServers.contains(s.getAddress()))
       .collect(Collectors.toList());
 

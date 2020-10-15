@@ -82,7 +82,7 @@ public class UpstreamServiceImplTest {
     Server server = servers.get(0);
     assertEquals(Server.addressFromHostPort(address1, port1), server.getAddress());
     assertEquals(weight, server.getWeight());
-    assertEquals(DATA_CENTER.toLowerCase(), server.getDatacenterLowerCased());
+    assertEquals(DATA_CENTER, server.getDatacenter());
 
     Server server2 = servers.get(1);
     assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
@@ -97,7 +97,7 @@ public class UpstreamServiceImplTest {
     //create
     ServiceHealth serviceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, true);
     Map<ServiceHealthKey, ServiceHealth> upstreams = Map.of(buildKey(address1), serviceHealth);
-    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER.toLowerCase());
+    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     Server server = servers.get(0);
     assertTrue(server.isActive());
@@ -105,7 +105,7 @@ public class UpstreamServiceImplTest {
     //update
     ServiceHealth updateServiceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, false);
     Map<ServiceHealthKey, ServiceHealth> updateUpstreams = Map.of(buildKey(address1), updateServiceHealth);
-    upstreamService.updateUpstreams(updateUpstreams, SERVICE_NAME, DATA_CENTER.toLowerCase());
+    upstreamService.updateUpstreams(updateUpstreams, SERVICE_NAME, DATA_CENTER);
 
     List<Server> updatedServers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(0, updatedServers.size());
