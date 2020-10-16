@@ -1,4 +1,4 @@
-version: 3.0.5
+version: 3.0.6
 build_image: registry.pyn.ru/openjdk11-building:2020.02.18
 docker_files:
   none: none
@@ -6,5 +6,5 @@ build_method: mvn_build
 deploy_method: mvn_deploy
 update_method: mvn_update
 wiki_links:
-  - https://wiki.hh.ru/pages/viewpage.action?pageId=322903998
-  - https://github.com/hhru/jclient-common/releases
+- https://wiki.hh.ru/pages/viewpage.action?pageId=322903998
+- https://github.com/hhru/jclient-common/releases
