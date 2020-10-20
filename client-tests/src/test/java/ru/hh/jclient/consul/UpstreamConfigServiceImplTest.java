@@ -19,10 +19,11 @@ public class UpstreamConfigServiceImplTest {
   private static String SERVICE_NAME = "upstream1";
   static List<String> upstreamList = List.of(SERVICE_NAME);
   static Consul consulClient = mock(Consul.class);
+  static int watchSeconds = 10;
 
   @BeforeClass
   public static void init() {
-    service = new UpstreamConfigServiceImpl(upstreamList, consulClient);
+    service = new UpstreamConfigServiceImpl(upstreamList, consulClient, watchSeconds);
   }
 
   @Test

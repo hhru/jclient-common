@@ -20,12 +20,14 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private final List<String> services;
   private Consumer<String> callback;
   private final KeyValueClient kvClient;
+  private final int watchSeconds;
 
   private volatile ValueNode rootConfigNode = new ValueNode();
 
-  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient) {
+  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds) {
     this.services = services;
     this.kvClient = consulClient.keyValueClient();
+    this.watchSeconds = watchSeconds;
   }
 
   @Override
@@ -70,7 +72,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   }
 
   private void initConfigCache() {
-    KVCache cache = KVCache.newCache(kvClient, ROOT_PATH);
+    KVCache cache = KVCache.newCache(kvClient, ROOT_PATH, watchSeconds);
     LOGGER.debug("subscribe to config:{}", ROOT_PATH);
     cache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);
