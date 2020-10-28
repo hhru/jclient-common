@@ -8,9 +8,6 @@ import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.ValueNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +24,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class AbstractBalancingStrategyTest {
@@ -57,34 +53,18 @@ public abstract class AbstractBalancingStrategyTest {
       public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
                              int firstStatusCode, int retryCount) {}
     };
-    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, Set.of(tracking), datacenterName, false,
-      new UpstreamConfigService() {
-        @Override
-        public ValueNode getUpstreamConfig() {
-          ValueNode root = new ValueNode();
-          ValueNode upstreamNode = root.computeMapIfAbsent(upstreamName);
-          ValueNode hostNode = upstreamNode.computeMapIfAbsent(UpstreamConfig.DEFAULT);
-          ValueNode profileNode = hostNode.computeMapIfAbsent(UpstreamConfig.PROFILE_NODE);
-          ValueNode profile = profileNode.computeMapIfAbsent(UpstreamConfig.DEFAULT);
-          upstreamCfg.forEach(profile::putValue);
-          return root;
-        }
-
-        @Override
-        public void setupListener(Consumer<String> callback) {
-        }
-    }, new UpstreamService() {
-         @Override
-         public void setupListener(Consumer<String> callback) {}
-
-         @Override
-         public List<Server> getServers(String serviceName) {
-           return adressesByWeight.entrySet().stream()
-             .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
-             .collect(Collectors.toList());
-         }
-    });
-    upstreamManager.updateUpstream(upstreamName);
+    String upstreamCfgString = upstreamCfg.entrySet().stream()
+        .map(entry -> String.join("=", entry.getKey(), entry.getValue()))
+        .collect(Collectors.joining(" "));
+    String serverCfgString = adressesByWeight.entrySet().stream()
+        .flatMap(weightToAddresses -> weightToAddresses.getValue().stream()
+            .map(address -> String.join(" ", "server=" + address, "weight=" + weightToAddresses.getKey(), "dc=" + datacenterName))
+        ).collect(Collectors.joining(" | "));
+    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
+        Map.of(upstreamName, String.join(" | ", upstreamCfgString, serverCfgString)),
+        scheduledExecutorService,
+        Set.of(tracking), datacenterName, false
+    );
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return new HttpClientFactoryBuilder(contextSupplier, List.of())
