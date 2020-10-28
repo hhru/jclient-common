@@ -65,18 +65,19 @@ public class BalancingUpstreamManager extends UpstreamManager {
 
     ValueNode upstreamConfig = upstreamConfigService.getUpstreamConfig();
     var newConfig = UpstreamConfig.fromTree(upstreamKey.getServiceName(), upstreamKey.getProfileName(), UpstreamConfig.DEFAULT, upstreamConfig);
+    List<Server> servers = upstreamService.getServers(upstreamName);
     upstreams.compute(upstreamKey.getServiceName(), (serviceName, existingGroup) -> {
       if (existingGroup == null) {
-        return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig));
+        return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig, servers));
       }
-      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig,
-          (profileName, config) -> createUpstream(upstreamKey, newConfig)
+      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig, servers,
+          (profileName, config) -> createUpstream(upstreamKey, newConfig, servers)
       );
     });
   }
 
-  private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config) {
-    return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true);
+  private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config, List<Server> servers) {
+    return new Upstream(key, config, servers, scheduledExecutor, datacenter, allowCrossDCRequests, true);
   }
 
   @Override

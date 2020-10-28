@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -30,11 +31,11 @@ public class UpstreamGroup {
   }
 
   public UpstreamGroup addOrUpdate(@Nullable String profileName, UpstreamConfig config,
-                          BiFunction<String, UpstreamConfig, Upstream> upstreamFactory) {
+                                   List<Server> servers, BiFunction<String, UpstreamConfig, Upstream> upstreamFactory) {
     var profileOrDefault = ofNullable(profileName).orElse(DEFAULT_PROFILE);
     upstreamsByProfile.compute(profileOrDefault, (name, existingUpstream) -> {
       if (existingUpstream != null) {
-        existingUpstream.updateConfig(config);
+        existingUpstream.updateConfig(config, servers);
         return existingUpstream;
       } else {
         return upstreamFactory.apply(name, config);

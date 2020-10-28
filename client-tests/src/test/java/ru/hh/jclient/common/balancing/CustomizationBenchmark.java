@@ -55,7 +55,7 @@ public class CustomizationBenchmark {
   }
 
   private static final Upstream upstream = new Upstream(UPSTREAM,
-      UpstreamConfig.fromTree(UPSTREAM, null, null, new ValueNode()), Executors.newScheduledThreadPool(1)
+      UpstreamConfig.fromTree(UPSTREAM, null, null, new ValueNode()), servers, Executors.newScheduledThreadPool(1)
   );
   private static final UpstreamManager manager = new UpstreamManager() {
 

@@ -1,19 +1,18 @@
 package ru.hh.jclient.common;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import static java.util.stream.Collectors.toList;
+import org.asynchttpclient.request.body.multipart.Part;
+import ru.hh.jclient.common.exception.RequestConverterException;
+
+import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.asynchttpclient.request.body.multipart.Part;
-import ru.hh.jclient.common.exception.RequestConverterException;
-
-import javax.ws.rs.core.MediaType;
 
 public class RequestBuilder {
 
@@ -221,8 +220,8 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setUrl(String url) {
-    if(!url.startsWith("http")){
-      url = "http://"+url;
+    if (!url.startsWith("http")) {
+      url = "http://" + url;
     }
     delegate.setUrl(url);
     return this;

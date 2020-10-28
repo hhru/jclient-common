@@ -1,5 +1,6 @@
 package ru.hh.jclient.consul;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.orbitz.consul.Consul;
@@ -70,6 +71,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     upstreamList.forEach(s -> subscribeToUpstream(s, allowCrossDC));
   }
 
+  @VisibleForTesting
   void notifyListeners() {
     upstreamList.forEach(callback);
   }
@@ -86,6 +88,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private void initializeCache(String serviceName, String datacenter) {
     QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(datacenter.toLowerCase()).build();
+
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, false, watchSeconds, queryOptions);
 
     LOGGER.debug("subscribe to service {}; dc {}", serviceName, datacenter);

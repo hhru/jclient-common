@@ -5,8 +5,6 @@ import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngineBuilder;
 import ru.hh.jclient.common.RequestStrategy;
 
-import java.util.List;
-
 public class RequestBalancerBuilder implements RequestEngineBuilder {
 
   private final UpstreamManager upstreamManager;
@@ -24,8 +22,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder {
 
   @Override
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
-    List<Server> servers = upstreamManager.getServersForService(request.getUri().getHost());
-    return new RequestBalancer(request, upstreamManager, requestExecutor, maxTimeoutTries, servers, forceIdempotence, adaptive, profile);
+    return new RequestBalancer(request, upstreamManager, requestExecutor, maxTimeoutTries, forceIdempotence, adaptive, profile);
   }
 
   @Override
