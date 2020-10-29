@@ -28,6 +28,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void requestWithProfile() throws Exception {
+    String profileFoo = "foo";
+    String profilebar = "bar";
     ValueNode rootNode = new ValueNode();
     ValueNode profileNode = buildProfileNode(rootNode);
 
@@ -36,8 +38,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
     profileNode.computeMapIfAbsent("bar").putValue("request_timeout_sec", "11");
 
     when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
+    when(upstreamService.getServers(TEST_UPSTREAM + ":" + profileFoo)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(upstreamService.getServers(TEST_UPSTREAM + ":" + profilebar)).thenReturn(List.of(new Server("server1", 1, null)));
 
-    List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, "foo"), profileName(TEST_UPSTREAM, "bar"));
+    List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, profileFoo), profileName(TEST_UPSTREAM, profilebar));
     createHttpClientFactory(upstreamList);
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -134,12 +138,15 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertHostEquals(request[0], "server1");
     when(upstreamService.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null)));
+    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
     when(upstreamService.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null), new Server("server3", 1, null)));
+    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
+
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
@@ -197,6 +204,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     createHttpClientFactory(List.of(TEST_UPSTREAM), datacenter, false);
     when(upstreamService.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server1", 1, datacenter)));
+    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
       .then(iom -> {
@@ -262,6 +270,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertHostEquals(request[0], "server1");
 
     when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server2", 1, "DC2")));
+    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");

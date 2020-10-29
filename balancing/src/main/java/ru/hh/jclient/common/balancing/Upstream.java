@@ -24,30 +24,33 @@ public class Upstream {
   private final String datacenter;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
+  private volatile List<Server> servers;
 
   private final ReadWriteLock configReadWriteLock = new ReentrantReadWriteLock();
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  Upstream(String upstreamName, UpstreamConfig upstreamConfig, ScheduledExecutorService scheduledExecutor) {
-    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, scheduledExecutor, null, false, true);
+  Upstream(String upstreamName, UpstreamConfig upstreamConfig, List<Server> servers, ScheduledExecutorService scheduledExecutor) {
+    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, servers, scheduledExecutor, null, false, true);
   }
 
   Upstream(UpstreamKey upstreamKey,
            UpstreamConfig upstreamConfig,
+           List<Server> servers,
            ScheduledExecutorService scheduledExecutor,
            String datacenter,
            boolean allowCrossDCRequests,
            boolean enabled) {
     this.upstreamKey = upstreamKey;
     this.upstreamConfig = upstreamConfig;
+    this.servers = servers;
     this.scheduledExecutor = scheduledExecutor;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
   }
 
-  ServerEntry acquireServer(Set<Integer> excludedServers, List<Server> servers) {
+  ServerEntry acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
       int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests);
@@ -62,7 +65,7 @@ public class Upstream {
     }
   }
 
-  List<ServerEntry> acquireAdaptiveServers(int retriesCount,  List<Server> servers) {
+  List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
     configReadLock.lock();
     try {
       List<Server> allowedServers = new ArrayList<>();
@@ -89,14 +92,14 @@ public class Upstream {
   }
 
   ServerEntry acquireServer(List<Server> servers) {
-    return acquireServer(Set.of(), servers);
+    return acquireServer(Set.of());
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, List<Server> servers) {
-    releaseServer(serverIndex, isError, responseTimeMicros, false, servers);
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros) {
+    releaseServer(serverIndex, isError, responseTimeMicros, false);
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive, List<Server> servers) {
+  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive) {
     configReadLock.lock();
     try {
       if (serverIndex < 0 || serverIndex >= servers.size()) {
@@ -141,10 +144,11 @@ public class Upstream {
     }
   }
 
-  void updateConfig(UpstreamConfig newConfig) {
+  void updateConfig(UpstreamConfig newConfig, List<Server> servers) {
     configWriteLock.lock();
     try {
-      upstreamConfig.update(newConfig);
+      this.upstreamConfig.update(newConfig);
+      this.servers = servers;
     } finally {
       configWriteLock.unlock();
     }

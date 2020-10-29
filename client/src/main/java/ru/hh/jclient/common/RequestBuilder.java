@@ -221,8 +221,8 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setUrl(String url) {
-    if(!url.startsWith("http")){
-      url = "http://"+url;
+    if (!url.startsWith("http")) {
+      url = "http://" + url;
     }
     delegate.setUrl(url);
     return this;

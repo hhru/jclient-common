@@ -39,7 +39,6 @@ public class RequestBalancer implements RequestEngine {
   private final UpstreamManager upstreamManager;
   private final RequestStrategy.RequestExecutor requestExecutor;
   private final Set<Integer> triedServers = new HashSet<>();
-  private final List<Server> servers;
   private final int maxTries;
   private final boolean adaptive;
   private final boolean forceIdempotence;
@@ -56,14 +55,12 @@ public class RequestBalancer implements RequestEngine {
                          UpstreamManager upstreamManager,
                          RequestStrategy.RequestExecutor requestExecutor,
                          Integer maxRequestTimeoutTries,
-                         List<Server> servers,
                          boolean forceIdempotence,
                          boolean adaptive,
                          @Nullable String profile) {
     this.request = request;
     this.upstreamManager = upstreamManager;
     this.requestExecutor = requestExecutor;
-    this.servers = servers;
     this.adaptive = adaptive;
     this.forceIdempotence = forceIdempotence;
     String host = request.getUri().getHost();
@@ -155,10 +152,10 @@ public class RequestBalancer implements RequestEngine {
       } catch (RuntimeException e) {
         logger.error("failed to acquire adaptive servers", e);
         adaptiveFailed = true;
-        currentServer = upstream.acquireServer(triedServers, servers);
+        currentServer = upstream.acquireServer(triedServers);
       }
     } else {
-      currentServer = upstream.acquireServer(triedServers, servers);
+      currentServer = upstream.acquireServer(triedServers);
     }
     if (currentServer == null) {
       return request;
@@ -175,7 +172,7 @@ public class RequestBalancer implements RequestEngine {
 
   private ServerEntry acquireAdaptiveServer() {
     if (serverEntryIterator == null) {
-      List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries, servers);
+      List<ServerEntry> entries = upstream.acquireAdaptiveServers(maxTries);
       serverEntryIterator = entries.iterator();
     }
 
@@ -191,8 +188,7 @@ public class RequestBalancer implements RequestEngine {
 
     if (isServerAvailable()) {
       boolean isError = wrapper != null && upstream.getConfig().getRetryPolicy().isServerError(wrapper.getResponse());
-      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMicros,
-              adaptive && !adaptiveFailed, servers);
+      upstream.releaseServer(currentServer.getIndex(), isError, timeToLastByteMicros, adaptive && !adaptiveFailed);
     }
   }
 
