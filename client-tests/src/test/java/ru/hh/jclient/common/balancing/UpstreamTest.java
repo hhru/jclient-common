@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.getDefaultConfig;
 import ru.hh.jclient.consul.ValueNode;
 
 import java.util.HashMap;
@@ -99,9 +100,8 @@ public class UpstreamTest {
 
   @Test
   public void acquireReleaseServerWithFails() {
-    Map<String, ValueNode> values = new HashMap<>();
     List<Server> servers = List.of(new Server("a", 1, null));
-    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, buildValueNode(values));
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers);
     int serverIndex = 0;
     Server server = servers.get(serverIndex);
     assertEquals(0, server.getFails());
@@ -122,8 +122,9 @@ public class UpstreamTest {
     Map<String, ValueNode> values = new HashMap<>();
     values.put("max_fails", new ValueNode("0"));
     values.put("fail_timeout_sec", new ValueNode("0.1"));
+    UpstreamConfig config = UpstreamConfig.fromTree(TEST_SERVICE_NAME, DEFAULT, DEFAULT, buildValueNode(values));
 
-    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, buildValueNode(values));
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, config);
     int index = upstream.acquireServer(servers).getIndex();
     upstream.releaseServer(index, true, 100);
 
@@ -179,11 +180,10 @@ public class UpstreamTest {
   }
 
   private static Upstream createTestUpstream(String serviceName, List<Server> servers) {
-    return createTestUpstream(serviceName, servers, new ValueNode());
+    return createTestUpstream(serviceName, servers, getDefaultConfig());
   }
 
-  private static Upstream createTestUpstream(String serviceName, List<Server> servers, ValueNode valueNode) {
-    UpstreamConfig config = UpstreamConfig.fromTree(serviceName, DEFAULT, DEFAULT, valueNode);
+  private static Upstream createTestUpstream(String serviceName, List<Server> servers, UpstreamConfig config) {
     return new Upstream(serviceName, config, servers, mock(ScheduledExecutorService.class));
   }
 
