@@ -49,7 +49,7 @@ final class RetryPolicy {
       .collect(Collectors.toMap(ci -> ci.code, ci -> ci.idempotent, (i1, i2) -> i1 || i2));
   }
 
-  boolean isRetriable(Response response, boolean idempotent) {
+  public boolean isRetriable(Response response, boolean idempotent) {
     int statusCode = response.getStatusCode();
 
     if (statusCode == CONNECT_TIMEOUT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {
@@ -64,7 +64,7 @@ final class RetryPolicy {
     return retryNonIdempotent || idempotent;
   }
 
-  boolean isServerError(Response response) {
+  public boolean isServerError(Response response) {
     int statusCode = response.getStatusCode();
 
     if (statusCode == CONNECT_TIMEOUT_ERROR && CONNECT_ERROR_MESSAGE.equals(response.getStatusText())) {

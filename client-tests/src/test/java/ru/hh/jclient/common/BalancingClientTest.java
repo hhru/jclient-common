@@ -117,7 +117,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
           return null;
         });
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(Long.toString(TimeUnit.SECONDS.toMillis(1)))));
-    getTestClient().get("http://foo/get");
+    getTestClient().get("https://foo/get");
     assertHostEquals(request[0], "foo");
   }
 
@@ -231,12 +231,12 @@ public class BalancingClientTest extends BalancingClientTestBase {
         return null;
       });
 
-    http.with(new RequestBuilder("GET").setUrl("http://not-balanced-backend/path?query").build())
+    http.with(new RequestBuilder("GET").setUrl("https://not-balanced-backend/path?query").build())
       .expectPlainText().result().get();
 
     Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-      eq("http://not-balanced-backend"), eq(null), eq("http://not-balanced-backend"), eq(200), anyLong(), eq(true)
+      eq("https://not-balanced-backend"), eq(null), eq("https://not-balanced-backend"), eq(200), anyLong(), eq(true)
     );
   }
 

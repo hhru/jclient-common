@@ -1,9 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
 import ru.hh.jclient.common.HttpClient;
+import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngineBuilder;
 import ru.hh.jclient.common.RequestStrategy;
+
+import java.util.Optional;
+import java.util.Set;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder {
 
@@ -22,7 +26,27 @@ public class RequestBalancerBuilder implements RequestEngineBuilder {
 
   @Override
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
-    return new RequestBalancer(request, upstreamManager, requestExecutor, maxTimeoutTries, forceIdempotence, adaptive, profile);
+    String host = request.getUri().getHost();
+    Upstream upstream = upstreamManager.getUpstream(host, profile);
+    double timeoutMultiplier = upstreamManager.getTimeoutMultiplier();
+    Set<Monitoring> monitoring = upstreamManager.getMonitoring();
+    if (upstream == null) {
+      int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElse(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES);
+      return new ExternalUrlRequestor(request, requestExecutor,
+        requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_MAX_TRIES,
+        timeoutMultiplier, forceIdempotence, monitoring);
+    } else {
+      int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(() -> upstream.getConfig().getMaxTimeoutTries());
+      BalancingState state;
+      if (adaptive) {
+        state = new AdaptiveBalancingState(upstream);
+      } else {
+        state = new BalancingState(upstream);
+      }
+      return new UpstreamRequestBalancer(state, request, requestExecutor,
+        maxTimeoutTries, forceIdempotence, timeoutMultiplier, monitoring
+      );
+    }
   }
 
   @Override

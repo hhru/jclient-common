@@ -8,10 +8,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static ru.hh.jclient.common.balancing.RequestBalancer.WARM_UP_DEFAULT_TIME_MICROS;
+
 final class AdaptiveBalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdaptiveBalancingStrategy.class);
 
-  static final int WARM_UP_DEFAULT_TIME_MICROS = 100_000;
   static final int DOWNTIME_DETECTOR_WINDOW = 100;
   static final int RESPONSE_TIME_TRACKER_WINDOW = 500;
   private static final int lowestHealthPercent = 2;

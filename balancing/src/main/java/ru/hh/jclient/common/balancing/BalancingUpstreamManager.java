@@ -19,7 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class BalancingUpstreamManager extends UpstreamManager {
 
-  static final String SCHEMA_SEPARATOR = "://";
+  public static final String SCHEMA_SEPARATOR = "://";
   private static final int SCHEMA_SEPARATOR_LEN = 3;
 
   private final Map<String, UpstreamGroup> upstreams = new ConcurrentHashMap<>();
