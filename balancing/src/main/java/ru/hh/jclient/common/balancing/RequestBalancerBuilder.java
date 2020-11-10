@@ -31,6 +31,9 @@ public class RequestBalancerBuilder implements RequestEngineBuilder {
     double timeoutMultiplier = upstreamManager.getTimeoutMultiplier();
     Set<Monitoring> monitoring = upstreamManager.getMonitoring();
     if (upstream == null) {
+      if (request.getUri().getScheme().equals("http")) {
+        throw new IllegalStateException("external requests must be provided with https");
+      }
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElse(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES);
       return new ExternalUrlRequestor(request, requestExecutor,
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_MAX_TRIES,

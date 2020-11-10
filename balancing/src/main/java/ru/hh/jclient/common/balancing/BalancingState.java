@@ -44,7 +44,7 @@ public class BalancingState {
     setCurrentServer(upstream.acquireServer(getTriedServers()));
   }
 
-  public void relaseServer(long timeToLastByteMicros, boolean isServerError) {
+  public void releaseServer(long timeToLastByteMicros, boolean isServerError) {
     if (isServerAvailable()) {
       upstream.releaseServer(getCurrentServer().getIndex(), isServerError, timeToLastByteMicros, false);
     }

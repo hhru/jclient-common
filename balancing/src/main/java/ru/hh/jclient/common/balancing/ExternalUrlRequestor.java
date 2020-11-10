@@ -22,9 +22,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
                               Set<Monitoring> monitorings
   ) {
     super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier, forceIdempotence);
-    if (request.getUri().getScheme().equals("http")) {
-      throw new IllegalStateException("external requests must be provided with https");
-    }
     this.monitorings = monitorings;
   }
 
@@ -45,7 +42,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
       long requestTimeMicros = wrapper.getTimeToLastByteMicros();
 
       String serverAddress;
-      String dcName = null;
+      String dcName = "externalRequest";
       Uri originalUri = request.getUri();
       Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
       serverAddress = baseUri.toString();

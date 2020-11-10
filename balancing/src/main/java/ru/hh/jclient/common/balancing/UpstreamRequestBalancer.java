@@ -83,7 +83,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
 
   @Override
   protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMicros) {
-    state.relaseServer(timeToLastByteMicros, isServerError(wrapper));
+    state.releaseServer(timeToLastByteMicros, isServerError(wrapper));
   }
 
   @Override
