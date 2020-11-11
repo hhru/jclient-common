@@ -125,18 +125,18 @@ public abstract class RequestBalancer implements RequestEngine {
   private void logFinalResponse(int statusCode, Response response) {
     String messageTemplate = "{}: {} {} on {} {}, trace: {}";
     if (statusCode >= 500) {
-      LOGGER.warn(messageTemplate, "HTTP_CLIENT_ERROR_FINAL", response.getStatusCode(), response.getStatusText(),
+      LOGGER.warn(messageTemplate, "balanced_request_final_error", response.getStatusCode(), response.getStatusText(),
         request.getMethod(), request.getUri(), getTrace()
       );
     } else {
-      LOGGER.info(messageTemplate, "HTTP_CLIENT_RESPONSE_FINAL", response.getStatusCode(), response.getStatusText(),
+      LOGGER.info(messageTemplate, "balanced_request_final_response", response.getStatusCode(), response.getStatusText(),
         request.getMethod(), request.getUri(), getTrace()
       );
     }
   }
 
   private void logRetryResponse(int statusCode, Response response) {
-    String messageTemplate = "HTTP_CLIENT_RESPONSE: {} {} on {} {}";
+    String messageTemplate = "balanced_request_response: {} {} on {} {}";
     if (statusCode >= 500) {
       LOGGER.info(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), request.getUri());
     } else {
