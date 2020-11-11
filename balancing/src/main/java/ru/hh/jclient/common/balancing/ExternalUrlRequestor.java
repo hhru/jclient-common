@@ -11,6 +11,7 @@ import ru.hh.jclient.common.Uri;
 import java.util.Set;
 
 public class ExternalUrlRequestor extends RequestBalancer {
+  public static final String DC_FOR_EXTERNAL_REQUESTS = "externalRequest";
   private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
   private final Set<Monitoring> monitorings;
@@ -42,16 +43,15 @@ public class ExternalUrlRequestor extends RequestBalancer {
       long requestTimeMicros = wrapper.getTimeToLastByteMicros();
 
       String serverAddress;
-      String dcName = "externalRequest";
       Uri originalUri = request.getUri();
       Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
       serverAddress = baseUri.toString();
 
-      monitoring.countRequest(serverAddress, dcName, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
-      monitoring.countRequestTime(null, dcName, requestTimeMicros);
+      monitoring.countRequest(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
+      monitoring.countRequestTime(null, DC_FOR_EXTERNAL_REQUESTS, requestTimeMicros);
 
       if (triesUsed > 0) {
-        monitoring.countRetry(serverAddress, dcName, serverAddress, statusCode, firstStatusCode, triesUsed);
+        monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, firstStatusCode, triesUsed);
       }
     }
   }

@@ -40,8 +40,7 @@ public class AdaptiveBalancingState extends BalancingState {
 
   private ServerEntry acquireAdaptiveServer() {
     if (serverEntryIterator == null) {
-      //TODO почему maxTries было вынесено в параметр, если достается из апстрима???
-      List<ServerEntry> entries = upstream.acquireAdaptiveServers(upstream.getConfig().getMaxTries());
+      List<ServerEntry> entries = upstream.acquireAdaptiveServers();
       serverEntryIterator = entries.iterator();
     }
     return serverEntryIterator.next();

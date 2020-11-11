@@ -12,6 +12,8 @@ import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
+
+import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
@@ -236,7 +238,9 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-      eq("https://not-balanced-backend"), eq(null), eq("https://not-balanced-backend"), eq(200), anyLong(), eq(true)
+      eq("https://not-balanced-backend"), eq(ExternalUrlRequestor.DC_FOR_EXTERNAL_REQUESTS),
+      eq("https://not-balanced-backend"),
+      eq(200), anyLong(), eq(true)
     );
   }
 
