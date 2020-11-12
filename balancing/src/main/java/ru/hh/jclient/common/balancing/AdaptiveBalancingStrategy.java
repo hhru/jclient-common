@@ -20,7 +20,7 @@ final class AdaptiveBalancingStrategy {
 
   static List<Integer> getServers(List<Server> servers, int retriesCount) {
     int n = servers.size();
-    int count = Math.max(n, retriesCount);
+    int count = Math.min(n, retriesCount);
     if (servers.isEmpty()) {
       return Collections.emptyList();
     }
@@ -58,7 +58,7 @@ final class AdaptiveBalancingStrategy {
 
     for (int j = 0; j < n; j++) {
       long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MICROS : scores[j];
-      scores[j] = isAnyWarmingUp ? time : (long) Math.round((float) min * max / time);
+      scores[j] = isAnyWarmingUp ? time : Math.round((float) min * max / time);
     }
 
     // adjust scores based on downtime detector health and response time tracker score
