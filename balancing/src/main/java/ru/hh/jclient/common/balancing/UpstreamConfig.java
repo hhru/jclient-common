@@ -83,27 +83,27 @@ public final class UpstreamConfig {
 
   }
 
-  int getMaxTries() {
+  public int getMaxTries() {
     return maxTries;
   }
 
-  int getMaxFails() {
+  public int getMaxFails() {
     return maxFails;
   }
 
-  int getMaxTimeoutTries() {
+  public int getMaxTimeoutTries() {
     return maxTimeoutTries;
   }
 
-  int getFailTimeoutMs() {
+  public int getFailTimeoutMs() {
     return failTimeoutMs;
   }
 
-  int getConnectTimeoutMs() {
+  public int getConnectTimeoutMs() {
     return connectTimeoutMs;
   }
 
-  int getRequestTimeoutMs() {
+  public int getRequestTimeoutMs() {
     return requestTimeoutMs;
   }
 

@@ -65,7 +65,7 @@ public class Upstream {
     }
   }
 
-  List<ServerEntry> acquireAdaptiveServers(int retriesCount) {
+  List<ServerEntry> acquireAdaptiveServers() {
     configReadLock.lock();
     try {
       List<Server> allowedServers = new ArrayList<>();
@@ -79,7 +79,7 @@ public class Upstream {
       }
 
       return AdaptiveBalancingStrategy
-          .getServers(allowedServers, retriesCount)
+          .getServers(allowedServers, getConfig().getMaxTries())
           .stream()
           .map(id -> {
             Server server = allowedServers.get(id);
