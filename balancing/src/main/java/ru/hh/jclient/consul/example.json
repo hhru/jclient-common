@@ -11,8 +11,12 @@
           "connect_timeout_sec" : 13,
           "request_timeout_sec" : 17,
           "retry_policy" : {
-            "503" : true,
-            "599" : false
+            "503" : {
+              "idempotent" : true
+            },
+            "599" : {
+              "idempotent" : false
+            }
           }
         },
         "first" : {
@@ -24,8 +28,12 @@
           "connect_timeout_sec" : 13,
           "request_timeout_sec" : 17,
           "retry_policy" : {
-            "503" : true,
-            "599" : false
+            "503" : {
+              "idempotent" : true
+            },
+            "599" : {
+              "idempotent" : false
+            }
           }
         }
       }
@@ -41,8 +49,12 @@
           "connect_timeout_sec" : 13,
           "request_timeout_sec" : 17,
           "retry_policy" : {
-            "503" : true,
-            "599" : false
+            "503" : {
+              "idempotent" : true
+            },
+            "599" : {
+              "idempotent" : false
+            }
           }
         },
         "first" : {
@@ -54,12 +66,15 @@
           "connect_timeout_sec" : 13,
           "request_timeout_sec" : 17,
           "retry_policy" : {
-            "503" : true,
-            "599" : false
+            "503" : {
+              "idempotent" : true
+            },
+            "599" : {
+              "idempotent" : false
+            }
           }
         }
       }
     }
   }
 }
-

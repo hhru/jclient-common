@@ -19,13 +19,13 @@ public class Profile {
   @JsonProperty("request_timeout_sec")
   private int requestTimeoutMs;
   @JsonProperty("retry_policy")
-  private Map<Integer, Boolean> retryPolicy;
+  private Map<Integer, RetryPolicyConfig> retryPolicy;
 
-  public Map<Integer, Boolean> getRetryPolicy() {
+  public Map<Integer, RetryPolicyConfig> getRetryPolicy() {
     return retryPolicy;
   }
 
-  public Profile setRetryPolicy(Map<Integer, Boolean> retryPolicy) {
+  public Profile setRetryPolicy(Map<Integer, RetryPolicyConfig> retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
   }
