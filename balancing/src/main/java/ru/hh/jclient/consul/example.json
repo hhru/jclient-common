@@ -1,0 +1,65 @@
+{
+  "hosts" : {
+    "default" : {
+      "profiles" : {
+        "second" : {
+          "name" : "first",
+          "max_tries" : 16,
+          "max_fails" : 15,
+          "max_timeout_tries" : 18,
+          "fail_timeout_sec" : 14,
+          "connect_timeout_sec" : 13,
+          "request_timeout_sec" : 17,
+          "retry_policy" : {
+            "503" : true,
+            "599" : false
+          }
+        },
+        "first" : {
+          "name" : "first",
+          "max_tries" : 16,
+          "max_fails" : 15,
+          "max_timeout_tries" : 18,
+          "fail_timeout_sec" : 14,
+          "connect_timeout_sec" : 13,
+          "request_timeout_sec" : 17,
+          "retry_policy" : {
+            "503" : true,
+            "599" : false
+          }
+        }
+      }
+    },
+    "host2" : {
+      "profiles" : {
+        "second" : {
+          "name" : "first",
+          "max_tries" : 16,
+          "max_fails" : 15,
+          "max_timeout_tries" : 18,
+          "fail_timeout_sec" : 14,
+          "connect_timeout_sec" : 13,
+          "request_timeout_sec" : 17,
+          "retry_policy" : {
+            "503" : true,
+            "599" : false
+          }
+        },
+        "first" : {
+          "name" : "first",
+          "max_tries" : 16,
+          "max_fails" : 15,
+          "max_timeout_tries" : 18,
+          "fail_timeout_sec" : 14,
+          "connect_timeout_sec" : 13,
+          "request_timeout_sec" : 17,
+          "retry_policy" : {
+            "503" : true,
+            "599" : false
+          }
+        }
+      }
+    }
+  }
+}
+
