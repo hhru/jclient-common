@@ -51,7 +51,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     initConfigCache();
   }
 
-  private void readValues(Collection<Value> values) {
+  Map<String, ApplicationConfig> readValues(Collection<Value> values) {
     for (Value value : values) {
       String key = value.getKey();
       String[] keys = key.split("/");
@@ -69,6 +69,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
         throw new RuntimeException("Can't read value for key:" + key, e);
       }
     }
+    return configMap;
   }
 
   void notifyListeners() {
