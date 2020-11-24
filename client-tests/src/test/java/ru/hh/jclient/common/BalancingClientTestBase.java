@@ -345,7 +345,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     when(response.getStatusCode()).thenReturn(status);
     when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(MediaType.PLAIN_TEXT_UTF_8.toString());
-
+    when(response.getUri()).thenReturn(mock(org.asynchttpclient.uri.Uri.class));
     Request request = iom.getArgument(0);
     CompletionHandler handler = iom.getArgument(1);
     handler.onCompleted(response);

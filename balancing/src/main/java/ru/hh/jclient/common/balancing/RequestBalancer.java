@@ -79,7 +79,7 @@ public abstract class RequestBalancer implements RequestEngine {
       timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
       updateLeftTriesAndTime((int) timeToLastByteMicros);
       Response response = wrapper.getResponse();
-      this.trace.add(new TraceFrame(request.getUri().getHost(), response.getStatusCode(), response.getStatusText())); //todo response
+      this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
     }
     onRequestReceived(wrapper, timeToLastByteMicros);
   }
