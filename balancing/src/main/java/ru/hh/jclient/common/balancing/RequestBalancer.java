@@ -70,7 +70,7 @@ public abstract class RequestBalancer implements RequestEngine {
       .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
       .thenCompose(this::unwrapOrRetry);
   }
-
+// RequestBalancer позаменять request.getUri() -> response.getUri() в методах finishRequest() и logRetryResponse()
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
   private void finishRequest(ResponseWrapper wrapper) {

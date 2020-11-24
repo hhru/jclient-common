@@ -25,7 +25,7 @@ import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.ValueNode;
+import ru.hh.jclient.consul.model.config.ApplicationConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,7 +55,7 @@ public class CustomizationBenchmark {
   }
 
   private static final Upstream upstream = new Upstream(UPSTREAM,
-      UpstreamConfig.fromTree(UPSTREAM, null, null, new ValueNode()), servers, Executors.newScheduledThreadPool(1)
+      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null, null), servers, Executors.newScheduledThreadPool(1)
   );
   private static final UpstreamManager manager = new UpstreamManager() {
 

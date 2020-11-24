@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import ru.hh.jclient.consul.model.config.Profile;
 
 public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBalancingStrategyTest {
 
@@ -37,7 +38,7 @@ public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBa
     exceptionallyClosingServerAddress = createExceptionallyStoppingServer();
     httpClientFactory = buildBalancingFactory(
       DATACENTER, TEST_UPSTREAM,
-      Map.of("max_tries", "2", "max_fails", "1", "max_timeout_tries", "2", "request_timeout_sec", "0.5"),
+      new Profile().setMaxTimeoutTries(2),
       Map.of(1, List.of(exceptionallyClosingServerAddress, workingServerAddress)),
       requestRouteTracking
     );

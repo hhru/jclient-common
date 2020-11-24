@@ -1,4 +1,52 @@
 {
+  "profile": {
+    "externalRequestsProfile": {
+      "fail_timeout_sec": "5",
+      "max_fails": "3",
+      "request_timeout_sec": "6",
+      "retry_policy": "timeout,http_503,non_idempotent_503",
+      "max_tries": "2",
+      "connect_timeout_sec": "0.1",
+      "max_timeout_tries": "1"
+    },
+    "default": {
+      "max_tries": "2",
+      "retry_policy": "timeout,http_503,non_idempotent_503",
+      "max_fails": "3",
+      "request_timeout_sec": "1.4",
+      "fail_timeout_sec": "1",
+      "max_timeout_tries": "1",
+      "connect_timeout_sec": "0.1"
+    }
+  }
+}
+{
+  "hosts": {
+    "default": {
+      "profiles": {
+        "externalRequestsProfile": {
+          "max_tries": "2",
+          "max_timeout_tries": "1",
+          "connect_timeout_sec": "0.1",
+          "request_timeout_sec": "6",
+          "max_fails": "3",
+          "retry_policy": "timeout,http_503,non_idempotent_503",
+          "fail_timeout_sec": "5"
+        },
+        "default": {
+          "max_tries": "2",
+          "connect_timeout_sec": "0.1",
+          "max_timeout_tries": "1",
+          "request_timeout_sec": "1.4",
+          "fail_timeout_sec": "1",
+          "retry_policy": "timeout,http_503,non_idempotent_503",
+          "max_fails": "3"
+        }
+      }
+    }
+  }
+}
+{
   "hosts" : {
     "default" : {
       "profiles" : {

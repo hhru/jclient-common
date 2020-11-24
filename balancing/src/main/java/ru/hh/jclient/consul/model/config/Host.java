@@ -3,7 +3,16 @@ package ru.hh.jclient.consul.model.config;
 import java.util.Map;
 
 public class Host {
-  public Map<String, Profile> profiles;
+  private Map<String, Profile> profiles;
+
+  public Map<String, Profile> getProfiles() {
+    return profiles;
+  }
+
+  public Host setProfiles(Map<String, Profile> profiles) {
+    this.profiles = profiles;
+    return this;
+  }
 
   @Override
   public String toString() {

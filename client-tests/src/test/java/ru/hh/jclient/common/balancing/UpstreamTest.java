@@ -11,11 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.getDefaultConfig;
-import ru.hh.jclient.consul.ValueNode;
+import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
+import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.Profile;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class UpstreamTest {
@@ -23,7 +23,7 @@ public class UpstreamTest {
   private static final String TEST_SERVICE_NAME = "backend";
 
   private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
-  UpstreamConfig config = UpstreamConfig.fromTree(DEFAULT, DEFAULT, DEFAULT, new ValueNode());
+  UpstreamConfig config = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT, DEFAULT);
 
   @Test
   public void createUpstreamServiceOnly() {
@@ -119,10 +119,13 @@ public class UpstreamTest {
   @Test
   public void acquireReleaseWhenMaxFailsIsZero() {
     List<Server> servers = List.of(new Server("a", 1, null));
-    Map<String, ValueNode> values = new HashMap<>();
-    values.put("max_fails", new ValueNode("0"));
-    values.put("fail_timeout_sec", new ValueNode("0.1"));
-    UpstreamConfig config = UpstreamConfig.fromTree(TEST_SERVICE_NAME, DEFAULT, DEFAULT, buildValueNode(values));
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    Profile profile = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
+    profile.setMaxFails(0)
+        .setFailTimeoutMs(0.1f);
+
+    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
 
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, config);
     int index = upstream.acquireServer(servers).getIndex();
@@ -189,15 +192,5 @@ public class UpstreamTest {
 
   private static List<Server> buildServers(){
     return List.of(new Server("a", 1, null), new Server("b", 2, null));
-  }
-
-  private ValueNode buildValueNode(Map<String, ValueNode> values) {
-    ValueNode rootNode = new ValueNode();
-    ValueNode serviceNode = rootNode.computeMapIfAbsent(TEST_SERVICE_NAME);
-    ValueNode hostNode = serviceNode.computeMapIfAbsent(DEFAULT);
-    ValueNode profileNode = hostNode.computeMapIfAbsent(UpstreamConfig.PROFILE_NODE);
-    ValueNode defaultProfile = profileNode.computeMapIfAbsent(DEFAULT);
-    defaultProfile.putAll(values);
-    return rootNode;
   }
 }

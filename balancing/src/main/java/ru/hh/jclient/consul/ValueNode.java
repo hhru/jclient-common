@@ -6,14 +6,14 @@ import java.util.Map;
 public class ValueNode {
   private final boolean valueNode;
   private Map<String, ValueNode> map;
-  private String value;
+  private Integer value;
 
   public ValueNode() {
     this.map = new HashMap<>();
     this.valueNode = false;
   }
 
-  public ValueNode(String value) {
+  public ValueNode(Integer value) {
     this.value = value;
     this.valueNode = true;
   }
@@ -22,12 +22,12 @@ public class ValueNode {
     return map;
   }
 
-  public String getValue() {
+  public Integer getValue() {
     checkTypeAndThrow(true);
     return value;
   }
 
-  public void putValue(String key, String value) {
+  public void putValue(String key, Integer value) {
     checkTypeAndThrow(false);
     map.put(key, new ValueNode(value));
   }
@@ -52,7 +52,7 @@ public class ValueNode {
     return map.get(key);
   }
 
-  public String getValue(String key) {
+  public Integer getValue(String key) {
     checkTypeAndThrow(false);
     ValueNode valueNode = map.get(key);
     return valueNode != null ? valueNode.getValue() : null;

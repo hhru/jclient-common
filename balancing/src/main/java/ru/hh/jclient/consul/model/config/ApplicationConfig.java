@@ -3,7 +3,7 @@ package ru.hh.jclient.consul.model.config;
 import java.util.Map;
 
 public class ApplicationConfig {
-  Map<String, Host> hosts;
+  private Map<String, Host> hosts;
 
   public Map<String, Host> getHosts() {
     return hosts;

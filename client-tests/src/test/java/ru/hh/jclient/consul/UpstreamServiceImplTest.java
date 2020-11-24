@@ -13,8 +13,8 @@ import com.orbitz.consul.model.health.ImmutableServiceHealth;
 import com.orbitz.consul.model.health.Node;
 import com.orbitz.consul.model.health.Service;
 import com.orbitz.consul.model.health.ServiceHealth;
+import com.orbitz.consul.option.ConsistencyMode;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
@@ -39,7 +39,8 @@ public class UpstreamServiceImplTest {
 
   @Before
   public void init() {
-    upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, watchSeconds, DATA_CENTER, null,  allowCrossDC);
+    upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, watchSeconds, DATA_CENTER,
+        null,  allowCrossDC, true, ConsistencyMode.DEFAULT);
   }
 
   @Test
@@ -89,35 +90,12 @@ public class UpstreamServiceImplTest {
   }
 
   @Test
-  public void testServerFailed() {
-    String address1 = "a1";
-    int weight = 12;
-    int port = 125;
-
-    //create
-    ServiceHealth serviceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, true);
-    Map<ServiceHealthKey, ServiceHealth> upstreams = Map.of(buildKey(address1), serviceHealth);
-    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
-    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
-    Server server = servers.get(0);
-    assertTrue(server.isActive());
-
-    //update
-    ServiceHealth updateServiceHealth = buildServiceHealth(address1, port, DATA_CENTER, NODE_NAME, weight, false);
-    Map<ServiceHealthKey, ServiceHealth> updateUpstreams = Map.of(buildKey(address1), updateServiceHealth);
-    upstreamService.updateUpstreams(updateUpstreams, SERVICE_NAME, DATA_CENTER);
-
-    List<Server> updatedServers = upstreamService.getServers(SERVICE_NAME);
-    assertEquals(0, updatedServers.size());
-  }
-
-  @Test
   public void testSameNode() {
     String address1 = "a1";
     int weight = 12;
     int port1 = 124;
     UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient,
-        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC);
+        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC, false, ConsistencyMode.DEFAULT);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
 
@@ -139,7 +117,7 @@ public class UpstreamServiceImplTest {
     int port1 = 124;
     int port2 = 126;
     UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient,
-        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC);
+        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC, false, ConsistencyMode.DEFAULT);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);

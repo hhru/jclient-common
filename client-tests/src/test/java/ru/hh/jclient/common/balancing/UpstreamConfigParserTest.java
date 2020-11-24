@@ -2,23 +2,25 @@ package ru.hh.jclient.common.balancing;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import ru.hh.jclient.consul.ValueNode;
+import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.Host;
+import ru.hh.jclient.consul.model.config.Profile;
+import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class UpstreamConfigParserTest {
-  private static final String SERVICE_NAME = "backend1";
   private static final String DEFAULT = "default";
-  private static final String PROFILE = "profile";
 
   @Test
   public void testOneProfile() {
 
-    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, buildValueNode());
+    ApplicationConfig applicationConfig = buildTestConfig();
+
+    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
 
     assertEquals(3, config.getMaxTries());
     assertEquals(30, config.getMaxFails());
@@ -30,21 +32,15 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void testTwoProfiles() {
-    String profileName = "secondProfile";
+    String secondProfileName = "secondProfile";
+    Profile secondProfile = new Profile()
+        .setRequestTimeoutMs(8f)
+        .setMaxTries(7);
 
-    ValueNode rootNode = buildValueNode();
-    ValueNode profiles = rootNode
-            .getNode(SERVICE_NAME)
-            .getNode(DEFAULT)
-            .getNode(PROFILE);
-    profiles.computeMapIfAbsent("firstProfile");
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().put(secondProfileName, secondProfile);
 
-    ValueNode secondProfile = profiles.computeMapIfAbsent(profileName);
-
-    secondProfile.putValue("max_tries", "7");
-    secondProfile.putValue("request_timeout_sec", "8");
-
-    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, profileName, DEFAULT, rootNode);
+    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, secondProfileName);
 
     assertEquals(7, config.getMaxTries());
     assertEquals(8000, config.getRequestTimeoutMs());
@@ -52,8 +48,7 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void testDefaultConfig() {
-    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, new ValueNode());
-
+    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT, DEFAULT);
 
     assertEquals(UpstreamConfig.DEFAULT_MAX_TRIES, config.getMaxTries());
     assertEquals(UpstreamConfig.DEFAULT_MAX_FAILS, config.getMaxFails());
@@ -67,54 +62,34 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void parseRetryPolicy() {
-    ValueNode rootNode = buildValueNode();
-    ValueNode profile = rootNode
-            .getNode(SERVICE_NAME)
-            .getNode(DEFAULT)
-            .getNode(PROFILE)
-            .getNode(DEFAULT);
-    profile.putValue("retry_policy", "timeout,http_503,non_idempotent_503");
+    ApplicationConfig applicationConfig = buildTestConfig();
+    Map<Integer, RetryPolicyConfig> retryPolicy = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).getRetryPolicy();
+    retryPolicy.put(503, new RetryPolicyConfig().setIdempotent(true));
+    retryPolicy.put(599, new RetryPolicyConfig().setIdempotent(false));
 
-    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, rootNode);
+    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
 
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertTrue(config.getRetryPolicy().getRules().get(503));
   }
 
-  @Test
-  public void parseUnknownRetryPolicy() {
-    ValueNode rootNode = buildValueNode();
-    ValueNode profile = rootNode
-            .getNode(SERVICE_NAME)
-            .getNode(DEFAULT)
-            .getNode(PROFILE)
-            .getNode(DEFAULT);
-    profile.putValue("retry_policy", "timeout,unknown");
+  public static ApplicationConfig buildTestConfig() {
 
-    UpstreamConfig config = UpstreamConfig.fromTree(SERVICE_NAME, DEFAULT, DEFAULT, rootNode);
-    assertFalse(config.getRetryPolicy().getRules().get(599));
-    assertNull(config.getRetryPolicy().getRules().get(503));
+    Profile profile = new Profile()
+        .setConnectTimeoutMs(0.2f)
+        .setFailTimeoutMs(1.5f)
+        .setMaxFails(30)
+        .setMaxTries(3)
+        .setRequestTimeoutMs(2f)
+        .setMaxTimeoutTries(2)
+        .setRetryPolicy(new HashMap<>())
+        .setName("first");
+
+    Host host = new Host();
+    Map<String, Profile> profiles = new HashMap<>();
+    profiles.put(DEFAULT, profile);
+    host.setProfiles(profiles);
+    Map<String, Host> hostMap = Map.of(DEFAULT, host);
+    return new ApplicationConfig().setHosts(hostMap);
   }
-
-  private ValueNode buildValueNode() {
-    ValueNode rootNode = new ValueNode();
-    ValueNode serviceNode = rootNode.computeMapIfAbsent(SERVICE_NAME);
-    ValueNode hostNode = serviceNode.computeMapIfAbsent("default");
-    ValueNode profileNode = hostNode.computeMapIfAbsent(PROFILE);
-    ValueNode defaultProfile = profileNode.computeMapIfAbsent("default");
-    defaultProfile.putAll(buildValues());
-    return rootNode;
-  }
-
-  private Map<String, ValueNode> buildValues() {
-    Map<String, ValueNode> values = new HashMap<>();
-    values.put("max_tries", new ValueNode("3"));
-    values.put("max_timeout_tries", new ValueNode("2"));
-    values.put("max_fails", new ValueNode("30"));
-    values.put("connect_timeout_sec", new ValueNode("0.2"));
-    values.put("request_timeout_sec", new ValueNode("2"));
-    values.put("fail_timeout_sec", new ValueNode("1.5"));
-    return values;
-  }
-
 }

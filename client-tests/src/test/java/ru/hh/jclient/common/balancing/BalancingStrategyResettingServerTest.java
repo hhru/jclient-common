@@ -32,7 +32,6 @@ public class BalancingStrategyResettingServerTest extends AbstractBalancingStrat
     resettingServerAddress = createResettingServer();
     httpClientFactory = buildBalancingFactory(
       DATACENTER, TEST_UPSTREAM,
-      Map.of("max_tries", "2", "max_fails", "1", "max_timeout_tries", "1", "request_timeout_sec", "0.5"),
       Map.of(1, List.of(resettingServerAddress, workingServerAddress)),
       requestRouteTracking
     );

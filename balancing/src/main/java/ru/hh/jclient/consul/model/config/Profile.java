@@ -7,17 +7,17 @@ import java.util.Map;
 public class Profile {
   private String name;
   @JsonProperty("max_tries")
-  private int maxTries;
+  private Integer maxTries;
   @JsonProperty("max_fails")
-  private int maxFails;
+  private Integer maxFails;
   @JsonProperty("max_timeout_tries")
-  private int maxTimeoutTries;
+  private Integer maxTimeoutTries;
   @JsonProperty("fail_timeout_sec")
-  private int failTimeoutMs;
+  private Float failTimeoutMs;
   @JsonProperty("connect_timeout_sec")
-  private int connectTimeoutMs;
+  private Float connectTimeoutMs;
   @JsonProperty("request_timeout_sec")
-  private int requestTimeoutMs;
+  private Float requestTimeoutMs;
   @JsonProperty("retry_policy")
   private Map<Integer, RetryPolicyConfig> retryPolicy;
 
@@ -30,56 +30,56 @@ public class Profile {
     return this;
   }
 
-  public int getMaxTries() {
+  public Integer getMaxTries() {
     return maxTries;
   }
 
-  public Profile setMaxTries(int maxTries) {
+  public Profile setMaxTries(Integer maxTries) {
     this.maxTries = maxTries;
     return this;
   }
 
-  public int getMaxFails() {
+  public Integer getMaxFails() {
     return maxFails;
   }
 
-  public Profile setMaxFails(int maxFails) {
+  public Profile setMaxFails(Integer maxFails) {
     this.maxFails = maxFails;
     return this;
   }
 
-  public int getMaxTimeoutTries() {
+  public Integer getMaxTimeoutTries() {
     return maxTimeoutTries;
   }
 
-  public Profile setMaxTimeoutTries(int maxTimeoutTries) {
+  public Profile setMaxTimeoutTries(Integer maxTimeoutTries) {
     this.maxTimeoutTries = maxTimeoutTries;
     return this;
   }
 
-  public int getFailTimeoutMs() {
+  public Float getFailTimeoutMs() {
     return failTimeoutMs;
   }
 
-  public Profile setFailTimeoutMs(int failTimeoutMs) {
+  public Profile setFailTimeoutMs(Float failTimeoutMs) {
     this.failTimeoutMs = failTimeoutMs;
     return this;
   }
 
-  public int getConnectTimeoutMs() {
+  public Float getConnectTimeoutMs() {
     return connectTimeoutMs;
   }
 
-  public Profile setConnectTimeoutMs(int connectTimeoutMs) {
+  public Profile setConnectTimeoutMs(Float connectTimeoutMs) {
     this.connectTimeoutMs = connectTimeoutMs;
     return this;
   }
 
-  public int getRequestTimeoutMs() {
+  public Float getRequestTimeoutMs() {
     return requestTimeoutMs;
   }
 
-  public Profile setRequestTimeoutMs(int requestTimeoutMs) {
+  public Profile setRequestTimeoutMs(Float requestTimeoutMs) {
     this.requestTimeoutMs = requestTimeoutMs;
     return this;
   }

@@ -11,11 +11,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.ValueNode;
+import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.Profile;
+import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class UpstreamManagerTest {
@@ -25,10 +30,11 @@ public class UpstreamManagerTest {
 
   @Test
   public void createUpstreamManager() {
-    ValueNode rootNode = new ValueNode();
-    ValueNode profileNode = buildProfileNode(rootNode);
-    profileNode.putValue("max_fails", "5");
-    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+        .setMaxFails(5);
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
 
     UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
 
@@ -38,24 +44,30 @@ public class UpstreamManagerTest {
 
     assertEquals(5, upstream.getConfig().getMaxFails());
 
+    assertNotNull(upstream.getConfig().getRetryPolicy().getRules());
     assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
     assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
   }
 
   @Test
   public void updateUpstreams() {
-    ValueNode rootNode = new ValueNode();
-    ValueNode profileNode = buildProfileNode(rootNode);
-    profileNode.putValue("max_fails", "5");
-    profileNode.putValue("retry_policy", "timeout");
-    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
+    ApplicationConfig applicationConfig = buildTestConfig();
+    Profile profile = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
 
+    profile
+        .setMaxFails(5)
+        .setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
     UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
 
-    profileNode.putValue("max_fails", "6");
+    profile.setMaxFails(6);
     manager.updateUpstream(TEST_BACKEND);
 
-    profileNode.putValue("retry_policy", "http_503,non_idempotent_503,http_500");
+    profile.setRetryPolicy(Map.of(
+            500, new RetryPolicyConfig().setIdempotent(false),
+            503, new RetryPolicyConfig().setIdempotent(true)
+        ));
     manager.updateUpstream(TEST_BACKEND);
 
     Upstream upstream = manager.getUpstream(TEST_BACKEND);
@@ -70,7 +82,8 @@ public class UpstreamManagerTest {
 
   @Test
   public void testGetUpstream() {
-    when(upstreamConfigService.getUpstreamConfig()).thenReturn(new ValueNode());
+    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(new ApplicationConfig());
+
     UpstreamManager upstreamManager = createUpstreamManager(List.of(TEST_BACKEND));
 
     assertNotNull(upstreamManager.getUpstream(TEST_BACKEND));
@@ -82,12 +95,6 @@ public class UpstreamManagerTest {
     assertNull(upstreamManager.getUpstream("missing_upstream"));
   }
 
-  private ValueNode buildProfileNode(ValueNode rootNode) {
-    return rootNode.computeMapIfAbsent(TEST_BACKEND)
-            .computeMapIfAbsent(UpstreamConfig.DEFAULT)
-            .computeMapIfAbsent(UpstreamConfig.PROFILE_NODE)
-            .computeMapIfAbsent(UpstreamConfig.DEFAULT);
-  }
 
   private static UpstreamManager createUpstreamManager(List<String> upstreamList) {
     Monitoring monitoring = mock(Monitoring.class);

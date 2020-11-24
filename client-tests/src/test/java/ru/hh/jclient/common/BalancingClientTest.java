@@ -16,8 +16,10 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
-import ru.hh.jclient.common.balancing.UpstreamConfig;
-import ru.hh.jclient.consul.ValueNode;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.Host;
+import ru.hh.jclient.consul.model.config.Profile;
 
 import java.util.List;
 import java.util.Map;
@@ -31,19 +33,21 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Test
   public void requestWithProfile() throws Exception {
     String profileFoo = "foo";
-    String profilebar = "bar";
-    ValueNode rootNode = new ValueNode();
-    ValueNode profileNode = buildProfileNode(rootNode);
+    String profileBar = "bar";
+    Map<String, Profile> profiles = Map.of(
+        DEFAULT, new Profile().setRequestTimeoutMs(33f),
+        profileFoo, new Profile().setRequestTimeoutMs(22f),
+        profileBar, new Profile().setRequestTimeoutMs(11f)
+    );
 
-    profileNode.computeMapIfAbsent(UpstreamConfig.DEFAULT).putValue("request_timeout_sec", "33");
-    profileNode.computeMapIfAbsent("foo").putValue("request_timeout_sec", "22");
-    profileNode.computeMapIfAbsent("bar").putValue("request_timeout_sec", "11");
+    ApplicationConfig applicationConfig = new ApplicationConfig().setHosts(Map.of(DEFAULT, new Host().setProfiles(profiles)));
 
-    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
     when(upstreamService.getServers(TEST_UPSTREAM + ":" + profileFoo)).thenReturn(List.of(new Server("server1", 1, null)));
-    when(upstreamService.getServers(TEST_UPSTREAM + ":" + profilebar)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(upstreamService.getServers(TEST_UPSTREAM + ":" + profileBar)).thenReturn(List.of(new Server("server1", 1, null)));
 
-    List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, profileFoo), profileName(TEST_UPSTREAM, profilebar));
+    List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, profileFoo), profileName(TEST_UPSTREAM, profileBar));
     createHttpClientFactory(upstreamList);
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))

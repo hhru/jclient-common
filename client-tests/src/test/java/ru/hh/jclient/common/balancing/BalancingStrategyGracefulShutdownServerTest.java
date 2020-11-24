@@ -34,7 +34,6 @@ public class BalancingStrategyGracefulShutdownServerTest extends AbstractBalanci
     gracefullyClosingServerAddress = createGracefullyClosingServer();
     httpClientFactory = buildBalancingFactory(
       DATACENTER, TEST_UPSTREAM,
-      Map.of("max_tries", "2", "max_fails", "1", "max_timeout_tries", "2", "request_timeout_sec", "0.5"),
       Map.of(1, List.of(gracefullyClosingServerAddress, workingServerAddress)),
       requestRouteTracking
     );
