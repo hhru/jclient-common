@@ -22,18 +22,26 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
+import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamConfigServiceImpl;
 import ru.hh.jclient.consul.UpstreamServiceImpl;
 import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
 
+import java.io.IOException;
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -92,236 +100,232 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().get();
   }
-//
-//  @Test
-//  public void retryIOExceptionRemotelyClosed() throws Exception {
-//    createHttpClientFactory(List.of(TEST_UPSTREAM));
-//
-//    Request[] request = mockRetryIOException("Remotely closed");
-//    getTestClient().get();
-//
-//    assertRequestEquals(request, "server1", "server2");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void retryIdempotentIOExceptionResetByPeer() throws Exception {
-//    createHttpClientFactory(List.of(TEST_UPSTREAM));
-//
-//    Request[] request = mockRetryIOException("Connection reset by peer");
-//    getTestClient().get();
-//
-//    assertRequestEquals(request, "server1", "server2");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void doNotRetryNonIdempotentIOExceptionResetByPeer() throws Exception {
-//    createHttpClientFactory(List.of(TEST_UPSTREAM));
-//
-//    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-//      .then(iom -> {
-//        failWith(new IOException("Connection reset by peer"), iom);
-//        return null;
-//      });
-//
-//    try {
-//      getTestClient().post();
-//    } catch (ExecutionException e) {
-//      assertTrue(e.getCause() instanceof ClientResponseException);
-//      assertEquals(599, ((ClientResponseException) e.getCause()).getStatusCode());
-//
-//      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
-//    }
-//  }
-//
-//  private Request[] mockRetryIOException(String exceptionText) {
-//    Request[] request = new Request[2];
-//    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-//      .then(iom -> {
-//        request[0] = failWith(new IOException(exceptionText), iom);
-//        return null;
-//      })
-//      .then(iom -> {
-//        request[1] = completeWith(200, iom);
-//        return null;
-//      });
-//    return request;
-//  }
-//  ValueNode buildProfileNode(ApplicationConfig rootNode) {
-//    ValueNode serviceNode = rootNode.computeMapIfAbsent(TEST_UPSTREAM);
-//    ValueNode hostNode = serviceNode.computeMapIfAbsent(UpstreamConfig.DEFAULT);
-//    return hostNode.computeMapIfAbsent(UpstreamConfig.PROFILE_NODE);
-//  }
-//
-//  @Test
-//  public void retryConnectException() throws Exception {
-//    List<Server> servers = List.of(new Server("server1", 1, null),
-//            new Server("server2", 1, null),
-//            new Server("server3", 1, null),
-//            new Server("server4", 1, null)
-//    );
-//    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
-//
-//    ApplicationConfig rootNode = new ValueNode();
-//    ValueNode profile = buildProfileNode(rootNode).computeMapIfAbsent(UpstreamConfig.DEFAULT);
-//
-//    profile.putValue("max_tries", "4");
-//    profile.putValue("max_fails", "2");
-//    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
-//
-//
-//    createHttpClientFactory(List.of(TEST_UPSTREAM));
-//
-//    Request[] request = new Request[4];
-//    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-//        .then(iom -> {
-//          request[0] = failWith(new ConnectException("Connection refused"), iom);
-//          return null;
-//        })
-//        .then(iom -> {
-//          request[1] = failWith(new ConnectException("Connection reset by peer"), iom);
-//          return null;
-//        })
-//        .then(iom -> {
-//          request[2] = failWith(new ConnectException("No route to host"), iom);
-//          return null;
-//        })
-//        .then(iom -> {
-//          request[3] = completeWith(200, iom);
-//          return null;
-//        });
-//
-//    getTestClient().get();
-//
-//    assertRequestEquals(request, "server1", "server2", "server3", "server4");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void retry503() throws Exception {
-//    List<Server> servers = List.of(new Server("server1", 1, null),
-//            new Server("server2", 1, null),
-//            new Server("server3", 1, null)
-//    );
-//    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
-//
-//    ApplicationConfig rootNode = new ValueNode();
-//    ValueNode profile = buildProfileNode(rootNode).computeMapIfAbsent(UpstreamConfig.DEFAULT);
-//
-//    profile.putValue("max_tries", "3");
-//    profile.putValue("max_fails", "2");
-//    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
-//    createHttpClientFactory(List.of(TEST_UPSTREAM));
-//
-//    Request[] request = mockRequestWith503Response();
-//
-//    getTestClient().get();
-//
-//    assertRequestEquals(request, "server1", "server2", "server3");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void retryTimeoutException() throws Exception {
-//    createHttpClientFactory();
-//
-//    Request[] request = new Request[2];
-//    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-//        .then(iom -> {
-//          request[0] = failWith(new TimeoutException("Connect timed out"), iom);
-//          return null;
-//        })
-//        .then(iom -> {
-//          request[1] = completeWith(200, iom);
-//          return null;
-//        });
-//
-//    getTestClient().get();
-//
-//    assertRequestEquals(request, "server1", "server2");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void retry503ForNonIdempotentRequest() throws Exception {
-//    List<Server> servers = List.of(new Server("server1", 1, null),
-//            new Server("server2", 1, null),
-//            new Server("server3", 1, null)
-//    );
-//    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
-//
-//    ApplicationConfig rootNode = new ValueNode();
-//    ValueNode profile = buildProfileNode(rootNode).computeMapIfAbsent(UpstreamConfig.DEFAULT);
-//
-//    profile.putValue("max_tries", "3");
-//    profile.putValue("max_fails", "2");
-//    profile.putValue("retry_policy", "non_idempotent_503");
-//    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
-//
-//    createHttpClientFactory();
-//    Request[] request = mockRequestWith503Response();
-//
-//    getTestClient().post();
-//
-//    assertRequestEquals(request, "server1", "server2", "server3");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void retryConnectTimeoutException() throws Exception {
-//    List<Server> servers = List.of(new Server("server1", 1, null),
-//            new Server("server2", 1, null),
-//            new Server("server3", 1, null)
-//    );
-//    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
-//    ApplicationConfig rootNode = new ValueNode();
-//    ValueNode profile = buildProfileNode(rootNode).computeMapIfAbsent(UpstreamConfig.DEFAULT);
-//
-//    profile.putValue("max_tries", "3");
-//    profile.putValue("max_fails", "2");
-//    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
-//
-//    createHttpClientFactory();
-//
-//    Request[] request = mockRequestWithConnectTimeoutResponse();
-//
-//    getTestClient().get();
-//
-//    assertRequestEquals(request, "server1", "server2", "server3");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
-//
-//  @Test
-//  public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
-//    List<Server> servers = List.of(new Server("server1", 1, null),
-//            new Server("server2", 1, null),
-//            new Server("server3", 1, null)
-//    );
-//    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
-//    ApplicationConfig rootNode = new ValueNode();
-//    ValueNode profile = buildProfileNode(rootNode).computeMapIfAbsent(UpstreamConfig.DEFAULT);
-//
-//    profile.putValue("max_tries", "3");
-//    profile.putValue("max_fails", "2");
-//    when(upstreamConfigService.getUpstreamConfig()).thenReturn(rootNode);
-//
-//    createHttpClientFactory();
-//    Request[] request = mockRequestWithConnectTimeoutResponse();
-//
-//    getTestClient().post();
-//
-//    assertRequestEquals(request, "server1", "server2", "server3");
-//
-//    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
-//  }
+
+  @Test
+  public void retryIOExceptionRemotelyClosed() throws Exception {
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    Request[] request = mockRetryIOException("Remotely closed");
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryIdempotentIOExceptionResetByPeer() throws Exception {
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    Request[] request = mockRetryIOException("Connection reset by peer");
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void doNotRetryNonIdempotentIOExceptionResetByPeer() throws Exception {
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        failWith(new IOException("Connection reset by peer"), iom);
+        return null;
+      });
+
+    try {
+      getTestClient().post();
+    } catch (ExecutionException e) {
+      assertTrue(e.getCause() instanceof ClientResponseException);
+      assertEquals(599, ((ClientResponseException) e.getCause()).getStatusCode());
+
+      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+    }
+  }
+
+  private Request[] mockRetryIOException(String exceptionText) {
+    Request[] request = new Request[2];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+      .then(iom -> {
+        request[0] = failWith(new IOException(exceptionText), iom);
+        return null;
+      })
+      .then(iom -> {
+        request[1] = completeWith(200, iom);
+        return null;
+      });
+    return request;
+  }
+
+  @Test
+  public void retryConnectException() throws Exception {
+    List<Server> servers = List.of(new Server("server1", 1, null),
+            new Server("server2", 1, null),
+            new Server("server3", 1, null),
+            new Server("server4", 1, null)
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+        .setMaxTries(4)
+        .setMaxFails(2);
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    Request[] request = new Request[4];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = failWith(new ConnectException("Connection refused"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[1] = failWith(new ConnectException("Connection reset by peer"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[2] = failWith(new ConnectException("No route to host"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[3] = completeWith(200, iom);
+          return null;
+        });
+
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2", "server3", "server4");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retry503() throws Exception {
+    List<Server> servers = List.of(new Server("server1", 1, null),
+            new Server("server2", 1, null),
+            new Server("server3", 1, null)
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+        .setMaxTries(3)
+        .setMaxFails(2);
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    Request[] request = mockRequestWith503Response();
+
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2", "server3");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryTimeoutException() throws Exception {
+    createHttpClientFactory();
+
+    Request[] request = new Request[2];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = failWith(new TimeoutException("Connect timed out"), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[1] = completeWith(200, iom);
+          return null;
+        });
+
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retry503ForNonIdempotentRequest() throws Exception {
+    List<Server> servers = List.of(new Server("server1", 1, null),
+            new Server("server2", 1, null),
+            new Server("server3", 1, null)
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+        .setMaxTries(3)
+        .setMaxFails(2)
+        .setRetryPolicy(Map.of(503, new RetryPolicyConfig().setIdempotent(true)));
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory();
+    Request[] request = mockRequestWith503Response();
+
+    getTestClient().post();
+
+    assertRequestEquals(request, "server1", "server2", "server3");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryConnectTimeoutException() throws Exception {
+    List<Server> servers = List.of(new Server("server1", 1, null),
+            new Server("server2", 1, null),
+            new Server("server3", 1, null)
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+        .setMaxTries(3)
+        .setMaxFails(2);
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory();
+
+    Request[] request = mockRequestWithConnectTimeoutResponse();
+
+    getTestClient().get();
+
+    assertRequestEquals(request, "server1", "server2", "server3");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
+    List<Server> servers = List.of(new Server("server1", 1, null),
+            new Server("server2", 1, null),
+            new Server("server3", 1, null)
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+        .setMaxTries(3)
+        .setMaxFails(2);
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory();
+    Request[] request = mockRequestWithConnectTimeoutResponse();
+
+    getTestClient().post();
+
+    assertRequestEquals(request, "server1", "server2", "server3");
+
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
 
 
   void createHttpClientFactory(List<String> upstreamList, String datacenter, boolean allowCrossDCRequests) {

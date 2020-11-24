@@ -70,7 +70,7 @@ public abstract class RequestBalancer implements RequestEngine {
       .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
       .thenCompose(this::unwrapOrRetry);
   }
-// RequestBalancer позаменять request.getUri() -> response.getUri() в методах finishRequest() и logRetryResponse()
+
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
   private void finishRequest(ResponseWrapper wrapper) {
@@ -79,7 +79,7 @@ public abstract class RequestBalancer implements RequestEngine {
       timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
       updateLeftTriesAndTime((int) timeToLastByteMicros);
       Response response = wrapper.getResponse();
-      this.trace.add(new TraceFrame(request.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
+      this.trace.add(new TraceFrame(request.getUri().getHost(), response.getStatusCode(), response.getStatusText())); //todo response
     }
     onRequestReceived(wrapper, timeToLastByteMicros);
   }
@@ -126,11 +126,11 @@ public abstract class RequestBalancer implements RequestEngine {
     String messageTemplate = "{}: {} {} on {} {}, trace: {}";
     if (statusCode >= 500) {
       LOGGER.warn(messageTemplate, "balanced_request_final_error", response.getStatusCode(), response.getStatusText(),
-        request.getMethod(), request.getUri(), getTrace()
+        request.getMethod(), response.getUri(), getTrace()
       );
     } else {
       LOGGER.info(messageTemplate, "balanced_request_final_response", response.getStatusCode(), response.getStatusText(),
-        request.getMethod(), request.getUri(), getTrace()
+        request.getMethod(), response.getUri(), getTrace()
       );
     }
   }
@@ -138,9 +138,9 @@ public abstract class RequestBalancer implements RequestEngine {
   private void logRetryResponse(int statusCode, Response response) {
     String messageTemplate = "balanced_request_response: {} {} on {} {}";
     if (statusCode >= 500) {
-      LOGGER.info(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), request.getUri());
+      LOGGER.info(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), response.getUri());
     } else {
-      LOGGER.debug(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), request.getUri());
+      LOGGER.debug(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), response.getUri());
     }
   }
 

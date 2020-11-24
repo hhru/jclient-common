@@ -18,7 +18,6 @@ final class RetryPolicy {
     rules.put(CONNECT_TIMEOUT_ERROR, false);
     rules.put(SERVICE_UNAVAILABLE, false);
   }
-//timeout,http_503,non_idempotent_503 503=true,599=false
 
   void update(Map<Integer, RetryPolicyConfig> config) {
     if (config != null && !config.isEmpty()) {

@@ -11,4 +11,11 @@ public class RetryPolicyConfig {
     this.idempotent = idempotent;
     return this;
   }
+
+  @Override
+  public String toString() {
+    return "RetryPolicyConfig{" +
+        "idempotent=" + idempotent +
+        '}';
+  }
 }

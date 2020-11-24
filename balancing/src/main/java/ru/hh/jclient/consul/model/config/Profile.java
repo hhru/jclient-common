@@ -99,6 +99,11 @@ public class Profile {
         "name='" + name + '\'' +
         ", maxTries=" + maxTries +
         ", maxFails=" + maxFails +
+        ", maxTimeoutTries=" + maxTimeoutTries +
+        ", failTimeoutMs=" + failTimeoutMs +
+        ", connectTimeoutMs=" + connectTimeoutMs +
+        ", requestTimeoutMs=" + requestTimeoutMs +
+        ", retryPolicy=" + retryPolicy +
         '}';
   }
 }
