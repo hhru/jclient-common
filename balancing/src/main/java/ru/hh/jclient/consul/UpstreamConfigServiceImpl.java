@@ -66,7 +66,6 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
         configMap.put(keys[1], applicationConfig);
       } catch (IOException e) {
         LOGGER.error("Can't read value for key:{}", key, e);
-        throw new RuntimeException("Can't read value for key:" + key, e);
       }
     }
     return configMap;
