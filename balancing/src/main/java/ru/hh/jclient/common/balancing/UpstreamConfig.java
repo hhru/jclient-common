@@ -1,14 +1,17 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import ru.hh.jclient.consul.ValueNode;
+import static java.util.Objects.requireNonNullElse;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Host;
+import ru.hh.jclient.consul.model.Profile;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public final class UpstreamConfig {
   public static final String DEFAULT = "default";
-  public static final String PROFILE_NODE = "profile";
   static final int DEFAULT_MAX_TRIES = 2;
   static final int DEFAULT_MAX_FAILS = 1;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;
@@ -16,7 +19,6 @@ public final class UpstreamConfig {
   static final int DEFAULT_FAIL_TIMEOUT_MS = 10;
   static final int DEFAULT_CONNECT_TIMEOUT_MS = 200;
   static final int DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
-
   private int maxTries;
   private int maxFails;
   private int maxTimeoutTries;
@@ -27,35 +29,35 @@ public final class UpstreamConfig {
 
   private RetryPolicy retryPolicy = new RetryPolicy();
 
-  public static UpstreamConfig fromTree(String serviceName, String profileName, String hostName, ValueNode rootNode) {
+  public static UpstreamConfig fromApplicationConfig(ApplicationConfig config, String hostName, String profileName) {
+    if (config == null) {
+      return getDefaultConfig();
+    }
+    Map<String, Host> hostMap = config.getHosts();
+    if (hostMap == null || hostMap.get(hostName) == null) {
+      return getDefaultConfig();
+    }
+    profileName = requireNonNullElse(profileName, DEFAULT);
+    Map<String, Profile> profiles = hostMap.get(hostName).getProfiles();
+    if (profiles == null || profiles.get(profileName) == null) {
+      return getDefaultConfig();
+    }
+    Profile profile = profiles.get(profileName);
 
-    ValueNode service = rootNode.getNode(serviceName);
-    if (service == null) {
-      return getDefaultConfig();
-    }
-    ValueNode host = service.getOrDefault(hostName, service.getNode(DEFAULT));
-    if (host == null) {
-      return getDefaultConfig();
-    }
-    ValueNode profiles = host.getNode(PROFILE_NODE);
-    ValueNode configMap = profiles.getOrDefault(profileName, profiles.getNode(DEFAULT));
     try {
       UpstreamConfig upstreamConfig = new UpstreamConfig();
-      upstreamConfig.maxTries = parseIntOrFallback(configMap.getValue("max_tries"), DEFAULT_MAX_TRIES);
-      upstreamConfig.maxFails = parseIntOrFallback(configMap.getValue("max_fails"), DEFAULT_MAX_FAILS);
-      upstreamConfig.maxTimeoutTries = parseIntOrFallback(configMap.getValue("max_timeout_tries"), DEFAULT_MAX_TIMEOUT_TRIES);
-      upstreamConfig.failTimeoutMs = parseAndConvertToMillisOrFallback(configMap.getValue("fail_timeout_sec"), DEFAULT_FAIL_TIMEOUT_MS);
-      upstreamConfig.connectTimeoutMs = parseAndConvertToMillisOrFallback(configMap.getValue("connect_timeout_sec"), DEFAULT_CONNECT_TIMEOUT_MS);
-      upstreamConfig.requestTimeoutMs = parseAndConvertToMillisOrFallback(configMap.getValue("request_timeout_sec"), DEFAULT_REQUEST_TIMEOUT_MS);
-
-      if (configMap.getValue("retry_policy") != null) {
-        upstreamConfig.retryPolicy.update(configMap.getValue("retry_policy"));
-      }
+      upstreamConfig.maxTries = requireNonNullElse(profile.getMaxTries(), DEFAULT_MAX_TRIES);
+      upstreamConfig.maxFails = requireNonNullElse(profile.getMaxFails(), DEFAULT_MAX_FAILS);
+      upstreamConfig.maxTimeoutTries = requireNonNullElse(profile.getMaxTimeoutTries(), DEFAULT_MAX_TIMEOUT_TRIES);
+      upstreamConfig.failTimeoutMs = convertToMillisOrFallback(profile.getFailTimeoutMs(), DEFAULT_FAIL_TIMEOUT_MS);
+      upstreamConfig.connectTimeoutMs = convertToMillisOrFallback(profile.getConnectTimeoutMs(), DEFAULT_CONNECT_TIMEOUT_MS);
+      upstreamConfig.requestTimeoutMs = convertToMillisOrFallback(profile.getRequestTimeoutMs(), DEFAULT_REQUEST_TIMEOUT_MS);
+      upstreamConfig.retryPolicy.update(profile.getRetryPolicy());
 
       return upstreamConfig;
 
     } catch (Exception e) {
-      throw new UpstreamConfigFormatException("failed to get upstream config: " + rootNode, e);
+      throw new UpstreamConfigFormatException("failed to get upstream config: " + config, e);
     }
   }
 
@@ -122,13 +124,9 @@ public final class UpstreamConfig {
         + '}';
   }
 
-  private static int parseIntOrFallback(String value, int defaultValue) {
-    return Optional.ofNullable(value).map(Integer::parseInt).orElse(defaultValue);
-  }
-
-  private static int parseAndConvertToMillisOrFallback(String value, int defaultValue) {
+  private static int convertToMillisOrFallback(Float value, int defaultValue) {
     return Optional.ofNullable(value)
-      .map(nonNullValue -> Math.round(Float.parseFloat(nonNullValue) * TimeUnit.SECONDS.toMillis(1)))
+      .map(nonNullValue -> Math.round(nonNullValue * TimeUnit.SECONDS.toMillis(1)))
       .orElse(defaultValue);
   }
 

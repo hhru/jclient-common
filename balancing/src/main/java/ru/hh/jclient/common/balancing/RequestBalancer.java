@@ -79,7 +79,7 @@ public abstract class RequestBalancer implements RequestEngine {
       timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
       updateLeftTriesAndTime((int) timeToLastByteMicros);
       Response response = wrapper.getResponse();
-      this.trace.add(new TraceFrame(request.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
+      this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
     }
     onRequestReceived(wrapper, timeToLastByteMicros);
   }
@@ -138,9 +138,9 @@ public abstract class RequestBalancer implements RequestEngine {
   private void logRetryResponse(int statusCode, Response response) {
     String messageTemplate = "balanced_request_response: {} {} on {} {}";
     if (statusCode >= 500) {
-      LOGGER.info(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), request.getUri());
+      LOGGER.info(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), response.getUri());
     } else {
-      LOGGER.debug(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), request.getUri());
+      LOGGER.debug(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), response.getUri());
     }
   }
 

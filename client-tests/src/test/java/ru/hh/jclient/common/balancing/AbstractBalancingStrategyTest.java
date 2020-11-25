@@ -10,7 +10,9 @@ import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.ValueNode;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Host;
+import ru.hh.jclient.consul.model.Profile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,13 +35,21 @@ import java.util.stream.Collectors;
 public abstract class AbstractBalancingStrategyTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBalancingStrategyTest.class);
-
+  private static final Profile EMPTY_PROFILE = new Profile();
   protected static final String DATACENTER = "test";
   protected static final String TEST_UPSTREAM = "test-upstream";
 
   protected static HttpClientFactory buildBalancingFactory(String datacenterName,
                                                            String upstreamName,
-                                                           Map<String, String> upstreamCfg,
+                                                           Map<Integer, List<String>> adressesByWeight, ConcurrentMap<String,
+                                                           List<Integer>> trackingHolder) {
+    return buildBalancingFactory(datacenterName, upstreamName, EMPTY_PROFILE, adressesByWeight, trackingHolder);
+
+  }
+
+  protected static HttpClientFactory buildBalancingFactory(String datacenterName,
+                                                           String upstreamName,
+                                                           Profile profile,
                                                            Map<Integer, List<String>> adressesByWeight, ConcurrentMap<String,
                                                            List<Integer>> trackingHolder) {
     ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -60,14 +70,8 @@ public abstract class AbstractBalancingStrategyTest {
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, Set.of(tracking), datacenterName, false,
       new UpstreamConfigService() {
         @Override
-        public ValueNode getUpstreamConfig() {
-          ValueNode root = new ValueNode();
-          ValueNode upstreamNode = root.computeMapIfAbsent(upstreamName);
-          ValueNode hostNode = upstreamNode.computeMapIfAbsent(UpstreamConfig.DEFAULT);
-          ValueNode profileNode = hostNode.computeMapIfAbsent(UpstreamConfig.PROFILE_NODE);
-          ValueNode profile = profileNode.computeMapIfAbsent(UpstreamConfig.DEFAULT);
-          upstreamCfg.forEach(profile::putValue);
-          return root;
+        public ApplicationConfig getUpstreamConfig(String application) {
+          return new ApplicationConfig().setHosts(Map.of("default", new Host().setProfiles(Map.of("default", profile))));
         }
 
         @Override

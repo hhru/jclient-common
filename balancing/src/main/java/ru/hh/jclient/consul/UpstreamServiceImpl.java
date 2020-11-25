@@ -8,14 +8,15 @@ import com.orbitz.consul.cache.ServiceHealthCache;
 import com.orbitz.consul.cache.ServiceHealthKey;
 import com.orbitz.consul.model.catalog.ImmutableServiceWeights;
 import com.orbitz.consul.model.catalog.ServiceWeights;
-import com.orbitz.consul.model.health.HealthCheck;
 import com.orbitz.consul.model.health.Service;
 import com.orbitz.consul.model.health.ServiceHealth;
+import com.orbitz.consul.option.ConsistencyMode;
 import com.orbitz.consul.option.ImmutableQueryOptions;
 import com.orbitz.consul.option.QueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,50 +32,50 @@ import java.util.stream.Collectors;
 public class UpstreamServiceImpl implements UpstreamService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
 
-  private final ServiceWeights defaultWeight;
+  private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
   private final HealthClient healthClient;
 
   private final List<String> upstreamList;
   private final List<String> datacenterList;
   private final String currentDC;
   private final String currentNode;
-
+  private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
   private final boolean allowCrossDC;
+  private final boolean healthPassing;
   private Consumer<String> callback;
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
-  public UpstreamServiceImpl(List<String> upstreamList, List<String> datacenterList, Consul consulClient,
-                             int watchSeconds, String currentDC, String currentNode, boolean allowCrossDC) {
+  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
-    Preconditions.checkState(!datacenterList.isEmpty(), "DatacenterList can't be empty");
+    Preconditions.checkState(!consulConfig.getDatacenterList().isEmpty(), "DatacenterList can't be empty");
 
     this.healthClient = consulClient.healthClient();
-    this.datacenterList = datacenterList;
+    this.datacenterList = consulConfig.getDatacenterList();
     this.upstreamList = upstreamList;
-    this.currentDC = currentDC;
-    this.currentNode = currentNode;
-    this.allowCrossDC = allowCrossDC;
-    this.watchSeconds = watchSeconds;
-    this.defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
-
+    this.currentDC = consulConfig.getCurrentDC();
+    this.currentNode = consulConfig.getCurrentNode();
+    this.allowCrossDC = consulConfig.isAllowCrossDC();
+    this.healthPassing = consulConfig.isHealthPassing();
+    this.watchSeconds = consulConfig.getWatchSeconds();
+    this.consistencyMode = consulConfig.getConsistencyMode();
     if (!this.datacenterList.contains(this.currentDC)) {
-      this.datacenterList.add(this.currentDC);
+      LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
   }
 
   @Override
   public void setupListener(Consumer<String> callback) {
     this.callback = callback;
-    upstreamList.forEach(s -> subscribeToUpstream(s, allowCrossDC));
+    upstreamList.forEach(this::subscribeToUpstream);
   }
 
   void notifyListeners() {
     upstreamList.forEach(callback);
   }
 
-  private void subscribeToUpstream(String serviceName, boolean allowCrossDC) {
+  private void subscribeToUpstream(String serviceName) {
     if (allowCrossDC) {
       for (String dataCenter : datacenterList) {
         initializeCache(serviceName, dataCenter);
@@ -85,8 +86,11 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private void initializeCache(String serviceName, String datacenter) {
-    QueryOptions queryOptions = ImmutableQueryOptions.builder().datacenter(datacenter.toLowerCase()).build();
-    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, false, watchSeconds, queryOptions);
+    QueryOptions queryOptions = ImmutableQueryOptions.builder()
+        .datacenter(datacenter.toLowerCase())
+        .consistencyMode(consistencyMode)
+        .build();
+    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, healthPassing, watchSeconds, queryOptions);
 
     LOGGER.debug("subscribe to service {}; dc {}", serviceName, datacenter);
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
@@ -117,13 +121,6 @@ public class UpstreamServiceImpl implements UpstreamService {
 
       Service service = serviceHealth.getService();
 
-      List<HealthCheck> checks = serviceHealth.getChecks();
-      boolean serviceFailed = checks.stream().anyMatch(check -> !check.getStatus().equals("passing"));
-
-      if (serviceFailed) {
-        continue;
-      }
-
       String address = Server.addressFromHostPort(getAddress(serviceHealth), service.getPort());
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
 
@@ -144,6 +141,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     disableDeadServices(currentServers, serviceName, datacenter, aliveServers);
 
+    LOGGER.info("upstreams for {} were updated in DC {}; Count: {} ", serviceName, datacenter, currentServers.size());
     LOGGER.debug("upstreams for {} were updated in DC {}: {} ", serviceName, datacenter, currentServers);
   }
 

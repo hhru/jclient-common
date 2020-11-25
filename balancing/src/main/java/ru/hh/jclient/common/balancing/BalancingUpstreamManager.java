@@ -6,7 +6,7 @@ import static java.util.Optional.ofNullable;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.ValueNode;
+import ru.hh.jclient.consul.model.ApplicationConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -63,8 +63,8 @@ public class BalancingUpstreamManager extends UpstreamManager {
   public void updateUpstream(@Nonnull String upstreamName) {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
-    ValueNode upstreamConfig = upstreamConfigService.getUpstreamConfig();
-    var newConfig = UpstreamConfig.fromTree(upstreamKey.getServiceName(), upstreamKey.getProfileName(), UpstreamConfig.DEFAULT, upstreamConfig);
+    ApplicationConfig upstreamConfig = upstreamConfigService.getUpstreamConfig(upstreamKey.getServiceName());
+    var newConfig = UpstreamConfig.fromApplicationConfig(upstreamConfig, UpstreamConfig.DEFAULT, upstreamKey.getProfileName());
     List<Server> servers = upstreamService.getServers(upstreamName);
     upstreams.compute(upstreamKey.getServiceName(), (serviceName, existingGroup) -> {
       if (existingGroup == null) {
