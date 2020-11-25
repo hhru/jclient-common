@@ -16,6 +16,7 @@ import com.orbitz.consul.option.QueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,24 +47,21 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
-  public UpstreamServiceImpl(List<String> upstreamList, List<String> datacenterList, Consul consulClient,
-                             int watchSeconds, String currentDC, String currentNode, boolean allowCrossDC,
-                             boolean healthPassing, ConsistencyMode consistencyMode
-  ) {
+  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
-    Preconditions.checkState(!datacenterList.isEmpty(), "DatacenterList can't be empty");
+    Preconditions.checkState(!consulConfig.getDatacenterList().isEmpty(), "DatacenterList can't be empty");
 
     this.healthClient = consulClient.healthClient();
-    this.datacenterList = datacenterList;
+    this.datacenterList = consulConfig.getDatacenterList();
     this.upstreamList = upstreamList;
-    this.currentDC = currentDC;
-    this.currentNode = currentNode;
-    this.allowCrossDC = allowCrossDC;
-    this.healthPassing = healthPassing;
-    this.watchSeconds = watchSeconds;
-    this.consistencyMode = consistencyMode;
+    this.currentDC = consulConfig.getCurrentDC();
+    this.currentNode = consulConfig.getCurrentNode();
+    this.allowCrossDC = consulConfig.isAllowCrossDC();
+    this.healthPassing = consulConfig.isHealthPassing();
+    this.watchSeconds = consulConfig.getWatchSeconds();
+    this.consistencyMode = consulConfig.getConsistencyMode();
     if (!this.datacenterList.contains(this.currentDC)) {
-      this.datacenterList.add(this.currentDC);
+      LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
   }
 

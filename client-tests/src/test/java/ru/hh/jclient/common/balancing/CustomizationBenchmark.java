@@ -25,7 +25,7 @@ import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.ApplicationConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

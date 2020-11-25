@@ -2,9 +2,9 @@ package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.Host;
-import ru.hh.jclient.consul.model.config.Profile;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Host;
+import ru.hh.jclient.consul.model.Profile;
 
 import java.util.Map;
 import java.util.Optional;
@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 public final class UpstreamConfig {
   public static final String DEFAULT = "default";
-  public static final String PROFILE_NODE = "profile";
   static final int DEFAULT_MAX_TRIES = 2;
   static final int DEFAULT_MAX_FAILS = 1;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;

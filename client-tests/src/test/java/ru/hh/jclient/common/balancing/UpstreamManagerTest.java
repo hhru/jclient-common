@@ -15,9 +15,9 @@ import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.Profile;
-import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Profile;
+import ru.hh.jclient.consul.model.RetryPolicyConfig;
 
 import java.util.List;
 import java.util.Map;

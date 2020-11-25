@@ -11,9 +11,9 @@ import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.Host;
-import ru.hh.jclient.consul.model.config.Profile;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Host;
+import ru.hh.jclient.consul.model.Profile;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,4 +1,4 @@
-package ru.hh.jclient.consul.model.config;
+package ru.hh.jclient.consul.model;
 
 public class RetryPolicyConfig {
   private boolean idempotent;

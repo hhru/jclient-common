@@ -10,7 +10,7 @@ import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.REQUEST_TIMEOUT_MESSAGE;
-import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
+import ru.hh.jclient.consul.model.RetryPolicyConfig;
 
 import java.util.Map;
 

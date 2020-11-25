@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.getDefaultConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.Profile;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Profile;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;

@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -39,8 +40,15 @@ public class UpstreamServiceImplTest {
 
   @Before
   public void init() {
-    upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient, watchSeconds, DATA_CENTER,
-        null,  allowCrossDC, true, ConsistencyMode.DEFAULT);
+    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setAllowCrossDC(allowCrossDC)
+        .setHealthPassing(true)
+        .setDatacenterList(datacenterList)
+        .setWatchSeconds(watchSeconds)
+        .setCurrentDC(DATA_CENTER)
+        .setCurrentNode(null)
+        .setConsistencyMode(ConsistencyMode.DEFAULT);
+    upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
   }
 
   @Test
@@ -94,8 +102,16 @@ public class UpstreamServiceImplTest {
     String address1 = "a1";
     int weight = 12;
     int port1 = 124;
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient,
-        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC, false, ConsistencyMode.DEFAULT);
+    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setAllowCrossDC(allowCrossDC)
+        .setHealthPassing(false)
+        .setDatacenterList(datacenterList)
+        .setWatchSeconds(watchSeconds)
+        .setCurrentDC(DATA_CENTER)
+        .setCurrentNode(NODE_NAME)
+        .setConsistencyMode(ConsistencyMode.DEFAULT);
+
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
 
@@ -116,8 +132,16 @@ public class UpstreamServiceImplTest {
     int weight = 12;
     int port1 = 124;
     int port2 = 126;
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, datacenterList, consulClient,
-        watchSeconds, DATA_CENTER, NODE_NAME, allowCrossDC, false, ConsistencyMode.DEFAULT);
+    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setAllowCrossDC(allowCrossDC)
+        .setHealthPassing(false)
+        .setDatacenterList(datacenterList)
+        .setWatchSeconds(watchSeconds)
+        .setCurrentDC(DATA_CENTER)
+        .setCurrentNode(NODE_NAME)
+        .setConsistencyMode(ConsistencyMode.DEFAULT);
+
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);

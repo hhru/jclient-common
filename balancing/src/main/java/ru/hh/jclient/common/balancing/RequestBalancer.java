@@ -126,11 +126,11 @@ public abstract class RequestBalancer implements RequestEngine {
     String messageTemplate = "{}: {} {} on {} {}, trace: {}";
     if (statusCode >= 500) {
       LOGGER.warn(messageTemplate, "balanced_request_final_error", response.getStatusCode(), response.getStatusText(),
-        request.getMethod(), response.getUri(), getTrace()
+        request.getMethod(), request.getUri(), getTrace()
       );
     } else {
       LOGGER.info(messageTemplate, "balanced_request_final_response", response.getStatusCode(), response.getStatusText(),
-        request.getMethod(), response.getUri(), getTrace()
+        request.getMethod(), request.getUri(), getTrace()
       );
     }
   }

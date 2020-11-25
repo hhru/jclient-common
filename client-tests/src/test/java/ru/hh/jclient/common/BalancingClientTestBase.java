@@ -33,8 +33,8 @@ import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamConfigServiceImpl;
 import ru.hh.jclient.consul.UpstreamServiceImpl;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.RetryPolicyConfig;
 
 import java.io.IOException;
 import java.net.ConnectException;

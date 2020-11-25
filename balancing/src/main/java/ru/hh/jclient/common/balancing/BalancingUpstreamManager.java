@@ -6,7 +6,7 @@ import static java.util.Optional.ofNullable;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.ApplicationConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

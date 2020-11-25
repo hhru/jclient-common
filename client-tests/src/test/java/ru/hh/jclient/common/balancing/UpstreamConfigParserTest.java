@@ -4,10 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.Host;
-import ru.hh.jclient.consul.model.config.Profile;
-import ru.hh.jclient.consul.model.config.RetryPolicyConfig;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Host;
+import ru.hh.jclient.consul.model.Profile;
+import ru.hh.jclient.consul.model.RetryPolicyConfig;
 
 import java.util.HashMap;
 import java.util.Map;

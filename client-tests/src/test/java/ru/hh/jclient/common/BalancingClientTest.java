@@ -17,9 +17,9 @@ import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.Host;
-import ru.hh.jclient.consul.model.config.Profile;
+import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.Host;
+import ru.hh.jclient.consul.model.Profile;
 
 import java.util.List;
 import java.util.Map;

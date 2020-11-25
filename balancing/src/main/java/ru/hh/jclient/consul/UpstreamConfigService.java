@@ -1,6 +1,6 @@
 package ru.hh.jclient.consul;
 
-import ru.hh.jclient.consul.model.config.ApplicationConfig;
+import ru.hh.jclient.consul.model.ApplicationConfig;
 
 import java.util.function.Consumer;
 
