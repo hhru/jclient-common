@@ -235,4 +235,17 @@ public class Upstream {
       return "UpstreamKey{" + getWholeName() + '}';
     }
   }
+
+  @Override
+  public String toString() {
+    return "Upstream{" +
+      "upstreamKey=" + upstreamKey +
+      ", upstreamConfig=" + upstreamConfig +
+      ", scheduledExecutor=" + scheduledExecutor +
+      ", datacenter='" + datacenter + '\'' +
+      ", allowCrossDCRequests=" + allowCrossDCRequests +
+      ", enabled=" + enabled +
+      ", servers=" + servers +
+      '}';
+  }
 }

@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 public final class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";
-  static final int DEFAULT_FAIL_TIMEOUT_MS = 10_000;
 
   private final String address;
   private volatile int weight;
@@ -144,6 +143,16 @@ public final class Server {
 
   @Override
   public String toString() {
-    return address + " (weight=" + weight + ", datacenter=" + datacenter + ")";
+    return "Server{" +
+      "address='" + address + '\'' +
+      ", weight=" + weight +
+      ", datacenter='" + datacenter + '\'' +
+      ", meta=" + meta +
+      ", tags=" + tags +
+      ", active=" + active +
+      ", requests=" + requests +
+      ", fails=" + fails +
+      ", statsRequests=" + statsRequests +
+      '}';
   }
 }

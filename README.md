@@ -32,13 +32,13 @@ CompletableFuture<Banners> bannersFuture = http.with(request).expectXml(jaxb, Ba
 
 # Creating a client
 
-`HttpClientConfig` is a builder that provides convenient way to create an instance of `HttpClientBuilder`:
+`HttpClientFactoryBuilder` is a builder that provides convenient way to create an instance of `HttpClientFactory`:
 
 ```java
-HttpClientFactory http = new HttpClientFactoryBuilder()
+HttpClientFactory http = new HttpClientFactoryBuilder(new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())), List.of())
     .withProperties(jClientProperties)
-    .withCallbackExecutor(callbackExecutor)
-    .withStorage(contextStorage)
+    .withRequestStrategy(new DefaultRequestStrategy())
+    .withCallbackExecutor(Runnable::run)
     .withHostsWithSession(hostsWithSession)
     .withUserAgent("my service")
     .build();
@@ -60,59 +60,4 @@ This is because in case when `readTimeout < requestTimeout`, `readTimeout` will 
 so if `requestTimeout` is sufficiently large (e.g. for slow requests) it will not work as expected.     
 
 ## Load balancing
-
-Jclient provides a way to balance load between separate instances of an upstream server.
-
-Currently two methods are supported:
-* weighted least-connection  
-* adaptive balancing 
-
-Your application should have connection to Cassandra in order to access configuration of upstreams.
-
-Additionally, you have to include `jclient-common-metrics` artifact:
-
-```xml
-<dependency>
-    <groupId>ru.hh.jclient-common</groupId>
-    <artifactId>jclient-common-metrics</artifactId>
-    <version>0.1.66</version>
-</dependency>
-```  
-
-Upstreams are managed by `BalancingUpstreamManager` class.
-
-### Spring configuration
-
-```java
-@Configuration
-public class JClientConfig {
-  
-  @Bean
-  public UpstreamManager upstreamManager(Session cassandraSession, StatsDSender statsDSender) {
-    return BalancingUpstreamManagerFactory.create("service-name", cassandraSession, statsDSender);
-  }
-
-  @Bean
-  public HttpClientFactory httpClientFactory(Properties jClientProperties,
-                                             Storage<HttpClientContext> contextStorage,
-                                             UpstreamManager upstreamManager) {
-    
-    return new HttpClientFactoryBuilder()
-      .withProperties(jClientProperties)
-      .withUpstreamManager(upstreamManager)    
-      .withStorage(contextStorage)
-      .withCallbackExecutor(Runnable::run)
-      .withHostsWithSession(Collections.singletonList(jClientProperties.getProperty("hostsWithSession")))
-      .withUserAgent(jClientProperties.getProperty("userAgent"))
-      .build();
-  }
-}
-```
-
-Notice that you have to provide an instance of `StatsDSender` to create `UpstreamManager` bean.
-
-This is because `BalancingUpstreamManager` has built-in monitoring of requests and `StatsDSender` is used to send metrics to our monitoring system ([okmeter.io](https://okmeter.io)).
-
-If you use [NaB](https://github.com/hhru/nuts-and-bolts), then you already have `StatsDSender` in your Spring context.
-
-In other case please refer to this [quick-guide](https://github.com/hhru/metrics#quick-guide).
+See [balancing readme](./balancing/README.md)
