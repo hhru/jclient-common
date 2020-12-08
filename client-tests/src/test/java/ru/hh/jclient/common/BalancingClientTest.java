@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
@@ -36,9 +35,9 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void testBalancing() throws Exception {
-    Server server1 = spy(new Server("server1", 10, null));
-    Server server2 = spy(new Server("server1", 5, null));
-    Server server3 = spy(new Server("server1", 1, null));
+    Server server1 = new Server("server1", 10, null);
+    Server server2 = new Server("server1", 5, null);
+    Server server3 = new Server("server1", 1, null);
     List<Server> servers = List.of(server1,
         server2,
         server3
@@ -78,9 +77,9 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void testBalancingWithCrossDC() throws Exception {
-    Server server1 = spy(new Server("server1", 10, "anotherDC"));
-    Server server2 = spy(new Server("server1", 5, null));
-    Server server3 = spy(new Server("server1", 1, null));
+    Server server1 = new Server("server1", 10, "anotherDC");
+    Server server2 = new Server("server1", 5, null);
+    Server server3 = new Server("server1", 1, null);
     List<Server> servers = List.of(server1,
         server2,
         server3
