@@ -91,7 +91,7 @@ public class Upstream {
     }
   }
 
-  ServerEntry acquireServer(List<Server> servers) {
+  ServerEntry acquireServer() {
     return acquireServer(Set.of());
   }
 

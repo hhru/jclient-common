@@ -12,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
@@ -27,6 +28,7 @@ import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
 import ru.hh.jclient.common.exception.ClientResponseException;
@@ -251,6 +253,53 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
+
+
+  //test set multiplier HttpClientFactoryBuilderTest.testMultiplierApplication()
+  @Test
+  public void testRequestTimeoutForUpstream() throws Exception {
+    double multiplier = 3.5;
+    createHttpClientFactory(multiplier);
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+
+    int customTimeout = 123;
+    //with timeout from request
+    getTestClient().getWithTimeout(customTimeout);
+    assertEquals((int) (customTimeout * multiplier), request[0].getRequestTimeout());
+
+    //with timeout from profile
+    getTestClient().get();
+    assertEquals((int) (UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS * multiplier), request[0].getRequestTimeout());
+  }
+
+  @Test
+  public void testRequestTimeoutForExternalUrl() throws Exception {
+    double multiplier = 3.5;
+    createHttpClientFactory(multiplier);
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+
+    int customTimeout = 123;
+    //with timeout from request
+    getTestClient("external_url").getWithTimeout(customTimeout);
+    assertEquals((int) (customTimeout * multiplier), request[0].getRequestTimeout());
+
+    int defaultAsyncHttpClientConfigDefaults = 60_000; //org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout
+    getTestClient("external_url").get();
+    assertEquals((int) (defaultAsyncHttpClientConfigDefaults * multiplier), request[0].getRequestTimeout());
+  }
+
   @Test
   public void retry503ForNonIdempotentRequest() throws Exception {
     List<Server> servers = List.of(new Server("server1", 1, null),
@@ -329,15 +378,19 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
 
   void createHttpClientFactory(List<String> upstreamList, String datacenter, boolean allowCrossDCRequests) {
-    http = createHttpClientFactory(httpClient, datacenter, upstreamList, allowCrossDCRequests);
+    http = createHttpClientFactory(httpClient, datacenter, upstreamList, allowCrossDCRequests, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+  }
+
+  void createHttpClientFactory(double multiplier) {
+    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), false, multiplier);
   }
 
   void createHttpClientFactory() {
-    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), false);
+    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), false, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
   }
 
   void createHttpClientFactory(List<String> upstreamList) {
-    http = createHttpClientFactory(httpClient, null, upstreamList, false);
+    http = createHttpClientFactory(httpClient, null, upstreamList, true, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
   }
 
   Request completeWith(int status, InvocationOnMock iom) throws Exception {
@@ -360,11 +413,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, String datacenter, List<String> upstreamList,
-                                                    boolean allowCrossDCRequests) {
+                                                    boolean allowCrossDCRequests, double multiplier) {
     Monitoring monitoring = mock(Monitoring.class);
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
             upstreamList, newSingleThreadScheduledExecutor(),
             Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService);
+    upstreamManager.setTimeoutMultiplier(multiplier);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager);
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
@@ -436,24 +490,32 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   TestClient getTestClient() {
-    return new TestClient(http, isAdaptive());
+    return getTestClient(TEST_UPSTREAM);
+  }
+
+  TestClient getTestClient(String upstream) {
+    return new TestClient(http, isAdaptive(), upstream);
   }
 
   static class TestClient extends ConfigurableJClientBase<TestClient> {
     private final boolean adaptive;
 
-    TestClient(HttpClientFactory http, boolean adaptive) {
-      super("http://" + TEST_UPSTREAM, http);
+    TestClient(HttpClientFactory http, boolean adaptive, String upstream) {
+      super("http://" + upstream, http);
       this.adaptive = adaptive;
     }
 
-    void get() throws Exception {
-      ru.hh.jclient.common.Request request = super.get(url("/get")).build();
+    void getWithTimeout(int requestTimeout) throws Exception {
+      ru.hh.jclient.common.Request request = super.get(url("/get")).setRequestTimeout(requestTimeout).build();
       HttpClient client = getHttp().with(request);
       if (adaptive) {
         client = client.configureRequestEngine(RequestBalancerBuilder.class).makeAdaptive().backToClient();
       }
       client.expectPlainText().result().get();
+    }
+
+    void get() throws Exception {
+      getWithTimeout(0);
     }
 
     void post() throws Exception {
@@ -488,7 +550,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     @Override
     protected TestClient createCustomizedCopy(HttpClientFactoryConfigurator configurator) {
-      return new TestClient(configurator.configure(getHttp()), adaptive);
+      return new TestClient(configurator.configure(getHttp()), adaptive, TEST_UPSTREAM);
     }
   }
 
