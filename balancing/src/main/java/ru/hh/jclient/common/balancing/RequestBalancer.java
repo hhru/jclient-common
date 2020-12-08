@@ -161,7 +161,7 @@ public abstract class RequestBalancer implements RequestEngine {
 
     @Override
     public String toString() {
-      return address + ":(" + responseCode + "):" + msg;
+      return address + "~" + responseCode + "~" + msg;
     }
   }
 }
