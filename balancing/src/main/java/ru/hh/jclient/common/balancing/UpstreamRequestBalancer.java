@@ -16,7 +16,6 @@ import ru.hh.jclient.common.Uri;
 import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
@@ -29,7 +28,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
 
   private final Set<Monitoring> monitorings;
   private int firstStatusCode;
-  private final AtomicBoolean detailedStatePrinted = new AtomicBoolean();
 
   public UpstreamRequestBalancer(BalancingState state, Request request, RequestStrategy.RequestExecutor requestExecutor,
                                  int maxTimeoutTries, boolean forceIdempotence,
@@ -53,11 +51,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     }
     state.acquireServer();
     if (!state.isServerAvailable()) {
-      if (detailedStatePrinted.compareAndSet(false, true)) {
-        LOGGER.warn("No available servers. Detailed upstream state: {}. Returning serverNotAvailableResponse", state.upstream);
-      } else {
-        LOGGER.warn("No available servers in upstream {}. Returning serverNotAvailableResponse", upstreamName);
-      }
       return new ImmediateResultOrPreparedRequest(completedFuture(getServerNotAvailableResponse(request, upstreamName)));
     }
     int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout()

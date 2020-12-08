@@ -68,7 +68,7 @@ public final class Server {
   }
 
   public synchronized void deactivate(int timeoutMs, ScheduledExecutorService executor) {
-    LOGGER.info("deactivate server: {} for {}ms", address, timeoutMs);
+    LOGGER.warn("deactivate server: {} for {}ms", this, timeoutMs);
     active = false;
     executor.schedule(this::activate, timeoutMs, TimeUnit.MILLISECONDS);
   }
