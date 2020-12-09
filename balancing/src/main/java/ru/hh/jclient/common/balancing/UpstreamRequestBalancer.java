@@ -46,6 +46,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   protected ImmediateResultOrPreparedRequest getResultOrContext(Request request) {
     String upstreamName = state.getUpstreamName();
     if (!state.isUpstreamEnabled()) {
+      LOGGER.warn("Upstream {} is disabled. Returning serverNotAvailableResponse", upstreamName);
       return new ImmediateResultOrPreparedRequest(completedFuture(getServerNotAvailableResponse(request, upstreamName)));
     }
     state.acquireServer();

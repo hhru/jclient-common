@@ -1,5 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
@@ -18,6 +21,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Upstream {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);
+
   private final UpstreamKey upstreamKey;
   private final UpstreamConfig upstreamConfig;
   private final ScheduledExecutorService scheduledExecutor;
@@ -25,6 +30,7 @@ public class Upstream {
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
   private volatile List<Server> servers;
+  private boolean failedSelection = false;
 
   private final ReadWriteLock configReadWriteLock = new ReentrantReadWriteLock();
   private final Lock configWriteLock = configReadWriteLock.writeLock();
@@ -57,7 +63,12 @@ public class Upstream {
       if (index >= 0) {
         Server server = servers.get(index);
         server.acquire();
+        failedSelection = false;
         return new ServerEntry(index, server.getAddress(), server.getDatacenter());
+      }
+      if (!failedSelection) {
+        failedSelection = true;
+        LOGGER.warn("Next server for upstream {} with excluded server indexes {} not found. Returning null", this, excludedServers);
       }
       return null;
     } finally {
@@ -149,6 +160,7 @@ public class Upstream {
     try {
       this.upstreamConfig.update(newConfig);
       this.servers = servers;
+      this.failedSelection = false;
     } finally {
       configWriteLock.unlock();
     }
@@ -234,5 +246,18 @@ public class Upstream {
     public String toString() {
       return "UpstreamKey{" + getWholeName() + '}';
     }
+  }
+
+  @Override
+  public String toString() {
+    return "Upstream{" +
+      "upstreamKey=" + upstreamKey +
+      ", upstreamConfig=" + upstreamConfig +
+      ", scheduledExecutor=" + scheduledExecutor +
+      ", datacenter='" + datacenter + '\'' +
+      ", allowCrossDCRequests=" + allowCrossDCRequests +
+      ", enabled=" + enabled +
+      ", servers=" + servers +
+      '}';
   }
 }
