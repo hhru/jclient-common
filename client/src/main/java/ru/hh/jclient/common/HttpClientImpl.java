@@ -74,6 +74,7 @@ class HttpClientImpl extends HttpClient {
 
     Transfers transfers = getStorages().prepare();
     CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor);
+    LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
