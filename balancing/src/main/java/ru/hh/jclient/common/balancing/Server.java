@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 public final class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";
-  static final int DEFAULT_FAIL_TIMEOUT_MS = 10_000;
 
   private final String address;
   private volatile int weight;

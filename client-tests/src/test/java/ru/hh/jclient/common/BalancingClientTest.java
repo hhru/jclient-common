@@ -45,9 +45,6 @@ public class BalancingClientTest extends BalancingClientTestBase {
     when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(4)
-        .setMaxFails(2);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -87,9 +84,6 @@ public class BalancingClientTest extends BalancingClientTestBase {
     when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(4)
-        .setMaxFails(2);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 

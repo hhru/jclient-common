@@ -2,7 +2,6 @@ package ru.hh.jclient.common.balancing;
 
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
-import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
@@ -29,11 +28,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
 
   @Override
   protected ImmediateResultOrPreparedRequest getResultOrContext(Request request) {
-    int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout(): requestTimeoutMs;
-    RequestBuilder requestBuilder = new RequestBuilder(request);
-    requestBuilder.setRequestTimeout(requestTimeout);
-
-    return new ImmediateResultOrPreparedRequest(RequestContext.EMPTY_CONTEXT, requestBuilder.build());
+    return new ImmediateResultOrPreparedRequest(RequestContext.EMPTY_CONTEXT, request);
   }
 
   @Override

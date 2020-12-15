@@ -294,10 +294,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     //with timeout from request
     getTestClient("external_url").getWithTimeout(customTimeout);
     assertEquals((int) (customTimeout * multiplier), request[0].getRequestTimeout());
-
-    int defaultAsyncHttpClientConfigDefaults = 60_000; //org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultRequestTimeout
-    getTestClient("external_url").get();
-    assertEquals((int) (defaultAsyncHttpClientConfigDefaults * multiplier), request[0].getRequestTimeout());
   }
 
   @Test
