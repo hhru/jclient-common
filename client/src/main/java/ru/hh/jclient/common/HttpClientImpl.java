@@ -64,6 +64,9 @@ class HttpClientImpl extends HttpClient {
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
     Request request = addHeadersAndParams(originalRequest);
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
+    }
     if (retryCount > 0) {
       LOGGER.info("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
       getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity(), retryCount, context));
@@ -74,7 +77,6 @@ class HttpClientImpl extends HttpClient {
 
     Transfers transfers = getStorages().prepare();
     CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor);
-    LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
