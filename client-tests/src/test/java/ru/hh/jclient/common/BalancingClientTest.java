@@ -14,7 +14,6 @@ import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
-
 import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;

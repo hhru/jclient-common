@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
-public class BalancingUpstreamManager extends UpstreamManager {
+public class BalancingUpstreamManager implements UpstreamManager {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingUpstreamManager.class);
   private static final int SCHEMA_SEPARATOR_LEN = 3;
@@ -57,11 +57,6 @@ public class BalancingUpstreamManager extends UpstreamManager {
       .collect(toMap(Map.Entry::getKey, e -> (int)Math.ceil(e.getValue().getMinServerSize() * (1 - allowedDegradationPath))));
     upstreamConfigService.setupListener(this::updateUpstream);
     upstreamService.setupListener(this::updateUpstream);
-  }
-
-  @Override
-  public List<Server> getServersForService(String serviceName) {
-    return upstreamService.getServers(serviceName);
   }
 
   @Override
@@ -112,7 +107,6 @@ public class BalancingUpstreamManager extends UpstreamManager {
     return beginIndex > 2 ? host.substring(beginIndex) : host;
   }
 
-  @Override
   @VisibleForTesting
   Map<String, UpstreamGroup> getUpstreams() {
     return upstreams;

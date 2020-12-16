@@ -19,7 +19,7 @@ public class HttpClientFactory {
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final RequestStrategy<?> requestStrategy;
+  private final RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier) {

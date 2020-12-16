@@ -9,7 +9,7 @@ import ru.hh.jclient.common.RequestStrategy;
 import java.util.Optional;
 import java.util.Set;
 
-public class RequestBalancerBuilder implements RequestEngineBuilder {
+public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
@@ -19,6 +19,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder {
     this.httpClient = httpClient;
   }
 
+  private Double timeoutMultiplier;
   private Integer maxTimeoutTries;
   private boolean forceIdempotence;
   private boolean adaptive;
@@ -28,7 +29,6 @@ public class RequestBalancerBuilder implements RequestEngineBuilder {
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
     String host = request.getUri().getHost();
     Upstream upstream = upstreamManager.getUpstream(host, profile);
-    double timeoutMultiplier = upstreamManager.getTimeoutMultiplier();
     Set<Monitoring> monitoring = upstreamManager.getMonitoring();
     if (upstream == null) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElse(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES);
@@ -47,6 +47,12 @@ public class RequestBalancerBuilder implements RequestEngineBuilder {
         maxTimeoutTries, forceIdempotence, timeoutMultiplier, monitoring
       );
     }
+  }
+
+  @Override
+  public RequestBalancerBuilder withTimeoutMultiplier(Double timeoutMultiplier) {
+    this.timeoutMultiplier = timeoutMultiplier;
+    return this;
   }
 
   @Override

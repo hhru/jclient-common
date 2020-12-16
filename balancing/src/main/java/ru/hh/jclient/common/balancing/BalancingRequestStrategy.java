@@ -30,12 +30,7 @@ public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer
   }
 
   @Override
-  public void setTimeoutMultiplier(double timeoutMultiplier) {
-    upstreamManager.setTimeoutMultiplier(timeoutMultiplier);
-  }
-
-  @Override
-  public RequestStrategy<RequestBalancerBuilder> createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
+  public BalancingRequestStrategy createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
     return new BalancingRequestStrategy(this.upstreamManager, configAction);
   }
 }

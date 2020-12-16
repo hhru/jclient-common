@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class UpstreamManagerTest {
+public class BalancingUpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";
   private final UpstreamConfigService upstreamConfigService = mock(UpstreamConfigService.class);
   private final UpstreamService upstreamService = mock(UpstreamService.class);
@@ -36,7 +36,7 @@ public class UpstreamManagerTest {
 
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
 
-    UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
     assertEquals(1, manager.getUpstreams().size());
 
@@ -59,7 +59,7 @@ public class UpstreamManagerTest {
         .setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
 
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
-    UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
     profile.setMaxFails(6);
     manager.updateUpstream(TEST_BACKEND);
@@ -88,7 +88,7 @@ public class UpstreamManagerTest {
             new Server("server2", 100, "test")
     );
     when(upstreamService.getServers(TEST_BACKEND)).thenReturn(initialServers);
-    UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.0);
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.0);
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
     when(upstreamService.getServers(TEST_BACKEND)).thenReturn(List.of(new Server("server3", 100, "test")));
     manager.updateUpstream(TEST_BACKEND);
@@ -104,7 +104,7 @@ public class UpstreamManagerTest {
             new Server("server2", 100, "test")
     );
     when(upstreamService.getServers(TEST_BACKEND)).thenReturn(initialServers);
-    UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
     List<Server> servers = List.of(new Server("server3", 100, "test"));
     when(upstreamService.getServers(TEST_BACKEND)).thenReturn(servers);
@@ -128,7 +128,7 @@ public class UpstreamManagerTest {
   }
 
 
-  private UpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
+  private BalancingUpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(upstreamList,
             newSingleThreadScheduledExecutor(),

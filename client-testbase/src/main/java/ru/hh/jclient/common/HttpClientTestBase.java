@@ -1,11 +1,16 @@
 package ru.hh.jclient.common;
 
+import com.google.common.net.HttpHeaders;
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import com.google.common.net.MediaType;
 import static java.util.Collections.singleton;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -13,7 +18,9 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
+import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
@@ -25,14 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.AsyncHttpClientConfig;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
-import ru.hh.jclient.common.util.storage.SingletonStorage;
-import com.google.common.net.HttpHeaders;
-import com.google.common.net.MediaType;
 
 public class HttpClientTestBase {
 
@@ -111,7 +110,7 @@ public class HttpClientTestBase {
       handler.onCompleted(response.getDelegate());
       return null;
     });
-    http = createHttpClientBuilder(httpClient);
+    http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
     return () -> new Request(request[0]);
   }
 
@@ -189,11 +188,11 @@ public class HttpClientTestBase {
     return this;
   }
 
-  HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient) {
+  HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
     return new HttpClientFactory(httpClient, singleton("http://localhost"),
         new SingletonStorage<>(() -> httpClientContext),
         Runnable::run,
-        new DefaultRequestStrategy(),
+        new DefaultRequestStrategy().createCustomizedCopy(engimeBuilder -> engimeBuilder.withTimeoutMultiplier(timeoutMultiplier)),
         eventListeners
     );
   }

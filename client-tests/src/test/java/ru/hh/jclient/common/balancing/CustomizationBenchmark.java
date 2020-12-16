@@ -60,12 +60,7 @@ public class CustomizationBenchmark {
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
-    public List<Server> getServersForService(String upstreamName) {
-      return servers;
-    }
-
-    @Override
-    public void updateUpstream(@Nonnull String upstreamName) {
+    public void updateUpstream(@Nonnull String serviceName) {
 
     }
 
@@ -75,14 +70,10 @@ public class CustomizationBenchmark {
     }
 
     @Override
-    Map<String, UpstreamGroup> getUpstreams() {
-      return Map.of(upstream.getName(), new UpstreamGroup(UPSTREAM, "test", upstream));
-    }
-
-    @Override
     public Set<Monitoring> getMonitoring() {
       return Set.of();
     }
+
   };
   private static final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;
@@ -165,11 +156,6 @@ public class CustomizationBenchmark {
     @Override
     public RequestBalancerBuilder createRequestEngineBuilder(HttpClient client) {
       return configAction.apply(new CustomBuilder(upstreamManager, client));
-    }
-
-    @Override
-    public void setTimeoutMultiplier(double timeoutMultiplier) {
-
     }
 
     @Override
