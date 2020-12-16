@@ -27,7 +27,6 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
@@ -58,11 +57,6 @@ public class CustomizationBenchmark {
       UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null, null), servers, Executors.newScheduledThreadPool(1)
   );
   private static final UpstreamManager manager = new UpstreamManager() {
-
-    @Override
-    public void updateUpstream(@Nonnull String serviceName) {
-
-    }
 
     @Override
     public Upstream getUpstream(String serviceName, @Nullable String profile) {

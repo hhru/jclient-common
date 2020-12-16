@@ -54,6 +54,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   static final String TEST_UPSTREAM = "backend";
   AsyncHttpClient httpClient;
   BalancingRequestStrategy requestingStrategy;
+  BalancingUpstreamManager upstreamManager;
   UpstreamConfigServiceImpl upstreamConfigService = mock(UpstreamConfigServiceImpl.class);
   UpstreamServiceImpl upstreamService = mock(UpstreamServiceImpl.class);
   @Before
@@ -411,7 +412,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, String datacenter, List<String> upstreamList,
                                                     boolean allowCrossDCRequests, double multiplier) {
     Monitoring monitoring = mock(Monitoring.class);
-    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
+    upstreamManager = new BalancingUpstreamManager(
         upstreamList, newSingleThreadScheduledExecutor(),
         Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService, 0.5);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)

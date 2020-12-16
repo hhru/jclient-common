@@ -224,14 +224,14 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertHostEquals(request[0], "server1");
     when(upstreamService.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null)));
-    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
+    upstreamManager.updateUpstream(TEST_UPSTREAM);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
     when(upstreamService.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null), new Server("server3", 1, null)));
-    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
+    upstreamManager.updateUpstream(TEST_UPSTREAM);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
@@ -290,7 +290,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     createHttpClientFactory(List.of(TEST_UPSTREAM), datacenter, false);
     when(upstreamService.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server1", 1, datacenter)));
-    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
+    upstreamManager.updateUpstream(TEST_UPSTREAM);
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
       .then(iom -> {
@@ -301,7 +301,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     http.with(new RequestBuilder("GET").setUrl("http://backend/path?query").build())
       .expectPlainText().result().get();
 
-    Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
+    Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
       eq("backend"), eq(datacenter), eq("server1"), eq(200), anyLong(), eq(true)
     );
@@ -320,7 +320,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     http.with(new RequestBuilder("GET").setUrl("https://not-balanced-backend/path?query").build())
       .expectPlainText().result().get();
 
-    Monitoring monitoring = requestingStrategy.getUpstreamManager().getMonitoring().stream().findFirst().get();
+    Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
       eq("https://not-balanced-backend"), eq(ExternalUrlRequestor.DC_FOR_EXTERNAL_REQUESTS),
       eq("https://not-balanced-backend"),
@@ -358,7 +358,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertHostEquals(request[0], "server1");
 
     when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server2", 1, "DC2")));
-    requestingStrategy.getUpstreamManager().updateUpstream(TEST_UPSTREAM);
+    upstreamManager.updateUpstream(TEST_UPSTREAM);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");

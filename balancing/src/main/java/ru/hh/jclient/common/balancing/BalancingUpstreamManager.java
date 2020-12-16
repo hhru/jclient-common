@@ -59,7 +59,6 @@ public class BalancingUpstreamManager implements UpstreamManager {
     upstreamService.setupListener(this::updateUpstream);
   }
 
-  @Override
   public void updateUpstream(@Nonnull String upstreamName) {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
