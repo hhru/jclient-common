@@ -163,6 +163,17 @@ public class Request {
     return delegate.toString();
   }
 
+  public String toStringExtended() {
+    StringBuilder sb = new StringBuilder(delegate.toString());
+    sb.append("; requestTimeout:");
+    sb.append(getRequestTimeout());
+    sb.append("; readTimeout:");
+    sb.append(getReadTimeout());
+    sb.append("; queryParams:");
+    sb.append(getQueryParams());
+    return sb.toString();
+  }
+
   org.asynchttpclient.Request getDelegate() {
     return delegate;
   }

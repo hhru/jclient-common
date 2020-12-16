@@ -40,4 +40,10 @@ public class Param {
     return delegate;
   }
 
+  @Override
+  public String toString() {
+    return "Param{" +
+        getName() + "=" + getValue() +
+        '}';
+  }
 }
