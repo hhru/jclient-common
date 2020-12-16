@@ -113,7 +113,7 @@ public class Upstream {
           server.releaseAdaptive(isError, responseTimeMicros);
         } else {
           server.release(isError, responseTimeMicros);
-          if (isError) {
+          if (isError && servers.size() > 1) {
             if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
               server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);
             }

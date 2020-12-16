@@ -3,8 +3,8 @@ package ru.hh.jclient.common.balancing;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +102,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireReleaseServerWithFails() {
+  public void oneServerAlwaysAlive() {
     Upstream upstream = createTestUpstream(TEST_HOST, "max_fails=1 fail_timeout_sec=0.1 | server=a");
 
     int serverIndex = 0;
@@ -112,11 +112,9 @@ public class UpstreamTest {
     assertEquals(serverIndex, upstream.acquireServer().getIndex());
     upstream.releaseServer(serverIndex, true, 100);
 
-    assertFalse(server.isActive());
+    assertTrue(server.isActive());
 
     assertEquals(1, server.getFails());
-
-    assertNull(upstream.acquireServer());
   }
 
   @Test
