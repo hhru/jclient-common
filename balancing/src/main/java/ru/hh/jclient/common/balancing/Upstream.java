@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +55,15 @@ public class Upstream {
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
+  }
+
+  public int getServerCount() {
+    return servers.size();
+  }
+
+  @VisibleForTesting
+  List<Server> getServers() {
+    return servers;
   }
 
   ServerEntry acquireServer(Set<Integer> excludedServers) {

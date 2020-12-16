@@ -67,7 +67,9 @@ public abstract class AbstractBalancingStrategyTest {
       public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
                              int firstStatusCode, int retryCount) {}
     };
-    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, Set.of(tracking), datacenterName, false,
+    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
+      List.of(),
+      scheduledExecutorService, Set.of(tracking), datacenterName, false,
       new UpstreamConfigService() {
         @Override
         public ApplicationConfig getUpstreamConfig(String application) {
@@ -87,7 +89,7 @@ public abstract class AbstractBalancingStrategyTest {
              .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
              .collect(Collectors.toList());
          }
-    });
+    }, 0.5);
     upstreamManager.updateUpstream(upstreamName);
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));

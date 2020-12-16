@@ -26,6 +26,11 @@ public class UpstreamGroup {
       .orElseThrow(noDefaultProfileExSupplier);
   }
 
+  public int getMinServerSize() {
+    return upstreamsByProfile.values().stream().mapToInt(Upstream::getServerCount).min()
+      .orElseThrow(() -> new IllegalStateException("No upstreams in group"));
+  }
+
   public boolean isEmpty() {
     return upstreamsByProfile.isEmpty();
   }

@@ -413,7 +413,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     Monitoring monitoring = mock(Monitoring.class);
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
             upstreamList, newSingleThreadScheduledExecutor(),
-            Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService);
+            Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService, 0.5);
     upstreamManager.setTimeoutMultiplier(multiplier);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager);
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
