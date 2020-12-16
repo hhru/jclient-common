@@ -2,7 +2,9 @@ package ru.hh.jclient.common;
 
 import joptsimple.internal.Strings;
 import org.asynchttpclient.Request;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
@@ -17,6 +19,7 @@ import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
@@ -29,6 +32,84 @@ import java.util.concurrent.TimeoutException;
 
 public class BalancingClientTest extends BalancingClientTestBase {
   private static final String PROFILE_DELIMITER = ":";
+
+  @Test
+  public void testBalancing() throws Exception {
+    Server server1 = new Server("server1", 10, null);
+    Server server2 = new Server("server1", 5, null);
+    Server server3 = new Server("server1", 1, null);
+    List<Server> servers = List.of(server1,
+        server2,
+        server3
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    int size=10;
+
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
+        .then(iom -> {
+          completeWith(200, iom);
+          return null;
+        });
+
+    for (int i = 0; i < size; i++) {
+      getTestClient().get();
+    }
+
+    assertEquals(0, servers.get(0).getRequests());
+    assertEquals(6, servers.get(0).getStatsRequests());
+
+    assertEquals(0, servers.get(1).getRequests());
+    assertEquals(3, servers.get(1).getStatsRequests());
+
+    assertEquals(0, servers.get(2).getRequests());
+    assertEquals(1, servers.get(2).getStatsRequests());
+  }
+
+  @Test
+  public void testBalancingWithCrossDC() throws Exception {
+    Server server1 = new Server("server1", 10, "anotherDC");
+    Server server2 = new Server("server1", 5, null);
+    Server server3 = new Server("server1", 1, null);
+    List<Server> servers = List.of(server1,
+        server2,
+        server3
+    );
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+
+    int size=5;
+
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
+        .then(iom -> {
+          completeWith(200, iom);
+          return null;
+        });
+
+    for (int i = 0; i < size; i++) {
+      getTestClient().get();
+    }
+
+    assertEquals(0, servers.get(0).getRequests());
+    assertEquals(0, servers.get(0).getStatsRequests());
+
+    assertEquals(0, servers.get(1).getRequests());
+    assertEquals(4, servers.get(1).getStatsRequests());
+
+    assertEquals(0, servers.get(2).getRequests());
+    assertEquals(1, servers.get(2).getStatsRequests());
+  }
 
   @Test
   public void requestWithProfile() throws Exception {

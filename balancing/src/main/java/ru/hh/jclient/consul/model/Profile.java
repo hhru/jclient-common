@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 public class Profile {
-  private String name;
   @JsonProperty("max_tries")
   private Integer maxTries;
   @JsonProperty("max_fails")
@@ -84,19 +83,9 @@ public class Profile {
     return this;
   }
 
-  public String getName() {
-    return name;
-  }
-
-  public Profile setName(String name) {
-    this.name = name;
-    return this;
-  }
-
   @Override
   public String toString() {
     return "Profile{" +
-        "name='" + name + '\'' +
         ", maxTries=" + maxTries +
         ", maxFails=" + maxFails +
         ", maxTimeoutTries=" + maxTimeoutTries +

@@ -12,17 +12,20 @@ import java.util.concurrent.TimeUnit;
 
 public final class UpstreamConfig {
   public static final String DEFAULT = "default";
+  public static final int DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
   static final int DEFAULT_MAX_TRIES = 2;
   static final int DEFAULT_MAX_FAILS = 1;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;
 
   static final int DEFAULT_FAIL_TIMEOUT_MS = 10;
   static final int DEFAULT_CONNECT_TIMEOUT_MS = 200;
-  static final int DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
   private int maxTries;
   private int maxFails;
   private int maxTimeoutTries;
-
+  /**
+   * Will be deleted with ru.hh.jclient.common.balancing.Server#deactivate
+   */
+  @Deprecated
   private int failTimeoutMs;
   private int connectTimeoutMs;
   private int requestTimeoutMs;

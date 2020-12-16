@@ -341,6 +341,7 @@ public abstract class HttpClient {
     return http;
   }
 
+  // set within ru.hh.nab.jclient.JClientContextProviderFilter
   public HttpClientContext getContext() {
     return context;
   }

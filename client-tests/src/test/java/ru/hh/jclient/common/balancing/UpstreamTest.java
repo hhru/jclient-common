@@ -43,14 +43,14 @@ public class UpstreamTest {
   public void acquireServer() {
     List<Server> servers = buildServers();
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers);
-    assertEquals("a", upstream.acquireServer(servers).getAddress());
+    assertEquals("a", upstream.acquireServer().getAddress());
     assertServerCounters(servers, 0, 1, 1, 0);
     assertServerCounters(servers, 1, 0, 0, 0);
 
-    assertEquals("b", upstream.acquireServer(servers).getAddress());
+    assertEquals("b", upstream.acquireServer().getAddress());
     assertServerCounters(servers, 1, 1, 1, 0);
 
-    assertEquals("b", upstream.acquireServer(servers).getAddress());
+    assertEquals("b", upstream.acquireServer().getAddress());
     assertServerCounters(servers, 1, 2, 2, 0);
 
     upstream.releaseServer(0, false, 100);
@@ -71,14 +71,14 @@ public class UpstreamTest {
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers);
     servers.forEach(server -> server.deactivate(1, mock(ScheduledExecutorService.class)));
 
-    assertNull(upstream.acquireServer(servers));
+    assertNull(upstream.acquireServer());
 
     assertServerCounters(servers, 0, 0, 0, 0);
     assertServerCounters(servers, 1, 0, 0, 0);
 
     servers.get(1).activate();
 
-    assertEquals("b", upstream.acquireServer(servers).getAddress());
+    assertEquals("b", upstream.acquireServer().getAddress());
 
     assertServerCounters(servers, 1, 1, 1, 0);
   }
@@ -106,14 +106,14 @@ public class UpstreamTest {
     Server server = servers.get(serverIndex);
     assertEquals(0, server.getFails());
 
-    assertEquals(serverIndex, upstream.acquireServer(servers).getIndex());
+    assertEquals(serverIndex, upstream.acquireServer().getIndex());
     upstream.releaseServer(serverIndex, true, 100);
 
     assertFalse(server.isActive());
 
     assertEquals(1, server.getFails());
 
-    assertNull(upstream.acquireServer(servers));
+    assertNull(upstream.acquireServer());
   }
 
   @Test
@@ -128,12 +128,12 @@ public class UpstreamTest {
     UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
 
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, config);
-    int index = upstream.acquireServer(servers).getIndex();
+    int index = upstream.acquireServer().getIndex();
     upstream.releaseServer(index, true, 100);
 
     int serverIndex = 0;
 
-    assertEquals(serverIndex, upstream.acquireServer(servers).getIndex());
+    assertEquals(serverIndex, upstream.acquireServer().getIndex());
   }
 
   @Test
@@ -175,7 +175,7 @@ public class UpstreamTest {
 
   private static void acquireReleaseUpstream(Upstream upstream, int times, List<Server> servers) {
     for (int i = 0; i < times; i++) {
-      ServerEntry serverEntry = upstream.acquireServer(servers);
+      ServerEntry serverEntry = upstream.acquireServer();
       if (serverEntry != null) {
         upstream.releaseServer(serverEntry.getIndex(), false, 100);
       }
