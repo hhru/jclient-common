@@ -69,6 +69,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
       .map(allowedUpstreamCapacity -> servers.size() < allowedUpstreamCapacity)
       .orElse(Boolean.FALSE);
     if (unsafeUpdate) {
+      monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
       LOGGER.warn("Ignoring update which contains {} servers, for upstream {} allowed minimum is {}",
         LOGGER.isDebugEnabled() ? servers : servers.size(),
         upstreamKey.getServiceName(),

@@ -9,4 +9,6 @@ public interface Monitoring {
   void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMicros);
 
   void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, int firstStatusCode, int retryCount);
+
+  void countUpdateIgnore(String upstreamName, String serverDatacenter);
 }

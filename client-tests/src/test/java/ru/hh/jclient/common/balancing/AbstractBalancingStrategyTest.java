@@ -66,6 +66,9 @@ public abstract class AbstractBalancingStrategyTest {
       @Override
       public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
                              int firstStatusCode, int retryCount) {}
+
+      @Override
+      public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
     };
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
       List.of(),
