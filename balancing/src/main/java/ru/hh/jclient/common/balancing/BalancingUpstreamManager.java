@@ -26,22 +26,27 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
+  private final int minAllowedServers;
 
   public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests) {
-    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests);
+                                  boolean allowCrossDCRequests,
+                                  int minAllowedServers) {
+    this(Map.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, minAllowedServers);
   }
 
   public BalancingUpstreamManager(Map<String, String> upstreamConfigs,
                                   ScheduledExecutorService scheduledExecutor,
                                   Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests) {
+                                  boolean allowCrossDCRequests,
+                                  int minAllowedServers
+                                  ) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.minAllowedServers = minAllowedServers;
 
     requireNonNull(upstreamConfigs, "upstreamConfigs must not be null");
     upstreamConfigs.forEach(this::updateUpstream);
@@ -73,7 +78,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config) {
-    return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true);
+    return new Upstream(key, config, scheduledExecutor, datacenter, allowCrossDCRequests, true, minAllowedServers);
   }
 
   @Override

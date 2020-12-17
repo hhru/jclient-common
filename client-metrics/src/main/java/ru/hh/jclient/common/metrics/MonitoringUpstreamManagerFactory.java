@@ -19,13 +19,14 @@ public class MonitoringUpstreamManagerFactory {
   public static RequestStrategy<RequestBalancerBuilder> create(
       String serviceName, String dc,
       boolean allowCrossDCRequests,
+      int minAllowedServers,
       StatsDSender statsDSender, @Nullable Properties kafkaUpstreamMonitoringProperties,
       ScheduledExecutorService scheduledExecutorService,
       Consumer<UpstreamManager> upstreamUpdater) {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       scheduledExecutorService,
       buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
-      dc, allowCrossDCRequests
+      dc, allowCrossDCRequests, minAllowedServers
     );
 
     upstreamUpdater.accept(balancingUpstreamManager);

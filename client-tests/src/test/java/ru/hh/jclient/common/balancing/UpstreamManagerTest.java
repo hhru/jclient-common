@@ -85,7 +85,7 @@ public class UpstreamManagerTest {
   private static UpstreamManager createUpstreamManager(String backend, String configString) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(
-      singletonMap(backend, configString), newSingleThreadScheduledExecutor(), Set.of(monitoring), null, false
+      singletonMap(backend, configString), newSingleThreadScheduledExecutor(), Set.of(monitoring), null, false, 1
     );
   }
 }

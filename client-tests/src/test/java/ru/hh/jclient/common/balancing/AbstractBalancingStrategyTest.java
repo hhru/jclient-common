@@ -63,7 +63,7 @@ public abstract class AbstractBalancingStrategyTest {
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
         Map.of(upstreamName, String.join(" | ", upstreamCfgString, serverCfgString)),
         scheduledExecutorService,
-        Set.of(tracking), datacenterName, false
+        Set.of(tracking), datacenterName, false, 1
     );
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));

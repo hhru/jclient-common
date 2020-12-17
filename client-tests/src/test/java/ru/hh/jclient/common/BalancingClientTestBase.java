@@ -290,7 +290,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
                                                     boolean allowCrossDCRequests) {
     Monitoring monitoring = mock(Monitoring.class);
     requestingStrategy = new BalancingRequestStrategy(new BalancingUpstreamManager(
-      upstreamConfigs, newSingleThreadScheduledExecutor(), Set.of(monitoring), datacenter, allowCrossDCRequests));
+      upstreamConfigs, newSingleThreadScheduledExecutor(), Set.of(monitoring), datacenter, allowCrossDCRequests, 1));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
   }
