@@ -51,6 +51,11 @@ public class UpstreamMonitoring implements Monitoring {
     statsDSender.sendCount("http.client.retries", 1, toTagsArray(tags));
   }
 
+  @Override
+  public void countUpdateIgnore(String upstreamName, String clientDatacenter) {
+    statsDSender.sendCount("http.client.not.ehough.servers.update", 1, toTagsArray(getCommonTags(serviceName, upstreamName, clientDatacenter)));
+  }
+
   private static Map<String, String> getCommonTags(String serviceName, String upstreamName, String datacenter) {
     Map<String, String> tags = new HashMap<>();
     tags.put("app", serviceName);

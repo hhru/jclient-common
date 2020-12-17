@@ -27,7 +27,6 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
@@ -60,29 +59,15 @@ public class CustomizationBenchmark {
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
-    public List<Server> getServersForService(String upstreamName) {
-      return servers;
-    }
-
-    @Override
-    public void updateUpstream(@Nonnull String upstreamName) {
-
-    }
-
-    @Override
     public Upstream getUpstream(String serviceName, @Nullable String profile) {
       return upstream;
-    }
-
-    @Override
-    Map<String, UpstreamGroup> getUpstreams() {
-      return Map.of(upstream.getName(), new UpstreamGroup(UPSTREAM, "test", upstream));
     }
 
     @Override
     public Set<Monitoring> getMonitoring() {
       return Set.of();
     }
+
   };
   private static final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;
@@ -165,11 +150,6 @@ public class CustomizationBenchmark {
     @Override
     public RequestBalancerBuilder createRequestEngineBuilder(HttpClient client) {
       return configAction.apply(new CustomBuilder(upstreamManager, client));
-    }
-
-    @Override
-    public void setTimeoutMultiplier(double timeoutMultiplier) {
-
     }
 
     @Override

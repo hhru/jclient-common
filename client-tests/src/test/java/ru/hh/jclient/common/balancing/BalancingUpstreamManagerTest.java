@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class UpstreamManagerTest {
+public class BalancingUpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";
-  private static final UpstreamConfigService upstreamConfigService = mock(UpstreamConfigService.class);
-  private static final UpstreamService upstreamService = mock(UpstreamService.class);
+  private final UpstreamConfigService upstreamConfigService = mock(UpstreamConfigService.class);
+  private final UpstreamService upstreamService = mock(UpstreamService.class);
 
   @Test
   public void createUpstreamManager() {
@@ -36,7 +36,7 @@ public class UpstreamManagerTest {
 
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
 
-    UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
     assertEquals(1, manager.getUpstreams().size());
 
@@ -59,7 +59,7 @@ public class UpstreamManagerTest {
         .setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
 
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
-    UpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
     profile.setMaxFails(6);
     manager.updateUpstream(TEST_BACKEND);
@@ -77,14 +77,46 @@ public class UpstreamManagerTest {
     assertNull(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
     assertTrue(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
     assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.INTERNAL_SERVER_ERROR));
+  }
 
+  @Test
+  public void ignoreDangerousServerUpdate() {
+    ApplicationConfig applicationConfig = buildTestConfig();
+    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
+    List<Server> initialServers = List.of(
+            new Server("server1", 100, "test"),
+            new Server("server2", 100, "test")
+    );
+    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(initialServers);
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.0);
+    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(List.of(new Server("server3", 100, "test")));
+    manager.updateUpstream(TEST_BACKEND);
+    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+  }
+
+  @Test
+  public void allowNotDangerousServerUpdate() {
+    ApplicationConfig applicationConfig = buildTestConfig();
+    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
+    List<Server> initialServers = List.of(
+            new Server("server1", 100, "test"),
+            new Server("server2", 100, "test")
+    );
+    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(initialServers);
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
+    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+    List<Server> servers = List.of(new Server("server3", 100, "test"));
+    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(servers);
+    manager.updateUpstream(TEST_BACKEND);
+    assertEquals(servers, manager.getUpstream(TEST_BACKEND).getServers());
   }
 
   @Test
   public void testGetUpstream() {
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(new ApplicationConfig());
 
-    UpstreamManager upstreamManager = createUpstreamManager(List.of(TEST_BACKEND));
+    UpstreamManager upstreamManager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
     assertNotNull(upstreamManager.getUpstream(TEST_BACKEND));
 
@@ -96,7 +128,7 @@ public class UpstreamManagerTest {
   }
 
 
-  private static UpstreamManager createUpstreamManager(List<String> upstreamList) {
+  private BalancingUpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(upstreamList,
             newSingleThreadScheduledExecutor(),
@@ -104,7 +136,8 @@ public class UpstreamManagerTest {
             null,
             false,
             upstreamConfigService,
-            upstreamService
+            upstreamService,
+            allowedDegradationPart
     );
   }
 }

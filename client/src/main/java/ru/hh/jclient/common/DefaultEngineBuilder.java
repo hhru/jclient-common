@@ -1,7 +1,10 @@
 package ru.hh.jclient.common;
 
-public class DefaultEngineBuilder implements RequestEngineBuilder {
+import static java.util.Optional.ofNullable;
+
+public class DefaultEngineBuilder implements RequestEngineBuilder<DefaultEngineBuilder> {
   private final HttpClient httpClient;
+  private Double timeoutMultiplier;
 
   public DefaultEngineBuilder(HttpClient httpClient) {
     this.httpClient = httpClient;
@@ -9,15 +12,20 @@ public class DefaultEngineBuilder implements RequestEngineBuilder {
 
   @Override
   public RequestEngine build(Request request, RequestStrategy.RequestExecutor executor) {
-    if (request.getRequestTimeout() <= 0) {
-      return () -> {
-        var requestWithTimeout = new RequestBuilder(request).setRequestTimeout(executor.getDefaultRequestTimeoutMs()).build();
-        return executor.executeRequest(requestWithTimeout, 0, RequestContext.EMPTY_CONTEXT)
-            .thenApply(ResponseWrapper::getResponse);
-      };
-    }
-    return () -> executor.executeRequest(request, 0, RequestContext.EMPTY_CONTEXT)
-        .thenApply(ResponseWrapper::getResponse);
+    return () -> {
+      var requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : executor.getDefaultRequestTimeoutMs();
+      var requestWithTimeout = new RequestBuilder(request)
+        .setRequestTimeout(ofNullable(timeoutMultiplier).map(multiplier -> (int) (multiplier * requestTimeout)).orElse(requestTimeout))
+        .build();
+      return executor.executeRequest(requestWithTimeout, 0, RequestContext.EMPTY_CONTEXT)
+          .thenApply(ResponseWrapper::getResponse);
+    };
+  }
+
+  @Override
+  public DefaultEngineBuilder withTimeoutMultiplier(Double timeoutMultiplier) {
+    this.timeoutMultiplier = timeoutMultiplier;
+    return this;
   }
 
   @Override

@@ -6,6 +6,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngine;
 import ru.hh.jclient.common.RequestStrategy;
@@ -44,7 +45,7 @@ public abstract class RequestBalancer implements RequestEngine {
                   @Nullable Double timeoutMultiplier,
                   boolean forceIdempotence
   ) {
-    this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(1.0);
+    this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
     this.request = request;
     this.requestExecutor = requestExecutor;
     this.forceIdempotence = forceIdempotence;

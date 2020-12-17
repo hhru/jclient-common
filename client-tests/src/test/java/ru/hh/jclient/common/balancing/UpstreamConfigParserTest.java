@@ -82,8 +82,7 @@ public class UpstreamConfigParserTest {
         .setMaxTries(3)
         .setRequestTimeoutMs(2f)
         .setMaxTimeoutTries(2)
-        .setRetryPolicy(new HashMap<>())
-        ;
+        .setRetryPolicy(new HashMap<>());
 
     Host host = new Host();
     Map<String, Profile> profiles = new HashMap<>();

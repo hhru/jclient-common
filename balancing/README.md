@@ -6,7 +6,10 @@ served with [default configuration](./src/main/java/ru/hh/jclient/common/balanci
 ### Balancing
 //TODO
 ### Arch
-Upstream - configuration(retries amount and policy, timeout etc) + ip and its weight list to balance request with  
+Upstream - configuration(retries amount and policy, timeout etc) + ip and its weight list to balance request with 
+If our default Consul-based implementation described below is not applicable for you - there are 2 extension points:
+- Implement custom [UpstreamService](./src/main/java/ru/hh/jclient/consul/UpstreamService.java) and [UpstreamConfigService](./src/main/java/ru/hh/jclient/consul/UpstreamConfigService.java) to use it with our [BalancingUpstreamManager](./src/main/java/ru/hh/jclient/common/balancing/BalancingUpstreamManager.java) - it requires to implement pub-sub pattern with your storage
+- If [BalancingUpstreamManager](./src/main/java/ru/hh/jclient/common/balancing/BalancingUpstreamManager.java) looks too constrained - feel free to implement [UpstreamManager](./src/main/java/ru/hh/jclient/common/balancing/UpstreamManager.java) - this abstraction is very high)
 #### Data Source
 > Important. Service name for configuration in consul KV must be equal to service name in consul registration of the service 
 

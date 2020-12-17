@@ -502,7 +502,7 @@ public class HttpClientTest extends HttpClientTestBase {
       handler.onThrowable(new TestException());
       return null;
     });
-    http = createHttpClientBuilder(httpClient);
+    http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
     withEmptyContext();
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();

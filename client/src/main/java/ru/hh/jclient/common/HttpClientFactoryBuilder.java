@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import io.netty.handler.ssl.SslContext;
+import static java.util.Optional.ofNullable;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
@@ -18,13 +19,11 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 
-import static java.util.Optional.ofNullable;
-
 public class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
-  private RequestStrategy<? extends RequestEngineBuilder> requestStrategy = new DefaultRequestStrategy();
+  private RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy = new DefaultRequestStrategy();
   private Executor callbackExecutor;
   private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
@@ -192,9 +191,8 @@ public class HttpClientFactoryBuilder {
     return MDCCopy.doWithoutContext(() -> new DefaultAsyncHttpClient(clientConfig));
   }
 
-  private RequestStrategy<? extends RequestEngineBuilder> initStrategy() {
-    requestStrategy.setTimeoutMultiplier(timeoutMultiplier);
-    return requestStrategy;
+  private RequestStrategy<? extends RequestEngineBuilder<?>> initStrategy() {
+    return requestStrategy.createCustomizedCopy(requestEngineBuilder -> requestEngineBuilder.withTimeoutMultiplier(timeoutMultiplier));
   }
 
   private DefaultAsyncHttpClientConfig.Builder applyTimeoutMultiplier(DefaultAsyncHttpClientConfig.Builder clientConfigBuilder) {

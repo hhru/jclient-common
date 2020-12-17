@@ -54,6 +54,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   static final String TEST_UPSTREAM = "backend";
   AsyncHttpClient httpClient;
   BalancingRequestStrategy requestingStrategy;
+  BalancingUpstreamManager upstreamManager;
   UpstreamConfigServiceImpl upstreamConfigService = mock(UpstreamConfigServiceImpl.class);
   UpstreamServiceImpl upstreamService = mock(UpstreamServiceImpl.class);
   @Before
@@ -411,11 +412,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, String datacenter, List<String> upstreamList,
                                                     boolean allowCrossDCRequests, double multiplier) {
     Monitoring monitoring = mock(Monitoring.class);
-    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
-            upstreamList, newSingleThreadScheduledExecutor(),
-            Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService);
-    upstreamManager.setTimeoutMultiplier(multiplier);
-    requestingStrategy = new BalancingRequestStrategy(upstreamManager);
+    upstreamManager = new BalancingUpstreamManager(
+        upstreamList, newSingleThreadScheduledExecutor(),
+        Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService, 0.5);
+    requestingStrategy = new BalancingRequestStrategy(upstreamManager)
+        .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
   }
@@ -550,11 +551,16 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     }
   }
 
-  static final class NotValidEngineBuilder implements RequestEngineBuilder {
+  static final class NotValidEngineBuilder implements RequestEngineBuilder<NotValidEngineBuilder> {
 
     @Override
     public RequestEngine build(ru.hh.jclient.common.Request request, RequestStrategy.RequestExecutor executor) {
       return null;
+    }
+
+    @Override
+    public NotValidEngineBuilder withTimeoutMultiplier(Double timeoutMultiplier) {
+      return this;
     }
 
     public NotValidEngineBuilder withSmth() {
