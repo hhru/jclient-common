@@ -3,8 +3,8 @@ package ru.hh.jclient.common.balancing;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
@@ -99,7 +99,7 @@ public class UpstreamTest {
   }
 
   @Test
-  public void acquireReleaseServerWithFails() {
+  public void oneServerAlwaysAlive() {
     List<Server> servers = List.of(new Server("a", 1, null));
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers);
     int serverIndex = 0;
@@ -109,11 +109,9 @@ public class UpstreamTest {
     assertEquals(serverIndex, upstream.acquireServer().getIndex());
     upstream.releaseServer(serverIndex, true, 100);
 
-    assertFalse(server.isActive());
+    assertTrue(server.isActive());
 
     assertEquals(1, server.getFails());
-
-    assertNull(upstream.acquireServer());
   }
 
   @Test

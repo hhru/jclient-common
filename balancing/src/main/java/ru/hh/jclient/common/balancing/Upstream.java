@@ -29,6 +29,7 @@ public class Upstream {
   private final String datacenter;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
+  private final int minAllowedServers;
   private volatile List<Server> servers;
   private boolean failedSelection = false;
 
@@ -37,7 +38,7 @@ public class Upstream {
   private final Lock configReadLock = configReadWriteLock.readLock();
 
   Upstream(String upstreamName, UpstreamConfig upstreamConfig, List<Server> servers, ScheduledExecutorService scheduledExecutor) {
-    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, servers, scheduledExecutor, null, false, true);
+    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, servers, scheduledExecutor, null, false, true, 1);
   }
 
   Upstream(UpstreamKey upstreamKey,
@@ -46,13 +47,16 @@ public class Upstream {
            ScheduledExecutorService scheduledExecutor,
            String datacenter,
            boolean allowCrossDCRequests,
-           boolean enabled) {
+           boolean enabled,
+           int minAllowedServers
+  ) {
     this.upstreamKey = upstreamKey;
     this.upstreamConfig = upstreamConfig;
     this.servers = servers;
     this.scheduledExecutor = scheduledExecutor;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.minAllowedServers = minAllowedServers;
     this.enabled = enabled;
   }
 
@@ -122,7 +126,7 @@ public class Upstream {
           server.releaseAdaptive(isError, responseTimeMicros);
         } else {
           server.release(isError, responseTimeMicros);
-          if (isError) {
+          if (isError && servers.size() > minAllowedServers) {
             if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
               server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);
             }

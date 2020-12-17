@@ -67,7 +67,7 @@ public abstract class AbstractBalancingStrategyTest {
       public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
                              int firstStatusCode, int retryCount) {}
     };
-    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, Set.of(tracking), datacenterName, false,
+    BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(scheduledExecutorService, Set.of(tracking), datacenterName, false, 1,
       new UpstreamConfigService() {
         @Override
         public ApplicationConfig getUpstreamConfig(String application) {

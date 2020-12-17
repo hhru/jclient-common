@@ -103,6 +103,7 @@ public class UpstreamManagerTest {
             Set.of(monitoring),
             null,
             false,
+            1,
             upstreamConfigService,
             upstreamService
     );

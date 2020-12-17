@@ -29,7 +29,7 @@ public class MonitoringRequestStrategyFactory {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       scheduledExecutorService,
       buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
-      dc, allowCrossDCRequests, upstreamConfigService, upstreamService
+      dc, allowCrossDCRequests, 1, upstreamConfigService, upstreamService
     );
 
     upstreamUpdater.accept(balancingUpstreamManager);

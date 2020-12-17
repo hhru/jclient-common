@@ -27,26 +27,30 @@ public class BalancingUpstreamManager extends UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
+  private final int minAllowedServers;
   private final UpstreamConfigService upstreamConfigService;
   private final UpstreamService upstreamService;
 
   public BalancingUpstreamManager(ScheduledExecutorService scheduledExecutor, Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests, UpstreamConfigService upstreamConfigService,
+                                  boolean allowCrossDCRequests, int minAllowedServers, UpstreamConfigService upstreamConfigService,
                                   UpstreamService upstreamService) {
-    this(List.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService);
+    this(List.of(), scheduledExecutor, monitoring, datacenter, allowCrossDCRequests, minAllowedServers, upstreamConfigService, upstreamService);
   }
 
   public BalancingUpstreamManager(Collection<String> upstreamsList,
                                   ScheduledExecutorService scheduledExecutor,
                                   Set<Monitoring> monitoring,
                                   String datacenter,
-                                  boolean allowCrossDCRequests, UpstreamConfigService upstreamConfigService,
+                                  boolean allowCrossDCRequests,
+                                  int minAllowedServers,
+                                  UpstreamConfigService upstreamConfigService,
                                   UpstreamService upstreamService) {
     this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.minAllowedServers = minAllowedServers;
     this.upstreamService = upstreamService;
     this.upstreamConfigService = upstreamConfigService;
 
@@ -77,7 +81,7 @@ public class BalancingUpstreamManager extends UpstreamManager {
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config, List<Server> servers) {
-    return new Upstream(key, config, servers, scheduledExecutor, datacenter, allowCrossDCRequests, true);
+    return new Upstream(key, config, servers, scheduledExecutor, datacenter, allowCrossDCRequests, true, minAllowedServers);
   }
 
   @Override
