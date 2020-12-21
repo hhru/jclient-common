@@ -91,7 +91,7 @@ public final class UpstreamConfig {
   public int getMaxTries() {
     return maxTries;
   }
-
+//todo выкосить
   public int getMaxFails() {
     return maxFails;
   }
@@ -99,7 +99,7 @@ public final class UpstreamConfig {
   public int getMaxTimeoutTries() {
     return maxTimeoutTries;
   }
-
+  //todo не нужен
   public int getFailTimeoutMs() {
     return failTimeoutMs;
   }

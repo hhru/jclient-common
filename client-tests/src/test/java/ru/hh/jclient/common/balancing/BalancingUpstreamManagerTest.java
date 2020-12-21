@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -131,7 +130,6 @@ public class BalancingUpstreamManagerTest {
   private BalancingUpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(upstreamList,
-            newSingleThreadScheduledExecutor(),
             Set.of(monitoring),
             null,
             false,
