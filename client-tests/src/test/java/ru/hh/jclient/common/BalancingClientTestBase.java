@@ -172,8 +172,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(4)
-        .setMaxFails(2);
+        .setMaxTries(4);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -215,8 +214,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3)
-        .setMaxFails(2);
+        .setMaxTries(3);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -306,7 +304,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
         .setMaxTries(3)
-        .setMaxFails(2)
         .setRetryPolicy(Map.of(503, new RetryPolicyConfig().setIdempotent(true)));
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
@@ -331,8 +328,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3)
-        .setMaxFails(2);
+        .setMaxTries(3);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -357,8 +353,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3)
-        .setMaxFails(2);
+        .setMaxTries(3);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 

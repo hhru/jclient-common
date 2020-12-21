@@ -10,7 +10,6 @@ import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.getDefaultConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
 import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Profile;
 
 import java.util.List;
 
@@ -81,9 +80,6 @@ public class UpstreamTest {
     List<Server> servers = List.of(new Server("a", 1, null));
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    Profile profile = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
-    profile.setMaxFails(0)
-        .setFailTimeoutMs(0.1f);
 
     UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
 
