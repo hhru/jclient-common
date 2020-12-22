@@ -3,6 +3,7 @@ package ru.hh.jclient.common.balancing;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,23 @@ public class UpstreamTest {
 
     assertEquals(0, servers.get(0).getRequests());
     assertEquals(1, servers.get(1).getRequests());
+  }
+
+  @Test
+  public void acquireReleaseServerWithFails() {
+    List<Server> servers = List.of(new Server("a", 1, null));
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers);
+    int serverIndex = 0;
+    Server server = servers.get(serverIndex);
+    assertEquals(0, server.getFails());
+
+    assertEquals(serverIndex, upstream.acquireServer().getIndex());
+    upstream.releaseServer(serverIndex, true, 100);
+
+
+    assertEquals(1, server.getFails());
+
+    assertNotNull(upstream.acquireServer());
   }
 
   @Test

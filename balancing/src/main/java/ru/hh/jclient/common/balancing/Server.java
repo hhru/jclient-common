@@ -11,8 +11,8 @@ public final class Server {
   private static final String DELIMITER = ":";
 
   private final String address;
-  private final int weight;
   private final String datacenter;
+  private volatile int weight;
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
 
@@ -115,6 +115,11 @@ public final class Server {
 
   public void setTags(List<String> tags) {
     this.tags = tags;
+  }
+
+  public Server setWeight(int weight) {
+    this.weight = weight;
+    return this;
   }
 
   @Override

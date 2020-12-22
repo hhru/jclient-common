@@ -123,18 +123,20 @@ public class UpstreamServiceImpl implements UpstreamService {
 
       String address = Server.addressFromHostPort(getAddress(serviceHealth), service.getPort());
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
+      int serverWeight = service.getWeights().orElse(defaultWeight).getPassing();
 
       Server server = currentServers.stream()
         .filter(s -> address.equals(s.getAddress()))
         .findFirst().orElse(null);
 
       if (server == null) {
-        server = new Server(address, service.getWeights().orElse(defaultWeight).getPassing(), nodeDatacenter);
+        server = new Server(address, serverWeight, nodeDatacenter);
         currentServers.add(server);
       }
 
       server.setMeta(service.getMeta());
       server.setTags(service.getTags());
+      server.setWeight(serverWeight);
 
       aliveServers.add(address);
     }
