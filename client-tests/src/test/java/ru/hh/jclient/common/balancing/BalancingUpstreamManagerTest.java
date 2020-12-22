@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,8 +30,7 @@ public class BalancingUpstreamManagerTest {
   @Test
   public void createUpstreamManager() {
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxFails(5);
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
 
@@ -41,8 +39,6 @@ public class BalancingUpstreamManagerTest {
     assertEquals(1, manager.getUpstreams().size());
 
     Upstream upstream =  manager.getUpstream(TEST_BACKEND);
-
-    assertEquals(5, upstream.getConfig().getMaxFails());
 
     assertNotNull(upstream.getConfig().getRetryPolicy().getRules());
     assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
@@ -54,14 +50,11 @@ public class BalancingUpstreamManagerTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     Profile profile = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
 
-    profile
-        .setMaxFails(5)
-        .setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
+    profile.setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
 
     when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
-    profile.setMaxFails(6);
     manager.updateUpstream(TEST_BACKEND);
 
     profile.setRetryPolicy(Map.of(
@@ -71,8 +64,6 @@ public class BalancingUpstreamManagerTest {
     manager.updateUpstream(TEST_BACKEND);
 
     Upstream upstream = manager.getUpstream(TEST_BACKEND);
-
-    assertEquals(6, upstream.getConfig().getMaxFails());
 
     assertNull(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
     assertTrue(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
@@ -131,7 +122,6 @@ public class BalancingUpstreamManagerTest {
   private BalancingUpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
     Monitoring monitoring = mock(Monitoring.class);
     return new BalancingUpstreamManager(upstreamList,
-            newSingleThreadScheduledExecutor(),
             Set.of(monitoring),
             null,
             false,

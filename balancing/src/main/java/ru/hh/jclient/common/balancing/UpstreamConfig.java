@@ -20,13 +20,8 @@ public final class UpstreamConfig {
   static final int DEFAULT_FAIL_TIMEOUT_MS = 10;
   static final int DEFAULT_CONNECT_TIMEOUT_MS = 200;
   private int maxTries;
-  private int maxFails;
   private int maxTimeoutTries;
-  /**
-   * Will be deleted with ru.hh.jclient.common.balancing.Server#deactivate
-   */
-  @Deprecated
-  private int failTimeoutMs;
+
   private int connectTimeoutMs;
   private int requestTimeoutMs;
 
@@ -50,9 +45,7 @@ public final class UpstreamConfig {
     try {
       UpstreamConfig upstreamConfig = new UpstreamConfig();
       upstreamConfig.maxTries = requireNonNullElse(profile.getMaxTries(), DEFAULT_MAX_TRIES);
-      upstreamConfig.maxFails = requireNonNullElse(profile.getMaxFails(), DEFAULT_MAX_FAILS);
       upstreamConfig.maxTimeoutTries = requireNonNullElse(profile.getMaxTimeoutTries(), DEFAULT_MAX_TIMEOUT_TRIES);
-      upstreamConfig.failTimeoutMs = convertToMillisOrFallback(profile.getFailTimeoutMs(), DEFAULT_FAIL_TIMEOUT_MS);
       upstreamConfig.connectTimeoutMs = convertToMillisOrFallback(profile.getConnectTimeoutMs(), DEFAULT_CONNECT_TIMEOUT_MS);
       upstreamConfig.requestTimeoutMs = convertToMillisOrFallback(profile.getRequestTimeoutMs(), DEFAULT_REQUEST_TIMEOUT_MS);
       upstreamConfig.retryPolicy.update(profile.getRetryPolicy());
@@ -67,9 +60,7 @@ public final class UpstreamConfig {
   public static UpstreamConfig getDefaultConfig() {
     UpstreamConfig upstreamConfig = new UpstreamConfig();
     upstreamConfig.maxTries = DEFAULT_MAX_TRIES;
-    upstreamConfig.maxFails = DEFAULT_MAX_FAILS;
     upstreamConfig.maxTimeoutTries = DEFAULT_MAX_TIMEOUT_TRIES;
-    upstreamConfig.failTimeoutMs = DEFAULT_FAIL_TIMEOUT_MS;
     upstreamConfig.connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS;
     upstreamConfig.requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
     return upstreamConfig;
@@ -79,9 +70,7 @@ public final class UpstreamConfig {
     requireNonNull(newConfig, "new config should not be empty");
 
     maxTries = newConfig.maxTries;
-    maxFails = newConfig.maxFails;
     maxTimeoutTries = newConfig.maxTimeoutTries;
-    failTimeoutMs = newConfig.failTimeoutMs;
     connectTimeoutMs = newConfig.connectTimeoutMs;
     requestTimeoutMs = newConfig.requestTimeoutMs;
     retryPolicy = newConfig.retryPolicy;
@@ -92,16 +81,8 @@ public final class UpstreamConfig {
     return maxTries;
   }
 
-  public int getMaxFails() {
-    return maxFails;
-  }
-
   public int getMaxTimeoutTries() {
     return maxTimeoutTries;
-  }
-
-  public int getFailTimeoutMs() {
-    return failTimeoutMs;
   }
 
   public int getConnectTimeoutMs() {
@@ -120,8 +101,6 @@ public final class UpstreamConfig {
   public String toString() {
     return "{max_tries=" + maxTries
         + ", max_timeout_tries=" + maxTimeoutTries
-        + ", fail_timeout_ms=" + failTimeoutMs
-        + ", max_fails=" + maxFails
         + ", connect_timeout_ms=" + connectTimeoutMs
         + ", request_timeout_ms=" + requestTimeoutMs
         + '}';

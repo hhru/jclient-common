@@ -71,8 +71,7 @@ public abstract class AbstractBalancingStrategyTest {
       public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
     };
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
-      List.of(),
-      scheduledExecutorService, Set.of(tracking), datacenterName, false,
+      List.of(), Set.of(tracking), datacenterName, false,
       new UpstreamConfigService() {
         @Override
         public ApplicationConfig getUpstreamConfig(String application) {

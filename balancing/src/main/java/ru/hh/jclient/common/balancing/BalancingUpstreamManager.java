@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class BalancingUpstreamManager implements UpstreamManager {
 
@@ -28,7 +27,6 @@ public class BalancingUpstreamManager implements UpstreamManager {
   public static final String SCHEMA_SEPARATOR = "://";
 
   private final Map<String, UpstreamGroup> upstreams = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService scheduledExecutor;
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
@@ -37,14 +35,12 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final Map<String, Integer> allowedUpstreamCapacities;
 
   public BalancingUpstreamManager(Collection<String> upstreamsList,
-                                  ScheduledExecutorService scheduledExecutor,
                                   Set<Monitoring> monitoring,
                                   String datacenter,
                                   boolean allowCrossDCRequests,
                                   UpstreamConfigService upstreamConfigService,
                                   UpstreamService upstreamService,
                                   double allowedDegradationPath) {
-    this.scheduledExecutor = requireNonNull(scheduledExecutor, "scheduledExecutor must not be null");
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
@@ -88,7 +84,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config, List<Server> servers) {
-    return new Upstream(key, config, servers, scheduledExecutor, datacenter, allowCrossDCRequests, true);
+    return new Upstream(key, config, servers, datacenter, allowCrossDCRequests, true);
   }
 
   @Override

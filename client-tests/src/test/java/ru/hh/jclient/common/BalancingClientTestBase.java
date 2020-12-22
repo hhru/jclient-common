@@ -4,7 +4,6 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import io.netty.channel.ConnectTimeoutException;
 import static java.util.Collections.singleton;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
@@ -173,8 +172,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(4)
-        .setMaxFails(2);
+        .setMaxTries(4);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -216,8 +214,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3)
-        .setMaxFails(2);
+        .setMaxTries(3);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -307,7 +304,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
         .setMaxTries(3)
-        .setMaxFails(2)
         .setRetryPolicy(Map.of(503, new RetryPolicyConfig().setIdempotent(true)));
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
@@ -332,8 +328,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3)
-        .setMaxFails(2);
+        .setMaxTries(3);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -358,8 +353,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3)
-        .setMaxFails(2);
+        .setMaxTries(3);
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
@@ -413,8 +407,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
                                                     boolean allowCrossDCRequests, double multiplier) {
     Monitoring monitoring = mock(Monitoring.class);
     upstreamManager = new BalancingUpstreamManager(
-        upstreamList, newSingleThreadScheduledExecutor(),
-        Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService, 0.5);
+        upstreamList, Set.of(monitoring), datacenter, allowCrossDCRequests, upstreamConfigService, upstreamService, 0.5);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),

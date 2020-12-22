@@ -15,13 +15,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class MonitoringRequestStrategyFactory {
   public static RequestStrategy<RequestBalancerBuilder> create(
       String serviceName, String dc,
       StatsDSender statsDSender,
-      ScheduledExecutorService scheduledExecutorService,
       UpstreamConfigService upstreamConfigService,
       UpstreamService upstreamService,
       List<String> upstreamList,
@@ -30,7 +28,6 @@ public class MonitoringRequestStrategyFactory {
       @Nullable Double allowedUpstreamDegradationPart) {
     var balancingUpstreamManager = new BalancingUpstreamManager(
       upstreamList,
-      scheduledExecutorService,
       buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
       dc, allowCrossDCRequests, upstreamConfigService, upstreamService, ofNullable(allowedUpstreamDegradationPart).orElse(0.5)
     );

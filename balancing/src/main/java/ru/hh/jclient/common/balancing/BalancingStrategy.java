@@ -19,7 +19,7 @@ final class BalancingStrategy {
     for (int index = 0; index < servers.size(); index++) {
       Server server = servers.get(index);
 
-      if (server == null || !server.isActive()) {
+      if (server == null) {
         continue;
       }
 

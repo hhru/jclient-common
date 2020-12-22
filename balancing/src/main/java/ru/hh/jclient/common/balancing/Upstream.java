@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -26,7 +25,6 @@ public class Upstream {
 
   private final UpstreamKey upstreamKey;
   private final UpstreamConfig upstreamConfig;
-  private final ScheduledExecutorService scheduledExecutor;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
@@ -37,21 +35,19 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  Upstream(String upstreamName, UpstreamConfig upstreamConfig, List<Server> servers, ScheduledExecutorService scheduledExecutor) {
-    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, servers, scheduledExecutor, null, false, true);
+  Upstream(String upstreamName, UpstreamConfig upstreamConfig, List<Server> servers) {
+    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, servers, null, false, true);
   }
 
   Upstream(UpstreamKey upstreamKey,
            UpstreamConfig upstreamConfig,
            List<Server> servers,
-           ScheduledExecutorService scheduledExecutor,
            String datacenter,
            boolean allowCrossDCRequests,
            boolean enabled) {
     this.upstreamKey = upstreamKey;
     this.upstreamConfig = upstreamConfig;
     this.servers = servers;
-    this.scheduledExecutor = scheduledExecutor;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
@@ -131,12 +127,7 @@ public class Upstream {
         if (adaptive) {
           server.releaseAdaptive(isError, responseTimeMicros);
         } else {
-          server.release(isError, responseTimeMicros);
-          if (isError) {
-            if (upstreamConfig.getMaxFails() > 0 && server.getFails() >= upstreamConfig.getMaxFails()) {
-              server.deactivate(upstreamConfig.getFailTimeoutMs(), scheduledExecutor);
-            }
-          }
+          server.release(isError);
         }
       }
 
@@ -199,7 +190,7 @@ public class Upstream {
 
   private static void iterateServers(List<Server> servers, Consumer<Server> function) {
     servers.forEach(server -> {
-      if (server == null || !server.isActive()) {
+      if (server == null) {
         return;
       }
 
@@ -263,7 +254,6 @@ public class Upstream {
     return "Upstream{" +
       "upstreamKey=" + upstreamKey +
       ", upstreamConfig=" + upstreamConfig +
-      ", scheduledExecutor=" + scheduledExecutor +
       ", datacenter='" + datacenter + '\'' +
       ", allowCrossDCRequests=" + allowCrossDCRequests +
       ", enabled=" + enabled +

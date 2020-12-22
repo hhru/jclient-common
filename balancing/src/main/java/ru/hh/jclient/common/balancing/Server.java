@@ -1,27 +1,21 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public final class Server {
-  private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";
 
   private final String address;
+  private final String datacenter;
   private volatile int weight;
-  private volatile String datacenter;
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
 
-  private volatile boolean active = true;
   private volatile int requests = 0;
   private volatile int fails = 0;
   private volatile int statsRequests = 0;
@@ -47,7 +41,7 @@ public final class Server {
     statsRequests++;
   }
 
-  synchronized void release(boolean isError, long responseTimeMicros) {
+  synchronized void release(boolean isError) {
     if (requests > 0) {
       requests--;
     }
@@ -65,20 +59,6 @@ public final class Server {
       downtimeDetector.success();
       responseTimeTracker.time(responseTimeMicros);
     }
-  }
-
-  public synchronized void deactivate(int timeoutMs, ScheduledExecutorService executor) {
-    LOGGER.warn("deactivate server: {} for {}ms", this, timeoutMs);
-    active = false;
-    executor.schedule(this::activate, timeoutMs, TimeUnit.MILLISECONDS);
-  }
-
-  synchronized void activate() {
-    LOGGER.info("activate server: {}", address);
-    active = true;
-    fails = 0;
-    requests = 0;
-    statsRequests = 0;
   }
 
   synchronized void rescaleStatsRequests() {
@@ -99,10 +79,6 @@ public final class Server {
 
   public String getDatacenterLowerCased() {
     return datacenter == null ? null : datacenter.toLowerCase();
-  }
-
-  public boolean isActive() {
-    return active;
   }
 
   public int getRequests() {
@@ -141,6 +117,11 @@ public final class Server {
     this.tags = tags;
   }
 
+  public Server setWeight(int weight) {
+    this.weight = weight;
+    return this;
+  }
+
   @Override
   public String toString() {
     return "Server{" +
@@ -149,7 +130,6 @@ public final class Server {
       ", datacenter='" + datacenter + '\'' +
       ", meta=" + meta +
       ", tags=" + tags +
-      ", active=" + active +
       ", requests=" + requests +
       ", fails=" + fails +
       ", statsRequests=" + statsRequests +

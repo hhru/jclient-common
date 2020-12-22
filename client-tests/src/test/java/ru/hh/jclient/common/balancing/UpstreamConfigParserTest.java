@@ -23,9 +23,7 @@ public class UpstreamConfigParserTest {
     UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
 
     assertEquals(3, config.getMaxTries());
-    assertEquals(30, config.getMaxFails());
     assertEquals(2, config.getMaxTimeoutTries());
-    assertEquals(1500, config.getFailTimeoutMs());
     assertEquals(200, config.getConnectTimeoutMs());
     assertEquals(2000, config.getRequestTimeoutMs());
   }
@@ -51,9 +49,7 @@ public class UpstreamConfigParserTest {
     UpstreamConfig config = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT, DEFAULT);
 
     assertEquals(UpstreamConfig.DEFAULT_MAX_TRIES, config.getMaxTries());
-    assertEquals(UpstreamConfig.DEFAULT_MAX_FAILS, config.getMaxFails());
     assertEquals(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES, config.getMaxTimeoutTries());
-    assertEquals(UpstreamConfig.DEFAULT_FAIL_TIMEOUT_MS, config.getFailTimeoutMs());
     assertEquals(UpstreamConfig.DEFAULT_CONNECT_TIMEOUT_MS, config.getConnectTimeoutMs());
     assertEquals(UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS, config.getRequestTimeoutMs());
     assertFalse(config.getRetryPolicy().getRules().get(599));
@@ -77,8 +73,6 @@ public class UpstreamConfigParserTest {
 
     Profile profile = new Profile()
         .setConnectTimeoutMs(0.2f)
-        .setFailTimeoutMs(1.5f)
-        .setMaxFails(30)
         .setMaxTries(3)
         .setRequestTimeoutMs(2f)
         .setMaxTimeoutTries(2)

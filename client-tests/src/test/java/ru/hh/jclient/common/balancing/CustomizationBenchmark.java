@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -54,8 +53,7 @@ public class CustomizationBenchmark {
   }
 
   private static final Upstream upstream = new Upstream(UPSTREAM,
-      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null, null), servers, Executors.newScheduledThreadPool(1)
-  );
+      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null, null), servers);
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
