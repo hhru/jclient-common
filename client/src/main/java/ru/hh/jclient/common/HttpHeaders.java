@@ -149,4 +149,9 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
   io.netty.handler.codec.http.HttpHeaders getDelegate() {
     return delegate;
   }
+
+  @Override
+  public String toString() {
+    return "HttpHeaders{" + "delegate=" + delegate + '}';
+  }
 }

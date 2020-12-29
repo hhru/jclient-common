@@ -7,13 +7,13 @@ import java.util.concurrent.CompletableFuture;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
-import com.google.common.collect.Range;
+import ru.hh.jclient.common.util.SimpleRange;
 
 public class ResultOrErrorProcessor<T, E> {
 
   private ResultProcessor<T> responseProcessor;
   private TypeConverter<E> errorConverter;
-  private Range<Integer> errorsRange = Range.greaterThan(OK_RANGE.upperEndpoint());
+  private SimpleRange errorsRange = SimpleRange.greaterThan(OK_RANGE.getUpperEndpoint());
 
   ResultOrErrorProcessor(ResultProcessor<T> responseProcessor, TypeConverter<E> errorConverter) {
     this.responseProcessor = requireNonNull(responseProcessor, "responseProcessor must not be null");
@@ -26,7 +26,7 @@ public class ResultOrErrorProcessor<T, E> {
    * @param status HTTP status code that converter will be used for
    */
   public ResultOrErrorProcessor<T, E> forStatus(int status) {
-    return forStatus(Range.singleton(status));
+    return forStatus(SimpleRange.singleton(status));
   }
 
   /**
@@ -34,7 +34,7 @@ public class ResultOrErrorProcessor<T, E> {
    *
    * @param statusCodes HTTP status codes that converter will be used for
    */
-  public ResultOrErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
+  public ResultOrErrorProcessor<T, E> forStatus(SimpleRange statusCodes) {
     if (OK_RANGE.isConnected(statusCodes)) {
       throw new IllegalArgumentException(String.format("Statuses %s are intersect with non-error statuses", statusCodes.toString()));
     }
@@ -51,7 +51,7 @@ public class ResultOrErrorProcessor<T, E> {
    * </ul>
    *
    * By default ERROR result will be parsed if HTTP status code is not in {@link HttpClient#OK_RANGE}. More specific range can be specified using
-   * {@link #forStatus(Range)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
+   * {@link #forStatus(SimpleRange)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
    *
    * @return {@link ResultOrErrorWithResponse} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter
@@ -69,7 +69,7 @@ public class ResultOrErrorProcessor<T, E> {
    * </ul>
    *
    * By default ERROR result will be parsed if HTTP status code is not in {@link HttpClient#OK_RANGE}. More specific range can be specified using
-   * {@link #forStatus(Range)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
+   * {@link #forStatus(SimpleRange)} method. Once called, any errors not in that range will NOT be parsed and can be handled manually.
    *
    * @return {@link ResultOrErrorWithStatus} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter

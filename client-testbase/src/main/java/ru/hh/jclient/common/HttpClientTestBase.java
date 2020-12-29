@@ -1,8 +1,5 @@
 package ru.hh.jclient.common;
 
-import com.google.common.net.HttpHeaders;
-import static com.google.common.net.HttpHeaders.ACCEPT;
-import com.google.common.net.MediaType;
 import static java.util.Collections.singleton;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -19,7 +16,10 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
+import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
+import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
+import static ru.hh.jclient.common.HttpHeaderNames.X_OUTER_TIMEOUT_MS;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.io.ByteArrayInputStream;
@@ -59,16 +59,22 @@ public class HttpClientTestBase {
     return this;
   }
 
-  public Supplier<Request> okRequest(String text, MediaType contentType) {
+  public Supplier<Request> okRequest(String text, String contentType) {
     return request(text, contentType, 200);
   }
 
-  public Supplier<Request> request(String text, MediaType contentType, int status) {
-    final Charset charset = contentType.charset().isPresent() ? contentType.charset().get() : Charset.defaultCharset();
+  public Supplier<Request> request(String text, String contentType, int status) {
+    Charset charset;
+    if (contentType.contains("charset=")) {
+      charset = Charset.forName(contentType.substring(contentType.indexOf("=") + 1));
+    }
+    else {
+      charset = Charset.defaultCharset();
+    }
     return request(text.getBytes(charset), contentType, status);
   }
 
-  public Supplier<Request> okRequest(byte[] data, MediaType contentType) {
+  public Supplier<Request> okRequest(byte[] data, String contentType) {
     return request(data, contentType, 200);
   }
 
@@ -76,11 +82,11 @@ public class HttpClientTestBase {
     return request(null, 204);
   }
 
-  public Supplier<Request> request(byte[] data, MediaType contentType, int status) {
+  public Supplier<Request> request(byte[] data, String contentType, int status) {
     org.asynchttpclient.Response response = mock(org.asynchttpclient.Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
-      when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
+      when(response.getHeader(eq(CONTENT_TYPE))).thenReturn(contentType);
     }
     when(response.getResponseBodyAsStream()).thenReturn(new ByteArrayInputStream(data));
     when(response.getResponseBodyAsBytes()).thenReturn(data);
@@ -91,11 +97,11 @@ public class HttpClientTestBase {
     return request(new Response(response));
   }
 
-  public Supplier<Request> request(MediaType contentType, int status) {
+  public Supplier<Request> request(String contentType, int status) {
     org.asynchttpclient.Response response = mock(org.asynchttpclient.Response.class);
     when(response.getStatusCode()).thenReturn(status);
     if (contentType != null) {
-      when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(contentType.toString());
+      when(response.getHeader(eq(CONTENT_TYPE))).thenReturn(contentType);
     }
     return request(new Response(response));
   }
@@ -120,7 +126,7 @@ public class HttpClientTestBase {
     ru.hh.jclient.common.HttpHeaders headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
     headers2.remove(X_HH_ACCEPT_ERRORS);
-    headers2.remove(HttpHeaderNames.X_OUTER_TIMEOUT_MS);
+    headers2.remove(X_OUTER_TIMEOUT_MS);
     assertEquals(request1.getHeaders(), headers2);
   }
 
@@ -130,7 +136,7 @@ public class HttpClientTestBase {
       return;
     }
 
-    Collection<MediaType> mediaTypes = resultProcessor.getConverter().getSupportedMediaTypes().get();
+    Collection<?> mediaTypes = resultProcessor.getConverter().getSupportedMediaTypes().get();
     assertEquals(1, actualRequest.getHeaders().getAll(ACCEPT).size());
     List<String> acceptTypes = Arrays.asList(actualRequest.getHeaders().get(ACCEPT).split(","));
     mediaTypes.forEach(type -> assertTrue(acceptTypes.contains(type.toString())));

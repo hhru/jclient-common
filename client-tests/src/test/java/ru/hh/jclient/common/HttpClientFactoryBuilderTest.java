@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import com.google.common.base.Throwables;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -53,7 +53,8 @@ public class HttpClientFactoryBuilderTest {
             var actual = builderMethod.invoke(initial, generateArgument(builderMethod));
             assertThat(actual, matcher);
           } catch (Exception e) {
-            fail("Fail to invoke method " + builderMethod.getName() + ":" + System.lineSeparator() + Throwables.getStackTraceAsString(e));
+
+            fail("Fail to invoke method " + builderMethod.getName() + ":" + System.lineSeparator() + ExceptionUtils.getStackTrace((e)));
           }
         });
   }

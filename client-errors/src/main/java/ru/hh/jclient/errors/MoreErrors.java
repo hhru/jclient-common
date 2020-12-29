@@ -172,4 +172,17 @@ public class MoreErrors {
       throw new RuntimeException("Completable future completed exceptionally", cause);
     }
   }
+
+  /**
+   * Rethrow RuntimeException or Error, wrap anything other with RuntimeException.
+   */
+  public static RuntimeException propagate(Throwable throwable) {
+    if (throwable instanceof RuntimeException) {
+      throw (RuntimeException) throwable;
+    }
+    if (throwable instanceof Error) {
+      throw (Error) throwable;
+    }
+    throw new RuntimeException(throwable);
+  }
 }

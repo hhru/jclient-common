@@ -1,8 +1,9 @@
 package ru.hh.jclient.common.responseconverter;
 
-import static com.google.common.collect.ImmutableSet.of;
-import static com.google.common.net.MediaType.PROTOBUF;
 import static java.util.Objects.requireNonNull;
+import static java.util.Set.of;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_X_PROTOBUF;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Set;
@@ -11,11 +12,10 @@ import com.google.protobuf.GeneratedMessageV3;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-import com.google.common.net.MediaType;
 
 public class ProtobufConverter<T extends GeneratedMessageV3> extends SingleTypeConverter<T> {
 
-  private static final Set<MediaType> MEDIA_TYPES = of(PROTOBUF.withoutParameters(), MediaType.parse("application/x-protobuf"));
+  private static final Set<String> MEDIA_TYPES = of(APPLICATION_PROTOBUF, APPLICATION_X_PROTOBUF);
 
   private Class<T> protobufClass;
 
@@ -40,7 +40,7 @@ public class ProtobufConverter<T extends GeneratedMessageV3> extends SingleTypeC
   }
 
   @Override
-  protected Collection<MediaType> getMediaTypes() {
+  protected Collection<String> getMediaTypes() {
     return MEDIA_TYPES;
   }
 }

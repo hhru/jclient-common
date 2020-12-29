@@ -1,9 +1,5 @@
 package ru.hh.jclient.common;
 
-import static com.google.common.collect.ImmutableSet.of;
-import static com.google.common.net.HttpHeaders.ACCEPT;
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -15,12 +11,14 @@ import java.util.stream.Collectors;
 
 import static java.lang.Boolean.TRUE;
 
-import com.google.common.net.MediaType;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Set.of;
+import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
+import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
@@ -31,6 +29,7 @@ import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaderNames.X_SOURCE;
 import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
 
+import ru.hh.jclient.common.util.ContentType;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -115,7 +114,7 @@ class HttpClientImpl extends HttpClient {
     requestBuilder.setHeaders(headers);
 
     if (!headers.contains(ACCEPT) && getExpectedMediaTypes().isPresent()) {
-      requestBuilder.addHeader(ACCEPT, getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")));
+      requestBuilder.addHeader(ACCEPT, String.join(",", getExpectedMediaTypes().get()));
     }
 
     if (!areAllowedMediaTypesForResponseAndErrorCompatible()) {
@@ -163,7 +162,7 @@ class HttpClientImpl extends HttpClient {
       return true;
     }
 
-    if (getExpectedMediaTypes().get().size() == 1 && getExpectedMediaTypes().get().contains(MediaType.ANY_TYPE)) {
+    if (getExpectedMediaTypes().get().size() == 1 && getExpectedMediaTypes().get().contains(ContentType.ANY)) {
       return true;
     }
 

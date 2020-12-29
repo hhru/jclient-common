@@ -13,4 +13,9 @@ public class HttpHeaderNames {
   public static final String X_SOURCE = "X-Source";
   public static final String X_OUTER_TIMEOUT_MS = "X-Outer-Timeout-Ms";
   public static final String X_HH_ACCEPT_ERRORS = "X-HH-AcceptErrors";
+  public static final String USER_AGENT = "User-Agent";
+  public static final String ACCEPT = "Accept";
+  public static final String AUTHORIZATION = "Authorization";
+  public static final String CONTENT_TYPE = "Content-Type";
+
 }

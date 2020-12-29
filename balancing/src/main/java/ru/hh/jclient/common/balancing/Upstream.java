@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +56,7 @@ public class Upstream {
     return servers.size();
   }
 
-  @VisibleForTesting
+  // VisibleForTesting
   List<Server> getServers() {
     return servers;
   }

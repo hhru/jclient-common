@@ -3,7 +3,6 @@ package ru.hh.jclient.common.responseconverter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.net.MediaType;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
@@ -50,7 +49,7 @@ public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
   }
 
   @Override
-  protected Collection<MediaType> getMediaTypes() {
+  protected Collection<String> getMediaTypes() {
     return JsonConverter.MEDIA_TYPES;
   }
 }

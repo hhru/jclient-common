@@ -1,11 +1,5 @@
 package ru.hh.jclient.common;
 
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static com.google.common.net.MediaType.ANY_VIDEO_TYPE;
-import static com.google.common.net.MediaType.JSON_UTF_8;
-import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static com.google.common.net.MediaType.PROTOBUF;
-import static com.google.common.net.MediaType.XML_UTF_8;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.DEBUG;
@@ -24,6 +19,13 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
+import static ru.hh.jclient.common.util.ContentType.ANY_VIDEO;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON_UTF_8;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
+import static ru.hh.jclient.common.util.ContentType.TEXT_XML_UTF_8;
+import static ru.hh.jclient.common.util.ContentType.WITH_CHARSET;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +62,6 @@ import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterables;
 
 public class HttpClientTest extends HttpClientTestBase {
 
@@ -72,7 +74,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testPlain() throws InterruptedException, ExecutionException {
-    Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест", PLAIN_TEXT_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест", TEXT_PLAIN_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
     String text = http.with(request).expectPlainText().result().get();
@@ -84,7 +86,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testPlainCp1251() throws InterruptedException, ExecutionException {
     Charset charset = Charset.forName("Cp1251");
-    Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест".getBytes(charset), PLAIN_TEXT_UTF_8.withCharset(charset));
+    Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест".getBytes(charset), TEXT_PLAIN + WITH_CHARSET + charset.name());
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
     String text = http.with(request).expectPlainText(charset).result().get();
@@ -96,7 +98,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testResponseWrapper() throws InterruptedException, ExecutionException, IOException {
     XmlTest test = new XmlTest("test тест");
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(test), JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(test), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     ResultWithResponse<XmlTest> testOutputWrapper = http.with(request).expectJson(objectMapper, XmlTest.class).resultWithResponse().get();
@@ -123,7 +125,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = UnexpectedContentTypeException.class)
   public void testIncorrectContentType() throws Throwable {
-    withEmptyContext().okRequest("test тест".getBytes(), JSON_UTF_8);
+    withEmptyContext().okRequest("test тест".getBytes(), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
@@ -138,7 +140,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testXml() throws InterruptedException, ExecutionException, JAXBException {
     XmlTest test = new XmlTest("test тест");
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), XML_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), TEXT_XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     XmlTest testOutput = http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
@@ -149,7 +151,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = ResponseConverterException.class)
   public void testIncorrectXml() throws Throwable {
-    withEmptyContext().okRequest("test тест".getBytes(), XML_UTF_8);
+    withEmptyContext().okRequest("test тест".getBytes(), TEXT_XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     try {
@@ -164,7 +166,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testJson() throws IOException, InterruptedException, ExecutionException {
     String responseBody = "{\"name\":\"test тест\"}";
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     XmlTest testOutput = http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
@@ -177,13 +179,14 @@ public class HttpClientTest extends HttpClientTestBase {
     XmlTest test1 = new XmlTest("test тест1");
     XmlTest test2 = new XmlTest("test тест2");
     List<XmlTest> tests = Arrays.asList(test1, test2);
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     Collection<XmlTest> testOutput = http.with(request).expectJsonCollection(objectMapper, XmlTest.class).result().get();
     assertEquals(tests.size(), testOutput.size());
-    assertEquals(test1.name, Iterables.get(testOutput, 0).name);
-    assertEquals(test2.name, Iterables.get(testOutput, 1).name);
+    Iterator<XmlTest> iterator = testOutput.iterator();
+    assertEquals(test1.name, iterator.next().name);
+    assertEquals(test2.name, iterator.next().name);
     assertEqualRequests(request, actualRequest.get());
   }
 
@@ -192,7 +195,7 @@ public class HttpClientTest extends HttpClientTestBase {
     XmlTest test1 = new XmlTest("test тест1");
     XmlTest test2 = new XmlTest("test тест2");
     Map<String, XmlTest> tests = Stream.of(test1, test2).collect(Collectors.toMap(xml -> xml.name, xml -> xml));
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(tests), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     Map<String, XmlTest> testOutput = http.with(request).expectJsonMap(objectMapper, String.class, XmlTest.class).result().get();
@@ -213,7 +216,7 @@ public class HttpClientTest extends HttpClientTestBase {
     testMap.put(test1, test2);
     testMap.put(test3, test4);
 
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(testMap), JSON_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(testMap), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     Map<JsonTest, JsonTest> testOutput = http.with(request)
@@ -226,7 +229,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = ResponseConverterException.class)
   public void testIncorrectJson() throws Throwable {
-    withEmptyContext().okRequest("test тест".getBytes(), JSON_UTF_8);
+    withEmptyContext().okRequest("test тест".getBytes(), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
     try {
@@ -244,7 +247,7 @@ public class HttpClientTest extends HttpClientTestBase {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     test.writeTo(out);
 
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), PROTOBUF);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(out.toByteArray(), APPLICATION_PROTOBUF);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
     ProtobufTestMessage testOutput = http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
@@ -255,7 +258,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = ResponseConverterException.class)
   public void testIncorrectProtobuf() throws Throwable {
-    withEmptyContext().okRequest("test тест".getBytes(), PROTOBUF);
+    withEmptyContext().okRequest("test тест".getBytes(), APPLICATION_PROTOBUF);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
     try {
@@ -269,7 +272,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testEmpty() throws InterruptedException, ExecutionException {
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).expectEmpty().result().get();
     assertNull(testOutput);
@@ -279,7 +282,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testReadOnly() throws InterruptedException, ExecutionException {
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
@@ -294,7 +297,7 @@ public class HttpClientTest extends HttpClientTestBase {
     headers.put("myheader2", singletonList("myvalue1"));
     headers.put(X_REQUEST_ID, singletonList("111"));
 
-    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
     http.with(request).expectEmpty().result().get();
     // all those headers won't be accepted, as they come from global mockRequest and are not in allowed list
@@ -318,7 +321,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .addHeader(AUTHORIZATION, "someauth")
         .build();
 
-    withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
     assertFalse(httpClientContext.isDebugMode());
     http.with(request).expectEmpty().result().get();
   }
@@ -334,7 +337,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .addQueryParam(HttpParams.DEBUG, "123")
         .build();
 
-    withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
     assertFalse(httpClientContext.isDebugMode());
     http.with(request).expectEmpty().result().get();
   }
@@ -352,7 +355,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Map<String, List<String>> queryParams = new HashMap<>();
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
@@ -376,7 +379,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
@@ -401,7 +404,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).external().expectEmpty().result().get();
@@ -426,7 +429,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).noDebug().expectEmpty().result().get();
@@ -467,7 +470,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
 
-    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectEmpty().result().get();
     assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
@@ -481,7 +484,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = ClientResponseException.class)
   public void testResponseError() throws Throwable {
-    withEmptyContext().request(ANY_VIDEO_TYPE, 403);
+    withEmptyContext().request(ANY_VIDEO, 403);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     try {
       http.with(request).expectEmpty().result().get();
@@ -523,7 +526,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
 
     // with default range (>399)
-    Supplier<Request> actualRequest = withEmptyContext().request(bytes, XML_UTF_8, 400);
+    Supplier<Request> actualRequest = withEmptyContext().request(bytes, TEXT_XML_UTF_8, 400);
     ResultOrErrorWithResponse<XmlTest, XmlError> response = http
         .with(request)
         .expectJson(objectMapper, XmlTest.class)
@@ -539,7 +542,7 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and specific range
-    actualRequest = withEmptyContext().request(bytes, XML_UTF_8, 800);
+    actualRequest = withEmptyContext().request(bytes, TEXT_XML_UTF_8, 800);
 
     response = http
         .with(request)
@@ -601,7 +604,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testXmlWithNoError() throws InterruptedException, ExecutionException, JAXBException {
     XmlTest test = new XmlTest("test тест");
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), XML_UTF_8);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(xmlBytes(test), TEXT_XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
     ResultOrErrorWithResponse<XmlTest, String> response = http
@@ -625,17 +628,17 @@ public class HttpClientTest extends HttpClientTestBase {
 
     ResultProcessor<?> resultProcessor;
 
-    actualRequest = withEmptyContext().okRequest("test тест", PLAIN_TEXT_UTF_8);
+    actualRequest = withEmptyContext().okRequest("test тест", TEXT_PLAIN_UTF_8);
     resultProcessor = http.with(request).expectPlainText();
     resultProcessor.result().get();
     assertProperAcceptHeader(resultProcessor, actualRequest.get());
 
-    actualRequest = withEmptyContext().okRequest(jsonBytes(new XmlTest("zxc")), JSON_UTF_8);
+    actualRequest = withEmptyContext().okRequest(jsonBytes(new XmlTest("zxc")), APPLICATION_JSON_UTF_8);
     resultProcessor = http.with(request).expectJson(objectMapper, XmlTest.class);
     resultProcessor.result().get();
     assertProperAcceptHeader(resultProcessor, actualRequest.get());
 
-    actualRequest = withEmptyContext().okRequest(xmlBytes(new XmlTest("zxc")), XML_UTF_8);
+    actualRequest = withEmptyContext().okRequest(xmlBytes(new XmlTest("zxc")), TEXT_XML_UTF_8);
     resultProcessor = http.with(request).expectXml(jaxbContext, XmlTest.class);
     resultProcessor.result().get();
     assertProperAcceptHeader(resultProcessor, actualRequest.get());
@@ -645,7 +648,7 @@ public class HttpClientTest extends HttpClientTestBase {
   public void testGenericValueJsonCollection() throws IOException, ExecutionException, InterruptedException {
     var testValue = Set.of(Set.of("test"));
     Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
-    withEmptyContext().okRequest(jsonBytes(testValue), JSON_UTF_8);
+    withEmptyContext().okRequest(jsonBytes(testValue), APPLICATION_JSON_UTF_8);
     var valueType = new TypeReference<Set<String>>() {};
     Collection<Set<String>> result = http.with(request).expectJsonCollection(objectMapper, valueType).result().get();
     assertEquals(testValue.size(), result.size());
@@ -656,7 +659,7 @@ public class HttpClientTest extends HttpClientTestBase {
   public void testGenericValueJsonMap() throws IOException, ExecutionException, InterruptedException {
     var testValue = Map.of("key", Set.of("test"));
     Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
-    withEmptyContext().okRequest(jsonBytes(testValue), JSON_UTF_8);
+    withEmptyContext().okRequest(jsonBytes(testValue), APPLICATION_JSON_UTF_8);
     var valueType = new TypeReference<Set<String>>() {};
     Map<String, Set<String>> result = http.with(request).expectJsonMap(objectMapper, String.class, valueType).result().get();
     assertEquals(testValue, result);

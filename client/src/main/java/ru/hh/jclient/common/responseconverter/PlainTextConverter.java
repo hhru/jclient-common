@@ -1,14 +1,15 @@
 package ru.hh.jclient.common.responseconverter;
 
 import static java.util.Objects.requireNonNull;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
+import static ru.hh.jclient.common.util.ContentType.WITH_CHARSET;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Set;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.net.MediaType;
 
 public class PlainTextConverter extends SingleTypeConverter<String> {
 
@@ -33,7 +34,7 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
   }
 
   @Override
-  protected Collection<MediaType> getMediaTypes() {
-    return ImmutableSet.of(MediaType.PLAIN_TEXT_UTF_8.withoutParameters().withCharset(charset));
+  protected Collection<String> getMediaTypes() {
+    return Set.of(TEXT_PLAIN + WITH_CHARSET + charset.name());
   }
 }
