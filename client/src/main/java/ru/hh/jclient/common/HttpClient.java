@@ -159,7 +159,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
     TypeConverter<T> converter = new XmlConverter<>(context, xmlClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -171,7 +171,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
     TypeConverter<T> converter = new JsonConverter<>(mapper, jsonClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -183,7 +183,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, Class<T> jsonClass) {
     TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -195,7 +195,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, TypeReference<T> jsonClass) {
     TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -208,7 +208,7 @@ public abstract class HttpClient {
    */
   public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
     TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -221,7 +221,7 @@ public abstract class HttpClient {
    */
   public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, TypeReference<V> jsonValueClass) {
     TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -232,7 +232,7 @@ public abstract class HttpClient {
    */
   public <T extends GeneratedMessageV3> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
     TypeConverter<T> converter = new ProtobufConverter<>(protobufClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -241,7 +241,7 @@ public abstract class HttpClient {
    */
   public ResultProcessor<String> expectPlainText() {
     TypeConverter<String> converter = new PlainTextConverter();
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -279,7 +279,7 @@ public abstract class HttpClient {
    * @param converter used to convert response to expected result
    */
   public <T> ResultProcessor<T> expect(TypeConverter<T> converter) {
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 

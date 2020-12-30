@@ -16,7 +16,7 @@ public class VoidConverter implements TypeConverter<Void> {
   }
 
   @Override
-  public Optional<Collection<String>> getSupportedMediaTypes() {
+  public Optional<Collection<String>> getSupportedContentTypes() {
     return Optional.empty();
   }
 }

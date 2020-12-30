@@ -40,7 +40,7 @@ public class ProtobufConverter<T extends GeneratedMessageV3> extends SingleTypeC
   }
 
   @Override
-  protected Collection<String> getMediaTypes() {
+  protected Collection<String> getContentTypes() {
     return MEDIA_TYPES;
   }
 }

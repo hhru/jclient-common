@@ -49,7 +49,7 @@ public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
   }
 
   @Override
-  protected Collection<String> getMediaTypes() {
+  protected Collection<String> getContentTypes() {
     return JsonConverter.MEDIA_TYPES;
   }
 }

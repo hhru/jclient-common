@@ -34,7 +34,7 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
   }
 
   @Override
-  protected Collection<String> getMediaTypes() {
+  protected Collection<String> getContentTypes() {
     return Set.of(TEXT_PLAIN + WITH_CHARSET + charset.name());
   }
 }

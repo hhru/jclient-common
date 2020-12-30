@@ -37,7 +37,7 @@ public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T
   }
 
   @Override
-  protected Collection<String> getMediaTypes() {
+  protected Collection<String> getContentTypes() {
     return JsonConverter.MEDIA_TYPES;
   }
 }

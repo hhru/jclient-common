@@ -131,12 +131,12 @@ public class HttpClientTestBase {
   }
 
   public void assertProperAcceptHeader(ResultProcessor<?> resultProcessor, Request actualRequest) {
-    if (!resultProcessor.getConverter().getSupportedMediaTypes().isPresent()) {
+    if (!resultProcessor.getConverter().getSupportedContentTypes().isPresent()) {
       assertFalse(actualRequest.getHeaders().contains(ACCEPT));
       return;
     }
 
-    Collection<?> mediaTypes = resultProcessor.getConverter().getSupportedMediaTypes().get();
+    Collection<?> mediaTypes = resultProcessor.getConverter().getSupportedContentTypes().get();
     assertEquals(1, actualRequest.getHeaders().getAll(ACCEPT).size());
     List<String> acceptTypes = Arrays.asList(actualRequest.getHeaders().get(ACCEPT).split(","));
     mediaTypes.forEach(type -> assertTrue(acceptTypes.contains(type.toString())));

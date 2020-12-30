@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.HttpClient.OK_RANGE;
+import com.google.common.collect.Range;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
@@ -40,6 +41,12 @@ public class ResultOrErrorProcessor<T, E> {
     }
     this.errorsRange = statusCodes;
     return this;
+  }
+
+  // use forStatus(SimpleRange statusCodes)
+  @Deprecated(forRemoval = true)
+  public ResultOrErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
+    return forStatus(new SimpleRange(statusCodes.lowerEndpoint(), statusCodes.upperEndpoint()));
   }
 
   /**

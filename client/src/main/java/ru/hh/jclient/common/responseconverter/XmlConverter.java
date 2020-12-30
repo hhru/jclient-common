@@ -40,7 +40,7 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
   }
 
   @Override
-  protected Collection<String> getMediaTypes() {
+  protected Collection<String> getContentTypes() {
     return MEDIA_TYPES;
   }
 }

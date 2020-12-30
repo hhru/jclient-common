@@ -1,7 +1,10 @@
 package ru.hh.jclient.common.responseconverter;
 
+import com.google.common.net.MediaType;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.exception.NoContentTypeException;
@@ -19,11 +22,19 @@ import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
 
   /**
-   * Returns list of allowed media types. Response' "Content-Type" header will be checked against this list.
+   * Returns list of allowed content types. Response' "Content-Type" header will be checked against this list.
    *
    * @return list of allowed media types
    */
-  protected abstract Collection<String> getMediaTypes();
+  protected Collection<String> getContentTypes() {
+    return getMediaTypes().stream().map(MediaType::toString).collect(Collectors.toSet());
+  }
+
+  // override getContentTypes()
+  @Deprecated(forRemoval = true)
+  protected Collection<MediaType> getMediaTypes() {
+    return Set.of();
+  }
 
   /**
    * Returns converter function that, ignoring content type, just converts the response.
@@ -33,8 +44,8 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
   public abstract FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction();
 
   @Override
-  public Optional<Collection<String>> getSupportedMediaTypes() {
-    return Optional.of(getMediaTypes());
+  public Optional<Collection<String>> getSupportedContentTypes() {
+    return Optional.of(getContentTypes());
   }
 
   @Override
@@ -47,8 +58,8 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
     String contentTypeString = r.getHeader(CONTENT_TYPE);
     ContentType contentType = ofNullable(contentTypeString).map(ContentType::new).orElseThrow(() -> new NoContentTypeException(r));
 
-    if (getMediaTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
-      throw new UnexpectedContentTypeException(r, contentTypeString, getMediaTypes());
+    if (getContentTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
+      throw new UnexpectedContentTypeException(r, contentTypeString, getContentTypes());
     }
     return r;
   }
