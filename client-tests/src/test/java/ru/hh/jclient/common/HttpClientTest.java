@@ -19,7 +19,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
-import static ru.hh.jclient.common.util.ContentType.ANY_VIDEO;
+import static ru.hh.jclient.common.util.ContentType.VIDEO_ANY;
 import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON_UTF_8;
 import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
 import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
@@ -272,7 +272,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testEmpty() throws InterruptedException, ExecutionException {
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], VIDEO_ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).expectEmpty().result().get();
     assertNull(testOutput);
@@ -282,7 +282,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testReadOnly() throws InterruptedException, ExecutionException {
-    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], VIDEO_ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     Object testOutput = http.with(request).readOnly().expectEmpty().result().get();
     assertNull(testOutput);
@@ -297,7 +297,7 @@ public class HttpClientTest extends HttpClientTestBase {
     headers.put("myheader2", singletonList("myvalue1"));
     headers.put(X_REQUEST_ID, singletonList("111"));
 
-    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], VIDEO_ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
     http.with(request).expectEmpty().result().get();
     // all those headers won't be accepted, as they come from global mockRequest and are not in allowed list
@@ -321,7 +321,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .addHeader(AUTHORIZATION, "someauth")
         .build();
 
-    withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
+    withEmptyContext().okRequest(new byte[0], VIDEO_ANY);
     assertFalse(httpClientContext.isDebugMode());
     http.with(request).expectEmpty().result().get();
   }
@@ -337,7 +337,7 @@ public class HttpClientTest extends HttpClientTestBase {
         .addQueryParam(HttpParams.DEBUG, "123")
         .build();
 
-    withEmptyContext().okRequest(new byte[0], ANY_VIDEO);
+    withEmptyContext().okRequest(new byte[0], VIDEO_ANY);
     assertFalse(httpClientContext.isDebugMode());
     http.with(request).expectEmpty().result().get();
   }
@@ -355,7 +355,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Map<String, List<String>> queryParams = new HashMap<>();
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], VIDEO_ANY);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
@@ -379,7 +379,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], VIDEO_ANY);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).expectEmpty().result().get();
@@ -404,7 +404,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], VIDEO_ANY);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).external().expectEmpty().result().get();
@@ -429,7 +429,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> queryParams = new HashMap<>();
     queryParams.put(DEBUG, singletonList("123"));
 
-    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withContext(headers, queryParams).okRequest(new byte[0], VIDEO_ANY);
     assertTrue(httpClientContext.isDebugMode());
 
     http.with(request).noDebug().expectEmpty().result().get();
@@ -470,7 +470,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
 
-    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], ANY_VIDEO);
+    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], VIDEO_ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectEmpty().result().get();
     assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
@@ -484,7 +484,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = ClientResponseException.class)
   public void testResponseError() throws Throwable {
-    withEmptyContext().request(ANY_VIDEO, 403);
+    withEmptyContext().request(VIDEO_ANY, 403);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     try {
       http.with(request).expectEmpty().result().get();

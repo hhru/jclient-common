@@ -47,7 +47,7 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
     String contentTypeString = r.getHeader(CONTENT_TYPE);
     ContentType contentType = ofNullable(contentTypeString).map(ContentType::new).orElseThrow(() -> new NoContentTypeException(r));
 
-    if (getMediaTypes().stream().map(ContentType::new).noneMatch(ct -> ct.matches(contentType))) {
+    if (getMediaTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
       throw new UnexpectedContentTypeException(r, contentTypeString, getMediaTypes());
     }
     return r;
