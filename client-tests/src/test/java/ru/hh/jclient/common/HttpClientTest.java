@@ -25,7 +25,7 @@ import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
 import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
 import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
 import static ru.hh.jclient.common.util.ContentType.TEXT_XML_UTF_8;
-import static ru.hh.jclient.common.util.ContentType.WITH_CHARSET;
+import static ru.hh.jclient.common.util.ContentType.withCharset;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -86,7 +86,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Test
   public void testPlainCp1251() throws InterruptedException, ExecutionException {
     Charset charset = Charset.forName("Cp1251");
-    Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест".getBytes(charset), TEXT_PLAIN + WITH_CHARSET + charset.name());
+    Supplier<Request> actualRequest = withEmptyContext().okRequest("test тест".getBytes(charset), withCharset(TEXT_PLAIN, charset));
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
     String text = http.with(request).expectPlainText(charset).result().get();

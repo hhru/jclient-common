@@ -2,13 +2,13 @@ package ru.hh.jclient.common.responseconverter;
 
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
-import static ru.hh.jclient.common.util.ContentType.WITH_CHARSET;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Set;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
+import ru.hh.jclient.common.util.ContentType;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
 public class PlainTextConverter extends SingleTypeConverter<String> {
@@ -35,6 +35,6 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
 
   @Override
   protected Collection<String> getContentTypes() {
-    return Set.of(TEXT_PLAIN + WITH_CHARSET + charset.name());
+    return Set.of(ContentType.withCharset(TEXT_PLAIN, charset));
   }
 }
