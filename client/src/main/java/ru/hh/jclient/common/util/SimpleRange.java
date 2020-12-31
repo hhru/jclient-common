@@ -1,5 +1,7 @@
 package ru.hh.jclient.common.util;
 
+import java.util.Objects;
+
 public class SimpleRange {
 
   private int from;
@@ -32,5 +34,22 @@ public class SimpleRange {
 
   public static SimpleRange singleton(int value) {
     return new SimpleRange(value, value);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SimpleRange that = (SimpleRange) o;
+    return from == that.from && to == that.to;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(from, to);
   }
 }

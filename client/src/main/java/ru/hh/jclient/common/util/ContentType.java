@@ -31,6 +31,10 @@ public class ContentType {
     if (contentType == null) {
       throw new IllegalArgumentException("Content type is null");
     }
+    if (!contentType.contains("/")) {
+      throw new IllegalArgumentException("Wrong content type format");
+    }
+
     String[] typeAndParams = contentType.trim().toLowerCase().split(";");
     String[] type = typeAndParams[0].split("/");
     type1 = type[0].trim();
