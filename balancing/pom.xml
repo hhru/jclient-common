@@ -10,7 +10,7 @@
     <artifactId>jclient-balancing</artifactId>
 
     <properties>
-        <com.orbitz.consul.version>1.4.0</com.orbitz.consul.version>
+        <com.orbitz.consul.version>1.4.0-hh-1.6</com.orbitz.consul.version>
     </properties>
 
     <dependencies>

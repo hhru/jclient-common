@@ -94,12 +94,12 @@ public class UpstreamServiceImpl implements UpstreamService {
         .build();
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, healthPassing, watchSeconds, queryOptions);
 
-    LOGGER.info("subscribe to service {}; dc {}", serviceName, datacenter);
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
       updateUpstreams(newValues, serviceName, datacenter);
       notifyListeners();
     });
     svHealth.start();
+    LOGGER.info("subscribed to service {}; dc {}", serviceName, datacenter);
   }
 
   @Override
