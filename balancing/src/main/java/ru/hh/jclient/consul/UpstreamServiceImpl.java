@@ -59,7 +59,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     this.currentNode = consulConfig.getCurrentNode();
     this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
-    this.selfNodeFiltering = consulConfig.isSelfNodeFilteringActivated();
+    this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
     this.watchSeconds = consulConfig.getWatchSeconds();
     this.consistencyMode = consulConfig.getConsistencyMode();
     if (!this.datacenterList.contains(this.currentDC)) {
@@ -118,7 +118,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
       if (selfNodeFiltering && notSameNode(nodeName)) {
-        LOGGER.trace("Self node filtering activated. Skip: {}", serviceHealth);
+        LOGGER.trace("Self node filtering activated. Skip: {}", nodeName);
         continue;
       }
 
