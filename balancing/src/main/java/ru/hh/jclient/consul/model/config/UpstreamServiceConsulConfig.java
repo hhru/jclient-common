@@ -12,6 +12,7 @@ public class UpstreamServiceConsulConfig {
   private String currentNode;
   private ConsistencyMode consistencyMode;
   private List<String> datacenterList;
+  private boolean selfNodeFiltering;
 
   public boolean isAllowCrossDC() {
     return allowCrossDC;
@@ -28,6 +29,15 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setHealthPassing(boolean healthPassing) {
     this.healthPassing = healthPassing;
+    return this;
+  }
+
+  public boolean isSelfNodeFilteringActivated() {
+    return selfNodeFiltering;
+  }
+
+  public UpstreamServiceConsulConfig setSelfNodeFiltering(boolean selfNodeFiltering) {
+    this.selfNodeFiltering = selfNodeFiltering;
     return this;
   }
 

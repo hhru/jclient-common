@@ -43,6 +43,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final int watchSeconds;
   private final boolean allowCrossDC;
   private final boolean healthPassing;
+  private final boolean selfNodeFiltering;
   private Consumer<String> callback;
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
@@ -58,6 +59,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     this.currentNode = consulConfig.getCurrentNode();
     this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
+    this.selfNodeFiltering = consulConfig.isSelfNodeFilteringActivated();
     this.watchSeconds = consulConfig.getWatchSeconds();
     this.consistencyMode = consulConfig.getConsistencyMode();
     if (!this.datacenterList.contains(this.currentDC)) {
@@ -115,7 +117,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
-      if (!isProd() && notSameNode(nodeName)) {
+      if (selfNodeFiltering && notSameNode(nodeName)) {
         continue;
       }
 
@@ -145,10 +147,6 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     LOGGER.info("upstreams for {} were updated in DC {}; Count: {} ", serviceName, datacenter, currentServers.size());
     LOGGER.debug("upstreams for {} were updated in DC {}: {} ", serviceName, datacenter, currentServers);
-  }
-
-  private boolean isProd() {
-    return Strings.isNullOrEmpty(currentNode);
   }
 
   private boolean notSameNode(String nodeName) {

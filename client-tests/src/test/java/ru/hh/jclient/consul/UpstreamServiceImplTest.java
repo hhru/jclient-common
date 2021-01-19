@@ -43,6 +43,7 @@ public class UpstreamServiceImplTest {
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(true)
+        .setSelfNodeFiltering(true)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
         .setCurrentDC(DATA_CENTER)
@@ -105,6 +106,7 @@ public class UpstreamServiceImplTest {
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
+        .setSelfNodeFiltering(false)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
         .setCurrentDC(DATA_CENTER)
@@ -125,7 +127,7 @@ public class UpstreamServiceImplTest {
   }
 
   @Test
-  public void testDifferentNodes() {
+  public void testDifferentNodesInTest() {
 
     String address1 = "a1";
     String address2 = "a2";
@@ -135,6 +137,7 @@ public class UpstreamServiceImplTest {
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
+        .setSelfNodeFiltering(true)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
         .setCurrentDC(DATA_CENTER)
@@ -154,6 +157,39 @@ public class UpstreamServiceImplTest {
 
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
+  }
+
+  @Test
+  public void testDifferentNodesInProd() {
+
+    String address1 = "a1";
+    String address2 = "a2";
+    int weight = 12;
+    int port1 = 124;
+    int port2 = 126;
+    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setAllowCrossDC(allowCrossDC)
+        .setHealthPassing(false)
+        .setSelfNodeFiltering(false)
+        .setDatacenterList(datacenterList)
+        .setWatchSeconds(watchSeconds)
+        .setCurrentDC(DATA_CENTER)
+        .setCurrentNode(NODE_NAME)
+        .setConsistencyMode(ConsistencyMode.DEFAULT);
+
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
+
+    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
+    ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
+
+    Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
+    upstreams.put(buildKey(address1), serviceHealth);
+    upstreams.put(buildKey(address2), serviceHealth2);
+
+    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
+
+    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    assertEquals(2, servers.size());
   }
 
   private ServiceHealth buildServiceHealth(String address, int port, String datacenter, String nodeName, int weight, boolean passing) {
