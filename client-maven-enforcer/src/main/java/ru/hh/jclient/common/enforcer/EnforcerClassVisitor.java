@@ -19,7 +19,7 @@ public class EnforcerClassVisitor extends ClassVisitor {
   private String className;
 
   public EnforcerClassVisitor() {
-    super(Opcodes.ASM5);
+    super(Opcodes.ASM9);
     this.methodDescriptors = new ArrayList<>();
   }
 
