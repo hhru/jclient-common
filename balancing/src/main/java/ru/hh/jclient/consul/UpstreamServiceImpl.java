@@ -118,6 +118,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
       if (selfNodeFiltering && notSameNode(nodeName)) {
+        LOGGER.trace("Self node filtering activated. Skip: {}", serviceHealth);
         continue;
       }
 
