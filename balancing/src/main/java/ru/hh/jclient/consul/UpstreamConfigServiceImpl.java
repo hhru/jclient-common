@@ -56,7 +56,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
       String key = value.getKey();
       String[] keys = key.split("/");
       if (keys.length != 2) {
-        LOGGER.debug("incorrect key: {} with value:{}; Will be skipped", key, value.getValueAsString());
+        LOGGER.trace("incorrect key: {} with value:{}; Will be skipped", key, value.getValueAsString());
         continue;
       }
       try {

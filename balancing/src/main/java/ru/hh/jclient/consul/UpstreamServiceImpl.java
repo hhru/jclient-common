@@ -146,8 +146,8 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     disableDeadServices(currentServers, serviceName, datacenter, aliveServers);
 
-    LOGGER.info("upstreams for {} were updated in DC {}; Count: {} ", serviceName, datacenter, currentServers.size());
-    LOGGER.debug("upstreams for {} were updated in DC {}: {} ", serviceName, datacenter, currentServers);
+    LOGGER.info("upstreams for {} were updated in DC {}; servers: {} ", serviceName, datacenter,
+        LOGGER.isDebugEnabled() ? currentServers : currentServers.size());
   }
 
   private boolean notSameNode(String nodeName) {
