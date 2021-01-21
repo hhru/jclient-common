@@ -18,6 +18,7 @@
             <groupId>com.orbitz.consul</groupId>
             <artifactId>consul-client</artifactId>
             <version>${com.orbitz.consul.version}</version>
+            <classifier>shaded</classifier>
         </dependency>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
