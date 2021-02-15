@@ -1,10 +1,10 @@
 package ru.hh.jclient.consul;
 
 import com.google.common.io.BaseEncoding;
-import com.orbitz.consul.Consul;
-import com.orbitz.consul.model.kv.ImmutableValue;
-import com.orbitz.consul.model.kv.Value;
-import com.orbitz.consul.option.ConsistencyMode;
+import ru.hh.consul.Consul;
+import ru.hh.consul.model.kv.ImmutableValue;
+import ru.hh.consul.model.kv.Value;
+import ru.hh.consul.option.ConsistencyMode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
