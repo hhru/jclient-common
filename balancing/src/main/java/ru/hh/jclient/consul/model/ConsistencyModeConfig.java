@@ -1,6 +1,6 @@
 package ru.hh.jclient.consul.model;
 
-import com.orbitz.consul.option.ConsistencyMode;
+import ru.hh.consul.option.ConsistencyMode;
 
 public enum ConsistencyModeConfig {
   DEFAULT(ConsistencyMode.DEFAULT),

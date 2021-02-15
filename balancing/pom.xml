@@ -10,15 +10,14 @@
     <artifactId>jclient-balancing</artifactId>
 
     <properties>
-        <com.orbitz.consul.version>1.4.0-hh-1.7</com.orbitz.consul.version>
+        <consul.client.version>1.0.1</consul.client.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.orbitz.consul</groupId>
+            <groupId>ru.hh.consul</groupId>
             <artifactId>consul-client</artifactId>
-            <version>${com.orbitz.consul.version}</version>
-            <classifier>shaded</classifier>
+            <version>${consul.client.version}</version>
         </dependency>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>

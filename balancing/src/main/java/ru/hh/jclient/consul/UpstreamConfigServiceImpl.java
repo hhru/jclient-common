@@ -2,12 +2,12 @@ package ru.hh.jclient.consul;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.orbitz.consul.Consul;
-import com.orbitz.consul.KeyValueClient;
-import com.orbitz.consul.cache.KVCache;
-import com.orbitz.consul.model.kv.Value;
-import com.orbitz.consul.option.ConsistencyMode;
-import com.orbitz.consul.option.ImmutableQueryOptions;
+import ru.hh.consul.Consul;
+import ru.hh.consul.KeyValueClient;
+import ru.hh.consul.cache.KVCache;
+import ru.hh.consul.model.kv.Value;
+import ru.hh.consul.option.ConsistencyMode;
+import ru.hh.consul.option.ImmutableQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.consul.model.ApplicationConfig;

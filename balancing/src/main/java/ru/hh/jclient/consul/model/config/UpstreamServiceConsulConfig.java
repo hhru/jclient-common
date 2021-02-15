@@ -1,6 +1,6 @@
 package ru.hh.jclient.consul.model.config;
 
-import com.orbitz.consul.option.ConsistencyMode;
+import ru.hh.consul.option.ConsistencyMode;
 
 import java.util.List;
 
