@@ -18,7 +18,6 @@
             <groupId>ru.hh.consul</groupId>
             <artifactId>consul-client</artifactId>
             <version>${consul.client.version}</version>
-            <classifier>shaded</classifier>
         </dependency>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
