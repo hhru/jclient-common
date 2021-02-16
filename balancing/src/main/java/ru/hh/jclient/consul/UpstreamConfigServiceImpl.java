@@ -76,6 +76,10 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     var notValidKeys = new ArrayList<String>();
     for (Value value : values) {
       String key = value.getKey();
+      if (ROOT_PATH.equals(key)) {
+        LOGGER.trace("ignoring root: {}", ROOT_PATH);
+        continue;
+      }
       String[] keys = key.split("/");
       if (keys.length != 2) {
         LOGGER.trace("incorrect key: {} with value:{}", key, value.getValueAsString());
