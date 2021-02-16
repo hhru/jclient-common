@@ -103,8 +103,7 @@ public class UpstreamServiceImpl implements UpstreamService {
       .getResponse().stream()
       .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
     LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
-    updateUpstreams(state, serviceName, dataCenter);
-    return !state.isEmpty();
+    return updateUpstreams(state, serviceName, dataCenter) > 0;
   }
 
   @Override
@@ -151,7 +150,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     return servers;
   }
 
-  void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
+  int updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
     Set<String> aliveServers = new HashSet<>();
     CopyOnWriteArrayList<Server> currentServers = serverList.computeIfAbsent(serviceName, k -> new CopyOnWriteArrayList<>());
 
@@ -188,6 +187,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     LOGGER.info("upstreams for {} were updated in DC {}; servers: {} ", serviceName, datacenter,
         LOGGER.isDebugEnabled() ? currentServers : currentServers.size());
+    return currentServers.size();
   }
 
   private boolean notSameNode(String nodeName) {
