@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -34,10 +35,30 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
   public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds, ConsistencyMode consistencyMode) {
+    this(services, consulClient, watchSeconds, consistencyMode, true);
+  }
+
+  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds, ConsistencyMode consistencyMode,
+                                   boolean syncUpdate) {
     this.services = services;
     this.kvClient = consulClient.keyValueClient();
     this.watchSeconds = watchSeconds;
     this.consistencyMode = consistencyMode;
+    if (syncUpdate) {
+      LOGGER.debug("Trying to sync update configs");
+      syncUpdateConfig();
+    }
+  }
+
+  private void syncUpdateConfig() {
+    List<Value> values = kvClient.getValues(ROOT_PATH, ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build());
+    if (values == null || values.isEmpty()) {
+      throw new IllegalStateException("There's no upstreamConfigs in KV");
+    }
+    Collection<String> notValidConfigKeys = readValues(values);
+    if (notValidConfigKeys != null && !notValidConfigKeys.isEmpty()) {
+      throw new IllegalStateException("Not valid configs found for keys: " + notValidConfigKeys);
+    }
   }
 
   @Override
@@ -51,12 +72,14 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     initConfigCache();
   }
 
-  Map<String, ApplicationConfig> readValues(Collection<Value> values) {
+  Collection<String> readValues(Collection<Value> values) {
+    var notValidKeys = new ArrayList<String>();
     for (Value value : values) {
       String key = value.getKey();
       String[] keys = key.split("/");
       if (keys.length != 2) {
-        LOGGER.trace("incorrect key: {} with value:{}; Will be skipped", key, value.getValueAsString());
+        LOGGER.trace("incorrect key: {} with value:{}", key, value.getValueAsString());
+        notValidKeys.add(key);
         continue;
       }
       try {
@@ -65,10 +88,11 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
         applicationConfig = OBJECT_MAPPER.readValue(value.getValueAsString().orElse(null), ApplicationConfig.class);
         configMap.put(keys[1], applicationConfig);
       } catch (IOException e) {
+        notValidKeys.add(key);
         LOGGER.error("Can't read value for key:{}", key, e);
       }
     }
-    return configMap;
+    return notValidKeys;
   }
 
   void notifyListeners() {

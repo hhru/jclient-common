@@ -2,6 +2,7 @@ package ru.hh.jclient.consul;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import static java.util.stream.Collectors.toMap;
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
 import ru.hh.consul.cache.ServiceHealthCache;
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class UpstreamServiceImpl implements UpstreamService {
@@ -49,6 +51,10 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
   public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+    this(upstreamList, consulClient, consulConfig, true);
+  }
+
+  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig, boolean syncUpdate) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
     Preconditions.checkState(!consulConfig.getDatacenterList().isEmpty(), "DatacenterList can't be empty");
 
@@ -65,6 +71,40 @@ public class UpstreamServiceImpl implements UpstreamService {
     if (!this.datacenterList.contains(this.currentDC)) {
       LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
+    if (syncUpdate) {
+      LOGGER.debug("Trying to sync update servers");
+      syncUpdateUpstreams();
+    }
+  }
+
+  private void syncUpdateUpstreams() {
+    for (String serviceName : upstreamList) {
+      boolean atLeastOneDatacenterHasServers = false;
+      if (allowCrossDC) {
+        for (String dataCenter : datacenterList) {
+          boolean hasServers = syncUpdateServiceInDC(serviceName, dataCenter);
+          atLeastOneDatacenterHasServers = atLeastOneDatacenterHasServers || hasServers;
+        }
+      } else {
+        atLeastOneDatacenterHasServers = syncUpdateServiceInDC(serviceName, currentDC);
+      }
+      if (!atLeastOneDatacenterHasServers) {
+        throw new IllegalStateException("There's no instances for service " + serviceName);
+      }
+    }
+  }
+
+  private boolean syncUpdateServiceInDC(String serviceName, String dataCenter) {
+    QueryOptions queryOptions = ImmutableQueryOptions.builder()
+      .datacenter(dataCenter.toLowerCase())
+      .consistencyMode(consistencyMode)
+      .build();
+    Map<ServiceHealthKey, ServiceHealth> state = healthClient.getHealthyServiceInstances(serviceName, queryOptions)
+      .getResponse().stream()
+      .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
+    LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
+    updateUpstreams(state, serviceName, dataCenter);
+    return !state.isEmpty();
   }
 
   @Override
