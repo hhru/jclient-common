@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -78,6 +79,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private void syncUpdateUpstreams() {
+    var failedServices = new ArrayList<>();
     for (String serviceName : upstreamList) {
       boolean atLeastOneDatacenterHasServers = false;
       if (allowCrossDC) {
@@ -89,8 +91,11 @@ public class UpstreamServiceImpl implements UpstreamService {
         atLeastOneDatacenterHasServers = syncUpdateServiceInDC(serviceName, currentDC);
       }
       if (!atLeastOneDatacenterHasServers) {
-        throw new IllegalStateException("There's no instances for service " + serviceName);
+        failedServices.add(serviceName);
       }
+    }
+    if (!failedServices.isEmpty()) {
+      throw new IllegalStateException("There's no instances for services: " + failedServices);
     }
   }
 
