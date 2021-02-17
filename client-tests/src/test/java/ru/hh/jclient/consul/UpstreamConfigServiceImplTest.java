@@ -28,7 +28,6 @@ import java.util.Map;
 
 public class UpstreamConfigServiceImplTest {
   private static String SERVICE_NAME = "upstream1";
-  static List<String> upstreamList = List.of(SERVICE_NAME);
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 10;
@@ -48,7 +47,7 @@ public class UpstreamConfigServiceImplTest {
   public void testGetConfig() {
     Collection<Value> values = prepareValues();
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(values));
-    var service = new UpstreamConfigServiceImpl(upstreamList, consulClient, watchSeconds, DEFAULT);
+    var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), consulClient, watchSeconds, DEFAULT);
 
     ApplicationConfig applicationConfig = service.getUpstreamConfig("app-name");
     assertNotNull(applicationConfig);
@@ -72,7 +71,7 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNotify() {
-    var service = new UpstreamConfigServiceImpl(upstreamList, consulClient, watchSeconds, DEFAULT, false);
+    var service = new UpstreamConfigServiceImpl(List.of("test"), consulClient, watchSeconds, DEFAULT, false);
     List<String> consumerMock = new ArrayList<>();
 
     try {
@@ -88,29 +87,25 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNoConfig() {
-    assertThrows(IllegalStateException.class, () -> new UpstreamConfigServiceImpl(upstreamList, consulClient, watchSeconds, DEFAULT));
+    assertThrows(IllegalStateException.class, () -> new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, watchSeconds, DEFAULT));
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(prepareValues()));
-    var service = new UpstreamConfigServiceImpl(upstreamList, consulClient, watchSeconds, DEFAULT);
+    var service = new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, watchSeconds, DEFAULT);
     assertNotNull(service.getUpstreamConfig("app-name"));
   }
 
   @Test
   public void testBadConfig() {
-    String badKey = "brokenKey";
-    String badFormatKey = "upstream/badFormat";
-    var badKeyValue = ImmutableValue.copyOf(template).withKey(badKey)
-      .withValue(BaseEncoding.base64().encode("{}".getBytes()));
-    var badFormatValue = ImmutableValue.copyOf(template).withKey(badFormatKey)
+    String badFormatKey = "badFormat";
+    var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
             .withValue(BaseEncoding.base64().encode("{\"a\":[1,2,3".getBytes()));
     List<Value> values = new ArrayList<>(prepareValues());
-    values.add(badKeyValue);
     values.add(badFormatValue);
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
     var ex = assertThrows(
       IllegalStateException.class,
-      () -> new UpstreamConfigServiceImpl(upstreamList, consulClient, watchSeconds, DEFAULT)
+      () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), consulClient, watchSeconds, DEFAULT)
     );
-    assertTrue(ex.getMessage().contains(List.of(badKey, badFormatKey).toString()));
+    assertTrue(ex.getMessage().contains(badFormatKey));
   }
 
 

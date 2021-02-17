@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +38,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
   private final HealthClient healthClient;
 
-  private final List<String> upstreamList;
+  private final Set<String> upstreamList;
   private final List<String> datacenterList;
   private final String currentDC;
   private final String currentNode;
@@ -61,7 +61,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
-    this.upstreamList = List.copyOf(upstreamList);
+    this.upstreamList = Set.copyOf(upstreamList);
     this.currentDC = consulConfig.getCurrentDC();
     this.currentNode = consulConfig.getCurrentNode();
     this.allowCrossDC = consulConfig.isAllowCrossDC();
@@ -79,27 +79,31 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private void syncUpdateUpstreams() {
-    var failedServices = new ArrayList<>();
     for (String serviceName : upstreamList) {
-      boolean atLeastOneDatacenterHasServers = false;
       if (allowCrossDC) {
         for (String dataCenter : datacenterList) {
-          boolean hasServers = syncUpdateServiceInDC(serviceName, dataCenter);
-          atLeastOneDatacenterHasServers |= hasServers;
+          syncUpdateServiceInDC(serviceName, dataCenter);
         }
       } else {
-        atLeastOneDatacenterHasServers = syncUpdateServiceInDC(serviceName, currentDC);
-      }
-      if (!atLeastOneDatacenterHasServers) {
-        failedServices.add(serviceName);
+        syncUpdateServiceInDC(serviceName, currentDC);
       }
     }
-    if (!failedServices.isEmpty()) {
-      throw new IllegalStateException("There's no instances for services: " + failedServices);
+    var emptyUpstreams = findEmptyUpstreams();
+    if (!emptyUpstreams.isEmpty()) {
+      throw new IllegalStateException("There's no instances for services: " + emptyUpstreams);
     }
   }
 
-  private boolean syncUpdateServiceInDC(String serviceName, String dataCenter) {
+  private Collection<String> findEmptyUpstreams() {
+    var emptyUpstreams = new HashSet<>(upstreamList);
+    var notEmptyServers = serverList.entrySet().stream()
+      .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty()).map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
+    emptyUpstreams.removeAll(notEmptyServers);
+    return emptyUpstreams;
+  }
+
+  private void syncUpdateServiceInDC(String serviceName, String dataCenter) {
     QueryOptions queryOptions = ImmutableQueryOptions.builder()
       .datacenter(dataCenter.toLowerCase())
       .consistencyMode(consistencyMode)
@@ -108,7 +112,7 @@ public class UpstreamServiceImpl implements UpstreamService {
       .getResponse().stream()
       .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
     LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
-    return !updateUpstreams(state, serviceName, dataCenter).isEmpty();
+    updateUpstreams(state, serviceName, dataCenter);
   }
 
   @Override
@@ -139,11 +143,12 @@ public class UpstreamServiceImpl implements UpstreamService {
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, healthPassing, watchSeconds, queryOptions);
 
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
-      var updatedServers = updateUpstreams(newValues, serviceName, datacenter);
-      if (updatedServers.isEmpty()) {
-        LOGGER.debug("There's no instances for service {} in DC {}", serviceName, datacenter);
-      }
+      updateUpstreams(newValues, serviceName, datacenter);
       notifyListeners();
+      var emptyUpstreams = findEmptyUpstreams();
+      if (!emptyUpstreams.isEmpty()) {
+        LOGGER.debug("There's no instances for services: {}", emptyUpstreams);
+      }
     });
     svHealth.start();
     LOGGER.info("subscribed to service {}; dc {}", serviceName, datacenter);
@@ -158,7 +163,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     return servers;
   }
 
-  List<Server> updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
+  void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
     Set<String> aliveServers = new HashSet<>();
     CopyOnWriteArrayList<Server> currentServers = serverList.computeIfAbsent(serviceName, k -> new CopyOnWriteArrayList<>());
 
@@ -195,7 +200,6 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     LOGGER.info("upstreams for {} were updated in DC {}; servers: {} ", serviceName, datacenter,
         LOGGER.isDebugEnabled() ? currentServers : currentServers.size());
-    return currentServers;
   }
 
   private boolean notSameNode(String nodeName) {
