@@ -15,18 +15,20 @@ import ru.hh.jclient.consul.model.ApplicationConfig;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
-  private static final String ROOT_PATH = "upstream/";
+  static final String ROOT_PATH = "upstream/";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
-  private final List<String> services;
+  private final Set<String> services;
   private Consumer<String> callback;
 
   private final KeyValueClient kvClient;
@@ -34,10 +36,31 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
   public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds, ConsistencyMode consistencyMode) {
-    this.services = services;
+    this(services, consulClient, watchSeconds, consistencyMode, true);
+  }
+
+  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds, ConsistencyMode consistencyMode,
+                                   boolean syncUpdate) {
+    this.services = Set.copyOf(services);
     this.kvClient = consulClient.keyValueClient();
     this.watchSeconds = watchSeconds;
     this.consistencyMode = consistencyMode;
+    if (syncUpdate) {
+      LOGGER.debug("Trying to sync update configs");
+      syncUpdateConfig();
+    }
+  }
+
+  private void syncUpdateConfig() {
+    List<Value> values = kvClient.getValues(ROOT_PATH, ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build());
+    if (values == null || values.isEmpty()) {
+      throw new IllegalStateException("There's no upstreamConfigs in KV");
+    }
+    updateConfigs(values);
+    Collection<String> unconfiguredServices = findUnconfiguredServices();
+    if (!unconfiguredServices.isEmpty()) {
+      throw new IllegalStateException("No valid configs found for services: " + unconfiguredServices);
+    }
   }
 
   @Override
@@ -51,24 +74,30 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     initConfigCache();
   }
 
-  Map<String, ApplicationConfig> readValues(Collection<Value> values) {
+  private void updateConfigs(Collection<Value> values) {
     for (Value value : values) {
       String key = value.getKey();
       String[] keys = key.split("/");
-      if (keys.length != 2) {
-        LOGGER.trace("incorrect key: {} with value:{}; Will be skipped", key, value.getValueAsString());
+      if (keys.length != 2 || keys[1].isEmpty()) {
+        LOGGER.trace("incorrect key: {} with value:{}", key, value.getValueAsString());
+        continue;
+      }
+      if (!services.contains(keys[1])) {
         continue;
       }
       try {
-        ApplicationConfig applicationConfig;
-
-        applicationConfig = OBJECT_MAPPER.readValue(value.getValueAsString().orElse(null), ApplicationConfig.class);
+        ApplicationConfig applicationConfig = OBJECT_MAPPER.readValue(value.getValueAsString().orElse(null), ApplicationConfig.class);
         configMap.put(keys[1], applicationConfig);
       } catch (IOException e) {
         LOGGER.error("Can't read value for key:{}", key, e);
       }
     }
-    return configMap;
+  }
+
+  private Collection<String> findUnconfiguredServices() {
+    var absentConfigs = new HashSet<>(services);
+    absentConfigs.removeAll(configMap.keySet());
+    return absentConfigs;
   }
 
   void notifyListeners() {
@@ -80,9 +109,12 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     LOGGER.debug("subscribe to config:{}", ROOT_PATH);
     cache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);
-      readValues(newValues.values());
-      LOGGER.info("config updated. size {}", configMap.size());
-      LOGGER.debug("new config:{}", configMap);
+      updateConfigs(newValues.values());
+      Collection<String> unconfiguredServices = findUnconfiguredServices();
+      if (!unconfiguredServices.isEmpty()) {
+        LOGGER.debug("No valid configs found for services: {}", unconfiguredServices);
+      }
+      LOGGER.debug("config updated. size {}", LOGGER.isDebugEnabled() ? configMap : configMap.size());
       notifyListeners();
     });
     cache.start();

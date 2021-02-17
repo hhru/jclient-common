@@ -2,6 +2,7 @@ package ru.hh.jclient.consul;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import static java.util.stream.Collectors.toMap;
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
 import ru.hh.consul.cache.ServiceHealthCache;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class UpstreamServiceImpl implements UpstreamService {
@@ -35,7 +38,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
   private final HealthClient healthClient;
 
-  private final List<String> upstreamList;
+  private final Set<String> upstreamList;
   private final List<String> datacenterList;
   private final String currentDC;
   private final String currentNode;
@@ -49,12 +52,16 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
   public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+    this(upstreamList, consulClient, consulConfig, true);
+  }
+
+  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig, boolean syncUpdate) {
     Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
     Preconditions.checkState(!consulConfig.getDatacenterList().isEmpty(), "DatacenterList can't be empty");
 
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
-    this.upstreamList = upstreamList;
+    this.upstreamList = Set.copyOf(upstreamList);
     this.currentDC = consulConfig.getCurrentDC();
     this.currentNode = consulConfig.getCurrentNode();
     this.allowCrossDC = consulConfig.isAllowCrossDC();
@@ -65,6 +72,48 @@ public class UpstreamServiceImpl implements UpstreamService {
     if (!this.datacenterList.contains(this.currentDC)) {
       LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
+    if (syncUpdate) {
+      LOGGER.debug("Trying to sync update servers");
+      syncUpdateUpstreams();
+    }
+  }
+
+  private void syncUpdateUpstreams() {
+    for (String serviceName : upstreamList) {
+      if (allowCrossDC) {
+        for (String dataCenter : datacenterList) {
+          syncUpdateServiceInDC(serviceName, dataCenter);
+        }
+      } else {
+        syncUpdateServiceInDC(serviceName, currentDC);
+      }
+    }
+    var emptyUpstreams = findEmptyUpstreams();
+    if (!emptyUpstreams.isEmpty()) {
+      throw new IllegalStateException("There's no instances for services: " + emptyUpstreams);
+    }
+  }
+
+  private Collection<String> findEmptyUpstreams() {
+    var emptyUpstreams = new HashSet<>(upstreamList);
+    var notEmptyServers = serverList.entrySet().stream()
+      .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
+    emptyUpstreams.removeAll(notEmptyServers);
+    return emptyUpstreams;
+  }
+
+  private void syncUpdateServiceInDC(String serviceName, String dataCenter) {
+    QueryOptions queryOptions = ImmutableQueryOptions.builder()
+      .datacenter(dataCenter.toLowerCase())
+      .consistencyMode(consistencyMode)
+      .build();
+    Map<ServiceHealthKey, ServiceHealth> state = healthClient.getHealthyServiceInstances(serviceName, queryOptions)
+      .getResponse().stream()
+      .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
+    LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
+    updateUpstreams(state, serviceName, dataCenter);
   }
 
   @Override
@@ -97,6 +146,10 @@ public class UpstreamServiceImpl implements UpstreamService {
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
       updateUpstreams(newValues, serviceName, datacenter);
       notifyListeners();
+      var emptyUpstreams = findEmptyUpstreams();
+      if (!emptyUpstreams.isEmpty()) {
+        LOGGER.debug("There's no instances for services: {}", emptyUpstreams);
+      }
     });
     svHealth.start();
     LOGGER.info("subscribed to service {}; dc {}", serviceName, datacenter);
@@ -151,7 +204,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private boolean notSameNode(String nodeName) {
-    return !Strings.isNullOrEmpty(currentNode) && (!currentNode.equalsIgnoreCase(nodeName));
+    return !Strings.isNullOrEmpty(currentNode) && !currentNode.equalsIgnoreCase(nodeName);
   }
 
   private String restoreOriginalDataCenterName(String lowerCasedDcName) {
@@ -164,10 +217,10 @@ public class UpstreamServiceImpl implements UpstreamService {
     return lowerCasedDcName;
   }
 
-  private static void disableDeadServices(CopyOnWriteArrayList<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
+  private static void disableDeadServices(List<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
     List<Server> deadServers = servers.stream()
-      .filter(s -> datacenter.equals(s.getDatacenter()))
-      .filter(s -> !aliveServers.contains(s.getAddress()))
+      .filter(server -> datacenter.equals(server.getDatacenter()))
+      .filter(server -> !aliveServers.contains(server.getAddress()))
       .collect(Collectors.toList());
 
     LOGGER.debug("removing dead servers for {} in DC {}: {} ", serviceName, datacenter, deadServers);
