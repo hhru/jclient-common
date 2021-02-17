@@ -74,7 +74,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     initConfigCache();
   }
 
-  void updateConfigs(Collection<Value> values) {
+  private void updateConfigs(Collection<Value> values) {
     for (Value value : values) {
       String key = value.getKey();
       String[] keys = key.split("/");

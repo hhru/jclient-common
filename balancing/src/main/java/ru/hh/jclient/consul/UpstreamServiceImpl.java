@@ -97,7 +97,8 @@ public class UpstreamServiceImpl implements UpstreamService {
   private Collection<String> findEmptyUpstreams() {
     var emptyUpstreams = new HashSet<>(upstreamList);
     var notEmptyServers = serverList.entrySet().stream()
-      .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty()).map(Map.Entry::getKey)
+      .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+      .map(Map.Entry::getKey)
       .collect(Collectors.toSet());
     emptyUpstreams.removeAll(notEmptyServers);
     return emptyUpstreams;
