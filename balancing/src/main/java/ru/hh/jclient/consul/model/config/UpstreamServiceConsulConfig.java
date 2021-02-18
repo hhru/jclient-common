@@ -13,6 +13,8 @@ public class UpstreamServiceConsulConfig {
   private ConsistencyMode consistencyMode;
   private List<String> datacenterList;
   private boolean selfNodeFilteringEnabled;
+  private boolean syncInit = true;
+  private int syncInitTimeoutMillis;
 
   public boolean isAllowCrossDC() {
     return allowCrossDC;
@@ -83,6 +85,24 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setDatacenterList(List<String> datacenterList) {
     this.datacenterList = datacenterList;
+    return this;
+  }
+
+  public int getSyncInitTimeoutMillis() {
+    return syncInitTimeoutMillis;
+  }
+
+  public UpstreamServiceConsulConfig setSyncInitTimeoutMillis(Integer syncInitTimeoutMillis) {
+    this.syncInitTimeoutMillis = syncInitTimeoutMillis;
+    return this;
+  }
+
+  public boolean isSyncInit() {
+    return syncInit;
+  }
+
+  public UpstreamServiceConsulConfig setSyncInit(boolean syncInit) {
+    this.syncInit = syncInit;
     return this;
   }
 }

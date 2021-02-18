@@ -3,6 +3,7 @@ package ru.hh.jclient.consul;
 import com.google.common.io.BaseEncoding;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import ru.hh.consul.Consul;
@@ -20,6 +21,7 @@ import ru.hh.consul.option.QueryOptions;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
+import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 public class UpstreamConfigServiceImplTest {
-  private static String SERVICE_NAME = "upstream1";
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 10;
@@ -36,6 +37,9 @@ public class UpstreamConfigServiceImplTest {
           .createIndex(System.currentTimeMillis()).modifyIndex(System.currentTimeMillis())
           .lockIndex(System.currentTimeMillis()).flags(System.currentTimeMillis())
           .build();
+  public UpstreamConfigServiceConsulConfig defaultConfig = new UpstreamConfigServiceConsulConfig()
+      .setWatchSeconds(watchSeconds)
+      .setConsistencyMode(DEFAULT);
 
   @BeforeClass
   public static void init() {
@@ -46,8 +50,9 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testGetConfig() {
     Collection<Value> values = prepareValues();
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(values));
-    var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), consulClient, watchSeconds, DEFAULT);
+    when(keyValueClient.getValues(anyString(), any(QueryOptions.class), anyInt())).thenReturn(List.copyOf(values));
+
+    var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), consulClient, defaultConfig);
 
     ApplicationConfig applicationConfig = service.getUpstreamConfig("app-name");
     assertNotNull(applicationConfig);
@@ -71,7 +76,7 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNotify() {
-    var service = new UpstreamConfigServiceImpl(List.of("test"), consulClient, watchSeconds, DEFAULT, false);
+    var service = new UpstreamConfigServiceImpl(List.of("test"), consulClient, defaultConfig.setSyncUpdate(false));
     List<String> consumerMock = new ArrayList<>();
 
     try {
@@ -87,9 +92,9 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNoConfig() {
-    assertThrows(IllegalStateException.class, () -> new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, watchSeconds, DEFAULT));
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(prepareValues()));
-    var service = new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, watchSeconds, DEFAULT);
+    assertThrows(IllegalStateException.class, () -> new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, defaultConfig));
+    when(keyValueClient.getValues(anyString(), any(QueryOptions.class), anyInt())).thenReturn(List.copyOf(prepareValues()));
+    var service = new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, defaultConfig);
     assertNotNull(service.getUpstreamConfig("app-name"));
   }
 
@@ -100,10 +105,10 @@ public class UpstreamConfigServiceImplTest {
             .withValue(BaseEncoding.base64().encode("{\"a\":[1,2,3".getBytes()));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
+    when(keyValueClient.getValues(anyString(), any(QueryOptions.class), anyInt())).thenReturn(values);
     var ex = assertThrows(
       IllegalStateException.class,
-      () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), consulClient, watchSeconds, DEFAULT)
+      () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), consulClient, defaultConfig)
     );
     assertTrue(ex.getMessage().contains(badFormatKey));
   }
