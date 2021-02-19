@@ -101,7 +101,7 @@ public class UpstreamConfigServiceImplTest {
   public void testBadConfig() {
     String badFormatKey = "badFormat";
     var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
-            .withValue(BaseEncoding.base64().encode("{\"a\":[1,2,3".getBytes()));
+            .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
