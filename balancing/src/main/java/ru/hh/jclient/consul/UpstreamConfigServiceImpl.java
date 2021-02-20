@@ -11,6 +11,7 @@ import ru.hh.consul.option.ImmutableQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,24 +36,20 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
-  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds, ConsistencyMode consistencyMode) {
-    this(services, consulClient, watchSeconds, consistencyMode, true);
-  }
-
-  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, int watchSeconds, ConsistencyMode consistencyMode,
-                                   boolean syncUpdate) {
+  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
     this.services = Set.copyOf(services);
     this.kvClient = consulClient.keyValueClient();
-    this.watchSeconds = watchSeconds;
-    this.consistencyMode = consistencyMode;
-    if (syncUpdate) {
+    this.watchSeconds = config.getWatchSeconds();
+    this.consistencyMode = config.getConsistencyMode();
+    if (config.isSyncUpdate()) {
       LOGGER.debug("Trying to sync update configs");
-      syncUpdateConfig();
+      syncUpdateConfig(config.getSyncInitTimeoutMillis());
     }
   }
 
-  private void syncUpdateConfig() {
-    List<Value> values = kvClient.getValues(ROOT_PATH, ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build());
+  private void syncUpdateConfig(int syncInitTimeoutMillis) {
+    ImmutableQueryOptions options = ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build();
+    List<Value> values = kvClient.getValues(ROOT_PATH, options, syncInitTimeoutMillis);
     if (values == null || values.isEmpty()) {
       throw new IllegalStateException("There's no upstreamConfigs in KV");
     }
