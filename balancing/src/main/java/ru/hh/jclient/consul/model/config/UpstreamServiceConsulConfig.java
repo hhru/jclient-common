@@ -14,7 +14,6 @@ public class UpstreamServiceConsulConfig {
   private List<String> datacenterList;
   private boolean selfNodeFilteringEnabled;
   private boolean syncInit = true;
-  private int syncInitTimeoutMillis;
 
   public boolean isAllowCrossDC() {
     return allowCrossDC;
@@ -88,12 +87,20 @@ public class UpstreamServiceConsulConfig {
     return this;
   }
 
+  /**
+   * value is no longer used
+   * @return always 0
+   */
+  @Deprecated(forRemoval = true)
   public int getSyncInitTimeoutMillis() {
-    return syncInitTimeoutMillis;
+    return 0;
   }
 
+  /**
+   * value is no longer used
+   */
+  @Deprecated(forRemoval = true)
   public UpstreamServiceConsulConfig setSyncInitTimeoutMillis(Integer syncInitTimeoutMillis) {
-    this.syncInitTimeoutMillis = syncInitTimeoutMillis;
     return this;
   }
 

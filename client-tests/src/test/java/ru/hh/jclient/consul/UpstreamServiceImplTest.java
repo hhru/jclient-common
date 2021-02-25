@@ -2,7 +2,6 @@ package ru.hh.jclient.consul;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import ru.hh.consul.Consul;
@@ -67,7 +66,7 @@ public class UpstreamServiceImplTest {
   }
 
   private void mockServiceHealth(List<ServiceHealth> health) {
-    when(healthClient.getHealthyServiceInstances(anyString(), any(QueryOptions.class), anyInt()))
+    when(healthClient.getHealthyServiceInstances(anyString(), any(QueryOptions.class)))
       .thenReturn(new ConsulResponse<>(health, 0, false, BigInteger.ONE, Optional.empty()));
   }
 

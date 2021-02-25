@@ -32,8 +32,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -75,29 +73,29 @@ public class UpstreamServiceImpl implements UpstreamService {
       LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
     if (consulConfig.isSyncInit()) {
-      LOGGER.debug("Trying to sync update servers, timeout={}ms", consulConfig.getSyncInitTimeoutMillis());
-      syncUpdateUpstreams(consulConfig.getSyncInitTimeoutMillis());
+      LOGGER.debug("Trying to sync update servers");
+      syncUpdateUpstreams();
     }
   }
 
-  private void syncUpdateUpstreams(int timeoutMillis) {
+  private void syncUpdateUpstreams() {
     for (String serviceName : upstreamList) {
       if (allowCrossDC) {
         ExecutorService executorService = Executors.newFixedThreadPool(datacenterList.size());
         var tasks = datacenterList.stream()
-          .map(dc -> CompletableFuture.runAsync(() -> syncUpdateServiceInDC(serviceName, dc, timeoutMillis), executorService))
+          .map(dc -> CompletableFuture.runAsync(() -> syncUpdateServiceInDC(serviceName, dc), executorService))
           .toArray(CompletableFuture[]::new);
         try {
-          CompletableFuture.allOf(tasks).get(timeoutMillis, TimeUnit.MILLISECONDS);
+          CompletableFuture.allOf(tasks).get();
           executorService.shutdown();
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (InterruptedException | ExecutionException e) {
           if (e instanceof InterruptedException) {
             Thread.currentThread().interrupt();
           }
           throw new RuntimeException(e);
         }
       } else {
-        syncUpdateServiceInDC(serviceName, currentDC, timeoutMillis);
+        syncUpdateServiceInDC(serviceName, currentDC);
       }
     }
     var emptyUpstreams = findEmptyUpstreams();
@@ -116,12 +114,12 @@ public class UpstreamServiceImpl implements UpstreamService {
     return emptyUpstreams;
   }
 
-  private void syncUpdateServiceInDC(String serviceName, String dataCenter, int timeoutMillis) {
+  private void syncUpdateServiceInDC(String serviceName, String dataCenter) {
     QueryOptions queryOptions = ImmutableQueryOptions.builder()
       .datacenter(dataCenter.toLowerCase())
       .consistencyMode(consistencyMode)
       .build();
-    Map<ServiceHealthKey, ServiceHealth> state = healthClient.getHealthyServiceInstances(serviceName, queryOptions, timeoutMillis)
+    Map<ServiceHealthKey, ServiceHealth> state = healthClient.getHealthyServiceInstances(serviceName, queryOptions)
       .getResponse().stream()
       .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
     LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);

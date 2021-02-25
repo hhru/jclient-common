@@ -43,13 +43,13 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
     this.consistencyMode = config.getConsistencyMode();
     if (config.isSyncUpdate()) {
       LOGGER.debug("Trying to sync update configs");
-      syncUpdateConfig(config.getSyncInitTimeoutMillis());
+      syncUpdateConfig();
     }
   }
 
-  private void syncUpdateConfig(int syncInitTimeoutMillis) {
+  private void syncUpdateConfig() {
     ImmutableQueryOptions options = ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build();
-    List<Value> values = kvClient.getValues(ROOT_PATH, options, syncInitTimeoutMillis);
+    List<Value> values = kvClient.getValues(ROOT_PATH, options);
     if (values == null || values.isEmpty()) {
       throw new IllegalStateException("There's no upstreamConfigs in KV");
     }
