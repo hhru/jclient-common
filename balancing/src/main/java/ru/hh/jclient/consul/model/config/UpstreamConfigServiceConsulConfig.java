@@ -6,7 +6,6 @@ public class UpstreamConfigServiceConsulConfig {
   private int watchSeconds;
   private ConsistencyMode consistencyMode;
   private boolean syncUpdate = true;
-  private int syncInitTimeoutMillis;
 
   public int getWatchSeconds() {
     return watchSeconds;
@@ -35,12 +34,20 @@ public class UpstreamConfigServiceConsulConfig {
     return this;
   }
 
+  /**
+   * value is no longer used
+   * @return always 0
+   */
+  @Deprecated(forRemoval = true)
   public int getSyncInitTimeoutMillis() {
-    return syncInitTimeoutMillis;
+    return 0;
   }
 
+  /**
+   * value is no longer used
+   */
+  @Deprecated(forRemoval = true)
   public UpstreamConfigServiceConsulConfig setSyncInitTimeoutMillis(int syncInitTimeoutMillis) {
-    this.syncInitTimeoutMillis = syncInitTimeoutMillis;
     return this;
   }
 }

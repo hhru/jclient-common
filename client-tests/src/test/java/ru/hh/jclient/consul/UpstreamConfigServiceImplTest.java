@@ -3,7 +3,6 @@ package ru.hh.jclient.consul;
 import com.google.common.io.BaseEncoding;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import ru.hh.consul.Consul;
@@ -50,7 +49,7 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testGetConfig() {
     Collection<Value> values = prepareValues();
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class), anyInt())).thenReturn(List.copyOf(values));
+    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(values));
 
     var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), consulClient, defaultConfig);
 
@@ -93,7 +92,7 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testNoConfig() {
     assertThrows(IllegalStateException.class, () -> new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, defaultConfig));
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class), anyInt())).thenReturn(List.copyOf(prepareValues()));
+    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(prepareValues()));
     var service = new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, defaultConfig);
     assertNotNull(service.getUpstreamConfig("app-name"));
   }
@@ -105,7 +104,7 @@ public class UpstreamConfigServiceImplTest {
             .withValue(BaseEncoding.base64().encode("{\"a\":[1,2,3".getBytes()));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class), anyInt())).thenReturn(values);
+    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
     var ex = assertThrows(
       IllegalStateException.class,
       () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), consulClient, defaultConfig)
