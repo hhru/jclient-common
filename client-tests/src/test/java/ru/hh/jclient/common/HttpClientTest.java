@@ -12,8 +12,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
@@ -305,6 +308,17 @@ public class HttpClientTest extends HttpClientTestBase {
     // this header is accepted since it comes from local mockRequest
     assertEquals("somevalue", actualRequest.get().getHeaders().get("someheader"));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
+  @Test
+  public void testSpanSending() throws InterruptedException, ExecutionException {
+
+    Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+    http.with(request).expectEmpty().result().get();
+
+    assertTrue(actualRequest.get().getHeaders().contains("traceparent"));
+    verify(spanExporter, times(1)).export(any());
   }
 
   @Test(expected = IllegalStateException.class)

@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import io.opentelemetry.sdk.OpenTelemetrySdk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
@@ -95,7 +96,7 @@ public abstract class AbstractBalancingStrategyTest {
     upstreamManager.updateUpstream(upstreamName);
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
-    return new HttpClientFactoryBuilder(contextSupplier, List.of())
+    return new HttpClientFactoryBuilder(contextSupplier, List.of(), OpenTelemetrySdk.builder().build())
       .withConnectTimeoutMs(100)
       .withRequestStrategy(strategy)
       .withCallbackExecutor(Runnable::run)

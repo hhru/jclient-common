@@ -4,6 +4,15 @@ import static com.google.common.collect.ImmutableSet.of;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.context.propagation.TextMapPropagator;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -38,11 +47,14 @@ import static java.time.Instant.now;
 
 class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
+  private static final TextMapPropagator.Getter<HttpClientContext> GETTER = createGetter();
 
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION,
     X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE);
 
   private final Executor callbackExecutor;
+  private final TextMapPropagator textMapPropagator;
+  private final Tracer tracer;
 
   HttpClientImpl(AsyncHttpClient http,
                  Request request,
@@ -50,9 +62,12 @@ class HttpClientImpl extends HttpClient {
                  RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
                  Storage<HttpClientContext> contextSupplier,
                  Executor callbackExecutor,
-                 List<HttpClientEventListener> eventListeners) {
+                 List<HttpClientEventListener> eventListeners,
+                 OpenTelemetry openTelemetry) {
     super(http, request, hostsWithSession, requestStrategy, contextSupplier, eventListeners);
     this.callbackExecutor = callbackExecutor;
+    this.textMapPropagator = openTelemetry.getPropagators().getTextMapPropagator();
+    this.tracer = openTelemetry.getTracer("jclient");
   }
 
   @Override
@@ -60,10 +75,11 @@ class HttpClientImpl extends HttpClient {
     for (HttpClientEventListener check : getEventListeners()) {
       check.beforeExecute(this, originalRequest);
     }
+    Span span = startSpan(originalRequest);
 
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
-    Request request = addHeadersAndParams(originalRequest);
+    Request request = addHeadersAndParams(originalRequest, span);
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     }
@@ -76,18 +92,21 @@ class HttpClientImpl extends HttpClient {
     }
 
     Transfers transfers = getStorages().prepare();
-    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor);
+    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor, span);
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
   }
 
-  private Request addHeadersAndParams(Request request) {
+  private Request addHeadersAndParams(Request request, Span span) {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
     HttpHeaders headers = new HttpHeaders();
     headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, Integer.toString(request.getRequestTimeout()));
+    try (Scope ignore = span.makeCurrent()) {
+      textMapPropagator.inject(Context.current(), headers, HttpHeaders::add);
+    }
     if (!isExternalRequest()) {
       PASS_THROUGH_HEADERS.stream()
         .filter(getContext().getHeaders()::containsKey)
@@ -154,6 +173,20 @@ class HttpClientImpl extends HttpClient {
     return requestBuilder.build();
   }
 
+  private Span startSpan(Request originalRequest) {
+
+    Context telemetryContext = textMapPropagator.extract(Context.current(), getContext(), GETTER);
+    Span span = tracer.spanBuilder(
+        originalRequest.getUrl()) //todo более общий
+        .setParent(telemetryContext)
+        .setSpanKind(SpanKind.CLIENT)
+        .setAttribute("requestTimeout", originalRequest.getRequestTimeout())
+        .setAttribute("readTimeout", originalRequest.getReadTimeout())
+        .startSpan();
+    LOGGER.trace("spanStarted : {}", span);
+    return span;
+  }
+
   private boolean areAllowedMediaTypesForResponseAndErrorCompatible() {
     if (getExpectedMediaTypes().isEmpty() || getExpectedMediaTypesForErrors().isEmpty()) {
       return true;
@@ -166,6 +199,24 @@ class HttpClientImpl extends HttpClient {
     return getExpectedMediaTypes().get().equals(getExpectedMediaTypesForErrors().get());
   }
 
+  private static TextMapPropagator.Getter<HttpClientContext> createGetter() {
+    return new TextMapPropagator.Getter<>() {
+      @Override
+      public Iterable<String> keys(HttpClientContext carrier) {
+        return carrier.getHeaders().keySet();
+      }
+
+      @Override
+      public String get(HttpClientContext carrier, String key) {
+        List<String> header = carrier.getHeaders().get(key);
+        if (header == null || header.isEmpty()) {
+          return "";
+        }
+        return header.get(0);
+      }
+    };
+  }
+
   static class CompletionHandler extends AsyncCompletionHandler<ResponseWrapper> {
     private final MDCCopy mdcCopy;
     private final CompletableFuture<ResponseWrapper> promise;
@@ -174,9 +225,10 @@ class HttpClientImpl extends HttpClient {
     private final List<RequestDebug> requestDebugs;
     private final Transfers contextTransfers;
     private final Executor callbackExecutor;
+    private final Span span;
 
     CompletionHandler(CompletableFuture<ResponseWrapper> promise, Request request, Instant requestStart,
-                      List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor) {
+                      List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor, Span span) {
       this.requestStart = requestStart;
       mdcCopy = MDCCopy.capture();
       this.promise = promise;
@@ -184,6 +236,7 @@ class HttpClientImpl extends HttpClient {
       this.requestDebugs = List.copyOf(requestDebugs);
       this.contextTransfers = contextTransfers;
       this.callbackExecutor = callbackExecutor;
+      this.span = span;
     }
 
     @Override
@@ -194,7 +247,9 @@ class HttpClientImpl extends HttpClient {
       long timeToLastByteMicros = getTimeToLastByte();
       mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} micros on {} {}",
           responseStatusCode, responseStatusText, timeToLastByteMicros, request.getMethod(), request.getUri()));
-
+      span.setStatus(StatusCode.OK, String.format("code:%d; description:%s", responseStatusCode, responseStatusText));
+      span.end();
+      LOGGER.trace("span closed: {}", span);
       return proceedWithResponse(response, timeToLastByteMicros);
     }
 
@@ -211,6 +266,13 @@ class HttpClientImpl extends HttpClient {
               request.getUri(),
               t,
               response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
+      String errorDescription = "";
+      if (response != null) {
+        errorDescription = String.format("code:%d; description:%s", response.getStatusCode(), response.getStatusText());
+      }
+      span.setStatus(StatusCode.ERROR, errorDescription);
+      span.end();
+      LOGGER.trace("span closed: {}", span);
 
       if (response != null) {
         proceedWithResponse(response, timeToLastByteMicros);

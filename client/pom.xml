@@ -36,7 +36,11 @@
             <artifactId>jclient-common-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${opentelemetry.version}</version>
+        </dependency>
         <!-- Async http client -->
         <dependency>
             <groupId>org.asynchttpclient</groupId>
