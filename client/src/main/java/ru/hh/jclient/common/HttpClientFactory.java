@@ -1,8 +1,9 @@
 package ru.hh.jclient.common;
 
-import io.opentelemetry.api.OpenTelemetry;
+import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metrics.MetricsProvider;
+import ru.hh.jclient.common.telemetry.TelemetryListener;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.List;
@@ -20,21 +21,21 @@ public class HttpClientFactory {
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final OpenTelemetry openTelemetry;
+  private final TelemetryListener telemetryListener;
   private final RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier,
-                           OpenTelemetry openTelemetry) {
-    this(http, hostsWithSession, contextSupplier, Runnable::run, openTelemetry);
+                           TelemetryListener telemetryListener) {
+    this(http, hostsWithSession, contextSupplier, Runnable::run, telemetryListener);
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
-                           Executor callbackExecutor, OpenTelemetry openTelemetry) {
+                           Executor callbackExecutor, @Nullable TelemetryListener telemetryListener) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor, new DefaultRequestStrategy()
-        , openTelemetry
+        , telemetryListener
     );
   }
 
@@ -43,9 +44,9 @@ public class HttpClientFactory {
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
                            RequestStrategy<?> requestStrategy,
-                           OpenTelemetry openTelemetry
+                           @Nullable TelemetryListener telemetryListener
   ) {
-    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of(), openTelemetry);
+    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of(), telemetryListener);
   }
 
   public HttpClientFactory(AsyncHttpClient http,
@@ -54,14 +55,14 @@ public class HttpClientFactory {
                            Executor callbackExecutor,
                            RequestStrategy<?> requestStrategy,
                            List<HttpClientEventListener> eventListeners,
-                           OpenTelemetry openTelemetry) {
+                           @Nullable TelemetryListener telemetryListener) {
     this.http = requireNonNull(http, "http must not be null");
     this.hostsWithSession = requireNonNull(hostsWithSession, "hostsWithSession must not be null");
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
     this.callbackExecutor = requireNonNull(callbackExecutor, "callbackExecutor must not be null");
     this.requestStrategy = requireNonNull(requestStrategy, "upstreamManager must not be null");
     this.eventListeners = eventListeners;
-    this.openTelemetry = openTelemetry;
+    this.telemetryListener = telemetryListener;
   }
 
   /**
@@ -79,7 +80,7 @@ public class HttpClientFactory {
         contextSupplier,
         callbackExecutor,
         eventListeners,
-        openTelemetry
+        telemetryListener
         );
   }
 
@@ -114,6 +115,6 @@ public class HttpClientFactory {
   public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
     return new HttpClientFactory(this.http, this.hostsWithSession, this.contextSupplier, this.callbackExecutor,
                                  this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
-                                 this.eventListeners, this.openTelemetry);
+                                 this.eventListeners, this.telemetryListener);
   }
 }

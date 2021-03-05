@@ -1,5 +1,7 @@
 package ru.hh.jclient.common;
 
+import ru.hh.jclient.common.telemetry.TelemetryContext;
+
 public interface HttpClientEventListener {
-  void beforeExecute(HttpClient httpClient, Request request);
+  Request beforeExecute(HttpClient httpClient, Request request, TelemetryContext telemetryContext);
 }

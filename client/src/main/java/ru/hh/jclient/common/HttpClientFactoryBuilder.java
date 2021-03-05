@@ -1,13 +1,14 @@
 package ru.hh.jclient.common;
 
 import io.netty.handler.ssl.SslContext;
-import io.opentelemetry.api.OpenTelemetry;
 import static java.util.Optional.ofNullable;
+import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import ru.hh.jclient.common.metrics.MetricsConsumer;
+import ru.hh.jclient.common.telemetry.TelemetryListener;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
 
@@ -31,14 +32,12 @@ public class HttpClientFactoryBuilder {
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private MetricsConsumer metricsConsumer;
-  private OpenTelemetry openTelemetry;
+  private TelemetryListener telemetryListener;
 
-  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners,
-                                  OpenTelemetry openTelemetry) {
+  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
     this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
     this.contextSupplier = contextSupplier;
     this.eventListeners = new ArrayList<>(eventListeners);
-    this.openTelemetry =  openTelemetry;
   }
 
   private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
@@ -49,7 +48,7 @@ public class HttpClientFactoryBuilder {
         prototype.timeoutMultiplier,
         prototype.metricsConsumer,
         new ArrayList<>(prototype.eventListeners),
-        prototype.openTelemetry
+        prototype.telemetryListener
     );
   }
 
@@ -60,7 +59,7 @@ public class HttpClientFactoryBuilder {
                                    double timeoutMultiplier,
                                    MetricsConsumer metricsConsumer,
                                    List<HttpClientEventListener> eventListeners,
-                                   OpenTelemetry openTelemetry
+                                   @Nullable TelemetryListener telemetryListener
   ) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
@@ -70,7 +69,7 @@ public class HttpClientFactoryBuilder {
     this.timeoutMultiplier = timeoutMultiplier;
     this.metricsConsumer = metricsConsumer;
     this.eventListeners = eventListeners;
-    this.openTelemetry = openTelemetry;
+    this.telemetryListener = telemetryListener;
   }
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
@@ -141,6 +140,11 @@ public class HttpClientFactoryBuilder {
     target.callbackExecutor = callbackExecutor;
     return target;
   }
+  public HttpClientFactoryBuilder withTelemetryListener(TelemetryListener telemetryListener) {
+    var target = getCopy();
+    target.telemetryListener = telemetryListener;
+    return target;
+  }
 
   public HttpClientFactoryBuilder withHostsWithSession(Collection<String> hostsWithSession) {
     var target = getCopy();
@@ -186,7 +190,7 @@ public class HttpClientFactoryBuilder {
       callbackExecutor,
       initStrategy(),
       List.copyOf(eventListeners),
-      openTelemetry
+      telemetryListener
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
     return httpClientFactory;

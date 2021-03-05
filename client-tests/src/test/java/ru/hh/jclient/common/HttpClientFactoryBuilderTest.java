@@ -26,7 +26,7 @@ public class HttpClientFactoryBuilderTest {
 
   @Test
   public void testImmutableByDefault() {
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of(), null);
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of());
     testBuilderMethods(initial, not(equalTo(initial)));
   }
 
@@ -35,7 +35,7 @@ public class HttpClientFactoryBuilderTest {
     Properties properties = new Properties();
     properties.put("requestTimeoutMs", "1000");
     properties.put("timeoutMultiplier", "5.0");
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of(), null).withCallbackExecutor(Executors.newSingleThreadExecutor());
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).withCallbackExecutor(Executors.newSingleThreadExecutor());
     var client = initial.withProperties(properties).withHostsWithSession(List.of("localhost")).build();
     assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
     assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());

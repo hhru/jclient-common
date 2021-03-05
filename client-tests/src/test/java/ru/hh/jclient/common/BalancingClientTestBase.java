@@ -3,7 +3,6 @@ package ru.hh.jclient.common;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import io.netty.channel.ConnectTimeoutException;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
 import static java.util.Collections.singleton;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
@@ -412,7 +411,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
-        new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy, OpenTelemetrySdk.builder().build());
+        new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy, null);
   }
 
   Request failWith(Throwable t, InvocationOnMock iom) {

@@ -312,12 +312,11 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testSpanSending() throws InterruptedException, ExecutionException {
-
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectEmpty().result().get();
 
-    assertTrue(actualRequest.get().getHeaders().contains("traceparent"));
+    assertTrue(actualRequest.get().getHeaders().contains(HttpHeaderNames.TRACE_PARENT));
     verify(spanExporter, times(1)).export(any());
   }
 
