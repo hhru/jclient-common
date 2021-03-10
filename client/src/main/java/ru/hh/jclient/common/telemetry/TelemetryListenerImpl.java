@@ -5,21 +5,28 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import java.util.List;
-import org.asynchttpclient.Response;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
+import ru.hh.jclient.common.HttpHeaders;
 import ru.hh.jclient.common.Request;
+import ru.hh.jclient.common.RequestBuilder;
+import ru.hh.jclient.common.RequestContext;
+import ru.hh.jclient.common.RequestDebug;
+import ru.hh.jclient.common.exception.ResponseConverterException;
 
-public class TelemetryListenerImpl implements TelemetryListener {
+public class TelemetryListenerImpl implements RequestDebug {
   private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryListenerImpl.class);
 
   private static final TextMapGetter<HttpClientContext> GETTER = createGetter();
   private final Tracer tracer;
   private final TextMapPropagator textMapPropagator;
+  private Span span;
 
   public TelemetryListenerImpl(Tracer tracer, TextMapPropagator textMapPropagator) {
     this.tracer = tracer;
@@ -27,9 +34,9 @@ public class TelemetryListenerImpl implements TelemetryListener {
   }
 
   @Override
-  public TelemetryContext beforeExecute(TelemetryContext telemetryContext, Request request) {
-    Context context = textMapPropagator.extract(Context.current(), telemetryContext.getHttpClientContext(), GETTER);
-    Span span = tracer.spanBuilder(
+  public Request onExecuteRequest(Request request, HttpClientContext httpClientContext) {
+    Context context = textMapPropagator.extract(Context.current(), httpClientContext, GETTER);
+    span = tracer.spanBuilder(
         request.getUrl()) //todo более общий
         .setParent(context)
         .setSpanKind(SpanKind.CLIENT)
@@ -37,31 +44,48 @@ public class TelemetryListenerImpl implements TelemetryListener {
         .setAttribute("readTimeout", request.getReadTimeout())
         .startSpan();
     LOGGER.trace("spanStarted : {}", span);
-    return new TelemetryContextHolder(span, telemetryContext.getHttpClientContext());
+    RequestBuilder requestBuilder = new RequestBuilder(request);
 
+    HttpHeaders headers = new HttpHeaders();
+
+    headers.add(request.getHeaders());
+    try (Scope ignore = span.makeCurrent()) {
+      textMapPropagator.inject(Context.current(), headers, HttpHeaders::add);
+    }
+    requestBuilder.setHeaders(headers);
+    return requestBuilder.build();
   }
 
+
   @Override
-  public TelemetryContext onCompleted(TelemetryContext telemetryContext, Response response) {
-    Span span = telemetryContext.getSpan();
+  public ru.hh.jclient.common.Response onResponse(ru.hh.jclient.common.Response response) {
+
+//  }
+//    @Override
+//  public Response onCompleted(TelemetryContext telemetryContext, Response response) {
+//    Span span = telemetryContext.getSpan();
     span.setStatus(StatusCode.OK, String.format("code:%d; description:%s", response.getStatusCode(), response.getStatusText()));
     span.end();
-    LOGGER.trace("span closed: {}", telemetryContext);
-    return telemetryContext;
+    LOGGER.trace("span closed: {}", span);
+    return response;
+//    return telemetryContext;
   }
 
   @Override
-  public TelemetryContext onThrowable(TelemetryContext telemetryContext, Response response) {
-    String errorDescription = "";
-    if (response != null) {
-      errorDescription = String.format("code:%d; description:%s", response.getStatusCode(), response.getStatusText());
-    }
-    Span span = telemetryContext.getSpan();
+  public void onClientProblem(Throwable t) {
 
-    span.setStatus(StatusCode.ERROR, errorDescription);
+//  }
+//    @Override
+//  public TelemetryContext onThrowable(TelemetryContext telemetryContext, Response response) {
+//    String errorDescription = "";
+//      errorDescription = String.format("code:%d; description:%s", response.getStatusCode(), response.getStatusText());
+//    }
+//    Span span = telemetryContext.getSpan();
+
+    span.setStatus(StatusCode.ERROR, t.getMessage());
     span.end();
-    LOGGER.trace("span closed: {}", telemetryContext);
-    return telemetryContext;
+    LOGGER.trace("span closed: {}", span);
+//    return telemetryContext;
   }
 
   private static TextMapGetter<HttpClientContext> createGetter() {
@@ -80,5 +104,32 @@ public class TelemetryListenerImpl implements TelemetryListener {
         return header.get(0);
       }
     };
+  }
+
+  @Override
+  public void onRequest(Request request, Optional<?> requestBodyEntity, RequestContext context) {
+
+  }
+
+  @Override
+  public void onRetry(Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context) {
+
+  }
+
+
+  @Override
+  public void onResponseConverted(Optional<?> result) {
+
+  }
+
+
+  @Override
+  public void onConverterProblem(ResponseConverterException e) {
+
+  }
+
+  @Override
+  public void onProcessingFinished() {
+
   }
 }

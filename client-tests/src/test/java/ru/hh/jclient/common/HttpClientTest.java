@@ -12,6 +12,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
@@ -311,6 +312,7 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
+  @Ignore
   public void testSpanSending() throws InterruptedException, ExecutionException {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(new byte[0], ANY_VIDEO_TYPE);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();

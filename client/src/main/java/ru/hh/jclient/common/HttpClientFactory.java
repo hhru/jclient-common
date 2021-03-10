@@ -2,8 +2,11 @@ package ru.hh.jclient.common;
 
 import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.metrics.MetricsProvider;
-import ru.hh.jclient.common.telemetry.TelemetryListener;
+import ru.hh.jclient.common.telemetry.TelemetryListenerImpl;
+import ru.hh.jclient.common.telemetry.TelemetryProcessorFactory;
 import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.List;
@@ -16,26 +19,27 @@ import java.util.function.UnaryOperator;
 import static java.util.Objects.requireNonNull;
 
 public class HttpClientFactory {
+  private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientFactory.class);
 
   private final AsyncHttpClient http;
   private final Set<String> hostsWithSession;
   private final Storage<HttpClientContext> contextSupplier;
   private final Executor callbackExecutor;
-  private final TelemetryListener telemetryListener;
+//  private final TelemetryListener telemetryListener;
   private final RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy;
   private final List<HttpClientEventListener> eventListeners;
 
-  public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier,
-                           TelemetryListener telemetryListener) {
-    this(http, hostsWithSession, contextSupplier, Runnable::run, telemetryListener);
+  public HttpClientFactory(AsyncHttpClient http, Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier
+                           ) {
+    this(http, hostsWithSession, contextSupplier, Runnable::run);
   }
 
   public HttpClientFactory(AsyncHttpClient http,
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
-                           Executor callbackExecutor, @Nullable TelemetryListener telemetryListener) {
+                           Executor callbackExecutor) {
     this(http, hostsWithSession, contextSupplier, callbackExecutor, new DefaultRequestStrategy()
-        , telemetryListener
+
     );
   }
 
@@ -43,10 +47,9 @@ public class HttpClientFactory {
                            Set<String> hostsWithSession,
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
-                           RequestStrategy<?> requestStrategy,
-                           @Nullable TelemetryListener telemetryListener
+                           RequestStrategy<?> requestStrategy
   ) {
-    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of(), telemetryListener);
+    this(http, hostsWithSession, contextSupplier, callbackExecutor, requestStrategy, List.of());
   }
 
   public HttpClientFactory(AsyncHttpClient http,
@@ -54,15 +57,16 @@ public class HttpClientFactory {
                            Storage<HttpClientContext> contextSupplier,
                            Executor callbackExecutor,
                            RequestStrategy<?> requestStrategy,
-                           List<HttpClientEventListener> eventListeners,
-                           @Nullable TelemetryListener telemetryListener) {
+                           List<HttpClientEventListener> eventListeners
+  ) {
     this.http = requireNonNull(http, "http must not be null");
     this.hostsWithSession = requireNonNull(hostsWithSession, "hostsWithSession must not be null");
+    LOGGER.warn("STORAGE1111 HttpClientFactory {}", contextSupplier);
+
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
     this.callbackExecutor = requireNonNull(callbackExecutor, "callbackExecutor must not be null");
     this.requestStrategy = requireNonNull(requestStrategy, "upstreamManager must not be null");
     this.eventListeners = eventListeners;
-    this.telemetryListener = telemetryListener;
   }
 
   /**
@@ -72,6 +76,9 @@ public class HttpClientFactory {
    *          to execute
    */
   public HttpClient with(Request request) {
+//    if(telemetryProcessorFactory!=null){
+//      contextSupplier.get().addDebugSupplier(telemetryProcessorFactory::createRequestDebug); //посмотреть где другой саплаер задается. запихать туда. проверить, что объект создается новый
+//    }
     return new HttpClientImpl(
         http,
         requireNonNull(request, "request must not be null"),
@@ -79,8 +86,9 @@ public class HttpClientFactory {
         requestStrategy,
         contextSupplier,
         callbackExecutor,
-        eventListeners,
-        telemetryListener
+        eventListeners
+//        ,
+//        telemetryListener
         );
   }
 
@@ -114,7 +122,7 @@ public class HttpClientFactory {
   @SuppressWarnings({"unchecked", "rawtypes"})
   public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
     return new HttpClientFactory(this.http, this.hostsWithSession, this.contextSupplier, this.callbackExecutor,
-                                 this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
-                                 this.eventListeners, this.telemetryListener);
+                                 this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper)
+    );
   }
 }

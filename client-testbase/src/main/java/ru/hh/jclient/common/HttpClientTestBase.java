@@ -32,8 +32,7 @@ import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.HttpHeaderNames.TRACE_PARENT;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
-import ru.hh.jclient.common.telemetry.TelemetryEventListener;
-import ru.hh.jclient.common.telemetry.TelemetryListenerImpl;
+import ru.hh.jclient.common.telemetry.TelemetryProcessorFactoryImpl;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.io.ByteArrayInputStream;
@@ -226,22 +225,26 @@ public class HttpClientTestBase {
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
     SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
         .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
+        .setIdGenerator(new IdGeneratorImpl(httpClientContext))
         .build();
     OpenTelemetrySdk telemetrySdk = OpenTelemetrySdk.builder()
         .setTracerProvider(tracerProvider)
+
         .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
         .build();
     Tracer tracer = telemetrySdk.getTracer("testSpan");
     TextMapPropagator textMapPropagator = telemetrySdk.getPropagators().getTextMapPropagator();
     List<HttpClientEventListener> eventListeners = new ArrayList<>(this.eventListeners);
-    eventListeners.add(new TelemetryEventListener(textMapPropagator));
+//    eventListeners.add(new TelemetryEventListener(textMapPropagator));
 
     return new HttpClientFactory(httpClient, singleton("http://localhost"),
         new SingletonStorage<>(() -> httpClientContext),
         Runnable::run,
         new DefaultRequestStrategy().createCustomizedCopy(engimeBuilder -> engimeBuilder.withTimeoutMultiplier(timeoutMultiplier)),
-        eventListeners,
-        new TelemetryListenerImpl(tracer, textMapPropagator)
+        eventListeners
+//        ,
+//        null
+//        new TelemetryProcessorFactoryImpl(tracer, textMapPropagator)
     );
   }
 }

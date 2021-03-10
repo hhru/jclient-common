@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
 import static java.util.Optional.ofNullable;
-import ru.hh.jclient.common.telemetry.TelemetryContext;
 
 public class GlobalTimeoutCheck implements HttpClientEventListener {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalTimeoutCheck.class);
@@ -82,7 +81,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   }
 
   @Override
-  public Request beforeExecute(HttpClient httpClient, Request request, TelemetryContext telemetryContext) {
+  public void beforeExecute(HttpClient httpClient, Request request) {
     ofNullable(httpClient.getContext().getHeaders())
       .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
       .flatMap(values -> values.stream().findFirst())
@@ -100,7 +99,6 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
           handleTimeoutExceeded(userAgent, request, outerTimeout, alreadySpentTime, requestTimeout);
         }
       });
-    return request;
   }
 
   protected LocalDateTime getNow() {

@@ -45,6 +45,13 @@ public interface RequestDebug {
   };
 
   /**
+   * Called at the very beginning of the execution
+   */
+  default Request onExecuteRequest(Request request, HttpClientContext httpClientContext){
+    return request;
+  }
+
+  /**
    * Called before start of the request
    */
   void onRequest(Request request, Optional<?> requestBodyEntity, RequestContext context);
