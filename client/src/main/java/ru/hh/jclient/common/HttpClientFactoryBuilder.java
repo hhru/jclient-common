@@ -2,17 +2,11 @@ package ru.hh.jclient.common;
 
 import io.netty.handler.ssl.SslContext;
 import static java.util.Optional.ofNullable;
-import java.util.function.Supplier;
-import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.metrics.MetricsConsumer;
-import ru.hh.jclient.common.telemetry.TelemetryListenerImpl;
-import ru.hh.jclient.common.telemetry.TelemetryProcessorFactory;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
 
@@ -26,10 +20,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 
 public class HttpClientFactoryBuilder {
-  private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientFactoryBuilder.class);
-
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
-  private final List<HttpClientEventListener> eventListeners;
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy = new DefaultRequestStrategy();
@@ -38,7 +29,7 @@ public class HttpClientFactoryBuilder {
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private MetricsConsumer metricsConsumer;
-  private TelemetryProcessorFactory telemetryProcessorFactory;
+  private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
     this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
@@ -53,8 +44,7 @@ public class HttpClientFactoryBuilder {
         prototype.contextSupplier,
         prototype.timeoutMultiplier,
         prototype.metricsConsumer,
-        new ArrayList<>(prototype.eventListeners),
-        prototype.telemetryProcessorFactory
+        new ArrayList<>(prototype.eventListeners)
     );
   }
 
@@ -64,9 +54,7 @@ public class HttpClientFactoryBuilder {
                                    Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier,
                                    double timeoutMultiplier,
                                    MetricsConsumer metricsConsumer,
-                                   List<HttpClientEventListener> eventListeners,
-                                   @Nullable TelemetryProcessorFactory telemetryProcessorFactory
-  ) {
+                                   List<HttpClientEventListener> eventListeners) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
     this.callbackExecutor = callbackExecutor;
@@ -75,7 +63,6 @@ public class HttpClientFactoryBuilder {
     this.timeoutMultiplier = timeoutMultiplier;
     this.metricsConsumer = metricsConsumer;
     this.eventListeners = eventListeners;
-    this.telemetryProcessorFactory = telemetryProcessorFactory;
   }
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
@@ -146,11 +133,6 @@ public class HttpClientFactoryBuilder {
     target.callbackExecutor = callbackExecutor;
     return target;
   }
-  public HttpClientFactoryBuilder withTelemetryProcessorFactory(TelemetryProcessorFactory telemetryProcessorFactory) {
-    var target = getCopy();
-    target.telemetryProcessorFactory = telemetryProcessorFactory;
-    return target;
-  }
 
   public HttpClientFactoryBuilder withHostsWithSession(Collection<String> hostsWithSession) {
     var target = getCopy();
@@ -161,14 +143,6 @@ public class HttpClientFactoryBuilder {
   public HttpClientFactoryBuilder withStorage(Storage<HttpClientContext> contextSupplier) {
     var target = getCopy();
     target.contextSupplier = contextSupplier;
-    return target;
-  }
-
-  public HttpClientFactoryBuilder addDebugSupplier(Supplier<RequestDebug> requestDebugSupplier) {
-    var target = getCopy();
-    LOGGER.warn("STORAGE1111 addDebugSupplier {}", this.contextSupplier.get());
-    LOGGER.warn("STORAGE1111 addDebugSupplier target{}", this.contextSupplier.get());
-//    target.contextSupplier.get().addDebugSupplier(requestDebugSupplier);
     return target;
   }
 
@@ -197,8 +171,6 @@ public class HttpClientFactoryBuilder {
   }
 
   public HttpClientFactory build() {
-    LOGGER.warn("STORAGE1111 build {}", contextSupplier.get());
-    LOGGER.warn("STORAGE1111 build {}", contextSupplier);
     HttpClientFactory httpClientFactory = new HttpClientFactory(
       buildClient(),
       ofNullable(hostsWithSession).map(Set::copyOf).orElseGet(Set::of),

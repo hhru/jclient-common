@@ -13,5 +13,4 @@ public class HttpHeaderNames {
   public static final String X_SOURCE = "X-Source";
   public static final String X_OUTER_TIMEOUT_MS = "X-Outer-Timeout-Ms";
   public static final String X_HH_ACCEPT_ERRORS = "X-HH-AcceptErrors";
-  public static final String TRACE_PARENT = "traceparent";
 }

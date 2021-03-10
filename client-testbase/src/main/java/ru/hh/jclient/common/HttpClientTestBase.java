@@ -3,16 +3,6 @@ package ru.hh.jclient.common;
 import com.google.common.net.HttpHeaders;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import com.google.common.net.MediaType;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
-import io.opentelemetry.context.propagation.ContextPropagators;
-import io.opentelemetry.context.propagation.TextMapPropagator;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
-import io.opentelemetry.sdk.common.CompletableResultCode;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.data.SpanData;
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
-import io.opentelemetry.sdk.trace.export.SpanExporter;
 import static java.util.Collections.singleton;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -27,12 +17,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
-import static ru.hh.jclient.common.HttpHeaderNames.TRACE_PARENT;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
-import ru.hh.jclient.common.telemetry.TelemetryProcessorFactoryImpl;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 import java.io.ByteArrayInputStream;
@@ -56,7 +43,6 @@ public class HttpClientTestBase {
   protected TestRequestDebug debug = new TestRequestDebug(true);
   protected List<Supplier<RequestDebug>> debugs = List.of(() -> debug);
   protected List<HttpClientEventListener> eventListeners = new ArrayList<>();
-  protected SpanExporter spanExporter = spy(createSpanExporter());
 
   public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), debugs);
@@ -134,7 +120,6 @@ public class HttpClientTestBase {
     ru.hh.jclient.common.HttpHeaders headers2 = request2.getHeaders();
     headers2.remove(ACCEPT);
     headers2.remove(X_HH_ACCEPT_ERRORS);
-    headers2.remove(TRACE_PARENT);
     headers2.remove(HttpHeaderNames.X_OUTER_TIMEOUT_MS);
     assertEquals(request1.getHeaders(), headers2);
   }
@@ -202,49 +187,13 @@ public class HttpClientTestBase {
     eventListeners = List.of(listener);
     return this;
   }
-  private SpanExporter createSpanExporter(){
-    return new SpanExporter() {
-
-      @Override
-      public CompletableResultCode export(Collection<SpanData> spans) {
-        return CompletableResultCode.ofSuccess();
-      }
-
-      @Override
-      public CompletableResultCode flush() {
-        return CompletableResultCode.ofSuccess();
-      }
-
-      @Override
-      public CompletableResultCode shutdown() {
-        return CompletableResultCode.ofSuccess();
-      }
-    };
-  }
 
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
-    SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-        .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
-        .setIdGenerator(new IdGeneratorImpl(httpClientContext))
-        .build();
-    OpenTelemetrySdk telemetrySdk = OpenTelemetrySdk.builder()
-        .setTracerProvider(tracerProvider)
-
-        .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
-        .build();
-    Tracer tracer = telemetrySdk.getTracer("testSpan");
-    TextMapPropagator textMapPropagator = telemetrySdk.getPropagators().getTextMapPropagator();
-    List<HttpClientEventListener> eventListeners = new ArrayList<>(this.eventListeners);
-//    eventListeners.add(new TelemetryEventListener(textMapPropagator));
-
     return new HttpClientFactory(httpClient, singleton("http://localhost"),
         new SingletonStorage<>(() -> httpClientContext),
         Runnable::run,
         new DefaultRequestStrategy().createCustomizedCopy(engimeBuilder -> engimeBuilder.withTimeoutMultiplier(timeoutMultiplier)),
         eventListeners
-//        ,
-//        null
-//        new TelemetryProcessorFactoryImpl(tracer, textMapPropagator)
     );
   }
 }

@@ -43,39 +43,27 @@ class HttpClientImpl extends HttpClient {
     X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE);
 
   private final Executor callbackExecutor;
-//  private final telemetryProcessorFactory telemetryProcessorFactory;
-//  private Storage<TelemetryContext> telemetryContextStorage;
+
   HttpClientImpl(AsyncHttpClient http,
                  Request request,
                  Set<String> hostsWithSession,
                  RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
                  Storage<HttpClientContext> contextSupplier,
                  Executor callbackExecutor,
-                 List<HttpClientEventListener> eventListeners
-//      ,
-//                 @Nullable TelemetryProcessorFactory telemetryProcessorFactory
-                 ) {
+                 List<HttpClientEventListener> eventListeners) {
     super(http, request, hostsWithSession, requestStrategy, contextSupplier, eventListeners);
     this.callbackExecutor = callbackExecutor;
-//    this.telemetryProcessorFactory = telemetryProcessorFactory;
   }
 
   @Override
   CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext context) {
-//    При создании clientImpl фабрикой создавать реализацию интерфейса requestDebug, внутри которого хранить весь контекст(спан и компания)
-//    Реализацию фабрики подсовывать снаружи
-//    TelemetryContext telemetryContext = null;
     for(RequestDebug requestDebug:getDebugs()){
       originalRequest = requestDebug.onExecuteRequest(originalRequest, getContext());
     }
-//    getDebugs().forEach(debug -> debug.фвываыва(request, getRequestBodyEntity(), context));
-//    SpanWraper = fabric.createSpanWraper()
-//    if (telemetryListener != null) {
-//      telemetryContext = telemetryListener.beforeExecute(new TelemetryContextHolder(null, getContext()), originalRequest);
-//    }
     for (HttpClientEventListener check : getEventListeners()) {
       check.beforeExecute(this, originalRequest);
     }
+
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
     Request request = addHeadersAndParams(originalRequest);
@@ -91,11 +79,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     Transfers transfers = getStorages().prepare();
-    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor
-//        ,
-//        telemetryListener,
-//        SpanWraper
-    );
+    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor);
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
@@ -193,14 +177,9 @@ class HttpClientImpl extends HttpClient {
     private final List<RequestDebug> requestDebugs;
     private final Transfers contextTransfers;
     private final Executor callbackExecutor;
-//    private final TelemetryContext telemetryContext;
-//    private final TelemetryListener telemetryListener;
 
     CompletionHandler(CompletableFuture<ResponseWrapper> promise, Request request, Instant requestStart,
-                      List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor
-//        ,
-//                      TelemetryListener telemetryListener, TelemetryContext telemetryContext
-    ) {
+                      List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor) {
       this.requestStart = requestStart;
       mdcCopy = MDCCopy.capture();
       this.promise = promise;
@@ -208,8 +187,6 @@ class HttpClientImpl extends HttpClient {
       this.requestDebugs = List.copyOf(requestDebugs);
       this.contextTransfers = contextTransfers;
       this.callbackExecutor = callbackExecutor;
-//      this.telemetryContext = telemetryContext;
-//      this.telemetryListener = telemetryListener;
     }
 
     @Override
@@ -220,9 +197,6 @@ class HttpClientImpl extends HttpClient {
       long timeToLastByteMicros = getTimeToLastByte();
       mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} micros on {} {}",
           responseStatusCode, responseStatusText, timeToLastByteMicros, request.getMethod(), request.getUri()));
-//      if (telemetryListener != null) {
-//        telemetryListener.onCompleted(wraper, response);
-//      }
 
       return proceedWithResponse(response, timeToLastByteMicros);
     }
@@ -240,9 +214,6 @@ class HttpClientImpl extends HttpClient {
               request.getUri(),
               t,
               response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
-//      if (telemetryListener != null) {
-//        telemetryListener.onThrowable(telemetryContext, response);
-//      }
 
       if (response != null) {
         proceedWithResponse(response, timeToLastByteMicros);

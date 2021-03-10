@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
 
     <name>jclient-common-parent</name>
-    <version>3.4.2-SNAPSHOT-3</version>
+    <version>3.4.2-SNAPSHOT</version>
 
     <modules>
         <module>client</module>
@@ -30,7 +30,6 @@
         <junit.version>4.13.1</junit.version>
         <surefire.encoding>UTF-8</surefire.encoding>
         <guava.version>29.0-jre</guava.version>
-        <opentelemetry.version>1.0.0</opentelemetry.version>
     </properties>
 
     <dependencyManagement>
@@ -97,7 +96,7 @@
                 <groupId>ru.hh.checkstyle</groupId>
                 <artifactId>hh-maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <excludes>**/*</excludes>
+                    <excludes>**/ru/hh/jclient/common/model/ProtobufTest.java</excludes>
                 </configuration>
             </plugin>
             <plugin>
