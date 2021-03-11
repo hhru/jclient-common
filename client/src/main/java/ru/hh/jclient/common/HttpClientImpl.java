@@ -57,8 +57,9 @@ class HttpClientImpl extends HttpClient {
 
   @Override
   CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext context) {
-    for(RequestDebug requestDebug:getDebugs()){
-      originalRequest = requestDebug.onExecuteRequest(originalRequest, getContext());
+    for (RequestDebug requestDebug : getDebugs()) {
+      originalRequest = requestDebug.onRequestStart(originalRequest, getContext().getHeaders(), originalRequest.getQueryParams(),
+          isExternalRequest());
     }
     for (HttpClientEventListener check : getEventListeners()) {
       check.beforeExecute(this, originalRequest);

@@ -1,5 +1,7 @@
 package ru.hh.jclient.common;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 
@@ -47,7 +49,7 @@ public interface RequestDebug {
   /**
    * Called at the very beginning of the execution
    */
-  default Request onExecuteRequest(Request request, HttpClientContext httpClientContext){
+  default Request onRequestStart(Request request, Map<String, List<String>> headers, List<Param> queryParams, boolean external){
     return request;
   }
 
