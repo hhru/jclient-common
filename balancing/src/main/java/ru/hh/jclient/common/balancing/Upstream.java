@@ -179,6 +179,10 @@ public class Upstream {
     return enabled;
   }
 
+  public String getDatacenter() {
+    return datacenter;
+  }
+
   UpstreamConfig getConfig() {
     configReadLock.lock();
     try {
