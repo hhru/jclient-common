@@ -30,9 +30,9 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     String host = request.getUri().getHost();
     Upstream upstream = upstreamManager.getUpstream(host, profile);
     Set<Monitoring> monitoring = upstreamManager.getMonitoring();
-    if (upstream == null) {
+    if (upstream == null || !upstream.isEnabled()) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElse(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES);
-      return new ExternalUrlRequestor(request, requestExecutor,
+      return new ExternalUrlRequestor(upstream, request, requestExecutor,
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_MAX_TRIES,
         timeoutMultiplier, forceIdempotence, monitoring);
     } else {

@@ -8,21 +8,26 @@ import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
 
+import java.util.Optional;
 import java.util.Set;
 
 public class ExternalUrlRequestor extends RequestBalancer {
   public static final String DC_FOR_EXTERNAL_REQUESTS = "externalRequest";
   private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
+  private final String upstreamName;
+  private final String dc;
   private final Set<Monitoring> monitorings;
   private int firstStatusCode;
 
-  public ExternalUrlRequestor(Request request, RequestStrategy.RequestExecutor requestExecutor,
+  public ExternalUrlRequestor(Upstream upstream, Request request, RequestStrategy.RequestExecutor requestExecutor,
                               int requestTimeoutMs, int maxRequestTimeoutTries, int maxTries,
                               Double timeoutMultiplier, boolean forceIdempotence,
                               Set<Monitoring> monitorings
   ) {
     super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier, forceIdempotence);
+    this.upstreamName = Optional.ofNullable(upstream).map(Upstream::getName).orElse(null);
+    this.dc = Optional.ofNullable(upstream).map(Upstream::getDatacenter).orElse(DC_FOR_EXTERNAL_REQUESTS);
     this.monitorings = monitorings;
   }
 
@@ -46,12 +51,13 @@ public class ExternalUrlRequestor extends RequestBalancer {
       Uri originalUri = request.getUri();
       Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
       serverAddress = baseUri.toString();
+      String name = upstreamName != null ? upstreamName : serverAddress;
 
-      monitoring.countRequest(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
-      monitoring.countRequestTime(null, DC_FOR_EXTERNAL_REQUESTS, requestTimeMicros);
+      monitoring.countRequest(name, dc, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
+      monitoring.countRequestTime(name, dc, requestTimeMicros);
 
       if (triesUsed > 0) {
-        monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, firstStatusCode, triesUsed);
+        monitoring.countRetry(name, dc, serverAddress, statusCode, firstStatusCode, triesUsed);
       }
     }
   }
