@@ -22,6 +22,7 @@ public class ContentType {
   public static final String APPLICATION_PROTOBUF = "application/protobuf";
   public static final String APPLICATION_X_PROTOBUF = "application/x-protobuf";
   public static final String ANY = "*/*";
+  public static final String FORM_DATA = "x-www-form-urlencoded";
 
   private final String type1;
   private final String type2;
