@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.check;
 
-import com.google.common.net.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClient;
@@ -93,7 +92,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
         var diff = requestTimeout.minus(expectedTimeout);
         if (diff.compareTo(threshold) > 0) {
           var userAgent = ofNullable(httpClient.getContext().getHeaders())
-              .map(headers -> headers.get(HttpHeaders.USER_AGENT))
+              .map(headers -> headers.get(HttpHeaderNames.USER_AGENT))
               .flatMap(values -> values.stream().findFirst())
               .orElse("unknown");
           handleTimeoutExceeded(userAgent, request, outerTimeout, alreadySpentTime, requestTimeout);

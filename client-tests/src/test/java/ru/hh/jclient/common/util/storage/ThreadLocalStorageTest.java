@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.junit.Test;
-import com.google.common.base.Throwables;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -73,7 +72,7 @@ public class ThreadLocalStorageTest {
           additionalStep.call();
         }
         catch (Exception e) {
-          throw Throwables.propagate(e);
+          throw new RuntimeException(e);
         }
       }
 

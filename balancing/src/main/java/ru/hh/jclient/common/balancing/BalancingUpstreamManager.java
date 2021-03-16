@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import com.google.common.annotations.VisibleForTesting;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
@@ -103,7 +102,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
     return beginIndex > 2 ? host.substring(beginIndex) : host;
   }
 
-  @VisibleForTesting
+  // VisibleForTesting
   Map<String, UpstreamGroup> getUpstreams() {
     return upstreams;
   }

@@ -1,7 +1,5 @@
 package ru.hh.jclient.common;
 
-import com.google.common.net.HttpHeaders;
-import com.google.common.net.MediaType;
 import io.netty.channel.ConnectTimeoutException;
 import static java.util.Collections.singleton;
 import org.asynchttpclient.AsyncHttpClient;
@@ -18,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.mockito.invocation.InvocationOnMock;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
+import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
 import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
 import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
@@ -30,6 +29,7 @@ import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamConfigServiceImpl;
@@ -388,7 +388,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     Response response = mock(Response.class);
 
     when(response.getStatusCode()).thenReturn(status);
-    when(response.getHeader(eq(HttpHeaders.CONTENT_TYPE))).thenReturn(MediaType.PLAIN_TEXT_UTF_8.toString());
+    when(response.getHeader(eq(CONTENT_TYPE))).thenReturn(TEXT_PLAIN_UTF_8);
     when(response.getUri()).thenReturn(mock(org.asynchttpclient.uri.Uri.class));
     Request request = iom.getArgument(0);
     CompletionHandler handler = iom.getArgument(1);

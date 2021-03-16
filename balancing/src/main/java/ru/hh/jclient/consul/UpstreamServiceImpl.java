@@ -1,7 +1,5 @@
 package ru.hh.jclient.consul;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import static java.util.stream.Collectors.toMap;
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
@@ -14,6 +12,7 @@ import ru.hh.consul.model.health.ServiceHealth;
 import ru.hh.consul.option.ConsistencyMode;
 import ru.hh.consul.option.ImmutableQueryOptions;
 import ru.hh.consul.option.QueryOptions;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
@@ -56,8 +55,16 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
   public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    Preconditions.checkState(!upstreamList.isEmpty(), "UpstreamList can't be empty");
-    Preconditions.checkState(!consulConfig.getDatacenterList().isEmpty(), "DatacenterList can't be empty");
+    this(upstreamList, consulClient, consulConfig, true);
+  }
+
+  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig, boolean syncUpdate) {
+    if (upstreamList.isEmpty()) {
+      throw new IllegalArgumentException("UpstreamList can't be empty");
+    }
+    if (consulConfig.getDatacenterList().isEmpty()) {
+      throw new IllegalArgumentException("DatacenterList can't be empty");
+    }
 
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
@@ -214,7 +221,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private boolean notSameNode(String nodeName) {
-    return !Strings.isNullOrEmpty(currentNode) && !currentNode.equalsIgnoreCase(nodeName);
+    return !StringUtils.isBlank(currentNode) && !currentNode.equalsIgnoreCase(nodeName);
   }
 
   private String restoreOriginalDataCenterName(String lowerCasedDcName) {
@@ -240,7 +247,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private static String getAddress(ServiceHealth serviceHealth) {
     String address = serviceHealth.getService().getAddress();
-    if (!Strings.isNullOrEmpty(address)) {
+    if (!StringUtils.isBlank(address)) {
       return address;
     }
 

@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import static java.util.stream.Collectors.toList;
+import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
@@ -154,26 +155,26 @@ public class RequestBuilder {
 
   public RequestBuilder setBody(byte[] data, String contentType) {
     delegate.setBody(data);
-    delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, contentType);
+    delegate.setHeader(CONTENT_TYPE, contentType);
     return this;
   }
 
   public RequestBuilder setBody(InputStream stream, String contentType) {
     delegate.setBody(stream);
-    delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, contentType);
+    delegate.setHeader(CONTENT_TYPE, contentType);
     return this;
   }
 
   public RequestBuilder setBody(String data, String contentType) {
     delegate.setBody(data);
-    delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, contentType);
+    delegate.setHeader(CONTENT_TYPE, contentType);
     return this;
   }
 
   public RequestBuilder setJsonBody(ObjectMapper mapper, Object bodyObject) {
     try {
       delegate.setBody(mapper.writeValueAsBytes(bodyObject));
-      delegate.setHeader(javax.ws.rs.core.HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+      delegate.setHeader(CONTENT_TYPE, MediaType.APPLICATION_JSON);
       return this;
     } catch (JsonProcessingException e) {
       throw new RequestConverterException("Failed to convert " + bodyObject, e);

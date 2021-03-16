@@ -3,16 +3,16 @@ package ru.hh.jclient.common;
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
-import com.google.common.base.Joiner;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RequestUtils {
 
-  private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RequestUtils.class);
 
   /**
    * Check if headers contain {@link HttpHeaderNames#X_HH_DEBUG} with value of 'true' or query params contain {@link HttpParams#DEBUG} param with any
@@ -75,7 +75,10 @@ public class RequestUtils {
   private static Optional<String> getWhenExists(Map<String, List<String>> headers, String headerName, boolean warnIfMultiple) {
     List<String> values = headers.get(headerName);
     if (values.size() > 1 && warnIfMultiple) {
-      log.warn("Unexpected multiple values for header {}: {}", headerName, Joiner.on(',').useForNull("null").join(values));
+      LOGGER.warn(
+          "Unexpected multiple values for header {}: {}",
+          headerName,
+          values.stream().map(v -> v == null ? "null" : v).collect(Collectors.joining(",")));
     }
     return Optional.ofNullable(values.get(0));
 

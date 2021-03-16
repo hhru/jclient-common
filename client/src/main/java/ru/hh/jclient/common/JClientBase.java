@@ -4,7 +4,6 @@ import ru.hh.jclient.common.util.storage.Storage;
 
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
@@ -114,7 +113,9 @@ public abstract class JClientBase {
     if (queryParams == null) {
       return builder;
     }
-    checkArgument(queryParams.length % 2 == 0, "params size must be even");
+    if (queryParams.length % 2 != 0) {
+      throw new IllegalArgumentException("params size must be even");
+    }
     for (int i = 0; i < queryParams.length; i += 2) {
       //only string keys allowed
       builder.addQueryParam((String) queryParams[i], queryParams[i + 1].toString());
@@ -136,7 +137,9 @@ public abstract class JClientBase {
   }
   
   protected static String requireNotEmpty(String arg, String argName) {
-    checkArgument(arg != null && !arg.isEmpty(), "%s is null or empty string", argName);
+    if (arg == null || arg.isEmpty()) {
+      throw new IllegalArgumentException(argName + " is null or empty string");
+    }
     return arg;
   }
   

@@ -1,10 +1,10 @@
 package ru.hh.jclient.consul;
 
-import com.google.common.io.BaseEncoding;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import java.util.Collection;
 import ru.hh.consul.Consul;
 import ru.hh.consul.KeyValueClient;
 import ru.hh.consul.model.kv.ImmutableValue;
@@ -12,6 +12,7 @@ import ru.hh.consul.model.kv.Value;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
@@ -23,7 +24,6 @@ import ru.hh.jclient.consul.model.Profile;
 import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -101,7 +101,7 @@ public class UpstreamConfigServiceImplTest {
   public void testBadConfig() {
     String badFormatKey = "badFormat";
     var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
-            .withValue(BaseEncoding.base64().encode("{\"a\":[1,2,3".getBytes()));
+            .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
@@ -119,11 +119,11 @@ public class UpstreamConfigServiceImplTest {
         "\"retry_policy\": {\"599\": {\"idempotent\": \"false\"},\"503\": {\"idempotent\": \"true\"}}},\"" +
         "externalRequestsProfile\": {\"fail_timeout_sec\": \"5\"}}}}}";
     values.add(ImmutableValue.copyOf(template).withKey("upstream/app-name/")
-            .withValue(BaseEncoding.base64().encode(twoProfiles.getBytes())));
+            .withValue(new String(Base64.getEncoder().encode(twoProfiles.getBytes()))));
 
     String secondAppProfile = "{\"hosts\": {\"default\": {\"profiles\": {\"default\": {\"max_tries\": \"56\"}}}}}";
     values.add(ImmutableValue.copyOf(template).withKey("upstream/app2/")
-            .withValue(BaseEncoding.base64().encode(secondAppProfile.getBytes())));
+            .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes()))));
     return values;
   }
 }

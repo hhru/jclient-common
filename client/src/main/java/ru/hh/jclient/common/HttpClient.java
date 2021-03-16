@@ -2,8 +2,6 @@ package ru.hh.jclient.common;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Range;
-import com.google.common.net.MediaType;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageLite;
 import static java.util.Objects.requireNonNull;
@@ -11,7 +9,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.function.Supplier;
 import org.asynchttpclient.AsyncHttpClient;
-import ru.hh.jclient.common.responseconverter.JavaSerializedConverter;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
 import ru.hh.jclient.common.responseconverter.JsonMapConverter;
@@ -20,6 +17,7 @@ import ru.hh.jclient.common.responseconverter.ProtobufConverter;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.responseconverter.VoidConverter;
 import ru.hh.jclient.common.responseconverter.XmlConverter;
+import ru.hh.jclient.common.util.SimpleRange;
 import ru.hh.jclient.common.util.storage.Storage;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 
@@ -37,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public abstract class HttpClient {
-  public static final Range<Integer> OK_RANGE = Range.atMost(399);
+  public static final SimpleRange OK_RANGE = new SimpleRange(0, 399);
   public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
   private final AsyncHttpClient http;
@@ -50,8 +48,8 @@ public abstract class HttpClient {
   private List<RequestDebug> debugs;
   private Request request;
   private Optional<?> requestBodyEntity = Optional.empty();
-  private Optional<Collection<MediaType>> expectedMediaTypes = Optional.empty();
-  private Optional<Collection<MediaType>> expectedMediaTypesForErrors = Optional.empty();
+  private Optional<Collection<String>> expectedMediaTypes = Optional.empty();
+  private Optional<Collection<String>> expectedMediaTypesForErrors = Optional.empty();
 
   private boolean readOnlyReplica;
   private boolean noSession;
@@ -161,7 +159,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<T> expectXml(JAXBContext context, Class<T> xmlClass) {
     TypeConverter<T> converter = new XmlConverter<>(context, xmlClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -173,7 +171,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<T> expectJson(ObjectMapper mapper, Class<T> jsonClass) {
     TypeConverter<T> converter = new JsonConverter<>(mapper, jsonClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -185,7 +183,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, Class<T> jsonClass) {
     TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -197,7 +195,7 @@ public abstract class HttpClient {
    */
   public <T> ResultProcessor<Collection<T>> expectJsonCollection(ObjectMapper mapper, TypeReference<T> jsonClass) {
     TypeConverter<Collection<T>> converter = new JsonCollectionConverter<>(mapper, jsonClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -210,7 +208,7 @@ public abstract class HttpClient {
    */
   public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, Class<V> jsonValueClass) {
     TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -223,7 +221,7 @@ public abstract class HttpClient {
    */
   public <K, V> ResultProcessor<Map<K, V>> expectJsonMap(ObjectMapper mapper, Class<K> jsonKeyClass, TypeReference<V> jsonValueClass) {
     TypeConverter<Map<K, V>> converter = new JsonMapConverter<>(mapper, jsonKeyClass, jsonValueClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -234,16 +232,7 @@ public abstract class HttpClient {
    */
   public <T extends GeneratedMessageV3> ResultProcessor<T> expectProtobuf(Class<T> protobufClass) {
     TypeConverter<T> converter = new ProtobufConverter<>(protobufClass);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
-    return new ResultProcessor<>(this, converter);
-  }
-
-  /**
-   * Specifies that the type of result must be serialized clazz or derivatives.
-   */
-  public <T> ResultProcessor<T> expectJavaSerialized(Class<T> clazz) {
-    TypeConverter<T> converter = new JavaSerializedConverter<>(clazz);
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -252,7 +241,7 @@ public abstract class HttpClient {
    */
   public ResultProcessor<String> expectPlainText() {
     TypeConverter<String> converter = new PlainTextConverter();
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -290,7 +279,7 @@ public abstract class HttpClient {
    * @param converter used to convert response to expected result
    */
   public <T> ResultProcessor<T> expect(TypeConverter<T> converter) {
-    expectedMediaTypes = converter.getSupportedMediaTypes();
+    expectedMediaTypes = converter.getSupportedContentTypes();
     return new ResultProcessor<>(this, converter);
   }
 
@@ -358,15 +347,15 @@ public abstract class HttpClient {
     return requestBodyEntity;
   }
 
-  Optional<Collection<MediaType>> getExpectedMediaTypes() {
+  Optional<Collection<String>> getExpectedMediaTypes() {
     return expectedMediaTypes;
   }
 
-  Optional<Collection<MediaType>> getExpectedMediaTypesForErrors() {
+  Optional<Collection<String>> getExpectedMediaTypesForErrors() {
     return expectedMediaTypesForErrors;
   }
 
-  void setExpectedMediaTypesForErrors(Optional<Collection<MediaType>> mediaTypes) {
+  void setExpectedMediaTypesForErrors(Optional<Collection<String>> mediaTypes) {
     expectedMediaTypesForErrors = mediaTypes;
   }
 

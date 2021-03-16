@@ -3,6 +3,7 @@ package ru.hh.jclient.common;
 import com.google.common.collect.Range;
 import java.util.concurrent.CompletableFuture;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
+import ru.hh.jclient.common.util.SimpleRange;
 
 public class EmptyOrErrorProcessor<E> extends ResultOrErrorProcessor<Void, E> {
 
@@ -29,6 +30,12 @@ public class EmptyOrErrorProcessor<E> extends ResultOrErrorProcessor<Void, E> {
     return (EmptyOrErrorProcessor<E>) super.forStatus(status);
   }
 
+  public EmptyOrErrorProcessor<E> forStatus(SimpleRange statusCodes) {
+    return (EmptyOrErrorProcessor<E>) super.forStatus(statusCodes);
+  }
+
+  // use forStatus(SimpleRange statusCodes)
+  @Deprecated(forRemoval = true)
   public EmptyOrErrorProcessor<E> forStatus(Range<Integer> statusCodes) {
     return (EmptyOrErrorProcessor<E>) super.forStatus(statusCodes);
   }

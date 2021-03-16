@@ -8,8 +8,6 @@ import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 import java.util.Collection;
 import java.util.Optional;
 
-import com.google.common.net.MediaType;
-
 public class VoidConverter implements TypeConverter<Void> {
 
   @Override
@@ -18,7 +16,7 @@ public class VoidConverter implements TypeConverter<Void> {
   }
 
   @Override
-  public Optional<Collection<MediaType>> getSupportedMediaTypes() {
+  public Optional<Collection<String>> getSupportedContentTypes() {
     return Optional.empty();
   }
 }
