@@ -1,5 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
@@ -10,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
@@ -30,6 +33,12 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     String host = request.getUri().getHost();
     Upstream upstream = upstreamManager.getUpstream(host, profile);
     Set<Monitoring> monitoring = upstreamManager.getMonitoring();
+
+    if (LOGGER.isTraceEnabled()) {
+      LOGGER.trace("builderParams::: request: {}, profile: {}, upstream: {}, timeoutMultiplier: {}, " +
+              "maxTimeoutTries: {}, forceIdempotence: {}, adaptive: {}",
+          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, forceIdempotence, adaptive);
+    }
     if (upstream == null || !upstream.isEnabled()) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElse(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES);
       return new ExternalUrlRequestor(upstream, request, requestExecutor,
