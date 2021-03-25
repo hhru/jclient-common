@@ -56,7 +56,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
       monitoring.countRequest(name, dc, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
       monitoring.countRequestTime(name, dc, requestTimeMicros);
 
-      if (triesUsed > 0) {
+      if (triesUsed > 1) {
         monitoring.countRetry(name, dc, serverAddress, statusCode, firstStatusCode, triesUsed);
       }
     }
