@@ -53,7 +53,7 @@ public class CustomizationBenchmark {
   }
 
   private static final Upstream upstream = new Upstream(UPSTREAM,
-      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null, null), servers);
+      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null), servers);
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override

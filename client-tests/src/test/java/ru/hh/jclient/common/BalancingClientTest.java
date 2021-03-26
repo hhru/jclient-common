@@ -142,22 +142,33 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(22));
     getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("foo")).getWithProfileInsideClient("bar");
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(11));
-    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("not existing profile")).get();
-    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(33));
   }
 
   @Test(expected = IllegalStateException.class)
-  public void requestWithProfileDefaultMissing() throws Exception {
-    List<String> upstreamList = List.of(profileName(TEST_UPSTREAM, "foo"), profileName(TEST_UPSTREAM, "bar"));
-    createHttpClientFactory(upstreamList);
+  public void requestWithProfileMissing() throws Exception {
+    createHttpClientFactory();
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-            .then(iom -> {
-              request[0] = completeWith(200, iom);
-              return null;
-            });
-    getTestClient().get();
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("not existing profile")).get();
+  }
+
+  @Test()
+  public void shouldGetDefaultProfileInsteadEmpty() throws Exception {
+    createHttpClientFactory();
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile(null)).get();
+    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
   }
 
   @Test(expected = ClassCastException.class)

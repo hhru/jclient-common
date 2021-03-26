@@ -45,6 +45,7 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final List<String> datacenterList;
   private final String currentDC;
   private final String currentNode;
+  private final String currentServiceName;
   private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
   private final boolean allowCrossDC;
@@ -54,11 +55,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
-  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    this(upstreamList, consulClient, consulConfig, true);
-  }
-
-  public UpstreamServiceImpl(List<String> upstreamList, Consul consulClient, UpstreamServiceConsulConfig consulConfig, boolean syncUpdate) {
+  public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
     if (upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
@@ -71,6 +68,7 @@ public class UpstreamServiceImpl implements UpstreamService {
     this.upstreamList = Set.copyOf(upstreamList);
     this.currentDC = consulConfig.getCurrentDC();
     this.currentNode = consulConfig.getCurrentNode();
+    this.currentServiceName = currentServiceName;
     this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
@@ -124,7 +122,8 @@ public class UpstreamServiceImpl implements UpstreamService {
   private void syncUpdateServiceInDC(String serviceName, String dataCenter) {
     QueryOptions queryOptions = ImmutableQueryOptions.builder()
       .datacenter(dataCenter.toLowerCase())
-      .consistencyMode(consistencyMode)
+        .caller(currentServiceName)
+        .consistencyMode(consistencyMode)
       .build();
     Map<ServiceHealthKey, ServiceHealth> state = healthClient.getHealthyServiceInstances(serviceName, queryOptions)
       .getResponse().stream()
@@ -143,25 +142,26 @@ public class UpstreamServiceImpl implements UpstreamService {
     upstreamList.forEach(callback);
   }
 
-  private void subscribeToUpstream(String serviceName) {
+  private void subscribeToUpstream(String upstreamName) {
     if (allowCrossDC) {
       for (String dataCenter : datacenterList) {
-        initializeCache(serviceName, dataCenter);
+        initializeCache(upstreamName, dataCenter);
       }
     } else {
-      initializeCache(serviceName, currentDC);
+      initializeCache(upstreamName, currentDC);
     }
   }
 
-  private void initializeCache(String serviceName, String datacenter) {
+  private void initializeCache(String upstreamName, String datacenter) {
     QueryOptions queryOptions = ImmutableQueryOptions.builder()
         .datacenter(datacenter.toLowerCase())
+        .caller(currentServiceName)
         .consistencyMode(consistencyMode)
         .build();
-    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, serviceName, healthPassing, watchSeconds, queryOptions);
+    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, upstreamName, healthPassing, watchSeconds, queryOptions);
 
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
-      updateUpstreams(newValues, serviceName, datacenter);
+      updateUpstreams(newValues, upstreamName, datacenter);
       notifyListeners();
       var emptyUpstreams = findEmptyUpstreams();
       if (!emptyUpstreams.isEmpty()) {
@@ -169,7 +169,7 @@ public class UpstreamServiceImpl implements UpstreamService {
       }
     });
     svHealth.start();
-    LOGGER.info("subscribed to service {}; dc {}", serviceName, datacenter);
+    LOGGER.info("subscribed to service {}; dc {}", upstreamName, datacenter);
   }
 
   @Override

@@ -5,16 +5,18 @@ import java.util.Set;
 
 public class BalancingState {
   protected final Upstream upstream;
+  protected final String profile;
   private final Set<Integer> triedServers;
   private ServerEntry currentServer;
 
-  public BalancingState(Upstream upstream) {
+  public BalancingState(Upstream upstream, String profile) {
     this.upstream = upstream;
+    this.profile = profile;
     this.triedServers = new HashSet<>();
   }
 
   public UpstreamConfig getUpstreamConfig() {
-    return upstream.getConfig();
+    return upstream.getConfig(profile);
   }
 
   public boolean isUpstreamEnabled() {

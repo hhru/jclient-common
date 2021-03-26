@@ -1,23 +1,20 @@
 package ru.hh.jclient.common.balancing;
 
-import static java.util.Objects.requireNonNull;
+import java.util.Map;
 import static java.util.Objects.requireNonNullElse;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 public final class UpstreamConfig {
   public static final String DEFAULT = "default";
   public static final int DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
   static final int DEFAULT_MAX_TRIES = 2;
-  static final int DEFAULT_MAX_FAILS = 1;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;
 
-  static final int DEFAULT_FAIL_TIMEOUT_MS = 10;
   static final int DEFAULT_CONNECT_TIMEOUT_MS = 200;
   private int maxTries;
   private int maxTimeoutTries;
@@ -27,7 +24,7 @@ public final class UpstreamConfig {
 
   private RetryPolicy retryPolicy = new RetryPolicy();
 
-  public static UpstreamConfig fromApplicationConfig(ApplicationConfig config, String hostName, String profileName) {
+  public static Map<String, UpstreamConfig> fromApplicationConfig(ApplicationConfig config, String hostName) {
     if (config == null) {
       return getDefaultConfig();
     }
@@ -35,46 +32,37 @@ public final class UpstreamConfig {
     if (hostMap == null || hostMap.get(hostName) == null) {
       return getDefaultConfig();
     }
-    profileName = requireNonNullElse(profileName, DEFAULT);
     Map<String, Profile> profiles = hostMap.get(hostName).getProfiles();
-    if (profiles == null || profiles.get(profileName) == null) {
+    if (profiles == null || profiles.isEmpty()) {
       return getDefaultConfig();
     }
-    Profile profile = profiles.get(profileName);
-
     try {
-      UpstreamConfig upstreamConfig = new UpstreamConfig();
-      upstreamConfig.maxTries = requireNonNullElse(profile.getMaxTries(), DEFAULT_MAX_TRIES);
-      upstreamConfig.maxTimeoutTries = requireNonNullElse(profile.getMaxTimeoutTries(), DEFAULT_MAX_TIMEOUT_TRIES);
-      upstreamConfig.connectTimeoutMs = convertToMillisOrFallback(profile.getConnectTimeoutMs(), DEFAULT_CONNECT_TIMEOUT_MS);
-      upstreamConfig.requestTimeoutMs = convertToMillisOrFallback(profile.getRequestTimeoutMs(), DEFAULT_REQUEST_TIMEOUT_MS);
-      upstreamConfig.retryPolicy.update(profile.getRetryPolicy());
-
-      return upstreamConfig;
-
+      Map<String, UpstreamConfig> configMap = profiles.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+          e -> convertProfileToUpstreamConfig(e.getValue())));
+      return configMap;
     } catch (Exception e) {
       throw new UpstreamConfigFormatException("failed to get upstream config: " + config, e);
     }
   }
 
-  public static UpstreamConfig getDefaultConfig() {
+  private static UpstreamConfig convertProfileToUpstreamConfig(Profile profile) {
+    UpstreamConfig upstreamConfig = new UpstreamConfig();
+    upstreamConfig.maxTries = requireNonNullElse(profile.getMaxTries(), DEFAULT_MAX_TRIES);
+    upstreamConfig.maxTimeoutTries = requireNonNullElse(profile.getMaxTimeoutTries(), DEFAULT_MAX_TIMEOUT_TRIES);
+    upstreamConfig.connectTimeoutMs = convertToMillisOrFallback(profile.getConnectTimeoutMs(), DEFAULT_CONNECT_TIMEOUT_MS);
+    upstreamConfig.requestTimeoutMs = convertToMillisOrFallback(profile.getRequestTimeoutMs(), DEFAULT_REQUEST_TIMEOUT_MS);
+    upstreamConfig.retryPolicy.update(profile.getRetryPolicy());
+
+    return upstreamConfig;
+  }
+
+  public static Map<String, UpstreamConfig> getDefaultConfig() {
     UpstreamConfig upstreamConfig = new UpstreamConfig();
     upstreamConfig.maxTries = DEFAULT_MAX_TRIES;
     upstreamConfig.maxTimeoutTries = DEFAULT_MAX_TIMEOUT_TRIES;
     upstreamConfig.connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS;
     upstreamConfig.requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
-    return upstreamConfig;
-  }
-
-  void update(UpstreamConfig newConfig) {
-    requireNonNull(newConfig, "new config should not be empty");
-
-    maxTries = newConfig.maxTries;
-    maxTimeoutTries = newConfig.maxTimeoutTries;
-    connectTimeoutMs = newConfig.connectTimeoutMs;
-    requestTimeoutMs = newConfig.requestTimeoutMs;
-    retryPolicy = newConfig.retryPolicy;
-
+    return Map.of(DEFAULT, upstreamConfig);
   }
 
   public int getMaxTries() {

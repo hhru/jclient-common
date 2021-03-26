@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
+import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
@@ -19,7 +20,7 @@ public class UpstreamTest {
   private static final String TEST_SERVICE_NAME = "backend";
 
   private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
-  UpstreamConfig config = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT, DEFAULT);
+  Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT);
 
   @Test
   public void createUpstreamServiceOnly() {
@@ -99,9 +100,9 @@ public class UpstreamTest {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
+    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
 
-    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, config);
+    Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, configMap);
     int index = upstream.acquireServer().getIndex();
     upstream.releaseServer(index, true, 100);
 
@@ -117,7 +118,7 @@ public class UpstreamTest {
     int weight = numOfRequests * tests * 2 + 1;
     List<Server> servers = List.of(new Server("a", weight, null));
 
-    Upstream upstream = new Upstream(TEST_SERVICE_NAME, config, servers);
+    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers);
     Server server = servers.get(0);
 
     Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests);
@@ -160,11 +161,11 @@ public class UpstreamTest {
     return createTestUpstream(serviceName, servers, getDefaultConfig());
   }
 
-  private static Upstream createTestUpstream(String serviceName, List<Server> servers, UpstreamConfig config) {
+  private static Upstream createTestUpstream(String serviceName, List<Server> servers, Map<String, UpstreamConfig> config) {
     return new Upstream(serviceName, config, servers);
   }
 
-  private static List<Server> buildServers(){
+  private static List<Server> buildServers() {
     return List.of(new Server("a", 1, null), new Server("b", 2, null));
   }
 }

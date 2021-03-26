@@ -13,8 +13,8 @@ public class AdaptiveBalancingState extends BalancingState {
   private boolean adaptiveFailed;
 
 
-  public AdaptiveBalancingState(Upstream upstream) {
-    super(upstream);
+  public AdaptiveBalancingState(Upstream upstream, String profile) {
+    super(upstream, profile);
   }
 
   @Override
@@ -40,7 +40,7 @@ public class AdaptiveBalancingState extends BalancingState {
 
   private ServerEntry acquireAdaptiveServer() {
     if (serverEntryIterator == null) {
-      List<ServerEntry> entries = upstream.acquireAdaptiveServers();
+      List<ServerEntry> entries = upstream.acquireAdaptiveServers(profile);
       serverEntryIterator = entries.iterator();
     }
     return serverEntryIterator.next();
