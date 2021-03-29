@@ -29,6 +29,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
+  private final String currentServiceName;
   private final Set<String> services;
   private Consumer<String> callback;
 
@@ -36,10 +37,11 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
-  public UpstreamConfigServiceImpl(List<String> services, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
+  public UpstreamConfigServiceImpl(List<String> services, String currentServiceName, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
     this.services = Set.copyOf(services);
     this.kvClient = consulClient.keyValueClient();
     this.watchSeconds = config.getWatchSeconds();
+    this.currentServiceName = currentServiceName;
     this.consistencyMode = config.getConsistencyMode();
     if (config.isSyncUpdate()) {
       LOGGER.debug("Trying to sync update configs");
@@ -48,7 +50,9 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   }
 
   private void syncUpdateConfig() {
-    ImmutableQueryOptions options = ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build();
+    ImmutableQueryOptions options = ImmutableQueryOptions.builder()
+        .caller(currentServiceName)
+        .consistencyMode(consistencyMode).build();
     List<Value> values = kvClient.getValues(ROOT_PATH, options);
     if (values == null || values.isEmpty()) {
       throw new IllegalStateException("There's no upstreamConfigs in KV");
@@ -102,7 +106,11 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   }
 
   private void initConfigCache() {
-    KVCache cache = KVCache.newCache(kvClient, ROOT_PATH, watchSeconds, ImmutableQueryOptions.builder().consistencyMode(consistencyMode).build());
+    ImmutableQueryOptions queryOptions = ImmutableQueryOptions.builder()
+        .caller(currentServiceName)
+        .consistencyMode(consistencyMode)
+        .build();
+    KVCache cache = KVCache.newCache(kvClient, ROOT_PATH, watchSeconds, queryOptions);
     LOGGER.debug("subscribe to config:{}", ROOT_PATH);
     cache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);

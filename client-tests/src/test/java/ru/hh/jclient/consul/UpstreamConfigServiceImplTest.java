@@ -29,6 +29,7 @@ import java.util.Map;
 
 public class UpstreamConfigServiceImplTest {
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
+  private static String currentServiceName = "CALLER_NAME";
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 10;
 
@@ -51,7 +52,7 @@ public class UpstreamConfigServiceImplTest {
     Collection<Value> values = prepareValues();
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(values));
 
-    var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), consulClient, defaultConfig);
+    var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), currentServiceName, consulClient, defaultConfig);
 
     ApplicationConfig applicationConfig = service.getUpstreamConfig("app-name");
     assertNotNull(applicationConfig);
@@ -75,7 +76,7 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNotify() {
-    var service = new UpstreamConfigServiceImpl(List.of("test"), consulClient, defaultConfig.setSyncUpdate(false));
+    var service = new UpstreamConfigServiceImpl(List.of("test"), null, consulClient, defaultConfig.setSyncUpdate(false));
     List<String> consumerMock = new ArrayList<>();
 
     try {
@@ -91,9 +92,10 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNoConfig() {
-    assertThrows(IllegalStateException.class, () -> new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, defaultConfig));
+    assertThrows(IllegalStateException.class,
+        () -> new UpstreamConfigServiceImpl(List.of("app-name"), currentServiceName, consulClient, defaultConfig));
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(prepareValues()));
-    var service = new UpstreamConfigServiceImpl(List.of("app-name"), consulClient, defaultConfig);
+    var service = new UpstreamConfigServiceImpl(List.of("app-name"), currentServiceName, consulClient, defaultConfig);
     assertNotNull(service.getUpstreamConfig("app-name"));
   }
 
@@ -107,7 +109,7 @@ public class UpstreamConfigServiceImplTest {
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
     var ex = assertThrows(
       IllegalStateException.class,
-      () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), consulClient, defaultConfig)
+      () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), currentServiceName, consulClient, defaultConfig)
     );
     assertTrue(ex.getMessage().contains(badFormatKey));
   }

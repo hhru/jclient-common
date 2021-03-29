@@ -20,7 +20,8 @@ public class UpstreamConfigParserTest {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
+    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    UpstreamConfig config = configMap.get(DEFAULT);
 
     assertEquals(3, config.getMaxTries());
     assertEquals(2, config.getMaxTimeoutTries());
@@ -38,7 +39,8 @@ public class UpstreamConfigParserTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().put(secondProfileName, secondProfile);
 
-    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, secondProfileName);
+    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    UpstreamConfig config = configMap.get(secondProfileName);
 
     assertEquals(7, config.getMaxTries());
     assertEquals(8000, config.getRequestTimeoutMs());
@@ -46,7 +48,8 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void testDefaultConfig() {
-    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT, DEFAULT);
+    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT);
+    UpstreamConfig config = configMap.get(DEFAULT);
 
     assertEquals(UpstreamConfig.DEFAULT_MAX_TRIES, config.getMaxTries());
     assertEquals(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES, config.getMaxTimeoutTries());
@@ -63,7 +66,8 @@ public class UpstreamConfigParserTest {
     retryPolicy.put(503, new RetryPolicyConfig().setIdempotent(true));
     retryPolicy.put(599, new RetryPolicyConfig().setIdempotent(false));
 
-    UpstreamConfig config = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT, DEFAULT);
+    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    UpstreamConfig config = configMap.get(DEFAULT);
 
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertTrue(config.getRetryPolicy().getRules().get(503));

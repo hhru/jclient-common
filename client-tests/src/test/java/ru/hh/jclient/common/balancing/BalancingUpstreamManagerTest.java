@@ -40,9 +40,9 @@ public class BalancingUpstreamManagerTest {
 
     Upstream upstream =  manager.getUpstream(TEST_BACKEND);
 
-    assertNotNull(upstream.getConfig().getRetryPolicy().getRules());
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
+    assertNotNull(upstream.getConfig(DEFAULT).getRetryPolicy().getRules());
+    assertFalse(upstream.getConfig(DEFAULT).getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
+    assertFalse(upstream.getConfig(DEFAULT).getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
   }
 
   @Test
@@ -65,9 +65,9 @@ public class BalancingUpstreamManagerTest {
 
     Upstream upstream = manager.getUpstream(TEST_BACKEND);
 
-    assertNull(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
-    assertTrue(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
-    assertFalse(upstream.getConfig().getRetryPolicy().getRules().get(HttpStatuses.INTERNAL_SERVER_ERROR));
+    assertNull(upstream.getConfig(DEFAULT).getRetryPolicy().getRules().get(HttpStatuses.CONNECT_TIMEOUT_ERROR));
+    assertTrue(upstream.getConfig(DEFAULT).getRetryPolicy().getRules().get(HttpStatuses.SERVICE_UNAVAILABLE));
+    assertFalse(upstream.getConfig(DEFAULT).getRetryPolicy().getRules().get(HttpStatuses.INTERNAL_SERVER_ERROR));
   }
 
   @Test

@@ -1,5 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
+import com.google.common.base.Strings;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,42 +23,38 @@ import java.util.stream.Stream;
 
 public class Upstream {
   private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);
+  static final String DEFAULT_PROFILE = "default";
 
   private final UpstreamKey upstreamKey;
-  private final UpstreamConfig upstreamConfig;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
   private volatile List<Server> servers;
+  private volatile Map<String, UpstreamConfig> upstreamConfigs;
   private boolean failedSelection = false;
 
   private final ReadWriteLock configReadWriteLock = new ReentrantReadWriteLock();
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  Upstream(String upstreamName, UpstreamConfig upstreamConfig, List<Server> servers) {
-    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfig, servers, null, false, true);
+  Upstream(String upstreamName, Map<String, UpstreamConfig> upstreamConfigs, List<Server> servers) {
+    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfigs, servers, null, false, true);
   }
 
   Upstream(UpstreamKey upstreamKey,
-           UpstreamConfig upstreamConfig,
+           Map<String, UpstreamConfig> upstreamConfigs,
            List<Server> servers,
            String datacenter,
            boolean allowCrossDCRequests,
            boolean enabled) {
     this.upstreamKey = upstreamKey;
-    this.upstreamConfig = upstreamConfig;
+    this.upstreamConfigs = upstreamConfigs;
     this.servers = servers;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
   }
 
-  public int getServerCount() {
-    return servers.size();
-  }
-
-  // VisibleForTesting
   List<Server> getServers() {
     return servers;
   }
@@ -81,7 +79,7 @@ public class Upstream {
     }
   }
 
-  List<ServerEntry> acquireAdaptiveServers() {
+  List<ServerEntry> acquireAdaptiveServers(String profile) {
     configReadLock.lock();
     try {
       List<Server> allowedServers = new ArrayList<>();
@@ -95,7 +93,7 @@ public class Upstream {
       }
 
       return AdaptiveBalancingStrategy
-          .getServers(allowedServers, getConfig().getMaxTries())
+          .getServers(allowedServers, getConfig(profile).getMaxTries())
           .stream()
           .map(id -> {
             Server server = allowedServers.get(id);
@@ -155,10 +153,10 @@ public class Upstream {
     }
   }
 
-  void updateConfig(UpstreamConfig newConfig, List<Server> servers) {
+  void updateConfig(Map<String, UpstreamConfig> newConfig, List<Server> servers) {
     configWriteLock.lock();
     try {
-      this.upstreamConfig.update(newConfig);
+      this.upstreamConfigs = newConfig;
       this.servers = servers;
       this.failedSelection = false;
     } finally {
@@ -182,9 +180,14 @@ public class Upstream {
     return datacenter;
   }
 
-  UpstreamConfig getConfig() {
+  UpstreamConfig getConfig(String profile) {
+    profile = Strings.isNullOrEmpty(profile) ? DEFAULT_PROFILE : profile;
     configReadLock.lock();
     try {
+      UpstreamConfig upstreamConfig = upstreamConfigs.get(profile);
+      if (upstreamConfig == null) {
+        throw new IllegalStateException(String.format("can't find profile '%s' for upstream '%s'", profile, getName()));
+      }
       return upstreamConfig;
     } finally {
       configReadLock.unlock();
@@ -213,7 +216,7 @@ public class Upstream {
 
     public UpstreamKey(String serviceName, @Nullable String profileName) {
       this.serviceName = requireNonNull(serviceName);
-      this.profileName = UpstreamGroup.DEFAULT_PROFILE.equals(profileName) ? null : profileName;
+      this.profileName = DEFAULT_PROFILE.equals(profileName) ? null : profileName;
     }
 
     public String getServiceName() {
@@ -256,7 +259,7 @@ public class Upstream {
   public String toString() {
     return "Upstream{" +
       "upstreamKey=" + upstreamKey +
-      ", upstreamConfig=" + upstreamConfig +
+      ", upstreamConfig=" + upstreamConfigs +
       ", datacenter='" + datacenter + '\'' +
       ", allowCrossDCRequests=" + allowCrossDCRequests +
       ", enabled=" + enabled +

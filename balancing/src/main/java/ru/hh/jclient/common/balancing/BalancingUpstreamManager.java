@@ -25,7 +25,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
 
   public static final String SCHEMA_SEPARATOR = "://";
 
-  private final Map<String, UpstreamGroup> upstreams = new ConcurrentHashMap<>();
+  private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
@@ -49,7 +49,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
     requireNonNull(upstreamsList, "upstreamsList must not be null");
     upstreamsList.forEach(this::updateUpstream);
     allowedUpstreamCapacities = upstreams.entrySet().stream()
-      .collect(toMap(Map.Entry::getKey, e -> (int)Math.ceil(e.getValue().getMinServerSize() * (1 - allowedDegradationPath))));
+        .collect(toMap(Map.Entry::getKey, e -> (int) Math.ceil(e.getValue().getServers().size() * (1 - allowedDegradationPath))));
     upstreamConfigService.setupListener(this::updateUpstream);
     upstreamService.setupListener(this::updateUpstream);
   }
@@ -58,7 +58,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
     ApplicationConfig upstreamConfig = upstreamConfigService.getUpstreamConfig(upstreamKey.getServiceName());
-    var newConfig = UpstreamConfig.fromApplicationConfig(upstreamConfig, UpstreamConfig.DEFAULT, upstreamKey.getProfileName());
+    var newConfig = UpstreamConfig.fromApplicationConfig(upstreamConfig, UpstreamConfig.DEFAULT);
     List<Server> servers = upstreamService.getServers(upstreamName);
     boolean unsafeUpdate = ofNullable(allowedUpstreamCapacities).map(capacities -> capacities.get(upstreamKey.getServiceName()))
       .map(allowedUpstreamCapacity -> servers.size() < allowedUpstreamCapacity)
@@ -72,24 +72,23 @@ public class BalancingUpstreamManager implements UpstreamManager {
       );
       return;
     }
-    upstreams.compute(upstreamKey.getServiceName(), (serviceName, existingGroup) -> {
-      if (existingGroup == null) {
-        return new UpstreamGroup(serviceName, upstreamKey.getProfileName(), createUpstream(upstreamKey, newConfig, servers));
+    upstreams.compute(upstreamKey.getServiceName(), (serviceName, upstream) -> {
+      if (upstream == null) {
+        upstream = createUpstream(upstreamKey, newConfig, servers);
+      } else {
+        upstream.updateConfig(newConfig, servers);
       }
-      return existingGroup.addOrUpdate(upstreamKey.getProfileName(), newConfig, servers,
-          (profileName, config) -> createUpstream(upstreamKey, newConfig, servers)
-      );
+      return upstream;
     });
   }
 
-  private Upstream createUpstream(Upstream.UpstreamKey key, UpstreamConfig config, List<Server> servers) {
+  private Upstream createUpstream(Upstream.UpstreamKey key, Map<String, UpstreamConfig>  config, List<Server> servers) {
     return new Upstream(key, config, servers, datacenter, allowCrossDCRequests, true);
   }
 
   @Override
   public Upstream getUpstream(String serviceName, @Nullable String profile) {
-    return ofNullable(upstreams.get(getNameWithoutScheme(serviceName)))
-        .map(group -> group.getUpstreamOrDefault(profile)).orElse(null);
+    return upstreams.get(getNameWithoutScheme(serviceName));
   }
 
   @Override
@@ -102,8 +101,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
     return beginIndex > 2 ? host.substring(beginIndex) : host;
   }
 
-  // VisibleForTesting
-  Map<String, UpstreamGroup> getUpstreams() {
+  Map<String, Upstream> getUpstreams() {
     return upstreams;
   }
 }

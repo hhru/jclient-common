@@ -39,6 +39,7 @@ import java.util.Optional;
 public class UpstreamServiceImplTest {
   static UpstreamServiceImpl upstreamService;
   static String SERVICE_NAME = "upstream1";
+  static String CURRENT_SERVICE_NAME = "testService";
   static String NODE_NAME = "node123";
   static String DATA_CENTER = "DC1";
   static List<String> upstreamList = List.of(SERVICE_NAME);
@@ -62,7 +63,7 @@ public class UpstreamServiceImplTest {
         .setCurrentNode(null)
         .setSyncInit(false)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
-    upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
+    upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
   }
 
   private void mockServiceHealth(List<ServiceHealth> health) {
@@ -131,10 +132,10 @@ public class UpstreamServiceImplTest {
         .setCurrentNode(NODE_NAME)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(upstreamList, consulClient, consulConfig));
+    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig));
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
 
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -161,7 +162,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
 
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -185,13 +186,13 @@ public class UpstreamServiceImplTest {
         .setCurrentNode(NODE_NAME)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(upstreamList, consulClient, consulConfig));
+    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig));
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, consulClient, consulConfig);
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
   }

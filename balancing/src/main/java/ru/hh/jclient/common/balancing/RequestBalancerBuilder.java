@@ -45,12 +45,13 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_MAX_TRIES,
         timeoutMultiplier, forceIdempotence, monitoring);
     } else {
-      int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(() -> upstream.getConfig().getMaxTimeoutTries());
+      int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries)
+          .orElseGet(() -> upstream.getConfig(profile).getMaxTimeoutTries());
       BalancingState state;
       if (adaptive) {
-        state = new AdaptiveBalancingState(upstream);
+        state = new AdaptiveBalancingState(upstream, profile);
       } else {
-        state = new BalancingState(upstream);
+        state = new BalancingState(upstream, profile);
       }
       return new UpstreamRequestBalancer(state, request, requestExecutor,
         maxTimeoutTries, forceIdempotence, timeoutMultiplier, monitoring
