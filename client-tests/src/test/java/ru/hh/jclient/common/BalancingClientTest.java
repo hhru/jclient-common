@@ -4,6 +4,7 @@ import joptsimple.internal.Strings;
 import org.asynchttpclient.Request;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +24,7 @@ import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +51,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
-    int size=10;
+    int size = 10;
 
     when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
         .then(iom -> {
@@ -69,6 +71,98 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     assertEquals(0, servers.get(2).getRequests());
     assertEquals(1, servers.get(2).getStatsRequests());
+  }
+
+  @Test
+  public void testAddServer() throws Exception {
+    Server existingServer = new Server("server1", 3, null);
+    List<Server> servers = new ArrayList<>();
+    servers.add(existingServer);
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+    var calledAddresses = new ArrayList<>();
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class))).then(iom -> {
+      Request request = completeWith(200, iom);
+      calledAddresses.add(request.getUri().getHost());
+      return null;
+    });
+    // less calls than weight, otherwise statRequests is rescaled
+    getTestClient().get();
+    Server newServer = new Server("server2", 3, null);
+    servers.add(newServer);
+    getTestClient().get();
+    assertEquals(2, servers.get(0).getStatsRequests());
+    assertNotEquals(newServer.getAddress(), calledAddresses.get(calledAddresses.size() - 1));
+    assertEquals(1, servers.get(1).getStatsRequests());
+    getTestClient().get();
+    assertEquals(newServer.getAddress(), calledAddresses.get(calledAddresses.size() - 1));
+    assertEquals(2, servers.get(1).getStatsRequests());
+    assertEquals(2, servers.get(0).getStatsRequests());
+  }
+
+  @Test
+  public void testNoWarmup() throws Exception {
+    Server server1 = new Server("server1", 3, null);
+    Server server2 = new Server("server2", 3, null);
+    List<Server> servers = List.of(server1, server2);
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+    var calledAddresses = new ArrayList<>();
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class))).then(iom -> {
+      Request request = completeWith(200, iom);
+      calledAddresses.add(request.getUri().getHost());
+      return null;
+    });
+    getTestClient().get();
+    getTestClient().get();
+    getTestClient().get();
+    assertEquals(2, server1.getStatsRequests());
+    assertEquals(1, server2.getStatsRequests());
+  }
+
+  @Test
+  public void testWarmup() throws Exception {
+    Server server1 = new Server("server1", 5, null);
+    Server server2 = new Server("server2", 5, null);
+    var servers = List.of(server1, server2);
+    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    int slowStartInterval = 2;
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setSlowStartIntervalSec(3);
+    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+    var calledAddresses = new ArrayList<>();
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class))).then(iom -> {
+      Request request = completeWith(200, iom);
+      calledAddresses.add(request.getUri().getHost());
+      return null;
+    });
+
+    getTestClient().get();
+    getTestClient().get();
+    getTestClient().get();
+    assertEquals(3, server1.getStatsRequests());
+    assertEquals(0, server2.getStatsRequests());
+    currentTimeMillis.set(TimeUnit.SECONDS.toMillis(slowStartInterval + 1));
+    getTestClient().get();
+    assertEquals(4, server1.getStatsRequests());
+    assertEquals(server1.getAddress(), calledAddresses.get(calledAddresses.size() - 1));
+    assertEquals(3, server2.getStatsRequests());
+    getTestClient().get();
+    assertEquals(4, server2.getStatsRequests());
+    assertEquals(server2.getAddress(), calledAddresses.get(calledAddresses.size() - 1));
   }
 
   @Test

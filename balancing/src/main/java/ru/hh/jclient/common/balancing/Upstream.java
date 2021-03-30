@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
 import com.google.common.base.Strings;
+
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,7 +30,9 @@ public class Upstream {
   private final UpstreamKey upstreamKey;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
+  private final LongSupplier currentTimeMillisProvider;
   private final boolean enabled;
+
   private volatile List<Server> servers;
   private volatile Map<String, UpstreamConfig> upstreamConfigs;
   private boolean failedSelection = false;
@@ -38,7 +42,10 @@ public class Upstream {
   private final Lock configReadLock = configReadWriteLock.readLock();
 
   Upstream(String upstreamName, Map<String, UpstreamConfig> upstreamConfigs, List<Server> servers) {
-    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfigs, servers, null, false, true);
+    this(
+        UpstreamKey.ofComplexName(upstreamName),
+        upstreamConfigs, servers,
+        null, false, System::currentTimeMillis, true);
   }
 
   Upstream(UpstreamKey upstreamKey,
@@ -46,13 +53,14 @@ public class Upstream {
            List<Server> servers,
            String datacenter,
            boolean allowCrossDCRequests,
+           LongSupplier currentTimeMillisProvider,
            boolean enabled) {
     this.upstreamKey = upstreamKey;
-    this.upstreamConfigs = upstreamConfigs;
-    this.servers = servers;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.currentTimeMillisProvider = currentTimeMillisProvider;
     this.enabled = enabled;
+    this.updateConfig(upstreamConfigs, servers);
   }
 
   List<Server> getServers() {
@@ -62,7 +70,7 @@ public class Upstream {
   ServerEntry acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
-      int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests);
+      int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, currentTimeMillisProvider);
       if (index >= 0) {
         Server server = servers.get(index);
         server.acquire();
@@ -157,11 +165,16 @@ public class Upstream {
     configWriteLock.lock();
     try {
       this.upstreamConfigs = newConfig;
-      this.servers = servers;
+      this.servers = initWarmup(servers, upstreamConfigs.get(DEFAULT_PROFILE), currentTimeMillisProvider);
       this.failedSelection = false;
     } finally {
       configWriteLock.unlock();
     }
+  }
+
+  private static List<Server> initWarmup(List<Server> servers, UpstreamConfig upstreamConfig, LongSupplier currentTimeMillisProvider) {
+    servers.forEach(server -> server.setWarmupEndNanosIfNeeded(upstreamConfig.getSlowStartIntervalSec(), currentTimeMillisProvider));
+    return servers;
   }
 
   String getName() {

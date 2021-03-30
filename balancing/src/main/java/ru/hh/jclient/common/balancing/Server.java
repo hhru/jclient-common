@@ -1,13 +1,20 @@
 package ru.hh.jclient.common.balancing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
+import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.LongSupplier;
 
 public final class Server {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";
 
   private final String address;
@@ -15,6 +22,11 @@ public final class Server {
   private volatile int weight;
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
+
+  private boolean oldGenServer;
+
+  private volatile int warmupEndMillis = 0;
+  private boolean warmupEnded;
 
   private volatile int requests = 0;
   private volatile int fails = 0;
@@ -134,5 +146,48 @@ public final class Server {
       ", fails=" + fails +
       ", statsRequests=" + statsRequests +
       '}';
+  }
+
+  public float getCurrentLoad() {
+    return (float) this.requests / this.weight;
+  }
+
+  public float getStatLoad(Collection<Server> currentServers, LongSupplier currentTimeMillisProvider) {
+    if (!warmupEnded) {
+      long currentTimeMillis = currentTimeMillisProvider.getAsLong();
+      if (warmupEndMillis > 0 && currentTimeMillis <= warmupEndMillis) {
+        LOGGER.trace("Warming up server {}. Current epoch millis: {}, warmup end epoch millis: {}", this, currentTimeMillis, warmupEndMillis);
+        return Float.POSITIVE_INFINITY;
+      }
+      LOGGER.trace("Warm up for server {} complete", this);
+      warmupEnded = true;
+    }
+    if (!oldGenServer && statsRequests == 0) {
+      oldGenServer = true;
+      statsRequests = calculateStatRequestsForMaxOfCurrentLoads(currentServers, weight);
+      LOGGER.trace("Server {} is new. Set speculative statRequests={} and marked it as not new anymore", this, statsRequests);
+    }
+    return calculateStatLoad();
+  }
+
+  static int calculateStatRequestsForMaxOfCurrentLoads(Collection<Server> servers, int currentServerWeight) {
+    return (int) Math.floor(servers.stream().mapToDouble(Server::calculateStatLoad).max().orElse(0d) * currentServerWeight);
+  }
+
+  private float calculateStatLoad() {
+    return (float) this.statsRequests / this.weight;
+  }
+
+  public void setWarmupEndNanosIfNeeded(int slowStartSeconds, LongSupplier currentTimeMillisProvider) {
+    if (warmupEndMillis == 0) {
+      if (slowStartSeconds > 0) {
+        long warmapEndTime = (long) (currentTimeMillisProvider.getAsLong() + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
+        this.warmupEndMillis = Math.toIntExact(warmapEndTime);
+        LOGGER.trace("Set warmup for server {}. Warmup is going to end at {} epoch millis", this, warmupEndMillis);
+      } else {
+        warmupEnded = true;
+        this.warmupEndMillis = -1;
+      }
+    }
   }
 }

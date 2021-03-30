@@ -4,15 +4,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.LongSupplier;
 
 final class BalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
-  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests) {
+  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests,
+                                  LongSupplier currentTimeMillisProvider) {
     int minIndex = -1;
     Weight minWeight = null;
 
@@ -29,9 +32,7 @@ final class BalancingStrategy {
         continue;
       }
 
-      float currentLoad = (float) server.getRequests() / server.getWeight();
-      float statLoad = (float) server.getStatsRequests() / server.getWeight();
-      Weight weight = new Weight(isDifferentDC, currentLoad, statLoad);
+      Weight weight = new Weight(isDifferentDC, server, servers, currentTimeMillisProvider);
 
       LOGGER.debug("static balancer stats for {}, differentDC:{}, load:{}, stat_load:{}", server,
               weight.isDifferentDC(), weight.getCurrentLoad(), weight.getStatLoad());
@@ -54,7 +55,7 @@ final class BalancingStrategy {
   private BalancingStrategy() {
   }
 
-  private static class Weight implements Comparable<Weight> {
+  private static final class Weight implements Comparable<Weight> {
     private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isDifferentDC)
         .thenComparingDouble(Weight::getCurrentLoad)
         .thenComparingDouble(Weight::getStatLoad);
@@ -62,10 +63,10 @@ final class BalancingStrategy {
     private final float currentLoad;
     private final float statLoad;
 
-    Weight(boolean differentDC, float currentLoad, float statLoad) {
+    Weight(boolean differentDC, Server server, Collection<Server> currentServers, LongSupplier currentTimeMillisProvider) {
       this.differentDC = differentDC;
-      this.currentLoad = currentLoad;
-      this.statLoad = statLoad;
+      this.currentLoad = server.getCurrentLoad();
+      this.statLoad = server.getStatLoad(currentServers, currentTimeMillisProvider);
     }
 
     public boolean isDifferentDC() {

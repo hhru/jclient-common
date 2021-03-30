@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 public class BalancingUpstreamManager implements UpstreamManager {
 
@@ -31,20 +32,39 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final boolean allowCrossDCRequests;
   private final UpstreamConfigService upstreamConfigService;
   private final UpstreamService upstreamService;
+  private final LongSupplier currentTimeMillisProvider;
   private final Map<String, Integer> allowedUpstreamCapacities;
 
   public BalancingUpstreamManager(Collection<String> upstreamsList,
-                                  Set<Monitoring> monitoring,
-                                  String datacenter,
-                                  boolean allowCrossDCRequests,
-                                  UpstreamConfigService upstreamConfigService,
-                                  UpstreamService upstreamService,
-                                  double allowedDegradationPath) {
+                           Set<Monitoring> monitoring,
+                           String datacenter,
+                           boolean allowCrossDCRequests,
+                           UpstreamConfigService upstreamConfigService,
+                           UpstreamService upstreamService,
+                           double allowedDegradationPath) {
+    this(
+        upstreamsList,
+        monitoring, datacenter, allowCrossDCRequests,
+        upstreamConfigService, upstreamService,
+        allowedDegradationPath,
+        System::currentTimeMillis
+    );
+  }
+
+  public BalancingUpstreamManager(Collection<String> upstreamsList,
+                           Set<Monitoring> monitoring,
+                           String datacenter,
+                           boolean allowCrossDCRequests,
+                           UpstreamConfigService upstreamConfigService,
+                           UpstreamService upstreamService,
+                           double allowedDegradationPath,
+                           LongSupplier currentTimeMillisProvider) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.upstreamService = upstreamService;
     this.upstreamConfigService = upstreamConfigService;
+    this.currentTimeMillisProvider = currentTimeMillisProvider;
 
     requireNonNull(upstreamsList, "upstreamsList must not be null");
     upstreamsList.forEach(this::updateUpstream);
@@ -83,7 +103,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, Map<String, UpstreamConfig>  config, List<Server> servers) {
-    return new Upstream(key, config, servers, datacenter, allowCrossDCRequests, true);
+    return new Upstream(key, config, servers, datacenter, allowCrossDCRequests, currentTimeMillisProvider, true);
   }
 
   @Override
