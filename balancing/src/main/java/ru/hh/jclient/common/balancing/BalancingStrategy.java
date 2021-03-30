@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,9 @@ final class BalancingStrategy {
     int minIndex = -1;
     Weight minWeight = null;
 
+    long currentTime = System.currentTimeMillis();
+    long warmupTimeMs = 30000;
+
     for (int index = 0; index < servers.size(); index++) {
       Server server = servers.get(index);
 
@@ -23,13 +27,20 @@ final class BalancingStrategy {
         continue;
       }
 
+      float warmupFactor = Optional.ofNullable(server.getMeta().get("startTimestamp")).map(Long::valueOf)
+          .map(startTime -> Math.max(0, currentTime - startTime))
+          .map(runningTime -> Math.max(1f, (float) runningTime / warmupTimeMs))
+          .orElse(1f);
+
+      float loadCorrection = 1 / (warmupFactor + 1);
+
       boolean isDifferentDC = !Objects.equals(datacenter, server.getDatacenterLowerCased());
 
       if (isDifferentDC && !allowCrossDCRequests) {
         continue;
       }
 
-      float currentLoad = (float) server.getRequests() / server.getWeight();
+      float currentLoad = ((float) server.getRequests() / server.getWeight()) * loadCorrection;
       float statLoad = (float) server.getStatsRequests() / server.getWeight();
       Weight weight = new Weight(isDifferentDC, currentLoad, statLoad);
 
