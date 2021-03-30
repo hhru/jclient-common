@@ -178,7 +178,7 @@ public final class Server {
     return (float) this.statsRequests / this.weight;
   }
 
-  public void setWarmupEndNanosIfNeeded(int slowStartSeconds, LongSupplier currentTimeMillisProvider) {
+  public void setWarmupEndTimeIfNeeded(int slowStartSeconds, LongSupplier currentTimeMillisProvider) {
     if (warmupEndMillis == 0) {
       if (slowStartSeconds > 0) {
         long warmapEndTime = (long) (currentTimeMillisProvider.getAsLong() + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));

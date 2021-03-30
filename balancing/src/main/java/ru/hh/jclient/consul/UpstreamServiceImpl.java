@@ -1,6 +1,8 @@
 package ru.hh.jclient.consul;
 
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
 import ru.hh.consul.cache.ServiceHealthCache;
@@ -43,6 +45,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final Set<String> upstreamList;
   private final List<String> datacenterList;
+  private final Map<String, String> lowercasedDataCenters;
   private final String currentDC;
   private final String currentNode;
   private final String currentServiceName;
@@ -65,6 +68,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
+    this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));
     this.upstreamList = Set.copyOf(upstreamList);
     this.currentDC = consulConfig.getCurrentDC();
     this.currentNode = consulConfig.getCurrentNode();
@@ -182,9 +186,10 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<String> aliveServers = new HashSet<>();
     CopyOnWriteArrayList<Server> currentServers = serverList.computeIfAbsent(serviceName, k -> new CopyOnWriteArrayList<>());
 
+    // assumption: no similar addresses in different DCs
+    Map<String, Server> serverByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
       if (selfNodeFiltering && notSameNode(nodeName)) {
@@ -198,9 +203,7 @@ public class UpstreamServiceImpl implements UpstreamService {
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
       int serverWeight = service.getWeights().orElse(defaultWeight).getPassing();
 
-      Server server = currentServers.stream()
-        .filter(s -> address.equals(s.getAddress()))
-        .findFirst().orElse(null);
+      Server server = serverByAddress.remove(address);
 
       if (server == null) {
         server = new Server(address, serverWeight, nodeDatacenter);
@@ -210,11 +213,12 @@ public class UpstreamServiceImpl implements UpstreamService {
       server.setMeta(service.getMeta());
       server.setTags(service.getTags());
       server.setWeight(serverWeight);
-
-      aliveServers.add(address);
     }
-
-    disableDeadServices(currentServers, serviceName, datacenter, aliveServers);
+    var deadServersFromCurrentDC = serverByAddress.values().stream()
+      .filter(server -> datacenter.equals(server.getDatacenter()))
+      .collect(toList());
+    LOGGER.debug("removing dead servers for {} in DC {}: {} ", serviceName, datacenter, deadServersFromCurrentDC);
+    currentServers.removeAll(deadServersFromCurrentDC);
 
     LOGGER.info("upstreams for {} were updated in DC {}; servers: {} ", serviceName, datacenter,
         LOGGER.isDebugEnabled() ? currentServers : currentServers.size());
@@ -225,24 +229,12 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private String restoreOriginalDataCenterName(String lowerCasedDcName) {
-    for (String dcName : datacenterList) {
-      if (dcName.toLowerCase().equals(lowerCasedDcName)) {
-        return dcName;
-      }
+    String restoredDc = lowercasedDataCenters.get(lowerCasedDcName);
+    if (restoredDc == null) {
+      LOGGER.warn("Unable to restore original datacenter name for: {}", lowerCasedDcName);
+      return lowerCasedDcName;
     }
-    LOGGER.warn("Unable to restore original datacenter name for: {}", lowerCasedDcName);
-    return lowerCasedDcName;
-  }
-
-  private static void disableDeadServices(List<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
-    List<Server> deadServers = servers.stream()
-      .filter(server -> datacenter.equals(server.getDatacenter()))
-      .filter(server -> !aliveServers.contains(server.getAddress()))
-      .collect(Collectors.toList());
-
-    LOGGER.debug("removing dead servers for {} in DC {}: {} ", serviceName, datacenter, deadServers);
-
-    servers.removeAll(deadServers);
+    return restoredDc;
   }
 
   private static String getAddress(ServiceHealth serviceHealth) {

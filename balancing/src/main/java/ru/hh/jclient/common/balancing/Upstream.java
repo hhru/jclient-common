@@ -173,7 +173,7 @@ public class Upstream {
   }
 
   private static List<Server> initWarmup(List<Server> servers, UpstreamConfig upstreamConfig, LongSupplier currentTimeMillisProvider) {
-    servers.forEach(server -> server.setWarmupEndNanosIfNeeded(upstreamConfig.getSlowStartIntervalSec(), currentTimeMillisProvider));
+    servers.forEach(server -> server.setWarmupEndTimeIfNeeded(upstreamConfig.getSlowStartIntervalSec(), currentTimeMillisProvider));
     return servers;
   }
 
