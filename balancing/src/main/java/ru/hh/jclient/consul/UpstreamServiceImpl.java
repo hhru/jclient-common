@@ -1,5 +1,6 @@
 package ru.hh.jclient.consul;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -35,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class UpstreamServiceImpl implements UpstreamService {
@@ -58,18 +60,26 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
+  public UpstreamServiceImpl(String currentServiceName, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+    this(List.of(), currentServiceName, consulClient, consulConfig);
+  }
+
+  /**
+   * use upstream list parameter in {@link UpstreamServiceConsulConfig}
+   */
+  @Deprecated(forRemoval = true)
   public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    if (upstreamList.isEmpty()) {
+    this.upstreamList = Set.copyOf(ofNullable(upstreamList).filter(Predicate.not(Collection::isEmpty)).orElseGet(consulConfig::getUpstreams));
+    if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
-    if (consulConfig.getDatacenterList().isEmpty()) {
+    if (consulConfig.getDatacenterList() == null || consulConfig.getDatacenterList().isEmpty()) {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
 
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
     this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));
-    this.upstreamList = Set.copyOf(upstreamList);
     this.currentDC = consulConfig.getCurrentDC();
     this.currentNode = consulConfig.getCurrentNode();
     this.currentServiceName = currentServiceName;

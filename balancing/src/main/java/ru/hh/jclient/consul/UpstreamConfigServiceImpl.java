@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import static java.util.Optional.ofNullable;
 
 public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
@@ -30,15 +33,27 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
   private final String currentServiceName;
-  private final Set<String> services;
+  private final Set<String> upstreamList;
   private Consumer<String> callback;
 
   private final KeyValueClient kvClient;
 
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
-  public UpstreamConfigServiceImpl(List<String> services, String currentServiceName, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
-    this.services = Set.copyOf(services);
+  public UpstreamConfigServiceImpl(String currentServiceName, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
+    this(List.of(), currentServiceName, consulClient, config);
+  }
+
+  /**
+   * use upstream list parameter in {@link UpstreamConfigServiceConsulConfig}
+   */
+  @Deprecated(forRemoval = true)
+  public UpstreamConfigServiceImpl(List<String> upstreamList, String currentServiceName, Consul consulClient,
+                                   UpstreamConfigServiceConsulConfig config) {
+    this.upstreamList = Set.copyOf(ofNullable(upstreamList).filter(Predicate.not(Collection::isEmpty)).orElseGet(config::getUpstreams));
+    if (this.upstreamList == null || this.upstreamList.isEmpty()) {
+      throw new IllegalArgumentException("UpstreamList can't be empty");
+    }
     this.kvClient = consulClient.keyValueClient();
     this.watchSeconds = config.getWatchSeconds();
     this.currentServiceName = currentServiceName;
@@ -83,7 +98,7 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
         LOGGER.trace("incorrect key: {} with value:{}", key, value.getValueAsString());
         continue;
       }
-      if (!services.contains(keys[1])) {
+      if (!upstreamList.contains(keys[1])) {
         continue;
       }
       try {
@@ -96,13 +111,13 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   }
 
   private Collection<String> findUnconfiguredServices() {
-    var absentConfigs = new HashSet<>(services);
+    var absentConfigs = new HashSet<>(upstreamList);
     absentConfigs.removeAll(configMap.keySet());
     return absentConfigs;
   }
 
   void notifyListeners() {
-    services.forEach(callback);
+    upstreamList.forEach(callback);
   }
 
   private void initConfigCache() {
