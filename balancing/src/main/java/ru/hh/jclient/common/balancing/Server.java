@@ -7,13 +7,13 @@ import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.LongSupplier;
 
-public final class Server {
+public class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";
 
@@ -23,11 +23,11 @@ public final class Server {
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
 
-  private boolean oldGenServer;
 
-  private volatile int warmupEndMillis = 0;
-  private boolean warmupEnded;
+  private volatile int slowStartEndMillis = 0;
+  private boolean slowStartModeEnabled;
 
+  private boolean statisticsFilledWithInitialValues;
   private volatile int requests = 0;
   private volatile int fails = 0;
   private volatile int statsRequests = 0;
@@ -152,20 +152,23 @@ public final class Server {
     return (float) this.requests / this.weight;
   }
 
-  public float getStatLoad(Collection<Server> currentServers, LongSupplier currentTimeMillisProvider) {
-    if (!warmupEnded) {
-      long currentTimeMillis = currentTimeMillisProvider.getAsLong();
-      if (warmupEndMillis > 0 && currentTimeMillis <= warmupEndMillis) {
-        LOGGER.trace("Warming up server {}. Current epoch millis: {}, warmup end epoch millis: {}", this, currentTimeMillis, warmupEndMillis);
+  public float getStatLoad(Collection<Server> currentServers, Clock clock) {
+    if (slowStartModeEnabled) {
+      long currentTimeMillis = getCurrentTimeMillis(clock);
+      if (slowStartEndMillis > 0 && currentTimeMillis <= slowStartEndMillis) {
+        LOGGER.trace(
+          "Server {} is on slowStart, returning infinite load. Current epoch millis: {}, slow start end epoch millis: {}",
+          this, currentTimeMillis, slowStartEndMillis
+        );
         return Float.POSITIVE_INFINITY;
       }
-      LOGGER.trace("Warm up for server {} complete", this);
-      warmupEnded = true;
+      LOGGER.trace("Slow start for server {} ended", this);
+      slowStartModeEnabled = false;
     }
-    if (!oldGenServer && statsRequests == 0) {
-      oldGenServer = true;
+    if (!statisticsFilledWithInitialValues && statsRequests == 0) {
+      statisticsFilledWithInitialValues = true;
       statsRequests = calculateStatRequestsForMaxOfCurrentLoads(currentServers, weight);
-      LOGGER.trace("Server {} is new. Set speculative statRequests={} and marked it as not new anymore", this, statsRequests);
+      LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, statsRequests);
     }
     return calculateStatLoad();
   }
@@ -178,15 +181,17 @@ public final class Server {
     return (float) this.statsRequests / this.weight;
   }
 
-  public void setWarmupEndTimeIfNeeded(int slowStartSeconds, LongSupplier currentTimeMillisProvider) {
-    if (warmupEndMillis == 0) {
-      if (slowStartSeconds > 0) {
-        long warmapEndTime = (long) (currentTimeMillisProvider.getAsLong() + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
-        this.warmupEndMillis = Math.toIntExact(warmapEndTime);
-        LOGGER.trace("Set warmup for server {}. Warmup is going to end at {} epoch millis", this, warmupEndMillis);
-      } else {
-        warmupEnded = true;
-        this.warmupEndMillis = -1;
+  protected long getCurrentTimeMillis(Clock clock) {
+    return clock.millis();
+  }
+
+  public void setSlowStartEndTimeIfNeeded(int slowStartSeconds, Clock clock) {
+    if (slowStartSeconds > 0) {
+      if (slowStartEndMillis == 0) {
+        slowStartModeEnabled = true;
+        long slowStartEnd = (long) (getCurrentTimeMillis(clock) + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
+        this.slowStartEndMillis = Math.toIntExact(slowStartEnd);
+        LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
       }
     }
   }

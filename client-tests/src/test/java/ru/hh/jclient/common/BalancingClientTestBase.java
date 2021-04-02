@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 abstract class BalancingClientTestBase extends HttpClientTestBase {
@@ -57,7 +56,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   BalancingUpstreamManager upstreamManager;
   UpstreamConfigServiceImpl upstreamConfigService = mock(UpstreamConfigServiceImpl.class);
   UpstreamServiceImpl upstreamService = mock(UpstreamServiceImpl.class);
-  AtomicLong currentTimeMillis = new AtomicLong();
   @Before
   public void setUpTest() {
     withEmptyContext();
@@ -411,7 +409,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     upstreamManager = new BalancingUpstreamManager(
       upstreamList, Set.of(monitoring), datacenter, allowCrossDCRequests,
       upstreamConfigService, upstreamService,
-      0.5, currentTimeMillis::get);
+      0.5);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),

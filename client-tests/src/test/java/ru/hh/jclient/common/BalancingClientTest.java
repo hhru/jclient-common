@@ -24,12 +24,14 @@ import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class BalancingClientTest extends BalancingClientTestBase {
   private static final String PROFILE_DELIMITER = ":";
@@ -106,7 +108,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Test
-  public void testNoWarmup() throws Exception {
+  public void testNoSlowStart() throws Exception {
     Server server1 = new Server("server1", 3, null);
     Server server2 = new Server("server2", 3, null);
     List<Server> servers = List.of(server1, server2);
@@ -131,9 +133,20 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Test
-  public void testWarmup() throws Exception {
-    Server server1 = new Server("server1", 5, null);
-    Server server2 = new Server("server2", 5, null);
+  public void testSlowStart() throws Exception {
+    AtomicLong currentTimeMillis = new AtomicLong();
+    Server server1 = new Server("server1", 5, null) {
+      @Override
+      protected long getCurrentTimeMillis(Clock clock) {
+        return currentTimeMillis.get();
+      }
+    };
+    Server server2 = new Server("server2", 5, null) {
+      @Override
+      protected long getCurrentTimeMillis(Clock clock) {
+        return currentTimeMillis.get();
+      }
+    };
     var servers = List.of(server1, server2);
     when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
