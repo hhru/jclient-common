@@ -19,7 +19,7 @@ public class UpstreamConfigServiceConsulConfig {
   private ConsistencyMode consistencyMode;
   private boolean syncUpdate = true;
 
-  private static UpstreamConfigServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
+  public static UpstreamConfigServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
       .filter(Predicate.not(String::isBlank))
       .map(separatedList -> List.of(separatedList.split("[,\\s]+")))

@@ -31,7 +31,7 @@ public class UpstreamServiceConsulConfig {
   private boolean selfNodeFilteringEnabled;
   private boolean syncInit = true;
 
-  private static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
+  public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
       .filter(Predicate.not(String::isBlank))
       .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
