@@ -26,6 +26,7 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import ru.hh.consul.option.QueryOptions;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
 import java.math.BigInteger;
@@ -48,22 +49,37 @@ public class UpstreamServiceImplTest {
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 7;
   static boolean allowCrossDC = false;
+  private static final JClientInfrastructureConfig infrastructureConfig = new JClientInfrastructureConfig() {
+
+    @Override
+    public String getServiceName() {
+      return SERVICE_NAME;
+    }
+
+    @Override
+    public String getCurrentDC() {
+      return DATA_CENTER;
+    }
+
+    @Override
+    public String getCurrentNodeName() {
+      return NODE_NAME;
+    }
+  };
 
   @Before
   public void init() {
     when(consulClient.healthClient()).thenReturn(healthClient);
     mockServiceHealth(List.of());
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
-        .setAllowCrossDC(allowCrossDC)
+        .setUpstreams(upstreamList)
         .setHealthPassing(true)
         .setSelfNodeFilteringEnabled(true)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
-        .setCurrentDC(DATA_CENTER)
-        .setCurrentNode(null)
         .setSyncInit(false)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
-    upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
+    upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
   }
 
   private void mockServiceHealth(List<ServiceHealth> health) {
@@ -123,19 +139,18 @@ public class UpstreamServiceImplTest {
     int weight = 12;
     int port1 = 124;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setUpstreams(upstreamList)
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
-        .setCurrentDC(DATA_CENTER)
-        .setCurrentNode(NODE_NAME)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig));
+    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig));
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
 
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -150,19 +165,18 @@ public class UpstreamServiceImplTest {
     int port1 = 124;
     int port2 = 126;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setUpstreams(upstreamList)
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(true)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
-        .setCurrentDC(DATA_CENTER)
-        .setCurrentNode(NODE_NAME)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
 
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -177,22 +191,21 @@ public class UpstreamServiceImplTest {
     int port1 = 124;
     int port2 = 126;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+        .setUpstreams(upstreamList)
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
-        .setCurrentDC(DATA_CENTER)
-        .setCurrentNode(NODE_NAME)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig));
+    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig));
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(upstreamList, CURRENT_SERVICE_NAME, consulClient, consulConfig);
+    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
     List<Server> servers = upstreamService.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
   }

@@ -1,6 +1,7 @@
 package ru.hh.jclient.consul.model.config;
 
 import ru.hh.consul.option.ConsistencyMode;
+import ru.hh.jclient.consul.UpstreamServiceImpl;
 import ru.hh.jclient.consul.model.ConsistencyModeConfig;
 
 import java.util.List;
@@ -10,10 +11,8 @@ import java.util.function.Predicate;
 
 import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.CONSISTENCY_MODE_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.DATACENTER_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.DC_LIST_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.HEALTHY_ONLY_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.NODE_NAME_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.SELF_NODE_FILTERING_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.SYNC_UPDATE_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.UPSTREAMS_KEY;
@@ -55,8 +54,6 @@ public class UpstreamServiceConsulConfig {
       .setSelfNodeFilteringEnabled(selfNodeFiltering)
       .setWatchSeconds(watchSeconds)
       .setDatacenterList(dcList)
-      .setCurrentDC(props.getProperty(DATACENTER_KEY))
-      .setCurrentNode(props.getProperty(NODE_NAME_KEY))
       .setConsistencyMode(consistencyMode.consistencyMode)
       .setSyncInit(syncUpdate);
   }
@@ -110,6 +107,13 @@ public class UpstreamServiceConsulConfig {
     return currentDC;
   }
 
+  /**
+   * datacenter can be provided from another source than serviceProperties
+   * should be inited directly in service
+   * @see {@link UpstreamServiceImpl#UpstreamServiceImpl(JClientInfrastructureConfig,
+   * ru.hh.consul.Consul, ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig)}
+   */
+  @Deprecated(forRemoval = true)
   public UpstreamServiceConsulConfig setCurrentDC(String currentDC) {
     this.currentDC = currentDC;
     return this;
@@ -119,6 +123,13 @@ public class UpstreamServiceConsulConfig {
     return currentNode;
   }
 
+  /**
+   * node name can be provided from another source than serviceProperties
+   * should be inited directly in service
+   * @see {@link UpstreamServiceImpl#UpstreamServiceImpl(JClientInfrastructureConfig,
+   * ru.hh.consul.Consul, ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig)}
+   */
+  @Deprecated(forRemoval = true)
   public UpstreamServiceConsulConfig setCurrentNode(String currentNode) {
     this.currentNode = currentNode;
     return this;

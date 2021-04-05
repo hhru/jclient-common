@@ -11,6 +11,7 @@ import ru.hh.consul.option.ImmutableQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
 
 import java.io.IOException;
@@ -40,8 +41,8 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
-  public UpstreamConfigServiceImpl(String currentServiceName, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
-    this(List.of(), currentServiceName, consulClient, config);
+  public UpstreamConfigServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
+    this(List.of(), infrastructureConfig.getServiceName(), consulClient, config);
   }
 
   /**

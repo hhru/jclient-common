@@ -17,6 +17,7 @@ import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Profile;
 import ru.hh.jclient.consul.model.RetryPolicyConfig;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -121,9 +122,10 @@ public class BalancingUpstreamManagerTest {
 
   private BalancingUpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
     Monitoring monitoring = mock(Monitoring.class);
+    JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
     return new BalancingUpstreamManager(upstreamList,
             Set.of(monitoring),
-            null,
+            infrastructureConfig,
             false,
             upstreamConfigService,
             upstreamService,

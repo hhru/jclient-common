@@ -11,4 +11,5 @@ public final class PropertyKeys {
     public static final String DC_LIST_KEY = "jclient.upstream.DCList";
     public static final String DATACENTER_KEY = "datacenter";
     public static final String NODE_NAME_KEY = "nodeName";
+    public static final String ALLOWED_DEGRADATION_PART_KEY = "jclient.allowedDegradationPart";
 }

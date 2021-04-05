@@ -9,6 +9,7 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,6 +34,22 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final UpstreamService upstreamService;
   private final Map<String, Integer> allowedUpstreamCapacities;
 
+  public BalancingUpstreamManager(Collection<String> upstreamsList,
+                                  Set<Monitoring> monitoring,
+                                  JClientInfrastructureConfig infrastructureConfig,
+                                  boolean allowCrossDCRequests,
+                                  UpstreamConfigService upstreamConfigService,
+                                  UpstreamService upstreamService,
+                                  double allowedDegradationPath) {
+    this(upstreamsList,
+      monitoring,
+      infrastructureConfig.getCurrentDC(),
+      allowCrossDCRequests,
+      upstreamConfigService, upstreamService,
+      allowedDegradationPath);
+  }
+
+  @Deprecated(forRemoval = true)
   public BalancingUpstreamManager(Collection<String> upstreamsList,
                                   Set<Monitoring> monitoring,
                                   String datacenter,

@@ -36,6 +36,7 @@ import ru.hh.jclient.consul.UpstreamConfigServiceImpl;
 import ru.hh.jclient.consul.UpstreamServiceImpl;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.RetryPolicyConfig;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -406,8 +407,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, String datacenter, List<String> upstreamList,
                                                     boolean allowCrossDCRequests, double multiplier) {
     Monitoring monitoring = mock(Monitoring.class);
+    JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
+    when(infrastructureConfig.getCurrentDC()).thenReturn(datacenter);
     upstreamManager = new BalancingUpstreamManager(
-      upstreamList, Set.of(monitoring), datacenter, allowCrossDCRequests,
+      upstreamList, Set.of(monitoring), infrastructureConfig, allowCrossDCRequests,
       upstreamConfigService, upstreamService,
       0.5);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)

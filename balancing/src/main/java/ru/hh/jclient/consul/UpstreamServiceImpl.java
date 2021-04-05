@@ -1,5 +1,6 @@
 package ru.hh.jclient.consul;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -19,8 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -60,15 +63,21 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
-  public UpstreamServiceImpl(String currentServiceName, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    this(List.of(), currentServiceName, consulClient, consulConfig);
+  public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig,
+                             Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+    this(List.of(),
+      infrastructureConfig.getServiceName(), requireNonNull(infrastructureConfig.getCurrentDC()),
+      requireNonNull(infrastructureConfig.getCurrentNodeName()),
+      consulClient, consulConfig
+    );
   }
 
   /**
    * use upstream list parameter in {@link UpstreamServiceConsulConfig}
    */
   @Deprecated(forRemoval = true)
-  public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+  public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, @Nullable String currentDC, @Nullable String currentNode,
+                             Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
     this.upstreamList = Set.copyOf(ofNullable(upstreamList).filter(Predicate.not(Collection::isEmpty)).orElseGet(consulConfig::getUpstreams));
     if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
@@ -76,13 +85,12 @@ public class UpstreamServiceImpl implements UpstreamService {
     if (consulConfig.getDatacenterList() == null || consulConfig.getDatacenterList().isEmpty()) {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
-
+    this.currentServiceName = currentServiceName;
+    this.currentDC = ofNullable(currentDC).orElseGet(consulConfig::getCurrentDC);
+    this.currentNode = ofNullable(currentNode).orElseGet(consulConfig::getCurrentNode);
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
     this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));
-    this.currentDC = consulConfig.getCurrentDC();
-    this.currentNode = consulConfig.getCurrentNode();
-    this.currentServiceName = currentServiceName;
     this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
