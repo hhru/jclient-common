@@ -12,7 +12,7 @@ import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.CONSISTENCY_MODE_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.DATACENTER_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.DC_LIST_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.HEALTY_ONLY_KEY;
+import static ru.hh.jclient.consul.PropertyKeys.HEALTHY_ONLY_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.NODE_NAME_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.SELF_NODE_FILTERING_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.SYNC_UPDATE_KEY;
@@ -37,7 +37,7 @@ public class UpstreamServiceConsulConfig {
       .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
       .orElseGet(List::of);
     boolean allowCrossDC = Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY)).map(Boolean::parseBoolean).orElse(false);
-    boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(false);
+    boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(false);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);
     var dcList = Optional.ofNullable(props.getProperty(DC_LIST_KEY))
