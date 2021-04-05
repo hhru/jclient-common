@@ -1,7 +1,6 @@
 package ru.hh.jclient.consul.model.config;
 
 import ru.hh.consul.option.ConsistencyMode;
-import ru.hh.jclient.consul.UpstreamServiceImpl;
 import ru.hh.jclient.consul.model.ConsistencyModeConfig;
 
 import java.util.List;
@@ -23,8 +22,6 @@ public class UpstreamServiceConsulConfig {
   private boolean allowCrossDC;
   private boolean healthPassing;
   private int watchSeconds;
-  private String currentDC;
-  private String currentNode;
   private ConsistencyMode consistencyMode;
   private List<String> datacenterList;
   private boolean selfNodeFilteringEnabled;
@@ -56,6 +53,18 @@ public class UpstreamServiceConsulConfig {
       .setDatacenterList(dcList)
       .setConsistencyMode(consistencyMode.consistencyMode)
       .setSyncInit(syncUpdate);
+  }
+
+  public static UpstreamServiceConsulConfig copyOf(UpstreamServiceConsulConfig config) {
+    return new UpstreamServiceConsulConfig()
+      .setUpstreams(config.upstreams)
+      .setAllowCrossDC(config.allowCrossDC)
+      .setHealthPassing(config.healthPassing)
+      .setWatchSeconds(config.watchSeconds)
+      .setConsistencyMode(config.consistencyMode)
+      .setDatacenterList(config.datacenterList)
+      .setSelfNodeFilteringEnabled(config.selfNodeFilteringEnabled)
+      .setSyncInit(config.syncInit);
   }
 
   public List<String> getUpstreams() {
@@ -103,38 +112,6 @@ public class UpstreamServiceConsulConfig {
     return this;
   }
 
-  public String getCurrentDC() {
-    return currentDC;
-  }
-
-  /**
-   * datacenter can be provided from another source than serviceProperties
-   * should be inited directly in service
-   * @see {@link UpstreamServiceImpl#UpstreamServiceImpl(JClientInfrastructureConfig,
-   * ru.hh.consul.Consul, ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig)}
-   */
-  @Deprecated(forRemoval = true)
-  public UpstreamServiceConsulConfig setCurrentDC(String currentDC) {
-    this.currentDC = currentDC;
-    return this;
-  }
-
-  public String getCurrentNode() {
-    return currentNode;
-  }
-
-  /**
-   * node name can be provided from another source than serviceProperties
-   * should be inited directly in service
-   * @see {@link UpstreamServiceImpl#UpstreamServiceImpl(JClientInfrastructureConfig,
-   * ru.hh.consul.Consul, ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig)}
-   */
-  @Deprecated(forRemoval = true)
-  public UpstreamServiceConsulConfig setCurrentNode(String currentNode) {
-    this.currentNode = currentNode;
-    return this;
-  }
-
   public ConsistencyMode getConsistencyMode() {
     return consistencyMode;
   }
@@ -150,23 +127,6 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setDatacenterList(List<String> datacenterList) {
     this.datacenterList = datacenterList;
-    return this;
-  }
-
-  /**
-   * value is no longer used
-   * @return always 0
-   */
-  @Deprecated(forRemoval = true)
-  public int getSyncInitTimeoutMillis() {
-    return 0;
-  }
-
-  /**
-   * value is no longer used
-   */
-  @Deprecated(forRemoval = true)
-  public UpstreamServiceConsulConfig setSyncInitTimeoutMillis(Integer syncInitTimeoutMillis) {
     return this;
   }
 

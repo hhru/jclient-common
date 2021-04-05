@@ -1,7 +1,5 @@
 package ru.hh.jclient.consul;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -23,7 +21,6 @@ import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -39,7 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class UpstreamServiceImpl implements UpstreamService {
@@ -65,29 +61,16 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig,
                              Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    this(List.of(),
-      infrastructureConfig.getServiceName(), requireNonNull(infrastructureConfig.getCurrentDC()),
-      requireNonNull(infrastructureConfig.getCurrentNodeName()),
-      consulClient, consulConfig
-    );
-  }
-
-  /**
-   * use upstream list parameter in {@link UpstreamServiceConsulConfig}
-   */
-  @Deprecated(forRemoval = true)
-  public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, @Nullable String currentDC, @Nullable String currentNode,
-                             Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    this.upstreamList = Set.copyOf(ofNullable(upstreamList).filter(Predicate.not(Collection::isEmpty)).orElseGet(consulConfig::getUpstreams));
-    if (this.upstreamList == null || this.upstreamList.isEmpty()) {
+    this.upstreamList = Set.copyOf(consulConfig.getUpstreams());
+    if (this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
     if (consulConfig.getDatacenterList() == null || consulConfig.getDatacenterList().isEmpty()) {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
-    this.currentServiceName = currentServiceName;
-    this.currentDC = ofNullable(currentDC).orElseGet(consulConfig::getCurrentDC);
-    this.currentNode = ofNullable(currentNode).orElseGet(consulConfig::getCurrentNode);
+    this.currentServiceName = infrastructureConfig.getServiceName();
+    this.currentDC = infrastructureConfig.getCurrentDC();
+    this.currentNode = infrastructureConfig.getCurrentNodeName();
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
     this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));

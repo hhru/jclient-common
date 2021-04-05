@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.metrics;
 
-import static java.util.Optional.ofNullable;
 import static ru.hh.jclient.consul.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.UPSTREAMS_KEY;
@@ -42,29 +41,6 @@ public class MonitoringRequestStrategyFactory {
       upstreamList,
       buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
       infrastructureConfig, allowCrossDCRequests, upstreamConfigService, upstreamService, allowedUpstreamDegradationPart
-    );
-    return new BalancingRequestStrategy(balancingUpstreamManager);
-  }
-
-  /**
-   * use {@link MonitoringRequestStrategyFactory#createWithDefaults(JClientInfrastructureConfig,
-   * ru.hh.nab.metrics.StatsDSender, ru.hh.jclient.consul.UpstreamConfigService, ru.hh.jclient.consul.UpstreamService, java.util.Properties,
-   * java.util.Properties)}
-   */
-  @Deprecated(forRemoval = true)
-  public static RequestStrategy<RequestBalancerBuilder> create(
-      String serviceName, String dc,
-      StatsDSender statsDSender,
-      UpstreamConfigService upstreamConfigService,
-      UpstreamService upstreamService,
-      List<String> upstreamList,
-      boolean allowCrossDCRequests,
-      @Nullable Properties kafkaUpstreamMonitoringProperties,
-      @Nullable Double allowedUpstreamDegradationPart) {
-    var balancingUpstreamManager = new BalancingUpstreamManager(
-      upstreamList,
-      buildMonitoring(serviceName, dc, statsDSender, kafkaUpstreamMonitoringProperties),
-      dc, allowCrossDCRequests, upstreamConfigService, upstreamService, ofNullable(allowedUpstreamDegradationPart).orElse(0.5)
     );
     return new BalancingRequestStrategy(balancingUpstreamManager);
   }
