@@ -23,10 +23,15 @@ public class Server {
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
 
-
-  private volatile int slowStartEndMillis = 0;
+  /**
+   * not volatile for optimization. Should protect writes with {@link Server#slowStartEndMillis}
+   */
   private boolean slowStartModeEnabled;
+  private volatile int slowStartEndMillis = 0;
 
+  /**
+   * not volatile for optimization. Should protect writes with {@link Server#statsRequests}, {@link Server#requests} or {@link Server#fails}
+   */
   private boolean statisticsFilledWithInitialValues;
   private volatile int requests = 0;
   private volatile int fails = 0;
@@ -165,7 +170,7 @@ public class Server {
       LOGGER.trace("Slow start for server {} ended", this);
       slowStartModeEnabled = false;
     }
-    if (!statisticsFilledWithInitialValues && statsRequests == 0) {
+    if (!statisticsFilledWithInitialValues && statsRequests <= 0) {
       statisticsFilledWithInitialValues = true;
       statsRequests = calculateStatRequestsForMaxOfCurrentLoads(currentServers, weight);
       LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, statsRequests);
