@@ -13,6 +13,8 @@ public class Profile {
   private Float connectTimeoutMs;
   @JsonProperty("request_timeout_sec")
   private Float requestTimeoutMs;
+  @JsonProperty("slow_start_interval_sec")
+  private Integer slowStartIntervalSec;
   @JsonProperty("retry_policy")
   private Map<Integer, RetryPolicyConfig> retryPolicy;
 
@@ -61,6 +63,15 @@ public class Profile {
     return this;
   }
 
+  public Integer getSlowStartIntervalSec() {
+    return slowStartIntervalSec;
+  }
+
+  public Profile setSlowStartIntervalSec(Integer slowStartIntervalSec) {
+    this.slowStartIntervalSec = slowStartIntervalSec;
+    return this;
+  }
+
   @Override
   public String toString() {
     return "Profile{" +
@@ -68,6 +79,7 @@ public class Profile {
         ", maxTimeoutTries=" + maxTimeoutTries +
         ", connectTimeoutMs=" + connectTimeoutMs +
         ", requestTimeoutMs=" + requestTimeoutMs +
+        ", slowStartIntervalSec=" + slowStartIntervalSec +
         ", retryPolicy=" + retryPolicy +
         '}';
   }

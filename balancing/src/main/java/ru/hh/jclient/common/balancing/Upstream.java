@@ -1,6 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
 import com.google.common.base.Strings;
+
+import java.time.Clock;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ public class Upstream {
   private final String datacenter;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
+
   private volatile List<Server> servers;
   private volatile Map<String, UpstreamConfig> upstreamConfigs;
   private boolean failedSelection = false;
@@ -38,7 +41,10 @@ public class Upstream {
   private final Lock configReadLock = configReadWriteLock.readLock();
 
   Upstream(String upstreamName, Map<String, UpstreamConfig> upstreamConfigs, List<Server> servers) {
-    this(UpstreamKey.ofComplexName(upstreamName), upstreamConfigs, servers, null, false, true);
+    this(
+        UpstreamKey.ofComplexName(upstreamName),
+        upstreamConfigs, servers,
+        null, false, true);
   }
 
   Upstream(UpstreamKey upstreamKey,
@@ -48,11 +54,10 @@ public class Upstream {
            boolean allowCrossDCRequests,
            boolean enabled) {
     this.upstreamKey = upstreamKey;
-    this.upstreamConfigs = upstreamConfigs;
-    this.servers = servers;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
+    this.updateConfig(upstreamConfigs, servers);
   }
 
   List<Server> getServers() {
@@ -62,7 +67,7 @@ public class Upstream {
   ServerEntry acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
-      int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests);
+      int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
       if (index >= 0) {
         Server server = servers.get(index);
         server.acquire();
@@ -158,10 +163,15 @@ public class Upstream {
     try {
       this.upstreamConfigs = newConfig;
       this.servers = servers;
+      initSlowStart(upstreamConfigs.get(DEFAULT_PROFILE), Clock.systemDefaultZone());
       this.failedSelection = false;
     } finally {
       configWriteLock.unlock();
     }
+  }
+
+  private void initSlowStart(UpstreamConfig upstreamConfig, Clock clock) {
+    servers.forEach(server -> server.setSlowStartEndTimeIfNeeded(upstreamConfig.getSlowStartIntervalSec(), clock));
   }
 
   String getName() {

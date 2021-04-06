@@ -1,6 +1,10 @@
 package ru.hh.jclient.consul;
 
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
 import ru.hh.consul.cache.ServiceHealthCache;
@@ -16,8 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class UpstreamServiceImpl implements UpstreamService {
@@ -43,6 +50,7 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final Set<String> upstreamList;
   private final List<String> datacenterList;
+  private final Map<String, String> lowercasedDataCenters;
   private final String currentDC;
   private final String currentNode;
   private final String currentServiceName;
@@ -55,20 +63,34 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
-  public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
-    if (upstreamList.isEmpty()) {
+  public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig,
+                             Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+    this(List.of(),
+      infrastructureConfig.getServiceName(), requireNonNull(infrastructureConfig.getCurrentDC()),
+      requireNonNull(infrastructureConfig.getCurrentNodeName()),
+      consulClient, consulConfig
+    );
+  }
+
+  /**
+   * use upstream list parameter in {@link UpstreamServiceConsulConfig}
+   */
+  @Deprecated(forRemoval = true)
+  public UpstreamServiceImpl(List<String> upstreamList, String currentServiceName, @Nullable String currentDC, @Nullable String currentNode,
+                             Consul consulClient, UpstreamServiceConsulConfig consulConfig) {
+    this.upstreamList = Set.copyOf(ofNullable(upstreamList).filter(Predicate.not(Collection::isEmpty)).orElseGet(consulConfig::getUpstreams));
+    if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
-    if (consulConfig.getDatacenterList().isEmpty()) {
+    if (consulConfig.getDatacenterList() == null || consulConfig.getDatacenterList().isEmpty()) {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
-
+    this.currentServiceName = currentServiceName;
+    this.currentDC = ofNullable(currentDC).orElseGet(consulConfig::getCurrentDC);
+    this.currentNode = ofNullable(currentNode).orElseGet(consulConfig::getCurrentNode);
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
-    this.upstreamList = Set.copyOf(upstreamList);
-    this.currentDC = consulConfig.getCurrentDC();
-    this.currentNode = consulConfig.getCurrentNode();
-    this.currentServiceName = currentServiceName;
+    this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));
     this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
@@ -182,9 +204,10 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<String> aliveServers = new HashSet<>();
     CopyOnWriteArrayList<Server> currentServers = serverList.computeIfAbsent(serviceName, k -> new CopyOnWriteArrayList<>());
 
+    // assumption: no similar addresses in different DCs
+    Map<String, Server> serverByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
       if (selfNodeFiltering && notSameNode(nodeName)) {
@@ -198,9 +221,7 @@ public class UpstreamServiceImpl implements UpstreamService {
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
       int serverWeight = service.getWeights().orElse(defaultWeight).getPassing();
 
-      Server server = currentServers.stream()
-        .filter(s -> address.equals(s.getAddress()))
-        .findFirst().orElse(null);
+      Server server = serverByAddress.remove(address);
 
       if (server == null) {
         server = new Server(address, serverWeight, nodeDatacenter);
@@ -210,11 +231,12 @@ public class UpstreamServiceImpl implements UpstreamService {
       server.setMeta(service.getMeta());
       server.setTags(service.getTags());
       server.setWeight(serverWeight);
-
-      aliveServers.add(address);
     }
-
-    disableDeadServices(currentServers, serviceName, datacenter, aliveServers);
+    var deadServersFromCurrentDC = serverByAddress.values().stream()
+      .filter(server -> datacenter.equals(server.getDatacenter()))
+      .collect(toList());
+    LOGGER.debug("removing dead servers for {} in DC {}: {} ", serviceName, datacenter, deadServersFromCurrentDC);
+    currentServers.removeAll(deadServersFromCurrentDC);
 
     LOGGER.info("upstreams for {} were updated in DC {}; servers: {} ", serviceName, datacenter,
         LOGGER.isDebugEnabled() ? currentServers : currentServers.size());
@@ -225,24 +247,12 @@ public class UpstreamServiceImpl implements UpstreamService {
   }
 
   private String restoreOriginalDataCenterName(String lowerCasedDcName) {
-    for (String dcName : datacenterList) {
-      if (dcName.toLowerCase().equals(lowerCasedDcName)) {
-        return dcName;
-      }
+    String restoredDc = lowercasedDataCenters.get(lowerCasedDcName);
+    if (restoredDc == null) {
+      LOGGER.warn("Unable to restore original datacenter name for: {}", lowerCasedDcName);
+      return lowerCasedDcName;
     }
-    LOGGER.warn("Unable to restore original datacenter name for: {}", lowerCasedDcName);
-    return lowerCasedDcName;
-  }
-
-  private static void disableDeadServices(List<Server> servers, String serviceName, String datacenter, Set<String> aliveServers) {
-    List<Server> deadServers = servers.stream()
-      .filter(server -> datacenter.equals(server.getDatacenter()))
-      .filter(server -> !aliveServers.contains(server.getAddress()))
-      .collect(Collectors.toList());
-
-    LOGGER.debug("removing dead servers for {} in DC {}: {} ", serviceName, datacenter, deadServers);
-
-    servers.removeAll(deadServers);
+    return restoredDc;
   }
 
   private static String getAddress(ServiceHealth serviceHealth) {

@@ -13,6 +13,7 @@ import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,22 @@ public abstract class AbstractBalancingStrategyTest {
   private static final Profile EMPTY_PROFILE = new Profile();
   protected static final String DATACENTER = "test";
   protected static final String TEST_UPSTREAM = "test-upstream";
+  protected static final JClientInfrastructureConfig infrastructureConfig = new JClientInfrastructureConfig() {
+    @Override
+    public String getServiceName() {
+      return null;
+    }
+
+    @Override
+    public String getCurrentDC() {
+      return DATACENTER;
+    }
+
+    @Override
+    public String getCurrentNodeName() {
+      return null;
+    }
+  };
 
   protected static HttpClientFactory buildBalancingFactory(String datacenterName,
                                                            String upstreamName,
@@ -71,7 +88,7 @@ public abstract class AbstractBalancingStrategyTest {
       public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
     };
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
-      List.of(), Set.of(tracking), datacenterName, false,
+      List.of(), Set.of(tracking), infrastructureConfig, false,
       new UpstreamConfigService() {
         @Override
         public ApplicationConfig getUpstreamConfig(String application) {

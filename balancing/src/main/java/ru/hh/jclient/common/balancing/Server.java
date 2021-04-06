@@ -1,13 +1,20 @@
 package ru.hh.jclient.common.balancing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static java.util.Objects.requireNonNull;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public final class Server {
+public class Server {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";
 
   private final String address;
@@ -16,6 +23,16 @@ public final class Server {
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
 
+  /**
+   * not volatile for optimization. Should protect writes with {@link Server#slowStartEndMillis}
+   */
+  private boolean slowStartModeEnabled;
+  private volatile int slowStartEndMillis = 0;
+
+  /**
+   * not volatile for optimization. Should protect writes with {@link Server#statsRequests}, {@link Server#requests} or {@link Server#fails}
+   */
+  private boolean statisticsFilledWithInitialValues;
   private volatile int requests = 0;
   private volatile int fails = 0;
   private volatile int statsRequests = 0;
@@ -134,5 +151,53 @@ public final class Server {
       ", fails=" + fails +
       ", statsRequests=" + statsRequests +
       '}';
+  }
+
+  public float getCurrentLoad() {
+    return (float) this.requests / this.weight;
+  }
+
+  public float getStatLoad(Collection<Server> currentServers, Clock clock) {
+    if (slowStartModeEnabled) {
+      long currentTimeMillis = getCurrentTimeMillis(clock);
+      if (slowStartEndMillis > 0 && currentTimeMillis <= slowStartEndMillis) {
+        LOGGER.trace(
+          "Server {} is on slowStart, returning infinite load. Current epoch millis: {}, slow start end epoch millis: {}",
+          this, currentTimeMillis, slowStartEndMillis
+        );
+        return Float.POSITIVE_INFINITY;
+      }
+      LOGGER.trace("Slow start for server {} ended", this);
+      slowStartModeEnabled = false;
+    }
+    if (!statisticsFilledWithInitialValues && statsRequests <= 0) {
+      statisticsFilledWithInitialValues = true;
+      statsRequests = calculateStatRequestsForMaxOfCurrentLoads(currentServers, weight);
+      LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, statsRequests);
+    }
+    return calculateStatLoad();
+  }
+
+  static int calculateStatRequestsForMaxOfCurrentLoads(Collection<Server> servers, int currentServerWeight) {
+    return (int) Math.floor(servers.stream().mapToDouble(Server::calculateStatLoad).max().orElse(0d) * currentServerWeight);
+  }
+
+  private float calculateStatLoad() {
+    return (float) this.statsRequests / this.weight;
+  }
+
+  protected long getCurrentTimeMillis(Clock clock) {
+    return clock.millis();
+  }
+
+  public void setSlowStartEndTimeIfNeeded(int slowStartSeconds, Clock clock) {
+    if (slowStartSeconds > 0) {
+      if (slowStartEndMillis == 0) {
+        slowStartModeEnabled = true;
+        long slowStartEnd = (long) (getCurrentTimeMillis(clock) + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
+        this.slowStartEndMillis = Math.toIntExact(slowStartEnd);
+        LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
+      }
+    }
   }
 }

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +13,8 @@ import java.util.Set;
 final class BalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
-  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests) {
+  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests,
+                                  Clock clock) {
     int minIndex = -1;
     Weight minWeight = null;
 
@@ -29,8 +31,8 @@ final class BalancingStrategy {
         continue;
       }
 
-      float currentLoad = (float) server.getRequests() / server.getWeight();
-      float statLoad = (float) server.getStatsRequests() / server.getWeight();
+      float currentLoad = server.getCurrentLoad();
+      float statLoad = server.getStatLoad(servers, clock);
       Weight weight = new Weight(isDifferentDC, currentLoad, statLoad);
 
       LOGGER.debug("static balancer stats for {}, differentDC:{}, load:{}, stat_load:{}", server,
@@ -54,7 +56,7 @@ final class BalancingStrategy {
   private BalancingStrategy() {
   }
 
-  private static class Weight implements Comparable<Weight> {
+  private static final class Weight implements Comparable<Weight> {
     private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isDifferentDC)
         .thenComparingDouble(Weight::getCurrentLoad)
         .thenComparingDouble(Weight::getStatLoad);
