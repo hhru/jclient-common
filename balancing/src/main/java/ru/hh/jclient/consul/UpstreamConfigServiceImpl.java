@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-
-import static java.util.Optional.ofNullable;
 
 public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
@@ -42,22 +39,13 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
   public UpstreamConfigServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
-    this(List.of(), infrastructureConfig.getServiceName(), consulClient, config);
-  }
-
-  /**
-   * use upstream list parameter in {@link UpstreamConfigServiceConsulConfig}
-   */
-  @Deprecated(forRemoval = true)
-  public UpstreamConfigServiceImpl(List<String> upstreamList, String currentServiceName, Consul consulClient,
-                                   UpstreamConfigServiceConsulConfig config) {
-    this.upstreamList = Set.copyOf(ofNullable(upstreamList).filter(Predicate.not(Collection::isEmpty)).orElseGet(config::getUpstreams));
+    this.upstreamList = Set.copyOf(config.getUpstreams());
     if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
     this.kvClient = consulClient.keyValueClient();
     this.watchSeconds = config.getWatchSeconds();
-    this.currentServiceName = currentServiceName;
+    this.currentServiceName = infrastructureConfig.getServiceName();
     this.consistencyMode = config.getConsistencyMode();
     if (config.isSyncUpdate()) {
       LOGGER.debug("Trying to sync update configs");

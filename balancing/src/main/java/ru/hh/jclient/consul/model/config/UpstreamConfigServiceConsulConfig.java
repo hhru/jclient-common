@@ -39,6 +39,13 @@ public class UpstreamConfigServiceConsulConfig {
       .setSyncUpdate(syncUpdate);
   }
 
+  public static UpstreamConfigServiceConsulConfig copyOf(UpstreamConfigServiceConsulConfig config) {
+    return new UpstreamConfigServiceConsulConfig().setUpstreams(config.upstreams)
+      .setWatchSeconds(config.watchSeconds)
+      .setConsistencyMode(config.getConsistencyMode())
+      .setSyncUpdate(config.isSyncUpdate());
+  }
+
   public List<String> getUpstreams() {
     return upstreams;
   }
@@ -72,23 +79,6 @@ public class UpstreamConfigServiceConsulConfig {
 
   public UpstreamConfigServiceConsulConfig setSyncUpdate(boolean syncUpdate) {
     this.syncUpdate = syncUpdate;
-    return this;
-  }
-
-  /**
-   * value is no longer used
-   * @return always 0
-   */
-  @Deprecated(forRemoval = true)
-  public int getSyncInitTimeoutMillis() {
-    return 0;
-  }
-
-  /**
-   * value is no longer used
-   */
-  @Deprecated(forRemoval = true)
-  public UpstreamConfigServiceConsulConfig setSyncInitTimeoutMillis(int syncInitTimeoutMillis) {
     return this;
   }
 }

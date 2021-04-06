@@ -17,10 +17,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static ru.hh.consul.option.ConsistencyMode.DEFAULT;
+import static ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig.copyOf;
+
 import ru.hh.consul.option.QueryOptions;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.Host;
 import ru.hh.jclient.consul.model.Profile;
+import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
 
 import java.util.ArrayList;
@@ -30,6 +33,7 @@ import java.util.Map;
 public class UpstreamConfigServiceImplTest {
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
   private static String currentServiceName = "CALLER_NAME";
+  private static JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 10;
 
@@ -37,14 +41,14 @@ public class UpstreamConfigServiceImplTest {
           .createIndex(System.currentTimeMillis()).modifyIndex(System.currentTimeMillis())
           .lockIndex(System.currentTimeMillis()).flags(System.currentTimeMillis())
           .build();
-  public UpstreamConfigServiceConsulConfig defaultConfig = new UpstreamConfigServiceConsulConfig()
+  public UpstreamConfigServiceConsulConfig configTemplate = new UpstreamConfigServiceConsulConfig()
       .setWatchSeconds(watchSeconds)
       .setConsistencyMode(DEFAULT);
 
   @BeforeClass
   public static void init() {
     when(consulClient.keyValueClient()).thenReturn(keyValueClient);
-
+    when(infrastructureConfig.getServiceName()).thenReturn(currentServiceName);
   }
 
   @Test
@@ -52,7 +56,11 @@ public class UpstreamConfigServiceImplTest {
     Collection<Value> values = prepareValues();
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(values));
 
-    var service = new UpstreamConfigServiceImpl(List.of("app-name", "app2"), currentServiceName, consulClient, defaultConfig);
+    var service = new UpstreamConfigServiceImpl(
+      infrastructureConfig,
+      consulClient,
+      copyOf(configTemplate).setUpstreams(List.of("app-name", "app2"))
+    );
 
     ApplicationConfig applicationConfig = service.getUpstreamConfig("app-name");
     assertNotNull(applicationConfig);
@@ -76,7 +84,8 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNotify() {
-    var service = new UpstreamConfigServiceImpl(List.of("test"), null, consulClient, defaultConfig.setSyncUpdate(false));
+    UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("test")).setSyncUpdate(false);
+    var service = new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, config);
     List<String> consumerMock = new ArrayList<>();
 
     try {
@@ -93,9 +102,9 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testNoConfig() {
     assertThrows(IllegalStateException.class,
-        () -> new UpstreamConfigServiceImpl(List.of("app-name"), currentServiceName, consulClient, defaultConfig));
+        () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name"))));
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(prepareValues()));
-    var service = new UpstreamConfigServiceImpl(List.of("app-name"), currentServiceName, consulClient, defaultConfig);
+    var service = new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name")));
     assertNotNull(service.getUpstreamConfig("app-name"));
   }
 
@@ -109,7 +118,7 @@ public class UpstreamConfigServiceImplTest {
     when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
     var ex = assertThrows(
       IllegalStateException.class,
-      () -> new UpstreamConfigServiceImpl(List.of("app-name", "badFormat"), currentServiceName, consulClient, defaultConfig)
+      () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat")))
     );
     assertTrue(ex.getMessage().contains(badFormatKey));
   }

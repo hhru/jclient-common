@@ -41,24 +41,8 @@ public class BalancingUpstreamManager implements UpstreamManager {
                                   UpstreamConfigService upstreamConfigService,
                                   UpstreamService upstreamService,
                                   double allowedDegradationPath) {
-    this(upstreamsList,
-      monitoring,
-      infrastructureConfig.getCurrentDC(),
-      allowCrossDCRequests,
-      upstreamConfigService, upstreamService,
-      allowedDegradationPath);
-  }
-
-  @Deprecated(forRemoval = true)
-  public BalancingUpstreamManager(Collection<String> upstreamsList,
-                                  Set<Monitoring> monitoring,
-                                  String datacenter,
-                                  boolean allowCrossDCRequests,
-                                  UpstreamConfigService upstreamConfigService,
-                                  UpstreamService upstreamService,
-                                  double allowedDegradationPath) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
-    this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
+    this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC().toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.upstreamService = upstreamService;
     this.upstreamConfigService = upstreamConfigService;
@@ -66,7 +50,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
     requireNonNull(upstreamsList, "upstreamsList must not be null");
     upstreamsList.forEach(this::updateUpstream);
     allowedUpstreamCapacities = upstreams.entrySet().stream()
-        .collect(toMap(Map.Entry::getKey, e -> (int) Math.ceil(e.getValue().getServers().size() * (1 - allowedDegradationPath))));
+      .collect(toMap(Map.Entry::getKey, e -> (int) Math.ceil(e.getValue().getServers().size() * (1 - allowedDegradationPath))));
     upstreamConfigService.setupListener(this::updateUpstream);
     upstreamService.setupListener(this::updateUpstream);
   }
