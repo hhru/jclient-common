@@ -27,7 +27,7 @@ public class Server {
    * not volatile for optimization. Should protect writes with {@link Server#slowStartEndMillis}
    */
   private boolean slowStartModeEnabled;
-  private volatile int slowStartEndMillis = 0;
+  private volatile long slowStartEndMillis = 0;
 
   /**
    * not volatile for optimization. Should protect writes with {@link Server#statsRequests}, {@link Server#requests} or {@link Server#fails}
@@ -194,8 +194,7 @@ public class Server {
     if (slowStartSeconds > 0) {
       if (slowStartEndMillis == 0) {
         slowStartModeEnabled = true;
-        long slowStartEnd = (long) (getCurrentTimeMillis(clock) + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
-        this.slowStartEndMillis = Math.toIntExact(slowStartEnd);
+        this.slowStartEndMillis = (long) (getCurrentTimeMillis(clock) + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
         LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
       }
     }
