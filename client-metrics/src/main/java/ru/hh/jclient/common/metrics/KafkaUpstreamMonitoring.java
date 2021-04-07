@@ -1,6 +1,9 @@
 package ru.hh.jclient.common.metrics;
 
 import io.netty.util.internal.StringUtil;
+
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -14,9 +17,13 @@ import java.util.Optional;
 import java.util.Properties;
 
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toMap;
 
 public class KafkaUpstreamMonitoring implements Monitoring {
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaUpstreamMonitoring.class);
+  private static final String ENABLED_PROPERTY_KEY = "enabled";
+  private static final String REQUEST_TOPIC_KEY = "topics.requests";
+  private static final Set<String> PROPERTIES_FOR_MONITORING = Set.of(ENABLED_PROPERTY_KEY, REQUEST_TOPIC_KEY);
 
   private final String serviceName;
   private final String localDc;
@@ -72,9 +79,16 @@ public class KafkaUpstreamMonitoring implements Monitoring {
 
   public static Optional<KafkaUpstreamMonitoring> fromProperties(String serviceName, String dc, Properties properties) {
     return ofNullable(properties)
-      .map(props -> props.getProperty("enabled")).map(Boolean::parseBoolean)
+      .map(props -> props.getProperty(ENABLED_PROPERTY_KEY)).map(Boolean::parseBoolean)
       .filter(Boolean.TRUE::equals)
-      .map(b -> new KafkaProducer<>(properties, new StringSerializer(), new StringSerializer()))
+      .map(ignored -> {
+        Map<?, ?> propertiesForKafka = properties.entrySet().stream()
+          .filter(entry -> !PROPERTIES_FOR_MONITORING.contains(entry.getKey()))
+          .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        var filteredProperties = new Properties();
+        filteredProperties.putAll(propertiesForKafka);
+        return new KafkaProducer<>(filteredProperties, new StringSerializer(), new StringSerializer());
+      })
       .map(producer -> new KafkaUpstreamMonitoring(serviceName, dc, producer, Config.fromProperties(properties)));
   }
 
@@ -86,8 +100,7 @@ public class KafkaUpstreamMonitoring implements Monitoring {
     }
 
     static Config fromProperties(Properties properties) {
-      var requestsCountTopicName = properties.getProperty("topics.requests");
-
+      var requestsCountTopicName = properties.getProperty(REQUEST_TOPIC_KEY);
       return new Config(requestsCountTopicName);
     }
   }
