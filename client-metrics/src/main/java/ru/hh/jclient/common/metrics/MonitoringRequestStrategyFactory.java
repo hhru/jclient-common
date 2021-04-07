@@ -2,6 +2,7 @@ package ru.hh.jclient.common.metrics;
 
 import static ru.hh.jclient.consul.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
+import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_PATH;
 import static ru.hh.jclient.consul.PropertyKeys.UPSTREAMS_KEY;
 
 import ru.hh.jclient.common.Monitoring;
@@ -34,7 +35,10 @@ public class MonitoringRequestStrategyFactory {
       .filter(Predicate.not(String::isBlank))
       .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
       .orElseGet(List::of);
-    boolean allowCrossDCRequests = Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY)).map(Boolean::parseBoolean).orElse(false);
+    boolean allowCrossDCRequests = Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
+        .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
+        .map(Boolean::parseBoolean)
+        .orElse(false);
     double allowedUpstreamDegradationPart = Optional.ofNullable(strategyProperties.getProperty(ALLOWED_DEGRADATION_PART_KEY)).stream()
       .mapToDouble(Double::parseDouble).findFirst().orElse(0.5d);
     var balancingUpstreamManager = new BalancingUpstreamManager(
