@@ -9,6 +9,7 @@ import java.util.Properties;
 import java.util.function.Predicate;
 
 import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
+import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_PATH;
 import static ru.hh.jclient.consul.PropertyKeys.CONSISTENCY_MODE_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.DC_LIST_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.HEALTHY_ONLY_KEY;
@@ -32,7 +33,10 @@ public class UpstreamServiceConsulConfig {
       .filter(Predicate.not(String::isBlank))
       .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
       .orElseGet(List::of);
-    boolean allowCrossDC = Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY)).map(Boolean::parseBoolean).orElse(false);
+    boolean allowCrossDC = Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY))
+      .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
+      .map(Boolean::parseBoolean)
+      .orElse(false);
     boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(false);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);

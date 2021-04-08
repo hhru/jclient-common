@@ -134,7 +134,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void testSlowStart() throws Exception {
-    AtomicLong currentTimeMillis = new AtomicLong();
+    AtomicLong currentTimeMillis = new AtomicLong(Integer.MAX_VALUE);
     Server server1 = new Server("server1", 5, null) {
       @Override
       protected long getCurrentTimeMillis(Clock clock) {
@@ -168,7 +168,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     getTestClient().get();
     assertEquals(3, server1.getStatsRequests());
     assertEquals(0, server2.getStatsRequests());
-    currentTimeMillis.set(TimeUnit.SECONDS.toMillis(slowStartInterval + 1));
+    currentTimeMillis.addAndGet(TimeUnit.SECONDS.toMillis(slowStartInterval + 1));
     getTestClient().get();
     assertEquals(4, server1.getStatsRequests());
     assertEquals(server1.getAddress(), calledAddresses.get(calledAddresses.size() - 1));
