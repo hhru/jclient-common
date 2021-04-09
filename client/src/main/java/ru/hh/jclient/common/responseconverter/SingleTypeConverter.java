@@ -27,7 +27,7 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
    * @return list of allowed media types
    */
   protected Collection<String> getContentTypes() {
-    return getMediaTypes().stream().map(MediaType::toString).collect(Collectors.toSet());
+    return Set.of();
   }
 
   // override getContentTypes()
@@ -45,7 +45,7 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
 
   @Override
   public Optional<Collection<String>> getSupportedContentTypes() {
-    return Optional.of(getContentTypes());
+    return Optional.of(collectContentTypes());
   }
 
   @Override
@@ -54,11 +54,18 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
     return checkFunction.andThen(singleTypeConverterFunction());
   }
 
-  private Response checkContentType(Response r) throws Exception {
+  private Collection<String> collectContentTypes() {
+    if (!getMediaTypes().isEmpty()) {
+      return getMediaTypes().stream().map(MediaType::toString).collect(Collectors.toSet());
+    }
+    return getContentTypes();
+  }
+
+  private Response checkContentType(Response r) {
     String contentTypeString = r.getHeader(CONTENT_TYPE);
     ContentType contentType = ofNullable(contentTypeString).map(ContentType::new).orElseThrow(() -> new NoContentTypeException(r));
 
-    if (getContentTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
+    if (collectContentTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
       throw new UnexpectedContentTypeException(r, contentTypeString, getContentTypes());
     }
     return r;
