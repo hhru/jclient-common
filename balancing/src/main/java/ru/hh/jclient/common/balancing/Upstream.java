@@ -20,8 +20,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Upstream {
   private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);
@@ -218,6 +216,7 @@ public class Upstream {
     private static final String SEP = ":";
     private final String serviceName;
     private final String profileName;
+    private final String wholeName;
 
     public static UpstreamKey ofComplexName(String wholeName) {
       String[] parts = wholeName.split(SEP, 2);
@@ -227,6 +226,7 @@ public class Upstream {
     public UpstreamKey(String serviceName, @Nullable String profileName) {
       this.serviceName = requireNonNull(serviceName);
       this.profileName = DEFAULT_PROFILE.equals(profileName) ? null : profileName;
+      this.wholeName = this.serviceName + (this.profileName != null ? SEP + this.profileName : "");
     }
 
     public String getServiceName() {
@@ -238,7 +238,7 @@ public class Upstream {
     }
 
     public String getWholeName() {
-      return Stream.of(serviceName, profileName).filter(Objects::nonNull).collect(Collectors.joining(SEP));
+      return wholeName;
     }
 
     @Override
