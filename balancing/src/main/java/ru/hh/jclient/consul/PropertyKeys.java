@@ -11,6 +11,8 @@ public final class PropertyKeys {
     public static final String SELF_NODE_FILTERING_KEY = String.join(".", JCLIENT_PREFIX, SELF_NODE_FILTERING_PATH);
     public static final String ALLOWED_DEGRADATION_PART_PATH = "allowedDegradationPart";
     public static final String ALLOWED_DEGRADATION_PART_KEY = String.join(".", JCLIENT_PREFIX, ALLOWED_DEGRADATION_PART_PATH);
+    public static final String IGNORE_NO_SERVERS_IN_CURRENT_DC_PATH = "ignoreNoServersInCurrentDC";
+    public static final String IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY = String.join(".", JCLIENT_PREFIX, IGNORE_NO_SERVERS_IN_CURRENT_DC_PATH);
 
     public static final String UPSTREAM_PREFIX = "upstream";
     public static final String UPSTREAMS_PATH = "services";

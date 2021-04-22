@@ -2,6 +2,7 @@ package ru.hh.jclient.consul;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static ru.hh.jclient.consul.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
 
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
@@ -84,11 +85,11 @@ public class UpstreamServiceImpl implements UpstreamService {
     }
     if (consulConfig.isSyncInit()) {
       LOGGER.debug("Trying to sync update servers");
-      syncUpdateUpstreams();
+      syncUpdateUpstreams(consulConfig);
     }
   }
 
-  private void syncUpdateUpstreams() {
+  private void syncUpdateUpstreams(UpstreamServiceConsulConfig consulConfig) {
     for (String serviceName : upstreamList) {
       if (allowCrossDC) {
         ExecutorService executorService = Executors.newFixedThreadPool(datacenterList.size());
@@ -111,6 +112,21 @@ public class UpstreamServiceImpl implements UpstreamService {
     var emptyUpstreams = findEmptyUpstreams();
     if (!emptyUpstreams.isEmpty()) {
       throw new IllegalStateException("There's no instances for services: " + emptyUpstreams);
+    }
+    checkCurrentUpstream(consulConfig.isIgnoreNoServersInCurrentDC());
+  }
+
+  private void checkCurrentUpstream(boolean ignoreNoServersInCurrentDC) {
+    if (!ignoreNoServersInCurrentDC) {
+      var upstreamsNotPresentInCurrentDC = serverList.entrySet().stream()
+          .filter(entry -> entry.getValue().stream().noneMatch(server -> server.getDatacenter().equals(currentDC)))
+          .map(Map.Entry::getKey)
+          .collect(Collectors.toSet());
+      if (!upstreamsNotPresentInCurrentDC.isEmpty()) {
+        throw new IllegalStateException("There's no instances in DC " + currentDC + " for services: " + upstreamsNotPresentInCurrentDC
+            + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
+        );
+      }
     }
   }
 
