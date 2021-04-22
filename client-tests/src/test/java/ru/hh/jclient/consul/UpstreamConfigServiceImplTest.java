@@ -4,9 +4,12 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
 import java.util.Collection;
 import ru.hh.consul.Consul;
 import ru.hh.consul.KeyValueClient;
+import ru.hh.consul.model.ConsulResponse;
 import ru.hh.consul.model.kv.ImmutableValue;
 import ru.hh.consul.model.kv.Value;
 import static org.junit.Assert.assertEquals;
@@ -54,7 +57,7 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testGetConfig() {
     Collection<Value> values = prepareValues();
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(values));
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(List.copyOf(values)));
 
     var service = new UpstreamConfigServiceImpl(
       infrastructureConfig,
@@ -101,9 +104,12 @@ public class UpstreamConfigServiceImplTest {
 
   @Test
   public void testNoConfig() {
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
+        .thenReturn(wrapWithResponse(List.of()));
     assertThrows(IllegalStateException.class,
         () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name"))));
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(List.copyOf(prepareValues()));
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
+      .thenReturn(wrapWithResponse(List.copyOf(prepareValues())));
     var service = new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name")));
     assertNotNull(service.getUpstreamConfig("app-name"));
   }
@@ -112,10 +118,10 @@ public class UpstreamConfigServiceImplTest {
   public void testBadConfig() {
     String badFormatKey = "badFormat";
     var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
-            .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
+      .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
-    when(keyValueClient.getValues(anyString(), any(QueryOptions.class))).thenReturn(values);
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(values));
     var ex = assertThrows(
       IllegalStateException.class,
       () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat")))
@@ -136,5 +142,9 @@ public class UpstreamConfigServiceImplTest {
     values.add(ImmutableValue.copyOf(template).withKey("upstream/app2/")
             .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes()))));
     return values;
+  }
+
+  private <T> ConsulResponse<T> wrapWithResponse(T value) {
+    return new ConsulResponse<>(value, 0, true, BigInteger.ONE, null, null);
   }
 }

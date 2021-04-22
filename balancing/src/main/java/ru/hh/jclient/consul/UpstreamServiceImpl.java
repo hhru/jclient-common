@@ -6,8 +6,10 @@ import static ru.hh.jclient.consul.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_
 
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
+import ru.hh.consul.cache.ConsulCache;
 import ru.hh.consul.cache.ServiceHealthCache;
 import ru.hh.consul.cache.ServiceHealthKey;
+import ru.hh.consul.model.ConsulResponse;
 import ru.hh.consul.model.catalog.ImmutableServiceWeights;
 import ru.hh.consul.model.catalog.ServiceWeights;
 import ru.hh.consul.model.health.Service;
@@ -22,11 +24,13 @@ import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +43,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class UpstreamServiceImpl implements UpstreamService {
+public class UpstreamServiceImpl implements UpstreamService, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
 
   private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
@@ -58,6 +62,8 @@ public class UpstreamServiceImpl implements UpstreamService {
   private final boolean selfNodeFiltering;
   private Consumer<String> callback;
 
+  private final Map<String, BigInteger> initialIndexes;
+  private final List<ServiceHealthCache> serviceHealthCaches = new CopyOnWriteArrayList<>();
   private final ConcurrentMap<String, CopyOnWriteArrayList<Server>> serverList = new ConcurrentHashMap<>();
 
   public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig,
@@ -83,9 +89,13 @@ public class UpstreamServiceImpl implements UpstreamService {
     if (!this.datacenterList.contains(this.currentDC)) {
       LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
+
     if (consulConfig.isSyncInit()) {
+      this.initialIndexes = new ConcurrentHashMap<>(datacenterList.size());
       LOGGER.debug("Trying to sync update servers");
       syncUpdateUpstreams(consulConfig);
+    } else {
+      this.initialIndexes = Map.of();
     }
   }
 
@@ -146,8 +156,9 @@ public class UpstreamServiceImpl implements UpstreamService {
         .caller(currentServiceName)
         .consistencyMode(consistencyMode)
       .build();
-    Map<ServiceHealthKey, ServiceHealth> state = healthClient.getHealthyServiceInstances(serviceName, queryOptions)
-      .getResponse().stream()
+    ConsulResponse<List<ServiceHealth>> response = healthClient.getHealthyServiceInstances(serviceName, queryOptions);
+    initialIndexes.put(dataCenter, response.getIndex());
+    Map<ServiceHealthKey, ServiceHealth> state = response.getResponse().stream()
       .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
     LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
     updateUpstreams(state, serviceName, dataCenter);
@@ -175,11 +186,14 @@ public class UpstreamServiceImpl implements UpstreamService {
 
   private void initializeCache(String upstreamName, String datacenter) {
     QueryOptions queryOptions = ImmutableQueryOptions.builder()
-        .datacenter(datacenter.toLowerCase())
-        .caller(currentServiceName)
-        .consistencyMode(consistencyMode)
-        .build();
-    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, upstreamName, healthPassing, watchSeconds, queryOptions);
+      .datacenter(datacenter.toLowerCase())
+      .caller(currentServiceName)
+      .consistencyMode(consistencyMode)
+      .build();
+    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, upstreamName,
+      healthPassing, watchSeconds, Optional.ofNullable(initialIndexes.get(datacenter)).orElse(null),
+      queryOptions
+    );
 
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
       updateUpstreams(newValues, upstreamName, datacenter);
@@ -189,6 +203,7 @@ public class UpstreamServiceImpl implements UpstreamService {
         LOGGER.debug("There's no instances for services: {}", emptyUpstreams);
       }
     });
+    serviceHealthCaches.add(svHealth);
     svHealth.start();
     LOGGER.info("subscribed to service {}; dc {}", upstreamName, datacenter);
   }
@@ -261,5 +276,10 @@ public class UpstreamServiceImpl implements UpstreamService {
     }
 
     return serviceHealth.getNode().getAddress();
+  }
+
+  @Override
+  public void close() throws Exception {
+    serviceHealthCaches.forEach(ConsulCache::close);
   }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.hh.consul.Consul;
 import ru.hh.consul.KeyValueClient;
 import ru.hh.consul.cache.KVCache;
+import ru.hh.consul.model.ConsulResponse;
 import ru.hh.consul.model.kv.Value;
 import ru.hh.consul.option.ConsistencyMode;
 import ru.hh.consul.option.ImmutableQueryOptions;
@@ -15,15 +16,17 @@ import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class UpstreamConfigServiceImpl implements UpstreamConfigService {
+public class UpstreamConfigServiceImpl implements UpstreamConfigService, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
   static final String ROOT_PATH = "upstream/";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -35,6 +38,9 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
   private Consumer<String> callback;
 
   private final KeyValueClient kvClient;
+
+  private volatile BigInteger initialIndex;
+  private KVCache kvCache;
 
   private final Map<String, ApplicationConfig> configMap = new HashMap<>();
 
@@ -55,9 +61,11 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   private void syncUpdateConfig() {
     ImmutableQueryOptions options = ImmutableQueryOptions.builder()
-        .caller(currentServiceName)
-        .consistencyMode(consistencyMode).build();
-    List<Value> values = kvClient.getValues(ROOT_PATH, options);
+      .caller(currentServiceName)
+      .consistencyMode(consistencyMode).build();
+    ConsulResponse<List<Value>> consulResponseWithValues = kvClient.getConsulResponseWithValues(ROOT_PATH, options);
+    initialIndex = consulResponseWithValues.getIndex();
+    List<Value> values = consulResponseWithValues.getResponse();
     if (values == null || values.isEmpty()) {
       throw new IllegalStateException("There's no upstreamConfigs in KV");
     }
@@ -111,12 +119,12 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
 
   private void initConfigCache() {
     ImmutableQueryOptions queryOptions = ImmutableQueryOptions.builder()
-        .caller(currentServiceName)
-        .consistencyMode(consistencyMode)
-        .build();
-    KVCache cache = KVCache.newCache(kvClient, ROOT_PATH, watchSeconds, queryOptions);
+      .caller(currentServiceName)
+      .consistencyMode(consistencyMode)
+      .build();
+    kvCache = KVCache.newCache(kvClient, ROOT_PATH, watchSeconds, initialIndex, queryOptions);
     LOGGER.debug("subscribe to config:{}", ROOT_PATH);
-    cache.addListener(newValues -> {
+    kvCache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);
       updateConfigs(newValues.values());
       Collection<String> unconfiguredServices = findUnconfiguredServices();
@@ -126,6 +134,11 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService {
       LOGGER.debug("config updated. size {}", LOGGER.isDebugEnabled() ? configMap : configMap.size());
       notifyListeners();
     });
-    cache.start();
+    kvCache.start();
+  }
+
+  @Override
+  public void close() throws Exception {
+    Optional.ofNullable(kvCache).ifPresent(KVCache::close);
   }
 }
