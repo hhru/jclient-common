@@ -1,13 +1,12 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
+import static ru.hh.jclient.consul.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 
@@ -18,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class BalancingUpstreamManager implements UpstreamManager {
 
@@ -26,50 +26,59 @@ public class BalancingUpstreamManager implements UpstreamManager {
 
   public static final String SCHEMA_SEPARATOR = "://";
 
+  private final UpstreamConfigService upstreamConfigService;
+  private final ServerStore serverStore;
+
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
-  private final UpstreamConfigService upstreamConfigService;
-  private final UpstreamService upstreamService;
-  private final Map<String, Integer> allowedUpstreamCapacities;
+  private final double allowedDegradationPart;
+  private final boolean ignoreNoServersInCurrentDC;
 
-  public BalancingUpstreamManager(Collection<String> upstreamsList,
-                                  Set<Monitoring> monitoring,
-                                  JClientInfrastructureConfig infrastructureConfig,
-                                  boolean allowCrossDCRequests,
-                                  UpstreamConfigService upstreamConfigService,
-                                  UpstreamService upstreamService,
-                                  double allowedDegradationPath) {
+public BalancingUpstreamManager(UpstreamConfigService upstreamConfigService,
+                                ServerStore serverStore,
+                                Set<Monitoring> monitoring,
+                                JClientInfrastructureConfig infrastructureConfig,
+                                boolean allowCrossDCRequests,
+                                double allowedDegradationPart,
+                                boolean ignoreNoServersInCurrentDC) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
-    this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC().toLowerCase();
+    this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC();
     this.allowCrossDCRequests = allowCrossDCRequests;
-    this.upstreamService = upstreamService;
+    this.serverStore = serverStore;
     this.upstreamConfigService = upstreamConfigService;
+    this.allowedDegradationPart = allowedDegradationPart;
+    this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
 
-    requireNonNull(upstreamsList, "upstreamsList must not be null");
-    upstreamsList.forEach(this::updateUpstream);
-    allowedUpstreamCapacities = upstreams.entrySet().stream()
-      .collect(toMap(Map.Entry::getKey, e -> (int) Math.ceil(e.getValue().getServers().size() * (1 - allowedDegradationPath))));
     upstreamConfigService.setupListener(this::updateUpstream);
-    upstreamService.setupListener(this::updateUpstream);
   }
 
-  public void updateUpstream(@Nonnull String upstreamName) {
+  @Override
+  public void updateUpstreams(Collection<String> upstreams, boolean throwOnUpstreamValidation) {
+    checkEmptyUpstreams(upstreams, throwOnUpstreamValidation);
+    if (!ignoreNoServersInCurrentDC) {
+      checkEmptyInCurrentDcUpstreams(upstreams, throwOnUpstreamValidation);
+    }
+    upstreams.forEach(this::updateUpstream);
+  }
+
+  private void updateUpstream(@Nonnull String upstreamName) {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
     ApplicationConfig upstreamConfig = upstreamConfigService.getUpstreamConfig(upstreamKey.getServiceName());
     var newConfig = UpstreamConfig.fromApplicationConfig(upstreamConfig, UpstreamConfig.DEFAULT);
-    List<Server> servers = upstreamService.getServers(upstreamName);
-    boolean unsafeUpdate = ofNullable(allowedUpstreamCapacities).map(capacities -> capacities.get(upstreamKey.getServiceName()))
-      .map(allowedUpstreamCapacity -> servers.size() < allowedUpstreamCapacity)
-      .orElse(Boolean.FALSE);
-    if (unsafeUpdate) {
+    List<Server> servers = serverStore.getServers(upstreamName);
+    int minAllowedSize = serverStore.getInitialSize(upstreamKey.getServiceName()).stream()
+      .mapToInt(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - allowedDegradationPart))).findFirst().orElse(-1);
+
+
+    if (minAllowedSize > 0 && servers.size() < minAllowedSize) {
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
       LOGGER.warn("Ignoring update which contains {} servers, for upstream {} allowed minimum is {}",
         LOGGER.isDebugEnabled() ? servers : servers.size(),
         upstreamKey.getServiceName(),
-        allowedUpstreamCapacities.get(upstreamKey.getServiceName())
+        minAllowedSize
       );
       return;
     }
@@ -81,6 +90,39 @@ public class BalancingUpstreamManager implements UpstreamManager {
       }
       return upstream;
     });
+  }
+
+  private void checkEmptyInCurrentDcUpstreams(Collection<String> upstreams, boolean throwValidation) {
+    var upstreamsNotPresentInCurrentDC = upstreams.stream()
+      .filter(upstream -> serverStore.getServers(upstream).stream().noneMatch(this::isInCurrentDc))
+      .collect(Collectors.toSet());
+    if (!upstreamsNotPresentInCurrentDC.isEmpty()) {
+      if (throwValidation) {
+        throw new IllegalStateException("There's no instances in DC " + datacenter + " for services: " + upstreamsNotPresentInCurrentDC
+                + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
+        );
+      } else {
+        LOGGER.debug("There's no instances in DC {} for services: {}. If it is intentional config use {} property to disable this check",
+                     datacenter, upstreamsNotPresentInCurrentDC, IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY);
+      }
+    }
+  }
+
+  private boolean isInCurrentDc(Server server) {
+    return server.getDatacenter() != null && server.getDatacenter().equals(datacenter);
+  }
+
+  private void checkEmptyUpstreams(Collection<String> upstreams, boolean throwValidation) {
+    var emptyUpstreams = upstreams.stream()
+      .filter(upstream -> serverStore.getServers(upstream).isEmpty())
+      .collect(Collectors.toSet());
+    if (!emptyUpstreams.isEmpty()) {
+      if (throwValidation) {
+        throw new IllegalStateException("There's no instances for services: " + emptyUpstreams);
+      } else {
+        LOGGER.debug("There's no instances for services: {}", emptyUpstreams);
+      }
+    }
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, Map<String, UpstreamConfig>  config, List<Server> servers) {

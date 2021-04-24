@@ -29,8 +29,8 @@ public class BalancingStrategyNotExistingServerTest extends AbstractBalancingStr
     requestRouteTracking = new ConcurrentHashMap<>();
     workingServerAddress = createNormallyWorkingServer();
     httpClientFactory = buildBalancingFactory(
-      DATACENTER, TEST_UPSTREAM,
-      Map.of(1, List.of(notExistingServerAddress, workingServerAddress)),
+      TEST_UPSTREAM,
+      new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(notExistingServerAddress, workingServerAddress))),
       requestRouteTracking
     );
   }

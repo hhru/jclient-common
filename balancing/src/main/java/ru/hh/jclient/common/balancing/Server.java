@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
@@ -198,5 +199,22 @@ public class Server {
         LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
       }
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Server server = (Server) o;
+    return address.equals(server.address) && Objects.equals(datacenter, server.datacenter);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(address, datacenter);
   }
 }

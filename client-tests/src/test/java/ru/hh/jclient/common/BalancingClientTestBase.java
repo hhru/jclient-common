@@ -33,7 +33,7 @@ import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.UpstreamConfigServiceImpl;
-import ru.hh.jclient.consul.UpstreamServiceImpl;
+import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.consul.model.ApplicationConfig;
 import ru.hh.jclient.consul.model.RetryPolicyConfig;
 import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
@@ -56,20 +56,20 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   BalancingRequestStrategy requestingStrategy;
   BalancingUpstreamManager upstreamManager;
   UpstreamConfigServiceImpl upstreamConfigService = mock(UpstreamConfigServiceImpl.class);
-  UpstreamServiceImpl upstreamService = mock(UpstreamServiceImpl.class);
+  ServerStore serverStore = mock(ServerStore.class);
   @Before
   public void setUpTest() {
     withEmptyContext();
     httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(new ApplicationConfig());
-    when(upstreamService.getServers(TEST_UPSTREAM))
+    when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server1", 1, null), new Server("server2", 2, null)));
   }
 
   @Test
   public void shouldMakeGetRequestForSingleServer() throws Exception {
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", 1, null)));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -169,7 +169,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
             new Server("server3", 1, null),
             new Server("server4", 1, null)
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
@@ -211,7 +211,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
             new Server("server2", 1, null),
             new Server("server3", 1, null)
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
@@ -301,7 +301,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
             new Server("server2", 1, null),
             new Server("server3", 1, null)
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
         .setMaxTries(3)
@@ -325,7 +325,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
             new Server("server2", 1, null),
             new Server("server3", 1, null)
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
@@ -350,7 +350,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
             new Server("server2", 1, null),
             new Server("server3", 1, null)
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
@@ -410,9 +410,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
     when(infrastructureConfig.getCurrentDC()).thenReturn(datacenter);
     upstreamManager = new BalancingUpstreamManager(
-      upstreamList, Set.of(monitoring), infrastructureConfig, allowCrossDCRequests,
-      upstreamConfigService, upstreamService,
-      0.5);
+      upstreamConfigService, serverStore,
+      Set.of(monitoring), infrastructureConfig,
+      allowCrossDCRequests, 0.5, false);
+    upstreamManager.updateUpstreams(upstreamList, false);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),

@@ -37,9 +37,9 @@ public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBa
     workingServerAddress = createNormallyWorkingServer();
     exceptionallyClosingServerAddress = createExceptionallyStoppingServer();
     httpClientFactory = buildBalancingFactory(
-      DATACENTER, TEST_UPSTREAM,
+      TEST_UPSTREAM,
       new Profile().setMaxTimeoutTries(2),
-      Map.of(1, List.of(exceptionallyClosingServerAddress, workingServerAddress)),
+      new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(exceptionallyClosingServerAddress, workingServerAddress))),
       requestRouteTracking
     );
   }

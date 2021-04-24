@@ -3,6 +3,7 @@ package ru.hh.jclient.common.metrics;
 import static ru.hh.jclient.consul.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_PATH;
+import static ru.hh.jclient.consul.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
 import static ru.hh.jclient.consul.PropertyKeys.UPSTREAMS_KEY;
 
 import ru.hh.jclient.common.Monitoring;
@@ -11,7 +12,7 @@ import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
+import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.nab.metrics.StatsDSender;
 
@@ -28,7 +29,7 @@ public class MonitoringRequestStrategyFactory {
   public static RequestStrategy<RequestBalancerBuilder> createWithDefaults(JClientInfrastructureConfig infrastructureConfig,
                                                                            StatsDSender statsDSender,
                                                                            UpstreamConfigService upstreamConfigService,
-                                                                           UpstreamService upstreamService,
+                                                                           ServerStore serverStore,
                                                                            Properties strategyProperties,
                                                                            @Nullable Properties kafkaUpstreamMonitoringProperties) {
     var upstreamList = Optional.ofNullable(strategyProperties.getProperty(UPSTREAMS_KEY))
@@ -36,15 +37,19 @@ public class MonitoringRequestStrategyFactory {
       .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
       .orElseGet(List::of);
     boolean allowCrossDCRequests = Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
-        .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
-        .map(Boolean::parseBoolean)
-        .orElse(false);
+      .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
+      .map(Boolean::parseBoolean)
+      .orElse(false);
     double allowedUpstreamDegradationPart = Optional.ofNullable(strategyProperties.getProperty(ALLOWED_DEGRADATION_PART_KEY)).stream()
       .mapToDouble(Double::parseDouble).findFirst().orElse(0.5d);
+    boolean ignoreNoServersInCurrentDC = Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
+      .or(() -> Optional.ofNullable(strategyProperties.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY)))
+      .map(Boolean::parseBoolean)
+      .orElse(false);
     var balancingUpstreamManager = new BalancingUpstreamManager(
-      upstreamList,
+      upstreamConfigService, serverStore,
       buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
-      infrastructureConfig, allowCrossDCRequests, upstreamConfigService, upstreamService, allowedUpstreamDegradationPart
+      infrastructureConfig, allowCrossDCRequests, allowedUpstreamDegradationPart, ignoreNoServersInCurrentDC
     );
     return new BalancingRequestStrategy(balancingUpstreamManager);
   }

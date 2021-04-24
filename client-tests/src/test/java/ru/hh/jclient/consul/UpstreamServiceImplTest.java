@@ -1,6 +1,5 @@
 package ru.hh.jclient.consul;
 
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -8,6 +7,7 @@ import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
 import ru.hh.consul.cache.ImmutableServiceHealthKey;
 import ru.hh.consul.cache.ServiceHealthKey;
+import ru.hh.consul.config.ClientConfig;
 import ru.hh.consul.model.ConsulResponse;
 import ru.hh.consul.model.catalog.ImmutableServiceWeights;
 import ru.hh.consul.model.catalog.ServiceWeights;
@@ -19,6 +19,8 @@ import ru.hh.consul.model.health.ImmutableServiceHealth;
 import ru.hh.consul.model.health.Node;
 import ru.hh.consul.model.health.Service;
 import ru.hh.consul.model.health.ServiceHealth;
+import ru.hh.consul.monitoring.ClientEventCallback;
+import ru.hh.consul.monitoring.ClientEventHandler;
 import ru.hh.consul.option.ConsistencyMode;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
@@ -26,29 +28,32 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import ru.hh.consul.option.QueryOptions;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.common.balancing.ServerStore;
+import ru.hh.jclient.common.balancing.ServerStoreImpl;
+import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class UpstreamServiceImplTest {
-  static UpstreamServiceImpl upstreamService;
+  UpstreamServiceImpl upstreamService;
   static String SERVICE_NAME = "upstream1";
-  static String CURRENT_SERVICE_NAME = "testService";
   static String NODE_NAME = "node123";
   static String DATA_CENTER = "DC1";
   static List<String> upstreamList = List.of(SERVICE_NAME);
   static List<String> datacenterList = List.of(DATA_CENTER);
   private HealthClient healthClient = mock(HealthClient.class);
+  private UpstreamManager upstreamManager = mock(UpstreamManager.class);
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 7;
   static boolean allowCrossDC = false;
+
+  private ServerStore serverStore = new ServerStoreImpl();
   private static final JClientInfrastructureConfig infrastructureConfig = new JClientInfrastructureConfig() {
 
     @Override
@@ -66,40 +71,27 @@ public class UpstreamServiceImplTest {
       return NODE_NAME;
     }
   };
+  UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+    .setUpstreams(upstreamList)
+    .setHealthPassing(true)
+    .setSelfNodeFilteringEnabled(true)
+    .setDatacenterList(datacenterList)
+    .setWatchSeconds(watchSeconds)
+    .setSyncInit(false)
+    .setConsistencyMode(ConsistencyMode.DEFAULT);
 
   @Before
   public void init() {
+    when(healthClient.getConfig()).thenReturn(new ClientConfig());
+    when(healthClient.getEventHandler()).thenReturn(new ClientEventHandler("", mock(ClientEventCallback.class)));
     when(consulClient.healthClient()).thenReturn(healthClient);
     mockServiceHealth(List.of());
-    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
-        .setUpstreams(upstreamList)
-        .setHealthPassing(true)
-        .setSelfNodeFilteringEnabled(true)
-        .setDatacenterList(datacenterList)
-        .setWatchSeconds(watchSeconds)
-        .setSyncInit(false)
-        .setConsistencyMode(ConsistencyMode.DEFAULT);
-    upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
+    upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of());
   }
 
   private void mockServiceHealth(List<ServiceHealth> health) {
     when(healthClient.getHealthyServiceInstances(anyString(), any(QueryOptions.class)))
       .thenReturn(new ConsulResponse<>(health, 0, false, BigInteger.ONE, Optional.empty()));
-  }
-
-  @Test
-  public void testNotify() {
-    List<String> consumerMock = new ArrayList<>();
-
-    try {
-      upstreamService.setupListener(consumerMock::add);
-    } catch (Exception ex) {
-      //ignore
-    }
-    upstreamService.notifyListeners();
-
-    assertEquals(1, consumerMock.size());
-
   }
 
   @Test
@@ -120,8 +112,7 @@ public class UpstreamServiceImplTest {
 
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
-    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
-    servers.sort(Comparator.comparing(Server::getAddress));
+    List<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
     Server server = servers.get(0);
@@ -147,12 +138,11 @@ public class UpstreamServiceImplTest {
         .setWatchSeconds(watchSeconds)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig));
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
-
-    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+      .getUpstreamStore()
+      .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
   }
 
@@ -176,9 +166,10 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
 
-    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+      .getUpstreamStore()
+      .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
   }
 
@@ -199,14 +190,13 @@ public class UpstreamServiceImplTest {
         .setWatchSeconds(watchSeconds)
         .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-    assertThrows(IllegalStateException.class, () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig));
-
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    UpstreamServiceImpl upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig);
-    List<Server> servers = upstreamService.getServers(SERVICE_NAME);
+    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+      .getUpstreamStore()
+      .getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
   }
 

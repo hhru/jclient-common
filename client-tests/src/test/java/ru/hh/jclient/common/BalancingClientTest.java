@@ -28,6 +28,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,7 +46,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
         server2,
         server3
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
@@ -80,7 +81,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     Server existingServer = new Server("server1", 3, null);
     List<Server> servers = new ArrayList<>();
     servers.add(existingServer);
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
@@ -112,7 +113,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     Server server1 = new Server("server1", 3, null);
     Server server2 = new Server("server2", 3, null);
     List<Server> servers = List.of(server1, server2);
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
@@ -148,7 +149,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
       }
     };
     var servers = List.of(server1, server2);
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     int slowStartInterval = 2;
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -187,7 +188,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
         server2,
         server3
     );
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
@@ -231,8 +232,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
-    when(upstreamService.getServers(TEST_UPSTREAM + ":" + profileFoo)).thenReturn(List.of(new Server("server1", 1, null)));
-    when(upstreamService.getServers(TEST_UPSTREAM + ":" + profileBar)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(serverStore.getServers(TEST_UPSTREAM + ":" + profileFoo)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(serverStore.getServers(TEST_UPSTREAM + ":" + profileBar)).thenReturn(List.of(new Server("server1", 1, null)));
 
     List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, profileFoo), profileName(TEST_UPSTREAM, profileBar));
     createHttpClientFactory(upstreamList);
@@ -327,7 +328,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
   @Test
   public void requestAndUpdateServers() throws Exception {
-    when(upstreamService.getServers(TEST_UPSTREAM))
+    when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server1", 1, null)));
     createHttpClientFactory();
 
@@ -340,16 +341,16 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     getTestClient().get();
     assertHostEquals(request[0], "server1");
-    when(upstreamService.getServers(TEST_UPSTREAM))
+    when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null)));
-    upstreamManager.updateUpstream(TEST_UPSTREAM);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), false);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
-    when(upstreamService.getServers(TEST_UPSTREAM))
+    when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null), new Server("server3", 1, null)));
-    upstreamManager.updateUpstream(TEST_UPSTREAM);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), false);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
@@ -381,7 +382,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Test
   public void disallowCrossDCRequests() throws Exception {
     List<Server> servers = List.of(new Server("server1", 1, "DC1"), new Server("server2", 1, "DC2"));
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", false);
 
@@ -406,9 +407,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
   public void balancedRequestMonitoring() throws Exception {
     String datacenter = "DC1";
     createHttpClientFactory(List.of(TEST_UPSTREAM), datacenter, false);
-    when(upstreamService.getServers(TEST_UPSTREAM))
-            .thenReturn(List.of(new Server("server1", 1, datacenter)));
-    upstreamManager.updateUpstream(TEST_UPSTREAM);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", 1, datacenter)));
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), true);
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
       .then(iom -> {
@@ -449,7 +449,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Test(expected = ExecutionException.class)
   public void failIfNoBackendAvailableInCurrentDC() throws Exception {
     createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", false);
-    when(upstreamService.getServers(TEST_UPSTREAM))
+    when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server1", 1, "DC2")));
 
     getTestClient().get();
@@ -458,7 +458,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Test
   public void testAllowCrossDCRequests() throws Exception {
     List<Server> servers = List.of(new Server("server1", 1, "DC1"), new Server("server2", 1, "DC2"));
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(servers);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", true);
 
@@ -475,8 +475,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
     getTestClient().get();
     assertHostEquals(request[0], "server1");
 
-    when(upstreamService.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server2", 1, "DC2")));
-    upstreamManager.updateUpstream(TEST_UPSTREAM);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server2", 1, "DC2")));
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), false);
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
