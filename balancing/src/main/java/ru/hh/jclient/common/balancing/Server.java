@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+//TODO move to ru.hh.jclient.common.balancing.internal
 public class Server {
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
   private static final String DELIMITER = ":";

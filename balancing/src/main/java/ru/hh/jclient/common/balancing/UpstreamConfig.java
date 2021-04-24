@@ -2,16 +2,15 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.Map;
 import static java.util.Objects.requireNonNullElse;
+
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Host;
-import ru.hh.jclient.consul.model.Profile;
 
 public final class UpstreamConfig {
   public static final String DEFAULT = "default";
-  public static final int DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
+  public static final UpstreamConfig DEFAULT_CONFIG = buildDefaultConfig();
+  private static final Map<String, UpstreamConfig> DEFAULT_CONFIGS = Map.of(DEFAULT, DEFAULT_CONFIG);
+  static final int DEFAULT_REQUEST_TIMEOUT_MS = 2_000;
   static final int DEFAULT_MAX_TRIES = 2;
   static final int DEFAULT_MAX_TIMEOUT_TRIES = 1;
 
@@ -23,48 +22,34 @@ public final class UpstreamConfig {
   private int requestTimeoutMs;
   private int slowStartIntervalSec;
 
-  private RetryPolicy retryPolicy = new RetryPolicy();
+  private final RetryPolicy retryPolicy = new RetryPolicy();
 
-  public static Map<String, UpstreamConfig> fromApplicationConfig(ApplicationConfig config, String hostName) {
-    if (config == null) {
-      return getDefaultConfig();
-    }
-    Map<String, Host> hostMap = config.getHosts();
-    if (hostMap == null || hostMap.get(hostName) == null) {
-      return getDefaultConfig();
-    }
-    Map<String, Profile> profiles = hostMap.get(hostName).getProfiles();
-    if (profiles == null || profiles.isEmpty()) {
-      return getDefaultConfig();
-    }
-    try {
-      Map<String, UpstreamConfig> configMap = profiles.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-          e -> convertProfileToUpstreamConfig(e.getValue())));
-      return configMap;
-    } catch (Exception e) {
-      throw new UpstreamConfigFormatException("failed to get upstream config: " + config, e);
-    }
+  public static Map<String, UpstreamConfig> getDefaultConfig() {
+    return DEFAULT_CONFIGS;
   }
 
-  private static UpstreamConfig convertProfileToUpstreamConfig(Profile profile) {
+  public static UpstreamConfig create(Integer maxTries, Integer maxTimeoutTries,
+                                      Float connectTimeoutMs, Float requestTimeoutMs,
+                                      Integer slowStartIntervalSec,
+                                      Map<Integer, Boolean> retryPolicyConfig) {
     UpstreamConfig upstreamConfig = new UpstreamConfig();
-    upstreamConfig.maxTries = requireNonNullElse(profile.getMaxTries(), DEFAULT_MAX_TRIES);
-    upstreamConfig.maxTimeoutTries = requireNonNullElse(profile.getMaxTimeoutTries(), DEFAULT_MAX_TIMEOUT_TRIES);
-    upstreamConfig.connectTimeoutMs = convertToMillisOrFallback(profile.getConnectTimeoutMs(), DEFAULT_CONNECT_TIMEOUT_MS);
-    upstreamConfig.requestTimeoutMs = convertToMillisOrFallback(profile.getRequestTimeoutMs(), DEFAULT_REQUEST_TIMEOUT_MS);
-    upstreamConfig.slowStartIntervalSec = requireNonNullElse(profile.getSlowStartIntervalSec(), 0);
-    upstreamConfig.retryPolicy.update(profile.getRetryPolicy());
+    upstreamConfig.maxTries = requireNonNullElse(maxTries, DEFAULT_MAX_TRIES);
+    upstreamConfig.maxTimeoutTries = requireNonNullElse(maxTimeoutTries, DEFAULT_MAX_TIMEOUT_TRIES);
+    upstreamConfig.connectTimeoutMs = convertToMillisOrFallback(connectTimeoutMs, DEFAULT_CONNECT_TIMEOUT_MS);
+    upstreamConfig.requestTimeoutMs = convertToMillisOrFallback(requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT_MS);
+    upstreamConfig.slowStartIntervalSec = requireNonNullElse(slowStartIntervalSec, 0);
+    upstreamConfig.retryPolicy.update(retryPolicyConfig);
 
     return upstreamConfig;
   }
 
-  public static Map<String, UpstreamConfig> getDefaultConfig() {
+  private static UpstreamConfig buildDefaultConfig() {
     UpstreamConfig upstreamConfig = new UpstreamConfig();
     upstreamConfig.maxTries = DEFAULT_MAX_TRIES;
     upstreamConfig.maxTimeoutTries = DEFAULT_MAX_TIMEOUT_TRIES;
     upstreamConfig.connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS;
     upstreamConfig.requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
-    return Map.of(DEFAULT, upstreamConfig);
+    return upstreamConfig;
   }
 
   public int getMaxTries() {

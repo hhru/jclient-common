@@ -1,14 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import static ru.hh.jclient.consul.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,39 +25,37 @@ public class BalancingUpstreamManager implements UpstreamManager {
 
   public static final String SCHEMA_SEPARATOR = "://";
 
-  private final UpstreamConfigService upstreamConfigService;
+  private final ConfigStore configStore;
   private final ServerStore serverStore;
 
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
-  private final double allowedDegradationPart;
-  private final boolean ignoreNoServersInCurrentDC;
+  private final ValidationSettings validationSettings;
 
-public BalancingUpstreamManager(UpstreamConfigService upstreamConfigService,
+public BalancingUpstreamManager(ConfigStore configStore,
                                 ServerStore serverStore,
                                 Set<Monitoring> monitoring,
                                 JClientInfrastructureConfig infrastructureConfig,
                                 boolean allowCrossDCRequests,
-                                double allowedDegradationPart,
-                                boolean ignoreNoServersInCurrentDC) {
+                                ValidationSettings validationSettings) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.serverStore = serverStore;
-    this.upstreamConfigService = upstreamConfigService;
-    this.allowedDegradationPart = allowedDegradationPart;
-    this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
-
-    upstreamConfigService.setupListener(this::updateUpstream);
+    this.configStore = configStore;
+    this.validationSettings = validationSettings;
   }
 
   @Override
   public void updateUpstreams(Collection<String> upstreams, boolean throwOnUpstreamValidation) {
-    checkEmptyUpstreams(upstreams, throwOnUpstreamValidation);
-    if (!ignoreNoServersInCurrentDC) {
-      checkEmptyInCurrentDcUpstreams(upstreams, throwOnUpstreamValidation);
+    if (validationSettings.failOnEmptyUpstreams) {
+      checkAllUpstreamConfigsExist(upstreams, throwOnUpstreamValidation);
+      checkServersForAllUpstreamsExist(upstreams, throwOnUpstreamValidation);
+    }
+    if (!validationSettings.ignoreNoServersInCurrentDC) {
+      checkServersForAllUpstreamsInCurrentDcExist(upstreams, throwOnUpstreamValidation);
     }
     upstreams.forEach(this::updateUpstream);
   }
@@ -66,11 +63,11 @@ public BalancingUpstreamManager(UpstreamConfigService upstreamConfigService,
   private void updateUpstream(@Nonnull String upstreamName) {
     var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
-    ApplicationConfig upstreamConfig = upstreamConfigService.getUpstreamConfig(upstreamKey.getServiceName());
-    var newConfig = UpstreamConfig.fromApplicationConfig(upstreamConfig, UpstreamConfig.DEFAULT);
+    ApplicationConfig upstreamConfig = configStore.getUpstreamConfig(upstreamKey.getServiceName());
+    var newConfig = ApplicationConfig.toUpstreamConfigs(upstreamConfig, UpstreamConfig.DEFAULT);
     List<Server> servers = serverStore.getServers(upstreamName);
     int minAllowedSize = serverStore.getInitialSize(upstreamKey.getServiceName()).stream()
-      .mapToInt(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - allowedDegradationPart))).findFirst().orElse(-1);
+      .mapToInt(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart))).findFirst().orElse(-1);
 
 
     if (minAllowedSize > 0 && servers.size() < minAllowedSize) {
@@ -92,14 +89,14 @@ public BalancingUpstreamManager(UpstreamConfigService upstreamConfigService,
     });
   }
 
-  private void checkEmptyInCurrentDcUpstreams(Collection<String> upstreams, boolean throwValidation) {
+  private void checkServersForAllUpstreamsInCurrentDcExist(Collection<String> upstreams, boolean throwValidation) {
     var upstreamsNotPresentInCurrentDC = upstreams.stream()
       .filter(upstream -> serverStore.getServers(upstream).stream().noneMatch(this::isInCurrentDc))
       .collect(Collectors.toSet());
     if (!upstreamsNotPresentInCurrentDC.isEmpty()) {
       if (throwValidation) {
         throw new IllegalStateException("There's no instances in DC " + datacenter + " for services: " + upstreamsNotPresentInCurrentDC
-                + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
+          + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
         );
       } else {
         LOGGER.debug("There's no instances in DC {} for services: {}. If it is intentional config use {} property to disable this check",
@@ -109,18 +106,32 @@ public BalancingUpstreamManager(UpstreamConfigService upstreamConfigService,
   }
 
   private boolean isInCurrentDc(Server server) {
-    return server.getDatacenter() != null && server.getDatacenter().equals(datacenter);
+    return datacenter == null || server.getDatacenter() != null && server.getDatacenter().equals(datacenter);
   }
 
-  private void checkEmptyUpstreams(Collection<String> upstreams, boolean throwValidation) {
+  private void checkServersForAllUpstreamsExist(Collection<String> upstreams, boolean throwValidation) {
     var emptyUpstreams = upstreams.stream()
       .filter(upstream -> serverStore.getServers(upstream).isEmpty())
       .collect(Collectors.toSet());
     if (!emptyUpstreams.isEmpty()) {
       if (throwValidation) {
-        throw new IllegalStateException("There's no instances for services: " + emptyUpstreams);
+        throw new IllegalStateException("There's no instances for services: " + emptyUpstreams
+          + ". If it is intentional config use " + SYNC_UPDATE_KEY + " property to disable this check");
       } else {
         LOGGER.debug("There's no instances for services: {}", emptyUpstreams);
+      }
+    }
+  }
+
+  private void checkAllUpstreamConfigsExist(Collection<String> upstreams, boolean throwValidation) {
+    var absentConfigs = upstreams.stream()
+      .filter(upstream -> configStore.getUpstreamConfig(upstream) == null)
+      .collect(Collectors.toSet());
+    if (!absentConfigs.isEmpty()) {
+      if (throwValidation) {
+        throw new IllegalStateException("No valid configs found for services: " + absentConfigs);
+      } else {
+        LOGGER.debug("No valid configs found for services: {}", absentConfigs);
       }
     }
   }
@@ -146,5 +157,26 @@ public BalancingUpstreamManager(UpstreamConfigService upstreamConfigService,
 
   Map<String, Upstream> getUpstreams() {
     return upstreams;
+  }
+
+  public static class ValidationSettings {
+    private double allowedDegradationPart;
+    private boolean ignoreNoServersInCurrentDC;
+    private boolean failOnEmptyUpstreams;
+
+    public ValidationSettings setAllowedDegradationPart(double allowedDegradationPart) {
+      this.allowedDegradationPart = allowedDegradationPart;
+      return this;
+    }
+
+    public ValidationSettings setIgnoreNoServersInCurrentDC(boolean ignoreNoServersInCurrentDC) {
+      this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
+      return this;
+    }
+
+    public ValidationSettings setFailOnEmptyUpstreams(boolean failOnEmptyUpstreams) {
+      this.failOnEmptyUpstreams = failOnEmptyUpstreams;
+      return this;
+    }
   }
 }

@@ -8,11 +8,9 @@ import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Host;
-import ru.hh.jclient.consul.model.Profile;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.Host;
+import ru.hh.jclient.common.balancing.config.Profile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Exchanger;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class AbstractBalancingStrategyTest {
@@ -83,19 +80,20 @@ public abstract class AbstractBalancingStrategyTest {
       @Override
       public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
     };
+    var configStore = new ConfigStoreImpl();
+    ApplicationConfig applicationConfig = new ApplicationConfig()
+      .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
+    configStore.updateConfig(upstreamName, applicationConfig);
+    BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings()
+      .setAllowedDegradationPart(0.5)
+      .setFailOnEmptyUpstreams(true)
+      .setIgnoreNoServersInCurrentDC(false);
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
-            new UpstreamConfigService() {
-              @Override
-              public ApplicationConfig getUpstreamConfig(String application) {
-                return new ApplicationConfig().setHosts(Map.of("default", new Host().setProfiles(Map.of("default", profile))));
-              }
-
-              @Override
-              public void setupListener(Consumer<String> callback) {
-              }
-            }, serverStore,
-            Set.of(tracking), infrastructureConfig,
-            false, 0.5, false);
+      configStore, serverStore,
+      Set.of(tracking), infrastructureConfig,
+      false,
+      validationSettings
+    );
     upstreamManager.updateUpstreams(Set.of(upstreamName), true);
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));

@@ -24,7 +24,7 @@ import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -50,8 +50,7 @@ public class CustomizationBenchmark {
     new Runner(opt).run();
   }
 
-  private static final Upstream upstream = new Upstream(UPSTREAM,
-      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null), servers);
+  private static final Upstream upstream = new Upstream(UPSTREAM, ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null), servers);
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override

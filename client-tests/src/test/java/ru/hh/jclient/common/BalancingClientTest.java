@@ -19,10 +19,10 @@ import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Host;
-import ru.hh.jclient.consul.model.Profile;
+import static ru.hh.jclient.common.balancing.config.UpstreamConfigParserTest.buildTestConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.Host;
+import ru.hh.jclient.common.balancing.config.Profile;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -85,7 +85,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
     var calledAddresses = new ArrayList<>();
@@ -117,7 +117,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
     var calledAddresses = new ArrayList<>();
@@ -154,7 +154,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     int slowStartInterval = 2;
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setSlowStartIntervalSec(3);
-    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
     var calledAddresses = new ArrayList<>();
@@ -192,7 +192,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -230,7 +230,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = new ApplicationConfig().setHosts(Map.of(DEFAULT, new Host().setProfiles(profiles)));
 
-    when(upstreamConfigService.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
 
     when(serverStore.getServers(TEST_UPSTREAM + ":" + profileFoo)).thenReturn(List.of(new Server("server1", 1, null)));
     when(serverStore.getServers(TEST_UPSTREAM + ":" + profileBar)).thenReturn(List.of(new Server("server1", 1, null)));
@@ -238,11 +238,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
     List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, profileFoo), profileName(TEST_UPSTREAM, profileBar));
     createHttpClientFactory(upstreamList);
     Request[] request = new Request[1];
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          request[0] = completeWith(200, iom);
-          return null;
-        });
+    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class))).then(iom -> {
+      request[0] = completeWith(200, iom);
+      return null;
+    });
 
     getTestClient().get();
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(33));

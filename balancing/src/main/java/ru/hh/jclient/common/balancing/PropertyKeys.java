@@ -1,4 +1,4 @@
-package ru.hh.jclient.consul;
+package ru.hh.jclient.common.balancing;
 
 public final class PropertyKeys {
 

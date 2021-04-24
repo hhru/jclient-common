@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import ru.hh.jclient.consul.model.Profile;
+import ru.hh.jclient.common.balancing.config.Profile;
 
 public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBalancingStrategyTest {
 

@@ -1,7 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import ru.hh.jclient.common.balancing.Server;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;

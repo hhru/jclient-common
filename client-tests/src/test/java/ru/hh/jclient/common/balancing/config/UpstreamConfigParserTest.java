@@ -1,13 +1,10 @@
-package ru.hh.jclient.common.balancing;
+package ru.hh.jclient.common.balancing.config;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Host;
-import ru.hh.jclient.consul.model.Profile;
-import ru.hh.jclient.consul.model.RetryPolicyConfig;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +17,7 @@ public class UpstreamConfigParserTest {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
     UpstreamConfig config = configMap.get(DEFAULT);
 
     assertEquals(3, config.getMaxTries());
@@ -39,7 +36,7 @@ public class UpstreamConfigParserTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().put(secondProfileName, secondProfile);
 
-    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
     UpstreamConfig config = configMap.get(secondProfileName);
 
     assertEquals(7, config.getMaxTries());
@@ -48,13 +45,13 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void testDefaultConfig() {
-    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT);
+    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT);
     UpstreamConfig config = configMap.get(DEFAULT);
 
-    assertEquals(UpstreamConfig.DEFAULT_MAX_TRIES, config.getMaxTries());
-    assertEquals(UpstreamConfig.DEFAULT_MAX_TIMEOUT_TRIES, config.getMaxTimeoutTries());
-    assertEquals(UpstreamConfig.DEFAULT_CONNECT_TIMEOUT_MS, config.getConnectTimeoutMs());
-    assertEquals(UpstreamConfig.DEFAULT_REQUEST_TIMEOUT_MS, config.getRequestTimeoutMs());
+    assertEquals(UpstreamConfig.DEFAULT_CONFIG.getMaxTries(), config.getMaxTries());
+    assertEquals(UpstreamConfig.DEFAULT_CONFIG.getMaxTimeoutTries(), config.getMaxTimeoutTries());
+    assertEquals(UpstreamConfig.DEFAULT_CONFIG.getConnectTimeoutMs(), config.getConnectTimeoutMs());
+    assertEquals(UpstreamConfig.DEFAULT_CONFIG.getRequestTimeoutMs(), config.getRequestTimeoutMs());
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertFalse(config.getRetryPolicy().getRules().get(503));
   }
@@ -66,7 +63,7 @@ public class UpstreamConfigParserTest {
     retryPolicy.put(503, new RetryPolicyConfig().setIdempotent(true));
     retryPolicy.put(599, new RetryPolicyConfig().setIdempotent(false));
 
-    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
     UpstreamConfig config = configMap.get(DEFAULT);
 
     assertFalse(config.getRetryPolicy().getRules().get(599));

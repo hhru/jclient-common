@@ -21,8 +21,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.UpstreamManager;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
-import ru.hh.jclient.consul.model.config.UpstreamServiceConsulConfig;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 
 import java.math.BigInteger;
 import java.util.Collection;

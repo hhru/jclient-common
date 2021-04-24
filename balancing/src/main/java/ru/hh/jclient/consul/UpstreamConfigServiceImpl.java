@@ -11,22 +11,23 @@ import ru.hh.consul.option.ConsistencyMode;
 import ru.hh.consul.option.ImmutableQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
-import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
+import ru.hh.jclient.common.balancing.ConfigStore;
+import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class UpstreamConfigServiceImpl implements UpstreamConfigService, AutoCloseable {
+public class UpstreamConfigServiceImpl implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
   static final String ROOT_PATH = "upstream/";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -35,28 +36,39 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService, AutoClo
   private final int watchSeconds;
   private final String currentServiceName;
   private final Set<String> upstreamList;
-  private Consumer<String> callback;
+  private final Collection<BiConsumer<Collection<String>, Boolean>> callbacks;
 
   private final KeyValueClient kvClient;
+  private final ConfigStore configStore;
 
   private volatile BigInteger initialIndex;
   private KVCache kvCache;
 
-  private final Map<String, ApplicationConfig> configMap = new HashMap<>();
-
-  public UpstreamConfigServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient, UpstreamConfigServiceConsulConfig config) {
+  public UpstreamConfigServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient,
+                                   ConfigStore configStore, UpstreamManager upstreamManager,
+                                   UpstreamConfigServiceConsulConfig config,
+                                   Collection<BiConsumer<Collection<String>, Boolean>> upstreamUpdateCallbacks) {
     this.upstreamList = Set.copyOf(config.getUpstreams());
     if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
+    this.callbacks = Stream.of(
+      upstreamUpdateCallbacks.stream(),
+      Stream.of((BiConsumer<Collection<String>, Boolean>)upstreamManager::updateUpstreams)
+    )
+      .flatMap(Function.identity())
+      .collect(Collectors.toList());
     this.kvClient = consulClient.keyValueClient();
+    this.configStore = configStore;
     this.watchSeconds = config.getWatchSeconds();
     this.currentServiceName = infrastructureConfig.getServiceName();
     this.consistencyMode = config.getConsistencyMode();
     if (config.isSyncUpdate()) {
       LOGGER.debug("Trying to sync update configs");
       syncUpdateConfig();
+      callbacks.forEach(cb -> cb.accept(upstreamList, true));
     }
+    initConfigCache();
   }
 
   private void syncUpdateConfig() {
@@ -66,25 +78,9 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService, AutoClo
     ConsulResponse<List<Value>> consulResponseWithValues = kvClient.getConsulResponseWithValues(ROOT_PATH, options);
     initialIndex = consulResponseWithValues.getIndex();
     List<Value> values = consulResponseWithValues.getResponse();
-    if (values == null || values.isEmpty()) {
-      throw new IllegalStateException("There's no upstreamConfigs in KV");
+    if (values != null && !values.isEmpty()) {
+      updateConfigs(values);
     }
-    updateConfigs(values);
-    Collection<String> unconfiguredServices = findUnconfiguredServices();
-    if (!unconfiguredServices.isEmpty()) {
-      throw new IllegalStateException("No valid configs found for services: " + unconfiguredServices);
-    }
-  }
-
-  @Override
-  public ApplicationConfig getUpstreamConfig(String application) {
-    return configMap.get(application);
-  }
-
-  @Override
-  public void setupListener(Consumer<String> callback) {
-    this.callback = callback;
-    initConfigCache();
   }
 
   private void updateConfigs(Collection<Value> values) {
@@ -100,21 +96,11 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService, AutoClo
       }
       try {
         ApplicationConfig applicationConfig = OBJECT_MAPPER.readValue(value.getValueAsString().orElse(null), ApplicationConfig.class);
-        configMap.put(keys[1], applicationConfig);
+        configStore.updateConfig(keys[1], applicationConfig);
       } catch (IOException e) {
         LOGGER.error("Can't read value for key:{}", key, e);
       }
     }
-  }
-
-  private Collection<String> findUnconfiguredServices() {
-    var absentConfigs = new HashSet<>(upstreamList);
-    absentConfigs.removeAll(configMap.keySet());
-    return absentConfigs;
-  }
-
-  void notifyListeners() {
-    upstreamList.forEach(callback);
   }
 
   private void initConfigCache() {
@@ -127,18 +113,13 @@ public class UpstreamConfigServiceImpl implements UpstreamConfigService, AutoClo
     kvCache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);
       updateConfigs(newValues.values());
-      Collection<String> unconfiguredServices = findUnconfiguredServices();
-      if (!unconfiguredServices.isEmpty()) {
-        LOGGER.debug("No valid configs found for services: {}", unconfiguredServices);
-      }
-      LOGGER.debug("config updated. size {}", LOGGER.isDebugEnabled() ? configMap : configMap.size());
-      notifyListeners();
+      callbacks.forEach(cb -> cb.accept(upstreamList, false));
     });
     kvCache.start();
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     Optional.ofNullable(kvCache).ifPresent(KVCache::close);
   }
 }

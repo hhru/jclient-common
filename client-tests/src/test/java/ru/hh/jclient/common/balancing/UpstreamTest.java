@@ -10,8 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.getDefaultConfig;
-import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
-import ru.hh.jclient.consul.model.ApplicationConfig;
+import static ru.hh.jclient.common.balancing.config.UpstreamConfigParserTest.buildTestConfig;
+
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class UpstreamTest {
   private static final String TEST_SERVICE_NAME = "backend";
 
   private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
-  Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT);
+  Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT);
 
   @Test
   public void createUpstreamServiceOnly() {
@@ -100,7 +101,7 @@ public class UpstreamTest {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
 
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, configMap);
     int index = upstream.acquireServer().getIndex();

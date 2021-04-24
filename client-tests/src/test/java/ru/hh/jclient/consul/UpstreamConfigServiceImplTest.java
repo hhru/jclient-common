@@ -1,6 +1,6 @@
 package ru.hh.jclient.consul;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -9,6 +9,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 import ru.hh.consul.Consul;
 import ru.hh.consul.KeyValueClient;
+import ru.hh.consul.config.ClientConfig;
 import ru.hh.consul.model.ConsulResponse;
 import ru.hh.consul.model.kv.ImmutableValue;
 import ru.hh.consul.model.kv.Value;
@@ -20,14 +21,18 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static ru.hh.consul.option.ConsistencyMode.DEFAULT;
-import static ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig.copyOf;
+import static ru.hh.jclient.consul.UpstreamConfigServiceConsulConfig.copyOf;
 
+import ru.hh.consul.monitoring.ClientEventCallback;
+import ru.hh.consul.monitoring.ClientEventHandler;
 import ru.hh.consul.option.QueryOptions;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Host;
-import ru.hh.jclient.consul.model.Profile;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
-import ru.hh.jclient.consul.model.config.UpstreamConfigServiceConsulConfig;
+import ru.hh.jclient.common.balancing.ConfigStore;
+import ru.hh.jclient.common.balancing.ConfigStoreImpl;
+import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.Host;
+import ru.hh.jclient.common.balancing.config.Profile;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +42,8 @@ public class UpstreamConfigServiceImplTest {
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
   private static String currentServiceName = "CALLER_NAME";
   private static JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
+  private static UpstreamManager upstreamManager = mock(UpstreamManager.class);
+  private ConfigStore configStore = new ConfigStoreImpl();
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 10;
 
@@ -50,6 +57,8 @@ public class UpstreamConfigServiceImplTest {
 
   @BeforeClass
   public static void init() {
+    when(keyValueClient.getConfig()).thenReturn(new ClientConfig());
+    when(keyValueClient.getEventHandler()).thenReturn(new ClientEventHandler("", mock(ClientEventCallback.class)));
     when(consulClient.keyValueClient()).thenReturn(keyValueClient);
     when(infrastructureConfig.getServiceName()).thenReturn(currentServiceName);
   }
@@ -62,10 +71,12 @@ public class UpstreamConfigServiceImplTest {
     var service = new UpstreamConfigServiceImpl(
       infrastructureConfig,
       consulClient,
-      copyOf(configTemplate).setUpstreams(List.of("app-name", "app2"))
+      configStore, upstreamManager,
+      copyOf(configTemplate).setUpstreams(List.of("app-name", "app2")),
+      List.of()
     );
 
-    ApplicationConfig applicationConfig = service.getUpstreamConfig("app-name");
+    ApplicationConfig applicationConfig = configStore.getUpstreamConfig("app-name");
     assertNotNull(applicationConfig);
     Map<String, Host> hosts = applicationConfig.getHosts();
     assertNotNull(hosts);
@@ -81,37 +92,8 @@ public class UpstreamConfigServiceImplTest {
 
     //second app
     assertEquals(56,
-      service.getUpstreamConfig("app2").getHosts().get("default").getProfiles().get("default").getMaxTries().intValue()
+      configStore.getUpstreamConfig("app2").getHosts().get("default").getProfiles().get("default").getMaxTries().intValue()
     );
-  }
-
-  @Test
-  public void testNotify() {
-    UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("test")).setSyncUpdate(false);
-    var service = new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, config);
-    List<String> consumerMock = new ArrayList<>();
-
-    try {
-      service.setupListener(consumerMock::add);
-    } catch (Exception ex) {
-      //ignore
-    }
-    service.notifyListeners();
-
-    assertEquals(1, consumerMock.size());
-
-  }
-
-  @Test
-  public void testNoConfig() {
-    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
-        .thenReturn(wrapWithResponse(List.of()));
-    assertThrows(IllegalStateException.class,
-        () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name"))));
-    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
-      .thenReturn(wrapWithResponse(List.copyOf(prepareValues())));
-    var service = new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name")));
-    assertNotNull(service.getUpstreamConfig("app-name"));
   }
 
   @Test
@@ -122,13 +104,11 @@ public class UpstreamConfigServiceImplTest {
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(values));
-    var ex = assertThrows(
-      IllegalStateException.class,
-      () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat")))
-    );
-    assertTrue(ex.getMessage().contains(badFormatKey));
+    UpstreamConfigServiceConsulConfig cfg = copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat"));
+    new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, cfg, List.of());
+    assertNotNull(configStore.getUpstreamConfig("app-name"));
+    assertNull(configStore.getUpstreamConfig("badFormat"));
   }
-
 
   private Collection<Value> prepareValues() {
     Collection<Value> values = new ArrayList<>();
