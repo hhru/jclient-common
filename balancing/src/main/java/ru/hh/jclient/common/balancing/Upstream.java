@@ -1,17 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
-import com.google.common.base.Strings;
-
 import java.time.Clock;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +21,7 @@ public class Upstream {
   private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);
   static final String DEFAULT_PROFILE = "default";
 
-  private final UpstreamKey upstreamKey;
+  private final String upstreamName;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
@@ -38,20 +34,13 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
-  Upstream(String upstreamName, Map<String, UpstreamConfig> upstreamConfigs, List<Server> servers) {
-    this(
-        UpstreamKey.ofComplexName(upstreamName),
-        upstreamConfigs, servers,
-        null, false, true);
-  }
-
-  Upstream(UpstreamKey upstreamKey,
+  Upstream(String upstreamName,
            Map<String, UpstreamConfig> upstreamConfigs,
            List<Server> servers,
            String datacenter,
            boolean allowCrossDCRequests,
            boolean enabled) {
-    this.upstreamKey = upstreamKey;
+    this.upstreamName = upstreamName;
     this.datacenter = datacenter == null ? null : datacenter.toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
@@ -173,11 +162,7 @@ public class Upstream {
   }
 
   String getName() {
-    return upstreamKey.getWholeName();
-  }
-
-  public UpstreamKey getKey() {
-    return upstreamKey;
+    return upstreamName;
   }
 
   public boolean isEnabled() {
@@ -189,7 +174,7 @@ public class Upstream {
   }
 
   UpstreamConfig getConfig(String profile) {
-    profile = Strings.isNullOrEmpty(profile) ? DEFAULT_PROFILE : profile;
+    profile = profile == null || profile.isEmpty() ? DEFAULT_PROFILE : profile;
     configReadLock.lock();
     try {
       UpstreamConfig upstreamConfig = upstreamConfigs.get(profile);
@@ -212,63 +197,10 @@ public class Upstream {
     });
   }
 
-  public static final class UpstreamKey {
-    private static final String SEP = ":";
-    private final String serviceName;
-    private final String profileName;
-    private final String wholeName;
-
-    public static UpstreamKey ofComplexName(String wholeName) {
-      String[] parts = wholeName.split(SEP, 2);
-      return new UpstreamKey(parts[0], parts.length == 2 ? parts[1] : null);
-    }
-
-    public UpstreamKey(String serviceName, @Nullable String profileName) {
-      this.serviceName = requireNonNull(serviceName);
-      this.profileName = DEFAULT_PROFILE.equals(profileName) ? null : profileName;
-      this.wholeName = this.serviceName + (this.profileName != null ? SEP + this.profileName : "");
-    }
-
-    public String getServiceName() {
-      return serviceName;
-    }
-
-    public String getProfileName() {
-      return profileName;
-    }
-
-    public String getWholeName() {
-      return wholeName;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      var thatKey = (UpstreamKey) o;
-      return Objects.equals(serviceName, thatKey.serviceName) &&
-          Objects.equals(profileName, thatKey.profileName);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(serviceName, profileName);
-    }
-
-    @Override
-    public String toString() {
-      return "UpstreamKey{" + getWholeName() + '}';
-    }
-  }
-
   @Override
   public String toString() {
     return "Upstream{" +
-      "upstreamKey=" + upstreamKey +
+      "upstreamName=" + upstreamName +
       ", upstreamConfig=" + upstreamConfigs +
       ", datacenter='" + datacenter + '\'' +
       ", allowCrossDCRequests=" + allowCrossDCRequests +

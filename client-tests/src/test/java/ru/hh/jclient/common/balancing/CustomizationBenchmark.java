@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import static java.util.Collections.singleton;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -26,7 +25,6 @@ import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -50,11 +48,15 @@ public class CustomizationBenchmark {
     new Runner(opt).run();
   }
 
-  private static final Upstream upstream = new Upstream(UPSTREAM, ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null), servers);
+  private static final Upstream upstream = new Upstream(UPSTREAM,
+    ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
+    servers,
+    null, false, true
+  );
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
-    public Upstream getUpstream(String serviceName, @Nullable String profile) {
+    public Upstream getUpstream(String serviceName) {
       return upstream;
     }
 
@@ -76,7 +78,7 @@ public class CustomizationBenchmark {
   public void setUp() {
 
 
-      factory = new HttpClientFactory(httpClient, singleton("http://localhost"),
+      factory = new HttpClientFactory(httpClient, Set.of("http://localhost"),
           new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
           Runnable::run,
           new CustomStrategy(manager, UnaryOperator.identity())

@@ -31,7 +31,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   @Override
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
     String host = request.getUri().getHost();
-    Upstream upstream = upstreamManager.getUpstream(host, profile);
+    Upstream upstream = upstreamManager.getUpstream(host);
     Set<Monitoring> monitoring = upstreamManager.getMonitoring();
 
     if (LOGGER.isTraceEnabled()) {

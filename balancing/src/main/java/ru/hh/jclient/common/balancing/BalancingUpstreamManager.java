@@ -8,7 +8,6 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +51,8 @@ public BalancingUpstreamManager(ConfigStore configStore,
   }
 
   private void updateUpstream(@Nonnull String upstreamName) {
-    var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
 
-    ApplicationConfig upstreamConfig = configStore.getUpstreamConfig(upstreamKey.getServiceName());
+    ApplicationConfig upstreamConfig = configStore.getUpstreamConfig(upstreamName);
     var newConfig = ApplicationConfig.toUpstreamConfigs(upstreamConfig, UpstreamConfig.DEFAULT);
     List<Server> servers = serverStore.getServers(upstreamName);
     Optional<Integer> minAllowedSize = serverStore.getInitialSize(upstreamName)
@@ -65,14 +63,14 @@ public BalancingUpstreamManager(ConfigStore configStore,
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
       LOGGER.warn("Ignoring update which contains {} servers, for upstream {} allowed minimum is {}",
         LOGGER.isDebugEnabled() ? servers : servers.size(),
-        upstreamKey.getServiceName(),
+        upstreamName,
         minAllowedSize
       );
       return;
     }
-    upstreams.compute(upstreamKey.getServiceName(), (serviceName, upstream) -> {
+    upstreams.compute(upstreamName, (serviceName, upstream) -> {
       if (upstream == null) {
-        upstream = createUpstream(upstreamKey, newConfig, servers);
+        upstream = createUpstream(upstreamName, newConfig, servers);
       } else {
         upstream.updateConfig(newConfig, servers);
       }
@@ -80,12 +78,12 @@ public BalancingUpstreamManager(ConfigStore configStore,
     });
   }
 
-  private Upstream createUpstream(Upstream.UpstreamKey key, Map<String, UpstreamConfig>  config, List<Server> servers) {
-    return new Upstream(key, config, servers, datacenter, allowCrossDCRequests, true);
+  private Upstream createUpstream(String upstreamName, Map<String, UpstreamConfig>  config, List<Server> servers) {
+    return new Upstream(upstreamName, config, servers, datacenter, allowCrossDCRequests, true);
   }
 
   @Override
-  public Upstream getUpstream(String serviceName, @Nullable String profile) {
+  public Upstream getUpstream(String serviceName) {
     return upstreams.get(getNameWithoutScheme(serviceName));
   }
 

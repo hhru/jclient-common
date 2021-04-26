@@ -19,22 +19,12 @@ import java.util.List;
 public class UpstreamTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamTest.class);
   private static final String TEST_SERVICE_NAME = "backend";
-
-  private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
   Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT);
 
   @Test
   public void createUpstreamServiceOnly() {
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, List.of());
     assertEquals(TEST_SERVICE_NAME, upstream.getName());
-  }
-
-  @Test
-  public void createUpstreamFull() {
-    Upstream.UpstreamKey upstreamKey = new Upstream.UpstreamKey(TEST_SERVICE_NAME, TEST_HOST_CUSTOM_PROFILE);
-    Upstream upstream = createTestUpstream(String.join(":", TEST_SERVICE_NAME, TEST_HOST_CUSTOM_PROFILE), List.of());
-
-    assertEquals(upstreamKey, upstream.getKey());
   }
 
   @Test
@@ -119,7 +109,7 @@ public class UpstreamTest {
     int weight = numOfRequests * tests * 2 + 1;
     List<Server> servers = List.of(new Server("a", weight, null));
 
-    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers);
+    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers, null, false, true);
     Server server = servers.get(0);
 
     Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests);
@@ -163,7 +153,7 @@ public class UpstreamTest {
   }
 
   private static Upstream createTestUpstream(String serviceName, List<Server> servers, Map<String, UpstreamConfig> config) {
-    return new Upstream(serviceName, config, servers);
+    return new Upstream(serviceName, config, servers, null, false, true);
   }
 
   private static List<Server> buildServers() {
