@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,12 +30,16 @@ public class ServerStoreImpl implements ServerStore {
 
   @Override
   public void updateServers(String serviceName, Collection<Server> aliveServers, Collection<Server> deadServers) {
-    Set<Server> currentServers = serverList.computeIfAbsent(serviceName, k -> {
-      initialCapacities.putIfAbsent(serviceName, aliveServers.size());
-      return Collections.newSetFromMap(new ConcurrentHashMap<>());
+    serverList.compute(serviceName, (upstream, serverSet) -> {
+      if (serverSet != null) {
+        serverSet.addAll(aliveServers);
+        serverSet.removeAll(deadServers);
+        return serverSet;
+      }
+      serverSet = new HashSet<>();
+      serverSet.addAll(aliveServers);
+      initialCapacities.put(serviceName, aliveServers.size());
+      return serverSet;
     });
-    currentServers.addAll(aliveServers);
-    currentServers.removeAll(deadServers);
   }
-
 }

@@ -27,7 +27,6 @@ import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 
 import java.math.BigInteger;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -218,10 +217,11 @@ public class UpstreamServiceImpl implements AutoCloseable {
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<Server> currentServers = new HashSet<>(serverStore.getServers(serviceName));
+    Set<Server> currentServers = serverStore.getServers(serviceName).stream()
+      .filter(server -> datacenter.equals(server.getDatacenter())).collect(Collectors.toSet());
 
-    Map<String, Server> serverByAddress = currentServers.stream()
-      .filter(server -> datacenter.equals(server.getDatacenter())).collect(toMap(Server::getAddress, Function.identity()));
+    Map<String, Server> serverToRemoveByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
+
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
       if (selfNodeFiltering && notSameNode(nodeName)) {
@@ -235,7 +235,7 @@ public class UpstreamServiceImpl implements AutoCloseable {
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
       int serverWeight = service.getWeights().orElse(defaultWeight).getPassing();
 
-      Server server = serverByAddress.remove(address);
+      Server server = serverToRemoveByAddress.remove(address);
 
       if (server == null) {
         server = new Server(address, serverWeight, nodeDatacenter);
@@ -246,10 +246,10 @@ public class UpstreamServiceImpl implements AutoCloseable {
       server.setTags(service.getTags());
       server.setWeight(serverWeight);
     }
-    serverStore.updateServers(serviceName, currentServers, serverByAddress.values());
+    serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
     LOGGER.info("upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}", serviceName, datacenter,
       LOGGER.isDebugEnabled() ? currentServers : currentServers.size(),
-      LOGGER.isDebugEnabled() ? serverByAddress.values() : serverByAddress.values().size()
+      LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()
     );
   }
 
