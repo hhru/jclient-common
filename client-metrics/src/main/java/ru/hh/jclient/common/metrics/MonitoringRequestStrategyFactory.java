@@ -3,8 +3,6 @@ package ru.hh.jclient.common.metrics;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
-import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.UPSTREAMS_KEY;
 
 import ru.hh.jclient.common.Monitoring;
@@ -43,16 +41,8 @@ public class MonitoringRequestStrategyFactory {
       .orElse(false);
     double allowedUpstreamDegradationPart = Optional.ofNullable(strategyProperties.getProperty(ALLOWED_DEGRADATION_PART_KEY)).stream()
       .mapToDouble(Double::parseDouble).findFirst().orElse(0.5d);
-    boolean ignoreNoServersInCurrentDC = Optional.ofNullable(strategyProperties.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY))
-      .map(Boolean::parseBoolean)
-      .orElse(false);
-    boolean failOnEmptyUpstreams = Optional.ofNullable(strategyProperties.getProperty(SYNC_UPDATE_KEY))
-      .map(Boolean::parseBoolean)
-      .orElse(true);
     BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings()
-      .setAllowedDegradationPart(allowedUpstreamDegradationPart)
-      .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC)
-      .setFailOnEmptyUpstreams(failOnEmptyUpstreams);
+      .setAllowedDegradationPart(allowedUpstreamDegradationPart);
     var balancingUpstreamManager = new BalancingUpstreamManager(
       configStore, serverStore,
       buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),

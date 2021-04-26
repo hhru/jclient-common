@@ -1,6 +1,8 @@
 package ru.hh.jclient.consul;
 
 import static java.util.stream.Collectors.toMap;
+import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
 
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
@@ -36,7 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,7 +49,7 @@ public class UpstreamServiceImpl implements AutoCloseable {
   private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();
   private final HealthClient healthClient;
   private final ServerStore serverStore;
-  private final Collection<BiConsumer<Collection<String>, Boolean>> callbacks;
+  private final Collection<Consumer<Collection<String>>> callbacks;
 
   private final Set<String> upstreamList;
   private final List<String> datacenterList;
@@ -60,6 +62,7 @@ public class UpstreamServiceImpl implements AutoCloseable {
   private final boolean allowCrossDC;
   private final boolean healthPassing;
   private final boolean selfNodeFiltering;
+  private final boolean ignoreNoServersInCurrentDC;
 
   private final Map<String, BigInteger> initialIndexes;
   private final List<ServiceHealthCache> serviceHealthCaches = new CopyOnWriteArrayList<>();
@@ -69,7 +72,7 @@ public class UpstreamServiceImpl implements AutoCloseable {
                              Consul consulClient, UpstreamServiceConsulConfig consulConfig,
                              ServerStore serverStore,
                              UpstreamManager upstreamManager,
-                             Collection<BiConsumer<Collection<String>, Boolean>> upstreamUpdateCallbacks) {
+                             Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks) {
     this.upstreamList = Set.copyOf(consulConfig.getUpstreams());
     if (this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
@@ -78,7 +81,7 @@ public class UpstreamServiceImpl implements AutoCloseable {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
     this.serverStore = serverStore;
-    this.callbacks = Stream.of(upstreamUpdateCallbacks.stream(), Stream.of((BiConsumer<Collection<String>, Boolean>)upstreamManager::updateUpstreams))
+    this.callbacks = Stream.of(upstreamUpdateCallbacks.stream(), Stream.of((Consumer<Collection<String>>)upstreamManager::updateUpstreams))
       .flatMap(Function.identity())
       .collect(Collectors.toList());
     this.currentServiceName = infrastructureConfig.getServiceName();
@@ -97,12 +100,18 @@ public class UpstreamServiceImpl implements AutoCloseable {
     }
 
     if (consulConfig.isSyncInit()) {
+      this.ignoreNoServersInCurrentDC = consulConfig.isIgnoreNoServersInCurrentDC();
       this.initialIndexes = new ConcurrentHashMap<>(datacenterList.size());
       LOGGER.debug("Trying to sync update servers");
       syncUpdateUpstreams();
-      this.callbacks.forEach(cb -> cb.accept(upstreamList, true));
+      checkServersForAllUpstreamsExist(true);
+      if (!ignoreNoServersInCurrentDC) {
+        checkServersForAllUpstreamsInCurrentDcExist(true);
+      }
+      this.callbacks.forEach(cb -> cb.accept(upstreamList));
     } else {
       this.initialIndexes = Map.of();
+      this.ignoreNoServersInCurrentDC = false;
     }
     upstreamList.forEach(this::subscribeToUpstream);
   }
@@ -166,11 +175,46 @@ public class UpstreamServiceImpl implements AutoCloseable {
 
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
       updateUpstreams(newValues, upstreamName, datacenter);
-      callbacks.forEach(cb -> cb.accept(Set.of(upstreamName), false));
+      checkServersForAllUpstreamsExist(false);
+      if (!ignoreNoServersInCurrentDC) {
+        checkServersForAllUpstreamsInCurrentDcExist(false);
+      }
+      callbacks.forEach(cb -> cb.accept(Set.of(upstreamName)));
     });
     serviceHealthCaches.add(svHealth);
     svHealth.start();
     LOGGER.info("subscribed to service {}; dc {}", upstreamName, datacenter);
+  }
+
+  private void checkServersForAllUpstreamsInCurrentDcExist(boolean throwIfError) {
+    var upstreamsNotPresentInCurrentDC = upstreamList.stream()
+      .filter(upstream -> serverStore.getServers(upstream).stream().noneMatch(this::isInCurrentDc))
+      .collect(Collectors.toSet());
+    if (!upstreamsNotPresentInCurrentDC.isEmpty()) {
+      if (throwIfError) {
+        throw new IllegalStateException("There's no instances in DC " + currentDC + " for services: " + upstreamsNotPresentInCurrentDC
+          + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
+        );
+      }
+      LOGGER.warn("There's no instances in DC {} for services: {}", currentDC, upstreamsNotPresentInCurrentDC);
+    }
+  }
+
+  private boolean isInCurrentDc(Server server) {
+    return currentDC == null || currentDC.equals(server.getDatacenter());
+  }
+
+  private void checkServersForAllUpstreamsExist(boolean throwIfError) {
+    var emptyUpstreams = upstreamList.stream()
+      .filter(upstream -> serverStore.getServers(upstream).isEmpty())
+      .collect(Collectors.toSet());
+    if (!emptyUpstreams.isEmpty()) {
+      if (throwIfError) {
+        throw new IllegalStateException("There's no instances for services: " + emptyUpstreams
+          + ". If it is intentional config use " + SYNC_UPDATE_KEY + " property to disable this check");
+      }
+      LOGGER.warn("There's no instances for services: {}", emptyUpstreams);
+    }
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {

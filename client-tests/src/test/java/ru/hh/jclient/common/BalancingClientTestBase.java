@@ -409,15 +409,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     Monitoring monitoring = mock(Monitoring.class);
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
     when(infrastructureConfig.getCurrentDC()).thenReturn(datacenter);
-    var validationSettings = new BalancingUpstreamManager.ValidationSettings()
-      .setFailOnEmptyUpstreams(true)
-      .setIgnoreNoServersInCurrentDC(false)
-      .setAllowedDegradationPart(0.5);
+    var validationSettings = new BalancingUpstreamManager.ValidationSettings();
     upstreamManager = new BalancingUpstreamManager(
       configStore, serverStore,
       Set.of(monitoring), infrastructureConfig,
       allowCrossDCRequests, validationSettings);
-    upstreamManager.updateUpstreams(upstreamList, false);
+    upstreamManager.updateUpstreams(upstreamList);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager)
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),

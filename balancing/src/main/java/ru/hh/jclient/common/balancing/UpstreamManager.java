@@ -15,5 +15,5 @@ public interface UpstreamManager {
 
   Set<Monitoring> getMonitoring();
 
-  void updateUpstreams(Collection<String> upstreams, boolean throwOnUpstreamValidation);
+  void updateUpstreams(Collection<String> upstreams);
 }

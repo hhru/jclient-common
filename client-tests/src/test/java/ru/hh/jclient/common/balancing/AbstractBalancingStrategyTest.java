@@ -84,17 +84,14 @@ public abstract class AbstractBalancingStrategyTest {
     ApplicationConfig applicationConfig = new ApplicationConfig()
       .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
     configStore.updateConfig(upstreamName, applicationConfig);
-    BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings()
-      .setAllowedDegradationPart(0.5)
-      .setFailOnEmptyUpstreams(true)
-      .setIgnoreNoServersInCurrentDC(false);
+    BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings();
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
       configStore, serverStore,
       Set.of(tracking), infrastructureConfig,
       false,
       validationSettings
     );
-    upstreamManager.updateUpstreams(Set.of(upstreamName), true);
+    upstreamManager.updateUpstreams(Set.of(upstreamName));
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return new HttpClientFactoryBuilder(contextSupplier, List.of())

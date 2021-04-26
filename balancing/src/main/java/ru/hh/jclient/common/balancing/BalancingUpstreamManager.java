@@ -1,8 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,9 +12,9 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class BalancingUpstreamManager implements UpstreamManager {
 
@@ -49,14 +47,7 @@ public BalancingUpstreamManager(ConfigStore configStore,
   }
 
   @Override
-  public void updateUpstreams(Collection<String> upstreams, boolean throwOnUpstreamValidation) {
-    if (validationSettings.failOnEmptyUpstreams) {
-      checkAllUpstreamConfigsExist(upstreams, throwOnUpstreamValidation);
-      checkServersForAllUpstreamsExist(upstreams, throwOnUpstreamValidation);
-    }
-    if (!validationSettings.ignoreNoServersInCurrentDC) {
-      checkServersForAllUpstreamsInCurrentDcExist(upstreams, throwOnUpstreamValidation);
-    }
+  public void updateUpstreams(Collection<String> upstreams) {
     upstreams.forEach(this::updateUpstream);
   }
 
@@ -66,11 +57,11 @@ public BalancingUpstreamManager(ConfigStore configStore,
     ApplicationConfig upstreamConfig = configStore.getUpstreamConfig(upstreamKey.getServiceName());
     var newConfig = ApplicationConfig.toUpstreamConfigs(upstreamConfig, UpstreamConfig.DEFAULT);
     List<Server> servers = serverStore.getServers(upstreamName);
-    int minAllowedSize = serverStore.getInitialSize(upstreamKey.getServiceName()).stream()
-      .mapToInt(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart))).findFirst().orElse(-1);
+    Optional<Integer> minAllowedSize = serverStore.getInitialSize(upstreamName)
+      .map(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart)));
 
 
-    if (minAllowedSize > 0 && servers.size() < minAllowedSize) {
+    if (minAllowedSize.isPresent() && servers.size() < minAllowedSize.get()) {
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
       LOGGER.warn("Ignoring update which contains {} servers, for upstream {} allowed minimum is {}",
         LOGGER.isDebugEnabled() ? servers : servers.size(),
@@ -87,53 +78,6 @@ public BalancingUpstreamManager(ConfigStore configStore,
       }
       return upstream;
     });
-  }
-
-  private void checkServersForAllUpstreamsInCurrentDcExist(Collection<String> upstreams, boolean throwValidation) {
-    var upstreamsNotPresentInCurrentDC = upstreams.stream()
-      .filter(upstream -> serverStore.getServers(upstream).stream().noneMatch(this::isInCurrentDc))
-      .collect(Collectors.toSet());
-    if (!upstreamsNotPresentInCurrentDC.isEmpty()) {
-      if (throwValidation) {
-        throw new IllegalStateException("There's no instances in DC " + datacenter + " for services: " + upstreamsNotPresentInCurrentDC
-          + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
-        );
-      } else {
-        LOGGER.debug("There's no instances in DC {} for services: {}. If it is intentional config use {} property to disable this check",
-                     datacenter, upstreamsNotPresentInCurrentDC, IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY);
-      }
-    }
-  }
-
-  private boolean isInCurrentDc(Server server) {
-    return datacenter == null || server.getDatacenter() != null && server.getDatacenter().equals(datacenter);
-  }
-
-  private void checkServersForAllUpstreamsExist(Collection<String> upstreams, boolean throwValidation) {
-    var emptyUpstreams = upstreams.stream()
-      .filter(upstream -> serverStore.getServers(upstream).isEmpty())
-      .collect(Collectors.toSet());
-    if (!emptyUpstreams.isEmpty()) {
-      if (throwValidation) {
-        throw new IllegalStateException("There's no instances for services: " + emptyUpstreams
-          + ". If it is intentional config use " + SYNC_UPDATE_KEY + " property to disable this check");
-      } else {
-        LOGGER.debug("There's no instances for services: {}", emptyUpstreams);
-      }
-    }
-  }
-
-  private void checkAllUpstreamConfigsExist(Collection<String> upstreams, boolean throwValidation) {
-    var absentConfigs = upstreams.stream()
-      .filter(upstream -> configStore.getUpstreamConfig(upstream) == null)
-      .collect(Collectors.toSet());
-    if (!absentConfigs.isEmpty()) {
-      if (throwValidation) {
-        throw new IllegalStateException("No valid configs found for services: " + absentConfigs);
-      } else {
-        LOGGER.debug("No valid configs found for services: {}", absentConfigs);
-      }
-    }
   }
 
   private Upstream createUpstream(Upstream.UpstreamKey key, Map<String, UpstreamConfig>  config, List<Server> servers) {
@@ -160,22 +104,10 @@ public BalancingUpstreamManager(ConfigStore configStore,
   }
 
   public static class ValidationSettings {
-    private double allowedDegradationPart;
-    private boolean ignoreNoServersInCurrentDC;
-    private boolean failOnEmptyUpstreams;
+    private double allowedDegradationPart = 0.5d;
 
     public ValidationSettings setAllowedDegradationPart(double allowedDegradationPart) {
       this.allowedDegradationPart = allowedDegradationPart;
-      return this;
-    }
-
-    public ValidationSettings setIgnoreNoServersInCurrentDC(boolean ignoreNoServersInCurrentDC) {
-      this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
-      return this;
-    }
-
-    public ValidationSettings setFailOnEmptyUpstreams(boolean failOnEmptyUpstreams) {
-      this.failOnEmptyUpstreams = failOnEmptyUpstreams;
       return this;
     }
   }

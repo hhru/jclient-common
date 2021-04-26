@@ -342,14 +342,14 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertHostEquals(request[0], "server1");
     when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null)));
-    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), false);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
     when(serverStore.getServers(TEST_UPSTREAM))
             .thenReturn(List.of(new Server("server2", 1, null), new Server("server3", 1, null)));
-    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), false);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
@@ -407,7 +407,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     String datacenter = "DC1";
     createHttpClientFactory(List.of(TEST_UPSTREAM), datacenter, false);
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", 1, datacenter)));
-    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), true);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
       .then(iom -> {
@@ -475,7 +475,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertHostEquals(request[0], "server1");
 
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server2", 1, "DC2")));
-    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM), false);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");

@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,7 +36,7 @@ public class UpstreamConfigServiceImpl implements AutoCloseable {
   private final int watchSeconds;
   private final String currentServiceName;
   private final Set<String> upstreamList;
-  private final Collection<BiConsumer<Collection<String>, Boolean>> callbacks;
+  private final Collection<Consumer<Collection<String>>> callbacks;
 
   private final KeyValueClient kvClient;
   private final ConfigStore configStore;
@@ -47,14 +47,14 @@ public class UpstreamConfigServiceImpl implements AutoCloseable {
   public UpstreamConfigServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient,
                                    ConfigStore configStore, UpstreamManager upstreamManager,
                                    UpstreamConfigServiceConsulConfig config,
-                                   Collection<BiConsumer<Collection<String>, Boolean>> upstreamUpdateCallbacks) {
+                                   Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks) {
     this.upstreamList = Set.copyOf(config.getUpstreams());
     if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
     this.callbacks = Stream.of(
       upstreamUpdateCallbacks.stream(),
-      Stream.of((BiConsumer<Collection<String>, Boolean>)upstreamManager::updateUpstreams)
+      Stream.of((Consumer<Collection<String>>)upstreamManager::updateUpstreams)
     )
       .flatMap(Function.identity())
       .collect(Collectors.toList());
@@ -66,7 +66,8 @@ public class UpstreamConfigServiceImpl implements AutoCloseable {
     if (config.isSyncUpdate()) {
       LOGGER.debug("Trying to sync update configs");
       syncUpdateConfig();
-      callbacks.forEach(cb -> cb.accept(upstreamList, true));
+      checkAllUpstreamConfigsExist(true);
+      callbacks.forEach(cb -> cb.accept(upstreamList));
     }
     initConfigCache();
   }
@@ -103,6 +104,18 @@ public class UpstreamConfigServiceImpl implements AutoCloseable {
     }
   }
 
+  private void checkAllUpstreamConfigsExist(boolean throwIfError) {
+    var absentConfigs = upstreamList.stream()
+      .filter(upstream -> configStore.getUpstreamConfig(upstream) == null)
+      .collect(Collectors.toSet());
+    if (!absentConfigs.isEmpty()) {
+      if (throwIfError) {
+        throw new IllegalStateException("No valid configs found for services: " + absentConfigs);
+      }
+      LOGGER.warn("No valid configs found for services: {}", absentConfigs);
+    }
+  }
+
   private void initConfigCache() {
     ImmutableQueryOptions queryOptions = ImmutableQueryOptions.builder()
       .caller(currentServiceName)
@@ -113,7 +126,8 @@ public class UpstreamConfigServiceImpl implements AutoCloseable {
     kvCache.addListener(newValues -> {
       LOGGER.debug("update config:{}", ROOT_PATH);
       updateConfigs(newValues.values());
-      callbacks.forEach(cb -> cb.accept(upstreamList, false));
+      checkAllUpstreamConfigsExist(false);
+      callbacks.forEach(cb -> cb.accept(upstreamList));
     });
     kvCache.start();
   }

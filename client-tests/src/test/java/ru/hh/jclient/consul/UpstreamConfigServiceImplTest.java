@@ -1,6 +1,6 @@
 package ru.hh.jclient.consul;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -97,6 +97,20 @@ public class UpstreamConfigServiceImplTest {
   }
 
   @Test
+  public void testNoConfig() {
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
+      .thenReturn(wrapWithResponse(List.of()));
+    UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("app-name"));
+    assertThrows(IllegalStateException.class,
+      () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of())
+    );
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
+      .thenReturn(wrapWithResponse(List.copyOf(prepareValues())));
+    new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of());
+    assertNotNull(configStore.getUpstreamConfig("app-name"));
+  }
+
+  @Test
   public void testBadConfig() {
     String badFormatKey = "badFormat";
     var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
@@ -104,11 +118,15 @@ public class UpstreamConfigServiceImplTest {
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(values));
-    UpstreamConfigServiceConsulConfig cfg = copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat"));
-    new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, cfg, List.of());
-    assertNotNull(configStore.getUpstreamConfig("app-name"));
-    assertNull(configStore.getUpstreamConfig("badFormat"));
+    var ex = assertThrows(IllegalStateException.class,
+      () -> {
+        UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat"));
+        new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of());
+      }
+    );
+    assertTrue(ex.getMessage().contains(badFormatKey));
   }
+
 
   private Collection<Value> prepareValues() {
     Collection<Value> values = new ArrayList<>();

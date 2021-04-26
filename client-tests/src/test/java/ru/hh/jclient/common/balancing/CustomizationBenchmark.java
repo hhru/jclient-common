@@ -64,7 +64,7 @@ public class CustomizationBenchmark {
     }
 
     @Override
-    public void updateUpstreams(Collection<String> upstreams, boolean throwOnUpstreamValidation) {
+    public void updateUpstreams(Collection<String> upstreams) {
 
     }
 

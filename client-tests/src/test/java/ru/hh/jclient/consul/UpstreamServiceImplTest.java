@@ -1,5 +1,6 @@
 package ru.hh.jclient.consul;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -197,6 +198,59 @@ public class UpstreamServiceImplTest {
       .getUpstreamStore()
       .getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
+  }
+
+  @Test
+  public void testNoServers() {
+    mockServiceHealth(List.of());
+
+    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+      .setUpstreams(upstreamList)
+      .setAllowCrossDC(allowCrossDC)
+      .setHealthPassing(false)
+      .setSelfNodeFilteringEnabled(false)
+      .setDatacenterList(datacenterList)
+      .setWatchSeconds(watchSeconds)
+      .setConsistencyMode(ConsistencyMode.DEFAULT)
+      .setSyncInit(true);
+    assertThrows(IllegalStateException.class,
+      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+    );
+  }
+
+  @Test
+  public void testNoServersInCurrentDc() {
+    ServiceHealth serviceHealth = buildServiceHealth("a1", 1, "notCurrentDc", NODE_NAME, 100, true);
+    mockServiceHealth(List.of(serviceHealth));
+
+    UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
+      .setUpstreams(upstreamList)
+      .setAllowCrossDC(true)
+      .setHealthPassing(false)
+      .setSelfNodeFilteringEnabled(false)
+      .setDatacenterList(List.of(DATA_CENTER, "notCurrentDc"))
+      .setWatchSeconds(watchSeconds)
+      .setConsistencyMode(ConsistencyMode.DEFAULT)
+      .setSyncInit(true)
+      .setIgnoreNoServersInCurrentDC(false);
+    assertThrows(IllegalStateException.class,
+      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+    );
+
+    UpstreamServiceConsulConfig ignoreConfig = UpstreamServiceConsulConfig.copyOf(consulConfig).setIgnoreNoServersInCurrentDC(true);
+    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, ignoreConfig, serverStore, upstreamManager, List.of())
+      .getUpstreamStore()
+      .getServers(SERVICE_NAME)
+      .size()
+    );
+
+    serviceHealth = buildServiceHealth("a2", 1, DATA_CENTER, NODE_NAME, 100, true);
+    mockServiceHealth(List.of(serviceHealth));
+    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+      .getUpstreamStore()
+      .getServers(SERVICE_NAME)
+      .size()
+    );
   }
 
   private ServiceHealth buildServiceHealth(String address, int port, String datacenter, String nodeName, int weight, boolean passing) {
