@@ -28,15 +28,13 @@ import ru.hh.consul.monitoring.ClientEventHandler;
 import ru.hh.consul.option.QueryOptions;
 import ru.hh.jclient.common.balancing.ConfigStore;
 import ru.hh.jclient.common.balancing.ConfigStoreImpl;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
+import ru.hh.jclient.common.balancing.UpstreamConfigs;
 import ru.hh.jclient.common.balancing.UpstreamManager;
-import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-import ru.hh.jclient.common.balancing.config.Host;
-import ru.hh.jclient.common.balancing.config.Profile;
 import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class UpstreamConfigServiceImplTest {
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
@@ -76,24 +74,16 @@ public class UpstreamConfigServiceImplTest {
       List.of()
     );
 
-    ApplicationConfig applicationConfig = configStore.getUpstreamConfig("app-name");
-    assertNotNull(applicationConfig);
-    Map<String, Host> hosts = applicationConfig.getHosts();
-    assertNotNull(hosts);
-    Host host = hosts.get("default");
-    assertNotNull(host);
-    Map<String, Profile> profiles = host.getProfiles();
+    UpstreamConfigs profiles = configStore.getUpstreamConfig("app-name");
     assertNotNull(profiles);
-    Profile profile = profiles.get("default");
+    UpstreamConfig profile = profiles.get("default").get();
     assertNotNull(profile);
 
-    assertEquals(43, profile.getMaxTries().intValue());
-    assertTrue(profile.getRetryPolicy().get(503).isIdempotent());
+    assertEquals(43, profile.getMaxTries());
+    assertTrue(profile.getRetryPolicy().getRules().get(503));
 
     //second app
-    assertEquals(56,
-      configStore.getUpstreamConfig("app2").getHosts().get("default").getProfiles().get("default").getMaxTries().intValue()
-    );
+    assertEquals(56, configStore.getUpstreamConfig("app2").get("default").get().getMaxTries());
   }
 
   @Test

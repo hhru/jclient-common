@@ -1,6 +1,5 @@
 package ru.hh.jclient.common;
 
-import joptsimple.internal.Strings;
 import org.asynchttpclient.Request;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -19,7 +18,7 @@ import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.config.UpstreamConfigParserTest.buildTestConfig;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.balancing.config.Host;
 import ru.hh.jclient.common.balancing.config.Profile;
@@ -50,7 +49,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -85,7 +84,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
     var calledAddresses = new ArrayList<>();
@@ -117,7 +116,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
     var calledAddresses = new ArrayList<>();
@@ -154,7 +153,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     int slowStartInterval = 2;
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setSlowStartIntervalSec(3);
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
     var calledAddresses = new ArrayList<>();
@@ -192,7 +191,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -230,12 +229,11 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     ApplicationConfig applicationConfig = new ApplicationConfig().setHosts(Map.of(DEFAULT, new Host().setProfiles(profiles)));
 
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(applicationConfig);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
-    when(serverStore.getServers(TEST_UPSTREAM + ":" + profileFoo)).thenReturn(List.of(new Server("server1", 1, null)));
-    when(serverStore.getServers(TEST_UPSTREAM + ":" + profileBar)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", 1, null)));
 
-    List<String> upstreamList = List.of(TEST_UPSTREAM, profileName(TEST_UPSTREAM, profileFoo), profileName(TEST_UPSTREAM, profileBar));
+    List<String> upstreamList = List.of(TEST_UPSTREAM);
     createHttpClientFactory(upstreamList);
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class))).then(iom -> {
@@ -310,7 +308,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Test
   public void requestWithUnknownUpstream() throws Exception {
 
-    List<String> upstreamList = List.of(profileName(TEST_UPSTREAM, "foo"), profileName(TEST_UPSTREAM, "bar"));
+    List<String> upstreamList = List.of(TEST_UPSTREAM);
 
     createHttpClientFactory(upstreamList);
 
@@ -484,12 +482,6 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Override
   public boolean isAdaptive() {
     return false;
-  }
-
-
-  private String profileName(String serviceName, String profileName) {
-    String[] ar = {serviceName, profileName};
-    return Strings.join(ar, PROFILE_DELIMITER);
   }
 
 }

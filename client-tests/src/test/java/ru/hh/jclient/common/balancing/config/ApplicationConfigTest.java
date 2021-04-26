@@ -3,22 +3,24 @@ package ru.hh.jclient.common.balancing.config;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
+
 import org.junit.Test;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
+import ru.hh.jclient.common.balancing.UpstreamConfigs;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpstreamConfigParserTest {
-  private static final String DEFAULT = "default";
+public class ApplicationConfigTest {
 
   @Test
   public void testOneProfile() {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
-    UpstreamConfig config = configMap.get(DEFAULT);
+    UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
+    UpstreamConfig config = configMap.get(DEFAULT).get();
 
     assertEquals(3, config.getMaxTries());
     assertEquals(2, config.getMaxTimeoutTries());
@@ -36,8 +38,8 @@ public class UpstreamConfigParserTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().put(secondProfileName, secondProfile);
 
-    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
-    UpstreamConfig config = configMap.get(secondProfileName);
+    UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
+    UpstreamConfig config = configMap.get(secondProfileName).get();
 
     assertEquals(7, config.getMaxTries());
     assertEquals(8000, config.getRequestTimeoutMs());
@@ -45,8 +47,8 @@ public class UpstreamConfigParserTest {
 
   @Test
   public void testDefaultConfig() {
-    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT);
-    UpstreamConfig config = configMap.get(DEFAULT);
+    UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT);
+    UpstreamConfig config = configMap.get(DEFAULT).get();
 
     assertEquals(UpstreamConfig.DEFAULT_CONFIG.getMaxTries(), config.getMaxTries());
     assertEquals(UpstreamConfig.DEFAULT_CONFIG.getMaxTimeoutTries(), config.getMaxTimeoutTries());
@@ -63,8 +65,8 @@ public class UpstreamConfigParserTest {
     retryPolicy.put(503, new RetryPolicyConfig().setIdempotent(true));
     retryPolicy.put(599, new RetryPolicyConfig().setIdempotent(false));
 
-    Map<String, UpstreamConfig> configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
-    UpstreamConfig config = configMap.get(DEFAULT);
+    UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
+    UpstreamConfig config = configMap.get(DEFAULT).get();
 
     assertFalse(config.getRetryPolicy().getRules().get(599));
     assertTrue(config.getRetryPolicy().getRules().get(503));

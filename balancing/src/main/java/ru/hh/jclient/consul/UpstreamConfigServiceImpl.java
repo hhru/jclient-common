@@ -12,6 +12,7 @@ import ru.hh.consul.option.ImmutableQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.balancing.ConfigStore;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
@@ -97,7 +98,7 @@ public class UpstreamConfigServiceImpl implements AutoCloseable {
       }
       try {
         ApplicationConfig applicationConfig = OBJECT_MAPPER.readValue(value.getValueAsString().orElse(null), ApplicationConfig.class);
-        configStore.updateConfig(keys[1], applicationConfig);
+        configStore.updateConfig(keys[1], ApplicationConfig.toUpstreamConfigs(applicationConfig, UpstreamConfig.DEFAULT));
       } catch (IOException e) {
         LOGGER.error("Can't read value for key:{}", key, e);
       }

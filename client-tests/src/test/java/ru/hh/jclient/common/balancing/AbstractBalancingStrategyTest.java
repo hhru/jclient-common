@@ -83,7 +83,7 @@ public abstract class AbstractBalancingStrategyTest {
     var configStore = new ConfigStoreImpl();
     ApplicationConfig applicationConfig = new ApplicationConfig()
       .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
-    configStore.updateConfig(upstreamName, applicationConfig);
+    configStore.updateConfig(upstreamName, ApplicationConfig.toUpstreamConfigs(applicationConfig, UpstreamConfig.DEFAULT));
     BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings();
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
       configStore, serverStore,

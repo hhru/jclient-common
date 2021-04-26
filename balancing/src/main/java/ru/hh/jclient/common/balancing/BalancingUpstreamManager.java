@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -52,8 +51,7 @@ public BalancingUpstreamManager(ConfigStore configStore,
 
   private void updateUpstream(@Nonnull String upstreamName) {
 
-    ApplicationConfig upstreamConfig = configStore.getUpstreamConfig(upstreamName);
-    var newConfig = ApplicationConfig.toUpstreamConfigs(upstreamConfig, UpstreamConfig.DEFAULT);
+    var newConfig = configStore.getUpstreamConfig(upstreamName);
     List<Server> servers = serverStore.getServers(upstreamName);
     Optional<Integer> minAllowedSize = serverStore.getInitialSize(upstreamName)
       .map(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart)));
@@ -78,8 +76,8 @@ public BalancingUpstreamManager(ConfigStore configStore,
     });
   }
 
-  private Upstream createUpstream(String upstreamName, Map<String, UpstreamConfig>  config, List<Server> servers) {
-    return new Upstream(upstreamName, config, servers, datacenter, allowCrossDCRequests, true);
+  private Upstream createUpstream(String upstreamName, UpstreamConfigs upstreamConfigs, List<Server> servers) {
+    return new Upstream(upstreamName, upstreamConfigs, servers, datacenter, allowCrossDCRequests, true);
   }
 
   @Override

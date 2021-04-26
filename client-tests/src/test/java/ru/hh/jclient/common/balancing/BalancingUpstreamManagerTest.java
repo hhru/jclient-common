@@ -13,7 +13,7 @@ import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
 
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.config.UpstreamConfigParserTest.buildTestConfig;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
 
 import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
@@ -32,7 +32,7 @@ public class BalancingUpstreamManagerTest {
   public void createUpstreamManager() {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
-    configStore.updateConfig(TEST_BACKEND, applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
@@ -52,7 +52,7 @@ public class BalancingUpstreamManagerTest {
 
     profile.setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
 
-    configStore.updateConfig(TEST_BACKEND, applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
     manager.updateUpstreams(Set.of(TEST_BACKEND));
@@ -61,6 +61,7 @@ public class BalancingUpstreamManagerTest {
         500, new RetryPolicyConfig().setIdempotent(false),
         503, new RetryPolicyConfig().setIdempotent(true)
     ));
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     manager.updateUpstreams(Set.of(TEST_BACKEND));
 
     Upstream upstream = manager.getUpstream(TEST_BACKEND);
@@ -73,7 +74,7 @@ public class BalancingUpstreamManagerTest {
   @Test
   public void ignoreDangerousServerUpdate() {
     ApplicationConfig applicationConfig = buildTestConfig();
-    configStore.updateConfig(TEST_BACKEND, applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     List<Server> initialServers = List.of(
       new Server("server1", 100, "test"),
       new Server("server2", 100, "test")
@@ -89,7 +90,7 @@ public class BalancingUpstreamManagerTest {
   @Test
   public void allowNotDangerousServerUpdate() {
     ApplicationConfig applicationConfig = buildTestConfig();
-    configStore.updateConfig(TEST_BACKEND, applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     List<Server> initialServers = List.of(
       new Server("server1", 100, "test"),
       new Server("server2", 100, "test")
@@ -105,7 +106,7 @@ public class BalancingUpstreamManagerTest {
 
   @Test
   public void testGetUpstream() {
-    configStore.updateConfig(TEST_BACKEND, new ApplicationConfig());
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
 
     UpstreamManager upstreamManager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 

@@ -1,7 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
 import java.time.Clock;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,7 @@ public class Upstream {
   private final boolean enabled;
 
   private volatile List<Server> servers;
-  private volatile Map<String, UpstreamConfig> upstreamConfigs;
+  private volatile UpstreamConfigs upstreamConfigs;
   private boolean failedSelection = false;
 
   private final ReadWriteLock configReadWriteLock = new ReentrantReadWriteLock();
@@ -35,7 +34,7 @@ public class Upstream {
   private final Lock configReadLock = configReadWriteLock.readLock();
 
   Upstream(String upstreamName,
-           Map<String, UpstreamConfig> upstreamConfigs,
+           UpstreamConfigs upstreamConfigs,
            List<Server> servers,
            String datacenter,
            boolean allowCrossDCRequests,
@@ -145,16 +144,21 @@ public class Upstream {
     }
   }
 
-  void updateConfig(Map<String, UpstreamConfig> newConfig, List<Server> servers) {
+  void updateConfig(UpstreamConfigs newConfigs, List<Server> servers) {
     configWriteLock.lock();
     try {
-      this.upstreamConfigs = newConfig;
+      this.upstreamConfigs = newConfigs;
       this.servers = servers;
-      initSlowStart(upstreamConfigs.get(DEFAULT_PROFILE), Clock.systemDefaultZone());
+      UpstreamConfig upstreamConfig = getUpstreamConfigOrThrow(DEFAULT_PROFILE);
+      initSlowStart(upstreamConfig, Clock.systemDefaultZone());
       this.failedSelection = false;
     } finally {
       configWriteLock.unlock();
     }
+  }
+
+  private UpstreamConfig getUpstreamConfigOrThrow(String profile) {
+    return upstreamConfigs.get(profile).orElseThrow(() -> new IllegalStateException("Profile " + profile + " should be present"));
   }
 
   private void initSlowStart(UpstreamConfig upstreamConfig, Clock clock) {
@@ -177,11 +181,7 @@ public class Upstream {
     profile = profile == null || profile.isEmpty() ? DEFAULT_PROFILE : profile;
     configReadLock.lock();
     try {
-      UpstreamConfig upstreamConfig = upstreamConfigs.get(profile);
-      if (upstreamConfig == null) {
-        throw new IllegalStateException(String.format("can't find profile '%s' for upstream '%s'", profile, getName()));
-      }
-      return upstreamConfig;
+      return getUpstreamConfigOrThrow(profile);
     } finally {
       configReadLock.unlock();
     }

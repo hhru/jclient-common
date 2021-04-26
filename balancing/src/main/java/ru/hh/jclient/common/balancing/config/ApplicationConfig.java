@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing.config;
 
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamConfigFormatException;
+import ru.hh.jclient.common.balancing.UpstreamConfigs;
 
 import java.util.Map;
 import java.util.Optional;
@@ -20,27 +21,27 @@ public class ApplicationConfig {
     return this;
   }
 
-  public static Map<String, UpstreamConfig> toUpstreamConfigs(ApplicationConfig config, String hostName) {
+  public static UpstreamConfigs toUpstreamConfigs(ApplicationConfig config, String hostName) {
     if (config == null) {
-      return UpstreamConfig.getDefaultConfig();
+      return UpstreamConfigs.getDefaultConfig();
     }
     Map<String, Host> hostMap = config.getHosts();
     if (hostMap == null || hostMap.get(hostName) == null) {
-      return UpstreamConfig.getDefaultConfig();
+      return UpstreamConfigs.getDefaultConfig();
     }
     Map<String, Profile> profiles = hostMap.get(hostName).getProfiles();
     if (profiles == null || profiles.isEmpty()) {
-      return UpstreamConfig.getDefaultConfig();
+      return UpstreamConfigs.getDefaultConfig();
     }
     try {
-      return profiles.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> convertProfileToUpstreamConfig(e.getValue())));
+      return UpstreamConfigs.of(profiles.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> convertProfileToUpstreamConfig(e.getValue()))));
     } catch (Exception e) {
       throw new UpstreamConfigFormatException("failed to get upstream config: " + config, e);
     }
   }
 
   private static UpstreamConfig convertProfileToUpstreamConfig(Profile profile) {
-    return UpstreamConfig.create(
+    return UpstreamConfigs.createUpstreamConfigWithDefaults(
       profile.getMaxTries(), profile.getMaxTimeoutTries(),
       profile.getConnectTimeoutMs(), profile.getRequestTimeoutMs(),
       profile.getSlowStartIntervalSec(),
