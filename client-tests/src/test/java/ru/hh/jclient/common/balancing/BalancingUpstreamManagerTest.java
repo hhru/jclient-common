@@ -105,6 +105,22 @@ public class BalancingUpstreamManagerTest {
   }
 
   @Test
+  public void skipUpdateIfNoConfigs() {
+    List<Server> initialServers = List.of(
+        new Server("server1", 100, "test"),
+        new Server("server2", 100, "test")
+    );
+    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
+    assertNull(manager.getUpstream(TEST_BACKEND));
+    ApplicationConfig applicationConfig = buildTestConfig();
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
+    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+  }
+
+  @Test
   public void testGetUpstream() {
     configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
 

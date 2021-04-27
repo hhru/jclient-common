@@ -25,6 +25,7 @@ import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +57,7 @@ public class CustomizationBenchmark {
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
-    public Upstream getUpstream(String serviceName) {
+    public Upstream getUpstream(String serviceName, @Nullable String profile) {
       return upstream;
     }
 

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -50,12 +51,9 @@ public BalancingUpstreamManager(ConfigStore configStore,
   }
 
   private void updateUpstream(@Nonnull String upstreamName) {
-
-    var newConfig = configStore.getUpstreamConfig(upstreamName);
-    List<Server> servers = serverStore.getServers(upstreamName);
     Optional<Integer> minAllowedSize = serverStore.getInitialSize(upstreamName)
       .map(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart)));
-
+    List<Server> servers = serverStore.getServers(upstreamName);
 
     if (minAllowedSize.isPresent() && servers.size() < minAllowedSize.get()) {
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
@@ -64,6 +62,12 @@ public BalancingUpstreamManager(ConfigStore configStore,
         upstreamName,
         minAllowedSize
       );
+      return;
+    }
+
+    var newConfig = configStore.getUpstreamConfig(upstreamName);
+    if (newConfig == null) {
+      LOGGER.debug("Config for upstream {} is not found", upstreamName);
       return;
     }
     upstreams.compute(upstreamName, (serviceName, upstream) -> {
@@ -81,7 +85,7 @@ public BalancingUpstreamManager(ConfigStore configStore,
   }
 
   @Override
-  public Upstream getUpstream(String serviceName) {
+  public Upstream getUpstream(String serviceName, @Nullable String profile) {
     return upstreams.get(getNameWithoutScheme(serviceName));
   }
 
