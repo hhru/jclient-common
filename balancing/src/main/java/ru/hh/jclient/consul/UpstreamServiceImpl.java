@@ -67,10 +67,9 @@ public class UpstreamServiceImpl implements AutoCloseable {
   private final List<ServiceHealthCache> serviceHealthCaches = new CopyOnWriteArrayList<>();
 
 
-  public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig,
-                             Consul consulClient, UpstreamServiceConsulConfig consulConfig,
-                             ServerStore serverStore,
-                             UpstreamManager upstreamManager,
+  public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient,
+                             ServerStore serverStore, UpstreamManager upstreamManager,
+                             UpstreamServiceConsulConfig consulConfig,
                              Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks) {
     this.upstreamList = Set.copyOf(consulConfig.getUpstreams());
     if (this.upstreamList.isEmpty()) {

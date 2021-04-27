@@ -86,7 +86,7 @@ public class UpstreamServiceImplTest {
     when(healthClient.getEventHandler()).thenReturn(new ClientEventHandler("", mock(ClientEventCallback.class)));
     when(consulClient.healthClient()).thenReturn(healthClient);
     mockServiceHealth(List.of());
-    upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of());
+    upstreamService = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of());
   }
 
   private void mockServiceHealth(List<ServiceHealth> health) {
@@ -140,7 +140,7 @@ public class UpstreamServiceImplTest {
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
       .getUpstreamStore()
       .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -167,7 +167,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
       .getUpstreamStore()
       .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -194,7 +194,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
       .getUpstreamStore()
       .getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
@@ -214,7 +214,7 @@ public class UpstreamServiceImplTest {
       .setConsistencyMode(ConsistencyMode.DEFAULT)
       .setSyncInit(true);
     assertThrows(IllegalStateException.class,
-      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
     );
   }
 
@@ -234,11 +234,11 @@ public class UpstreamServiceImplTest {
       .setSyncInit(true)
       .setIgnoreNoServersInCurrentDC(false);
     assertThrows(IllegalStateException.class,
-      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
     );
 
     UpstreamServiceConsulConfig ignoreConfig = UpstreamServiceConsulConfig.copyOf(consulConfig).setIgnoreNoServersInCurrentDC(true);
-    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, ignoreConfig, serverStore, upstreamManager, List.of())
+    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, ignoreConfig, List.of())
       .getUpstreamStore()
       .getServers(SERVICE_NAME)
       .size()
@@ -246,7 +246,7 @@ public class UpstreamServiceImplTest {
 
     serviceHealth = buildServiceHealth("a2", 1, DATA_CENTER, NODE_NAME, 100, true);
     mockServiceHealth(List.of(serviceHealth));
-    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, consulConfig, serverStore, upstreamManager, List.of())
+    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
       .getUpstreamStore()
       .getServers(SERVICE_NAME)
       .size()
