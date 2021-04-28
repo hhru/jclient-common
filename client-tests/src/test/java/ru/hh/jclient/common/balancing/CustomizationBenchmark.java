@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import static java.util.Collections.singleton;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -24,16 +23,15 @@ import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 @State(Scope.Benchmark)
@@ -42,7 +40,6 @@ public class CustomizationBenchmark {
   private static final String UPSTREAM = "up1";
   private static final List<Server> servers = List.of(new Server("server1", 1, null),
           new Server("server2", 1, null));
-  private static final CustomUpstreamService CUSTOM_UPSTREAM_SERVICE = new CustomUpstreamService();
 
   public static void main(String[] args) throws RunnerException {
     var opt = new OptionsBuilder()
@@ -53,7 +50,10 @@ public class CustomizationBenchmark {
   }
 
   private static final Upstream upstream = new Upstream(UPSTREAM,
-      UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), null), servers);
+    ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
+    servers,
+    null, false, true
+  );
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
@@ -66,6 +66,11 @@ public class CustomizationBenchmark {
       return Set.of();
     }
 
+    @Override
+    public void updateUpstreams(Collection<String> upstreams) {
+
+    }
+
   };
   private static final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;
@@ -74,7 +79,7 @@ public class CustomizationBenchmark {
   public void setUp() {
 
 
-      factory = new HttpClientFactory(httpClient, singleton("http://localhost"),
+      factory = new HttpClientFactory(httpClient, Set.of("http://localhost"),
           new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
           Runnable::run,
           new CustomStrategy(manager, UnaryOperator.identity())
@@ -153,18 +158,6 @@ public class CustomizationBenchmark {
     @Override
     public RequestStrategy<RequestBalancerBuilder> createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
       return new CustomStrategy(upstreamManager, configAction);
-    }
-  }
-  private static final class CustomUpstreamService implements UpstreamService{
-
-    @Override
-    public void setupListener(Consumer<String> callback) {
-
-    }
-
-    @Override
-    public List<Server> getServers(String serviceName) {
-      return servers;
     }
   }
 }

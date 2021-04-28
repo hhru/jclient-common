@@ -1,4 +1,4 @@
-package ru.hh.jclient.consul.model.config;
+package ru.hh.jclient.consul;
 
 import ru.hh.consul.option.ConsistencyMode;
 import ru.hh.jclient.consul.model.ConsistencyModeConfig;
@@ -8,15 +8,16 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 
-import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.ALLOW_CROSS_DC_PATH;
-import static ru.hh.jclient.consul.PropertyKeys.CONSISTENCY_MODE_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.DC_LIST_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.HEALTHY_ONLY_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.SELF_NODE_FILTERING_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.SYNC_UPDATE_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.UPSTREAMS_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.WATCH_SECONDS_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
+import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.DC_LIST_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.HEALTHY_ONLY_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.SELF_NODE_FILTERING_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.UPSTREAMS_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.WATCH_SECONDS_KEY;
 
 public class UpstreamServiceConsulConfig {
   private List<String> upstreams;
@@ -27,6 +28,7 @@ public class UpstreamServiceConsulConfig {
   private List<String> datacenterList;
   private boolean selfNodeFilteringEnabled;
   private boolean syncInit = true;
+  private boolean ignoreNoServersInCurrentDC;
 
   public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
@@ -48,6 +50,8 @@ public class UpstreamServiceConsulConfig {
       .map(ConsistencyModeConfig::valueOf)
       .orElse(ConsistencyModeConfig.DEFAULT);
     boolean syncUpdate = Optional.ofNullable(props.getProperty(SYNC_UPDATE_KEY)).map(Boolean::parseBoolean).orElse(true);
+    boolean ignoreNoServersInCurrentDC = Optional.ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY)).map(Boolean::parseBoolean)
+      .orElse(false);
     return new UpstreamServiceConsulConfig()
       .setUpstreams(upstreams)
       .setAllowCrossDC(allowCrossDC)
@@ -56,7 +60,8 @@ public class UpstreamServiceConsulConfig {
       .setWatchSeconds(watchSeconds)
       .setDatacenterList(dcList)
       .setConsistencyMode(consistencyMode.consistencyMode)
-      .setSyncInit(syncUpdate);
+      .setSyncInit(syncUpdate)
+      .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC);
   }
 
   public static UpstreamServiceConsulConfig copyOf(UpstreamServiceConsulConfig config) {
@@ -140,6 +145,15 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setSyncInit(boolean syncInit) {
     this.syncInit = syncInit;
+    return this;
+  }
+
+  public boolean isIgnoreNoServersInCurrentDC() {
+    return ignoreNoServersInCurrentDC;
+  }
+
+  public UpstreamServiceConsulConfig setIgnoreNoServersInCurrentDC(boolean ignoreNoServersInCurrentDC) {
+    this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
     return this;
   }
 }

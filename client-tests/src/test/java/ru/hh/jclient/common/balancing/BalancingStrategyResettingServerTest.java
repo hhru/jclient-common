@@ -31,8 +31,8 @@ public class BalancingStrategyResettingServerTest extends AbstractBalancingStrat
     workingServerAddress = createNormallyWorkingServer();
     resettingServerAddress = createResettingServer();
     httpClientFactory = buildBalancingFactory(
-      DATACENTER, TEST_UPSTREAM,
-      Map.of(1, List.of(resettingServerAddress, workingServerAddress)),
+      TEST_UPSTREAM,
+      new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(resettingServerAddress, workingServerAddress))),
       requestRouteTracking
     );
   }

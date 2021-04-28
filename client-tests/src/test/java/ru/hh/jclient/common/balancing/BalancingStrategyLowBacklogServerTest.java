@@ -42,8 +42,8 @@ public class BalancingStrategyLowBacklogServerTest extends AbstractBalancingStra
     workingServerAddress = createNormallyWorkingServer();
     lowBacklogServerAddress = createNotAcceptingServer(latch);
     httpClientFactory = buildBalancingFactory(
-      DATACENTER, TEST_UPSTREAM,
-      Map.of(1, List.of(lowBacklogServerAddress, workingServerAddress)),
+      TEST_UPSTREAM,
+      new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(lowBacklogServerAddress, workingServerAddress))),
       requestRouteTracking
     );
     HttpRequest req = HttpRequest.newBuilder(URI.create(lowBacklogServerAddress)).GET().build();

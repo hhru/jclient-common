@@ -1,4 +1,4 @@
-package ru.hh.jclient.consul.model;
+package ru.hh.jclient.common.balancing.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

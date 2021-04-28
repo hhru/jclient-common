@@ -4,30 +4,22 @@ import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
 import ru.hh.jclient.common.Response;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
-import ru.hh.jclient.consul.model.RetryPolicyConfig;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
-final class RetryPolicy {
+public final class RetryPolicy {
   private Map<Integer, Boolean> rules = new HashMap<>();
 
-  RetryPolicy() {
+   public RetryPolicy() {
     rules.put(CONNECT_TIMEOUT_ERROR, false);
     rules.put(SERVICE_UNAVAILABLE, false);
   }
 
-  void update(Map<Integer, RetryPolicyConfig> config) {
+  void update(Map<Integer, Boolean> config) {
     if (config != null && !config.isEmpty()) {
-      rules = config
-          .entrySet()
-          .stream()
-          .collect(Collectors.toMap(
-              e -> e.getKey(),
-              e -> e.getValue().isIdempotent()
-          ));
+      rules = config;
     }
   }
 
@@ -56,7 +48,7 @@ final class RetryPolicy {
     return rules.containsKey(statusCode);
   }
 
-  Map<Integer, Boolean> getRules() {
+  public Map<Integer, Boolean> getRules() {
     return Map.copyOf(this.rules);
   }
 

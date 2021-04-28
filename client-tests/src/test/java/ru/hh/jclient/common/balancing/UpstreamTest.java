@@ -2,38 +2,28 @@ package ru.hh.jclient.common.balancing;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
-import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.UpstreamConfig.getDefaultConfig;
-import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
-import ru.hh.jclient.consul.model.ApplicationConfig;
+import static ru.hh.jclient.common.balancing.UpstreamConfigs.getDefaultConfig;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
+
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 import java.util.List;
 
 public class UpstreamTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamTest.class);
   private static final String TEST_SERVICE_NAME = "backend";
-
-  private static final String TEST_HOST_CUSTOM_PROFILE = "foo";
-  Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(new ApplicationConfig(), DEFAULT);
+  UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT);
 
   @Test
   public void createUpstreamServiceOnly() {
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, List.of());
     assertEquals(TEST_SERVICE_NAME, upstream.getName());
-  }
-
-  @Test
-  public void createUpstreamFull() {
-    Upstream.UpstreamKey upstreamKey = new Upstream.UpstreamKey(TEST_SERVICE_NAME, TEST_HOST_CUSTOM_PROFILE);
-    Upstream upstream = createTestUpstream(String.join(":", TEST_SERVICE_NAME, TEST_HOST_CUSTOM_PROFILE), List.of());
-
-    assertEquals(upstreamKey, upstream.getKey());
   }
 
   @Test
@@ -100,7 +90,7 @@ public class UpstreamTest {
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
-    Map<String, UpstreamConfig> configMap = UpstreamConfig.fromApplicationConfig(applicationConfig, DEFAULT);
+    UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
 
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, configMap);
     int index = upstream.acquireServer().getIndex();
@@ -118,7 +108,7 @@ public class UpstreamTest {
     int weight = numOfRequests * tests * 2 + 1;
     List<Server> servers = List.of(new Server("a", weight, null));
 
-    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers);
+    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers, null, false, true);
     Server server = servers.get(0);
 
     Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests);
@@ -161,8 +151,8 @@ public class UpstreamTest {
     return createTestUpstream(serviceName, servers, getDefaultConfig());
   }
 
-  private static Upstream createTestUpstream(String serviceName, List<Server> servers, Map<String, UpstreamConfig> config) {
-    return new Upstream(serviceName, config, servers);
+  private static Upstream createTestUpstream(String serviceName, List<Server> servers, UpstreamConfigs upstreamConfigs) {
+    return new Upstream(serviceName, upstreamConfigs, servers, null, false, true);
   }
 
   private static List<Server> buildServers() {

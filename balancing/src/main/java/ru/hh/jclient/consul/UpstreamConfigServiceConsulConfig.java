@@ -1,4 +1,4 @@
-package ru.hh.jclient.consul.model.config;
+package ru.hh.jclient.consul;
 
 import ru.hh.consul.option.ConsistencyMode;
 import ru.hh.jclient.consul.model.ConsistencyModeConfig;
@@ -8,10 +8,10 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 
-import static ru.hh.jclient.consul.PropertyKeys.CONSISTENCY_MODE_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.UPSTREAMS_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.SYNC_UPDATE_KEY;
-import static ru.hh.jclient.consul.PropertyKeys.WATCH_SECONDS_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.UPSTREAMS_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.WATCH_SECONDS_KEY;
 
 public class UpstreamConfigServiceConsulConfig {
   private List<String> upstreams;

@@ -8,12 +8,9 @@ import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Host;
-import ru.hh.jclient.consul.model.Profile;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.Host;
+import ru.hh.jclient.common.balancing.config.Profile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,15 +19,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class AbstractBalancingStrategyTest {
@@ -56,20 +52,17 @@ public abstract class AbstractBalancingStrategyTest {
     }
   };
 
-  protected static HttpClientFactory buildBalancingFactory(String datacenterName,
-                                                           String upstreamName,
-                                                           Map<Integer, List<String>> adressesByWeight, ConcurrentMap<String,
-                                                           List<Integer>> trackingHolder) {
-    return buildBalancingFactory(datacenterName, upstreamName, EMPTY_PROFILE, adressesByWeight, trackingHolder);
+  protected static HttpClientFactory buildBalancingFactory(String upstreamName,
+                                                           ServerStore serverStore,
+                                                           ConcurrentMap<String, List<Integer>> trackingHolder) {
+    return buildBalancingFactory(upstreamName, EMPTY_PROFILE, serverStore, trackingHolder);
 
   }
 
-  protected static HttpClientFactory buildBalancingFactory(String datacenterName,
-                                                           String upstreamName,
+  protected static HttpClientFactory buildBalancingFactory(String upstreamName,
                                                            Profile profile,
-                                                           Map<Integer, List<String>> adressesByWeight, ConcurrentMap<String,
-                                                           List<Integer>> trackingHolder) {
-    ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+                                                           ServerStore serverStore,
+                                                           ConcurrentMap<String, List<Integer>> trackingHolder) {
     var tracking = new Monitoring() {
       @Override
       public void countRequest(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
@@ -87,29 +80,18 @@ public abstract class AbstractBalancingStrategyTest {
       @Override
       public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
     };
+    var configStore = new ConfigStoreImpl();
+    ApplicationConfig applicationConfig = new ApplicationConfig()
+      .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
+    configStore.updateConfig(upstreamName, ApplicationConfig.toUpstreamConfigs(applicationConfig, UpstreamConfig.DEFAULT));
+    BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings();
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
-      List.of(), Set.of(tracking), infrastructureConfig, false,
-      new UpstreamConfigService() {
-        @Override
-        public ApplicationConfig getUpstreamConfig(String application) {
-          return new ApplicationConfig().setHosts(Map.of("default", new Host().setProfiles(Map.of("default", profile))));
-        }
-
-        @Override
-        public void setupListener(Consumer<String> callback) {
-        }
-    }, new UpstreamService() {
-         @Override
-         public void setupListener(Consumer<String> callback) {}
-
-         @Override
-         public List<Server> getServers(String serviceName) {
-           return adressesByWeight.entrySet().stream()
-             .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
-             .collect(Collectors.toList());
-         }
-    }, 0.5);
-    upstreamManager.updateUpstream(upstreamName);
+      configStore, serverStore,
+      Set.of(tracking), infrastructureConfig,
+      false,
+      validationSettings
+    );
+    upstreamManager.updateUpstreams(Set.of(upstreamName));
     var strategy = new BalancingRequestStrategy(upstreamManager);
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return new HttpClientFactoryBuilder(contextSupplier, List.of())
@@ -117,6 +99,33 @@ public abstract class AbstractBalancingStrategyTest {
       .withRequestStrategy(strategy)
       .withCallbackExecutor(Runnable::run)
       .build();
+  }
+
+  protected static class TestStoreFromAddress implements ServerStore {
+    private final String datacenterName;
+    private final Map<Integer, List<String>> adressesByWeight;
+
+    public TestStoreFromAddress(String datacenterName, Map<Integer, List<String>> adressesByWeight) {
+      this.datacenterName = datacenterName;
+      this.adressesByWeight = adressesByWeight;
+    }
+
+    @Override
+    public List<Server> getServers(String serviceName) {
+      return adressesByWeight.entrySet().stream()
+        .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
+        .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Integer> getInitialSize(String serviceName) {
+      return Optional.of(adressesByWeight.values().stream().mapToInt(List::size).sum());
+    }
+
+    @Override
+    public void updateServers(String serviceName, Collection<Server> aliveServers, Collection<Server> deadServers) {
+
+    }
   }
 
   protected static String createNormallyWorkingServer() {

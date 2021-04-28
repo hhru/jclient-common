@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
-class UpstreamConfigFormatException extends RuntimeException {
+public class UpstreamConfigFormatException extends RuntimeException {
 
-  UpstreamConfigFormatException(String message, Throwable cause) {
+  public UpstreamConfigFormatException(String message, Throwable cause) {
     super(message, cause);
   }
 }

@@ -6,18 +6,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
+
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.UpstreamConfigParserTest.buildTestConfig;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.Profile;
-import ru.hh.jclient.consul.model.RetryPolicyConfig;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
+
+import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.Profile;
 
 import java.util.List;
 import java.util.Map;
@@ -25,15 +25,14 @@ import java.util.Set;
 
 public class BalancingUpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";
-  private final UpstreamConfigService upstreamConfigService = mock(UpstreamConfigService.class);
-  private final UpstreamService upstreamService = mock(UpstreamService.class);
+  private final ConfigStore configStore = new ConfigStoreImpl();
+  private final ServerStore serverStore = new ServerStoreImpl();
 
   @Test
   public void createUpstreamManager() {
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
-
-    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
@@ -53,16 +52,17 @@ public class BalancingUpstreamManagerTest {
 
     profile.setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
 
-    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
-    manager.updateUpstream(TEST_BACKEND);
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
 
     profile.setRetryPolicy(Map.of(
-            500, new RetryPolicyConfig().setIdempotent(false),
-            503, new RetryPolicyConfig().setIdempotent(true)
-        ));
-    manager.updateUpstream(TEST_BACKEND);
+        500, new RetryPolicyConfig().setIdempotent(false),
+        503, new RetryPolicyConfig().setIdempotent(true)
+    ));
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
 
     Upstream upstream = manager.getUpstream(TEST_BACKEND);
 
@@ -74,39 +74,55 @@ public class BalancingUpstreamManagerTest {
   @Test
   public void ignoreDangerousServerUpdate() {
     ApplicationConfig applicationConfig = buildTestConfig();
-    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     List<Server> initialServers = List.of(
-            new Server("server1", 100, "test"),
-            new Server("server2", 100, "test")
+      new Server("server1", 100, "test"),
+      new Server("server2", 100, "test")
     );
-    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(initialServers);
+    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.0);
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
-    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(List.of(new Server("server3", 100, "test")));
-    manager.updateUpstream(TEST_BACKEND);
+    serverStore.updateServers(TEST_BACKEND, List.of(new Server("server3", 100, "test")), initialServers);
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
   }
 
   @Test
   public void allowNotDangerousServerUpdate() {
     ApplicationConfig applicationConfig = buildTestConfig();
-    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(applicationConfig);
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     List<Server> initialServers = List.of(
-            new Server("server1", 100, "test"),
-            new Server("server2", 100, "test")
+      new Server("server1", 100, "test"),
+      new Server("server2", 100, "test")
     );
-    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(initialServers);
+    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
     List<Server> servers = List.of(new Server("server3", 100, "test"));
-    when(upstreamService.getServers(TEST_BACKEND)).thenReturn(servers);
-    manager.updateUpstream(TEST_BACKEND);
+    serverStore.updateServers(TEST_BACKEND, servers, initialServers);
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
     assertEquals(servers, manager.getUpstream(TEST_BACKEND).getServers());
   }
 
   @Test
+  public void skipUpdateIfNoConfigs() {
+    List<Server> initialServers = List.of(
+        new Server("server1", 100, "test"),
+        new Server("server2", 100, "test")
+    );
+    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
+    BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
+    assertNull(manager.getUpstream(TEST_BACKEND));
+    ApplicationConfig applicationConfig = buildTestConfig();
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+    manager.updateUpstreams(Set.of(TEST_BACKEND));
+    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+  }
+
+  @Test
   public void testGetUpstream() {
-    when(upstreamConfigService.getUpstreamConfig(TEST_BACKEND)).thenReturn(new ApplicationConfig());
+    configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
 
     UpstreamManager upstreamManager = createUpstreamManager(List.of(TEST_BACKEND), 0.5);
 
@@ -119,17 +135,18 @@ public class BalancingUpstreamManagerTest {
     assertNull(upstreamManager.getUpstream("missing_upstream"));
   }
 
-
   private BalancingUpstreamManager createUpstreamManager(List<String> upstreamList, double allowedDegradationPart) {
     Monitoring monitoring = mock(Monitoring.class);
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
-    return new BalancingUpstreamManager(upstreamList,
-            Set.of(monitoring),
-            infrastructureConfig,
-            false,
-            upstreamConfigService,
-            upstreamService,
-            allowedDegradationPart
+    var validationSettings = new BalancingUpstreamManager.ValidationSettings()
+      .setAllowedDegradationPart(allowedDegradationPart);
+    BalancingUpstreamManager balancingUpstreamManager = new BalancingUpstreamManager(
+      configStore, serverStore,
+      Set.of(monitoring),
+      infrastructureConfig,
+      false, validationSettings
     );
+    balancingUpstreamManager.updateUpstreams(upstreamList);
+    return balancingUpstreamManager;
   }
 }

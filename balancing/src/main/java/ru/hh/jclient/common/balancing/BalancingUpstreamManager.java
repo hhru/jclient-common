@@ -1,21 +1,17 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
-import ru.hh.jclient.consul.model.ApplicationConfig;
-import ru.hh.jclient.consul.model.config.JClientInfrastructureConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,56 +22,57 @@ public class BalancingUpstreamManager implements UpstreamManager {
 
   public static final String SCHEMA_SEPARATOR = "://";
 
+  private final ConfigStore configStore;
+  private final ServerStore serverStore;
+
   private final Map<String, Upstream> upstreams = new ConcurrentHashMap<>();
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
-  private final UpstreamConfigService upstreamConfigService;
-  private final UpstreamService upstreamService;
-  private final Map<String, Integer> allowedUpstreamCapacities;
+  private final ValidationSettings validationSettings;
 
-  public BalancingUpstreamManager(Collection<String> upstreamsList,
-                                  Set<Monitoring> monitoring,
-                                  JClientInfrastructureConfig infrastructureConfig,
-                                  boolean allowCrossDCRequests,
-                                  UpstreamConfigService upstreamConfigService,
-                                  UpstreamService upstreamService,
-                                  double allowedDegradationPath) {
+public BalancingUpstreamManager(ConfigStore configStore,
+                                ServerStore serverStore,
+                                Set<Monitoring> monitoring,
+                                JClientInfrastructureConfig infrastructureConfig,
+                                boolean allowCrossDCRequests,
+                                ValidationSettings validationSettings) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC().toLowerCase();
     this.allowCrossDCRequests = allowCrossDCRequests;
-    this.upstreamService = upstreamService;
-    this.upstreamConfigService = upstreamConfigService;
-
-    requireNonNull(upstreamsList, "upstreamsList must not be null");
-    upstreamsList.forEach(this::updateUpstream);
-    allowedUpstreamCapacities = upstreams.entrySet().stream()
-      .collect(toMap(Map.Entry::getKey, e -> (int) Math.ceil(e.getValue().getServers().size() * (1 - allowedDegradationPath))));
-    upstreamConfigService.setupListener(this::updateUpstream);
-    upstreamService.setupListener(this::updateUpstream);
+    this.serverStore = serverStore;
+    this.configStore = configStore;
+    this.validationSettings = validationSettings;
   }
 
-  public void updateUpstream(@Nonnull String upstreamName) {
-    var upstreamKey = Upstream.UpstreamKey.ofComplexName(upstreamName);
+  @Override
+  public void updateUpstreams(Collection<String> upstreams) {
+    upstreams.forEach(this::updateUpstream);
+  }
 
-    ApplicationConfig upstreamConfig = upstreamConfigService.getUpstreamConfig(upstreamKey.getServiceName());
-    var newConfig = UpstreamConfig.fromApplicationConfig(upstreamConfig, UpstreamConfig.DEFAULT);
-    List<Server> servers = upstreamService.getServers(upstreamName);
-    boolean unsafeUpdate = ofNullable(allowedUpstreamCapacities).map(capacities -> capacities.get(upstreamKey.getServiceName()))
-      .map(allowedUpstreamCapacity -> servers.size() < allowedUpstreamCapacity)
-      .orElse(Boolean.FALSE);
-    if (unsafeUpdate) {
+  private void updateUpstream(@Nonnull String upstreamName) {
+    Optional<Integer> minAllowedSize = serverStore.getInitialSize(upstreamName)
+      .map(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart)));
+    List<Server> servers = serverStore.getServers(upstreamName);
+
+    if (minAllowedSize.isPresent() && servers.size() < minAllowedSize.get()) {
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
       LOGGER.warn("Ignoring update which contains {} servers, for upstream {} allowed minimum is {}",
         LOGGER.isDebugEnabled() ? servers : servers.size(),
-        upstreamKey.getServiceName(),
-        allowedUpstreamCapacities.get(upstreamKey.getServiceName())
+        upstreamName,
+        minAllowedSize
       );
       return;
     }
-    upstreams.compute(upstreamKey.getServiceName(), (serviceName, upstream) -> {
+
+    var newConfig = configStore.getUpstreamConfig(upstreamName);
+    if (newConfig == null) {
+      LOGGER.debug("Config for upstream {} is not found", upstreamName);
+      return;
+    }
+    upstreams.compute(upstreamName, (serviceName, upstream) -> {
       if (upstream == null) {
-        upstream = createUpstream(upstreamKey, newConfig, servers);
+        upstream = createUpstream(upstreamName, newConfig, servers);
       } else {
         upstream.updateConfig(newConfig, servers);
       }
@@ -83,8 +80,8 @@ public class BalancingUpstreamManager implements UpstreamManager {
     });
   }
 
-  private Upstream createUpstream(Upstream.UpstreamKey key, Map<String, UpstreamConfig>  config, List<Server> servers) {
-    return new Upstream(key, config, servers, datacenter, allowCrossDCRequests, true);
+  private Upstream createUpstream(String upstreamName, UpstreamConfigs upstreamConfigs, List<Server> servers) {
+    return new Upstream(upstreamName, upstreamConfigs, servers, datacenter, allowCrossDCRequests, true);
   }
 
   @Override
@@ -104,5 +101,14 @@ public class BalancingUpstreamManager implements UpstreamManager {
 
   Map<String, Upstream> getUpstreams() {
     return upstreams;
+  }
+
+  public static class ValidationSettings {
+    private double allowedDegradationPart = 0.5d;
+
+    public ValidationSettings setAllowedDegradationPart(double allowedDegradationPart) {
+      this.allowedDegradationPart = allowedDegradationPart;
+      return this;
+    }
   }
 }
