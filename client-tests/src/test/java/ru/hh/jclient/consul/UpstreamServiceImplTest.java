@@ -244,7 +244,7 @@ public class UpstreamServiceImplTest {
       .size()
     );
 
-    serviceHealth = buildServiceHealth("a2", 1, DATA_CENTER, NODE_NAME, 100, true);
+    serviceHealth = buildServiceHealth("a2", 1, DATA_CENTER.toLowerCase(), NODE_NAME, 100, true);
     mockServiceHealth(List.of(serviceHealth));
     assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
       .getUpstreamStore()

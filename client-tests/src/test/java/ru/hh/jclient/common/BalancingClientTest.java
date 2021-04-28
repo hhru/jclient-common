@@ -34,7 +34,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BalancingClientTest extends BalancingClientTestBase {
-  private static final String PROFILE_DELIMITER = ":";
 
   @Test
   public void testBalancing() throws Exception {
@@ -73,6 +72,48 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     assertEquals(0, servers.get(2).getRequests());
     assertEquals(1, servers.get(2).getStatsRequests());
+  }
+
+  @Test
+  public void testBalancingCrossDc() throws Exception {
+    String currentDC = "DC1";
+    Server server1 = new Server("server1", 11, currentDC);
+    Server server2 = new Server("server2", 5, "DC2");
+    Server server3 = new Server("server3", 1, null);
+    List<Server> servers = List.of(server1,
+        server2,
+        server3
+    );
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM), currentDC, true);
+
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
+        .then(iom -> {
+          completeWith(200, iom);
+          return null;
+        });
+    // to avoid rescaling
+    for (int i = 0; i < servers.stream().mapToInt(Server::getWeight).max().getAsInt() - 1; i++) {
+      getTestClient().get();
+    }
+    assertEquals(10, servers.get(0).getStatsRequests());
+    assertEquals(0, servers.get(1).getStatsRequests());
+    assertEquals(0, servers.get(2).getStatsRequests());
+
+    List<Server> noCurrentDcServers = List.of(server2, server3);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(noCurrentDcServers);
+    upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
+
+    for (int i = 0; i < noCurrentDcServers.stream().mapToInt(Server::getWeight).max().getAsInt() - 1; i++) {
+      getTestClient().get();
+    }
+
+    assertEquals(3, noCurrentDcServers.get(0).getStatsRequests());
+    assertEquals(1, noCurrentDcServers.get(1).getStatsRequests());
   }
 
   @Test
