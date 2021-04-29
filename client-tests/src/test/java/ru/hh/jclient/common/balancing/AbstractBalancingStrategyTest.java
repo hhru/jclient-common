@@ -33,7 +33,7 @@ public abstract class AbstractBalancingStrategyTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBalancingStrategyTest.class);
   private static final Profile EMPTY_PROFILE = new Profile();
-  protected static final String DATACENTER = "test";
+  protected static final String DATACENTER = "Test";
   protected static final String TEST_UPSTREAM = "test-upstream";
   protected static final JClientInfrastructureConfig infrastructureConfig = new JClientInfrastructureConfig() {
     @Override

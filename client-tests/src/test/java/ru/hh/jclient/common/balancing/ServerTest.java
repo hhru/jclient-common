@@ -13,7 +13,7 @@ public class ServerTest {
     assertEquals(0, server.getStatsRequests());
     assertEquals(0, server.getFails());
     assertEquals(1, server.getWeight());
-    assertEquals("dc1", server.getDatacenterLowerCased());
+    assertEquals("DC1", server.getDatacenter());
   }
 
   @Test

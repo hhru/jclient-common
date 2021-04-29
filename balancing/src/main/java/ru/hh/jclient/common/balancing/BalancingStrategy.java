@@ -25,7 +25,7 @@ final class BalancingStrategy {
         continue;
       }
 
-      boolean isDifferentDC = !Objects.equals(datacenter, server.getDatacenterLowerCased());
+      boolean isDifferentDC = !Objects.equals(datacenter, server.getDatacenter());
 
       if (isDifferentDC && !allowCrossDCRequests) {
         continue;

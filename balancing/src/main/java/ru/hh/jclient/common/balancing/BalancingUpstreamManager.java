@@ -38,7 +38,7 @@ public BalancingUpstreamManager(ConfigStore configStore,
                                 boolean allowCrossDCRequests,
                                 ValidationSettings validationSettings) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
-    this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC().toLowerCase();
+    this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.serverStore = serverStore;
     this.configStore = configStore;

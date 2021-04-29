@@ -96,10 +96,6 @@ public class Server {
     return datacenter;
   }
 
-  public String getDatacenterLowerCased() {
-    return datacenter == null ? null : datacenter.toLowerCase();
-  }
-
   public int getRequests() {
     return requests;
   }
