@@ -92,7 +92,7 @@ public abstract class AbstractBalancingStrategyTest {
       validationSettings
     );
     upstreamManager.updateUpstreams(Set.of(upstreamName));
-    var strategy = new BalancingRequestStrategy(upstreamManager);
+    var strategy = new BalancingRequestStrategy(upstreamManager, Set.of());
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return new HttpClientFactoryBuilder(contextSupplier, List.of())
       .withConnectTimeoutMs(100)

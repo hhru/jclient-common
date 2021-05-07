@@ -20,6 +20,7 @@ import ru.hh.consul.option.QueryOptions;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.balancing.BalancingStrategyInitializer;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.UpstreamManager;
@@ -42,7 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UpstreamServiceImpl implements AutoCloseable {
+public class UpstreamServiceImpl implements AutoCloseable, BalancingStrategyInitializer {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
 
   private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();

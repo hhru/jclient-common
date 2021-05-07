@@ -415,7 +415,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       Set.of(monitoring), infrastructureConfig,
       allowCrossDCRequests, validationSettings);
     upstreamManager.updateUpstreams(upstreamList);
-    requestingStrategy = new BalancingRequestStrategy(upstreamManager)
+    requestingStrategy = new BalancingRequestStrategy(upstreamManager, Set.of())
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
