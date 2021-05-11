@@ -4,6 +4,7 @@ import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.RequestStrategy;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 public class BalancingRequestStrategy implements RequestStrategy<RequestBalancerBuilder> {
@@ -14,6 +15,11 @@ public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer
 
   public BalancingRequestStrategy(UpstreamManager upstreamManager, Collection<BalancingStrategyInitializer> initializers) {
     this(upstreamManager, initializers, UnaryOperator.identity());
+  }
+
+  @Deprecated(forRemoval = true)
+  public BalancingRequestStrategy(UpstreamManager upstreamManager) {
+    this(upstreamManager, Set.of(), UnaryOperator.identity());
   }
 
   private BalancingRequestStrategy(UpstreamManager upstreamManager, Collection<BalancingStrategyInitializer> initializers,
