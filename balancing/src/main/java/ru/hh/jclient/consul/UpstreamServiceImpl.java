@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UpstreamServiceImpl implements AutoCloseable {
+public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);
 
   private final ServiceWeights defaultWeight = ImmutableServiceWeights.builder().passing(100).warning(10).build();

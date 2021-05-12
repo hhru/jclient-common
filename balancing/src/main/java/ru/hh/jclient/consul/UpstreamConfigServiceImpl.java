@@ -28,7 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UpstreamConfigServiceImpl implements AutoCloseable {
+public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
   static final String ROOT_PATH = "upstream/";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
