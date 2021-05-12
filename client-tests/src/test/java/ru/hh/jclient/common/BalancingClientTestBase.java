@@ -37,8 +37,8 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-import ru.hh.jclient.consul.UpstreamConfigService;
-import ru.hh.jclient.consul.UpstreamService;
+import ru.hh.jclient.consul.TestUpstreamConfigService;
+import ru.hh.jclient.consul.TestUpstreamService;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -417,7 +417,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       Set.of(monitoring), infrastructureConfig,
       allowCrossDCRequests, validationSettings);
     upstreamManager.updateUpstreams(upstreamList);
-    requestingStrategy = new BalancingRequestStrategy(upstreamManager, new UpstreamService() {}, new UpstreamConfigService() {})
+    requestingStrategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService())
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
