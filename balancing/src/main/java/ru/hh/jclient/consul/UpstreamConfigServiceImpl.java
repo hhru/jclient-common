@@ -11,7 +11,6 @@ import ru.hh.consul.option.ConsistencyMode;
 import ru.hh.consul.option.ImmutableQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.balancing.BalancingStrategyInitializer;
 import ru.hh.jclient.common.balancing.ConfigStore;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamManager;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UpstreamConfigServiceImpl implements AutoCloseable, BalancingStrategyInitializer {
+public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);
   static final String ROOT_PATH = "upstream/";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

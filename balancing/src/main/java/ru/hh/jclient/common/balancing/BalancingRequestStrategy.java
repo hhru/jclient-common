@@ -2,30 +2,34 @@ package ru.hh.jclient.common.balancing;
 
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.RequestStrategy;
+import ru.hh.jclient.consul.UpstreamConfigService;
+import ru.hh.jclient.consul.UpstreamService;
 
-import java.util.Collection;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 
 public class BalancingRequestStrategy implements RequestStrategy<RequestBalancerBuilder> {
 
   private final UpstreamManager upstreamManager;
-  private final Collection<BalancingStrategyInitializer> initializers;
+  private final UpstreamConfigService upstreamConfigService;
+  private final UpstreamService upstreamService;
   private final UnaryOperator<RequestBalancerBuilder> configAction;
 
-  public BalancingRequestStrategy(UpstreamManager upstreamManager, Collection<BalancingStrategyInitializer> initializers) {
-    this(upstreamManager, initializers, UnaryOperator.identity());
+  public BalancingRequestStrategy(UpstreamManager upstreamManager,
+                                  UpstreamService upstreamService, UpstreamConfigService upstreamConfigService) {
+    this(upstreamManager, upstreamService, upstreamConfigService, UnaryOperator.identity());
   }
 
   @Deprecated(forRemoval = true)
   public BalancingRequestStrategy(UpstreamManager upstreamManager) {
-    this(upstreamManager, Set.of(), UnaryOperator.identity());
+    this(upstreamManager, null, null, UnaryOperator.identity());
   }
 
-  private BalancingRequestStrategy(UpstreamManager upstreamManager, Collection<BalancingStrategyInitializer> initializers,
+  private BalancingRequestStrategy(UpstreamManager upstreamManager,
+                                   UpstreamService upstreamService, UpstreamConfigService upstreamConfigService,
                                    UnaryOperator<RequestBalancerBuilder> configAction) {
     this.upstreamManager = upstreamManager;
-    this.initializers = initializers;
+    this.upstreamConfigService = upstreamConfigService;
+    this.upstreamService = upstreamService;
     this.configAction = configAction;
   }
 
@@ -37,6 +41,6 @@ public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer
 
   @Override
   public BalancingRequestStrategy createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
-    return new BalancingRequestStrategy(this.upstreamManager, initializers, configAction);
+    return new BalancingRequestStrategy(this.upstreamManager, upstreamService, upstreamConfigService, configAction);
   }
 }

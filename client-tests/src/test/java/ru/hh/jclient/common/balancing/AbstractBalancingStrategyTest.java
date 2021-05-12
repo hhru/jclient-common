@@ -11,6 +11,8 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.balancing.config.Host;
 import ru.hh.jclient.common.balancing.config.Profile;
+import ru.hh.jclient.consul.UpstreamConfigService;
+import ru.hh.jclient.consul.UpstreamService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,7 +94,7 @@ public abstract class AbstractBalancingStrategyTest {
       validationSettings
     );
     upstreamManager.updateUpstreams(Set.of(upstreamName));
-    var strategy = new BalancingRequestStrategy(upstreamManager, Set.of());
+    var strategy = new BalancingRequestStrategy(upstreamManager, new UpstreamService() {}, new UpstreamConfigService() {});
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return new HttpClientFactoryBuilder(contextSupplier, List.of())
       .withConnectTimeoutMs(100)
