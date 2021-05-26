@@ -41,6 +41,8 @@ class HttpClientImpl extends HttpClient {
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION,
     X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE);
 
+  static final String CONTRACTS_HEADERS_PREFIX = "X-Contract";
+
   private final Executor callbackExecutor;
 
   HttpClientImpl(AsyncHttpClient http,
@@ -92,8 +94,8 @@ class HttpClientImpl extends HttpClient {
     HttpHeaders headers = new HttpHeaders();
     if (!isExternalRequest()) {
       headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, Integer.toString(request.getRequestTimeout()));
-      PASS_THROUGH_HEADERS.stream()
-        .filter(getContext().getHeaders()::containsKey)
+      getContext().getHeaders().keySet().stream()
+        .filter(header -> PASS_THROUGH_HEADERS.contains(header) || header.startsWith(CONTRACTS_HEADERS_PREFIX))
         .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }
 
