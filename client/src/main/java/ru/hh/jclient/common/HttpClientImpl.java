@@ -41,6 +41,10 @@ class HttpClientImpl extends HttpClient {
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION,
     X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE);
 
+  /**
+   * Headers used for contract tests, details in PORTFOLIO-12423.
+   * Probably temporal solution, if contract tests will work then we should change hard-coded headers to predicates
+   */
   static final String CONTRACTS_HEADERS_PREFIX = "X-Contract";
 
   private final Executor callbackExecutor;
