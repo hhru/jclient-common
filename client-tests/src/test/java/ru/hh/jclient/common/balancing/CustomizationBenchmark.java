@@ -21,6 +21,7 @@ import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
@@ -129,6 +130,11 @@ public class CustomizationBenchmark {
         @Override
         public CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context) {
           return CompletableFuture.completedFuture(new ResponseWrapper(null, 1));
+        }
+
+        @Override
+        public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
+          return CompletableFuture.completedFuture(new ResponseWrapper(response, 0L));
         }
 
         @Override

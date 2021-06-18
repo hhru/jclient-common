@@ -298,24 +298,11 @@ public abstract class HttpClient {
    * @return response
    */
   public CompletableFuture<Response> unconverted() {
-    RequestStrategy.RequestExecutor requestExecutor = new RequestStrategy.RequestExecutor() {
-      @Override
-      public CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext requestContext) {
-        if (retryCount > 0) {
-          // due to retry possibly performed in another thread
-          // TODO do not re-get suppliers here
-          debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
-        }
-        return HttpClient.this.executeRequest(request, retryCount, requestContext);
-      }
-
-      @Override
-      public int getDefaultRequestTimeoutMs() {
-        return http.getConfig().getRequestTimeout();
-      }
-    };
+    RequestStrategy.RequestExecutor requestExecutor = createRequestExecutor();
     return requestEngineBuilder.build(request, requestExecutor).execute();
   }
+
+  abstract RequestStrategy.RequestExecutor createRequestExecutor();
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
 
@@ -361,6 +348,10 @@ public abstract class HttpClient {
 
   List<RequestDebug> getDebugs() {
     return debugs;
+  }
+
+  void setDebugs(List<RequestDebug> debugs) {
+    this.debugs = debugs;
   }
 
   boolean useReadOnlyReplica() {

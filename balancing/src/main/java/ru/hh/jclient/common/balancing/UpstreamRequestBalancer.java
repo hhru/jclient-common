@@ -17,7 +17,6 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
 
@@ -47,11 +46,11 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     String upstreamName = state.getUpstreamName();
     if (!state.isUpstreamEnabled()) {
       LOGGER.warn("Upstream {} is disabled. Returning serverNotAvailableResponse", upstreamName);
-      return new ImmediateResultOrPreparedRequest(completedFuture(getServerNotAvailableResponse(request, upstreamName)));
+      return new ImmediateResultOrPreparedRequest(getServerNotAvailableResponse(request, upstreamName), new RequestContext(upstreamName, "unknown"));
     }
     state.acquireServer();
     if (!state.isServerAvailable()) {
-      return new ImmediateResultOrPreparedRequest(completedFuture(getServerNotAvailableResponse(request, upstreamName)));
+      return new ImmediateResultOrPreparedRequest(getServerNotAvailableResponse(request, upstreamName), new RequestContext(upstreamName, "unknown"));
     }
     int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout()
       : state.getUpstreamConfig().getRequestTimeoutMs();
