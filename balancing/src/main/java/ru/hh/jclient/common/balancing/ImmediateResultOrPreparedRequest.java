@@ -6,16 +6,15 @@ import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.Response;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
 
 public final class ImmediateResultOrPreparedRequest {
-  private final CompletableFuture<Response> result;
+  private final Response result;
   private final RequestContext requestContext;
   private final Request processedRequest;
 
-  public ImmediateResultOrPreparedRequest(@Nonnull CompletableFuture<Response> result) {
+  public ImmediateResultOrPreparedRequest(@Nonnull Response result, @Nonnull RequestContext requestContext) {
     this.result = result;
-    this.requestContext = null;
+    this.requestContext = requestContext;
     this.processedRequest = null;
   }
 
@@ -25,14 +24,11 @@ public final class ImmediateResultOrPreparedRequest {
     this.processedRequest = processedRequest;
   }
 
-  public CompletableFuture<Response> getResult() {
+  public Response getResult() {
     return result;
   }
 
   public RequestContext getRequestContext() {
-    if (result != null) {
-      throw new IllegalStateException("first check result");
-    }
     return requestContext;
   }
 

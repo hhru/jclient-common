@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.Boolean.TRUE;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Set.of;
+import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
@@ -29,6 +31,7 @@ import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaderNames.X_SOURCE;
 import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
 
+import ru.hh.jclient.common.RequestStrategy.RequestExecutor;
 import ru.hh.jclient.common.util.ContentType;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
@@ -175,6 +178,68 @@ class HttpClientImpl extends HttpClient {
     return getExpectedMediaTypes().get().equals(getExpectedMediaTypesForErrors().get());
   }
 
+  @Override
+  RequestExecutor createRequestExecutor() {
+    return new RequestStrategy.RequestExecutor() {
+      @Override
+      public CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext requestContext) {
+        if (retryCount > 0) {
+          // due to retry possibly performed in another thread
+          // TODO do not re-get suppliers here
+          setDebugs(getContext().getDebugSuppliers().stream().map(Supplier::get).collect(toList()));
+        }
+        return HttpClientImpl.this.executeRequest(request, retryCount, requestContext);
+      }
+
+      @Override
+      public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
+        for (RequestDebug requestDebug : getDebugs()) {
+          request = requestDebug.onRequestStart(request, getContext().getHeaders(), request.getQueryParams(), isExternalRequest());
+        }
+        for (RequestDebug requestDebug : getDebugs()) {
+          requestDebug.onRequest(request, getRequestBodyEntity(), requestContext);
+        }
+        Transfers transfers = getStorages().prepare();
+        CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
+        HttpClientImpl.proceedWithResponse(response, 0, getDebugs(), transfers, promise, callbackExecutor);
+        return promise;
+      }
+
+      @Override
+      public int getDefaultRequestTimeoutMs() {
+        return getHttp().getConfig().getRequestTimeout();
+      }
+    };
+  }
+
+  private static ResponseWrapper proceedWithResponse(
+      Response response,
+      long responseTimeMicros,
+      List<RequestDebug> requestDebugs,
+      Transfers contextTransfers,
+      CompletableFuture<ResponseWrapper> promise,
+      Executor callbackExecutor) {
+
+    for (RequestDebug debug : requestDebugs) {
+      response = debug.onResponse(response);
+    }
+    ResponseWrapper wrapper = new ResponseWrapper(response, responseTimeMicros);
+    // complete promise in a separate thread to avoid blocking caller thread
+    callbackExecutor.execute(() -> {
+      try {
+        // install context(s) in current (callback) thread so chained tasks have context to run with
+        contextTransfers.perform();
+        promise.complete(wrapper);
+      }
+      finally {
+        // remove context(s) once the promise completes
+        contextTransfers.rollback();
+      }
+    });
+    return wrapper;
+  }
+
+
   static class CompletionHandler extends AsyncCompletionHandler<ResponseWrapper> {
     private final MDCCopy mdcCopy;
     private final CompletableFuture<ResponseWrapper> promise;
@@ -233,23 +298,13 @@ class HttpClientImpl extends HttpClient {
     }
 
     private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMicros) {
-      Response debuggedResponse = new Response(response);
-      for (RequestDebug debug : requestDebugs) {
-        debuggedResponse = debug.onResponse(debuggedResponse);
-      }
-      ResponseWrapper wrapper = new ResponseWrapper(debuggedResponse, responseTimeMicros);
-      // complete promise in a separate thread not to block ning thread
-      callbackExecutor.execute(() -> {
-        try {
-          // install context(s) for current (callback) thread so chained tasks have context to run with
-          contextTransfers.perform();
-          promise.complete(wrapper);
-        } finally {
-          // remove context(s) once the promise completes
-          contextTransfers.rollback();
-        }
-      });
-      return wrapper;
+      return HttpClientImpl.proceedWithResponse(
+          new Response(response),
+          responseTimeMicros,
+          requestDebugs,
+          contextTransfers,
+          promise,
+          callbackExecutor);
     }
 
     private void completeExceptionally(Throwable t) {
