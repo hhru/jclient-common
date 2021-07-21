@@ -2,21 +2,6 @@ package ru.hh.jclient.consul;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ru.hh.consul.Consul;
-import ru.hh.consul.KeyValueClient;
-import ru.hh.consul.cache.KVCache;
-import ru.hh.consul.model.ConsulResponse;
-import ru.hh.consul.model.kv.Value;
-import ru.hh.consul.option.ConsistencyMode;
-import ru.hh.consul.option.ImmutableQueryOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.balancing.ConfigStore;
-import ru.hh.jclient.common.balancing.UpstreamConfig;
-import ru.hh.jclient.common.balancing.UpstreamManager;
-import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Collection;
@@ -27,6 +12,20 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.hh.consul.Consul;
+import ru.hh.consul.KeyValueClient;
+import ru.hh.consul.cache.KVCache;
+import ru.hh.consul.model.ConsulResponse;
+import ru.hh.consul.model.kv.Value;
+import ru.hh.consul.option.ConsistencyMode;
+import ru.hh.consul.option.ImmutableQueryOptions;
+import ru.hh.jclient.common.balancing.ConfigStore;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
+import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 
 public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamConfigServiceImpl.class);

@@ -1,20 +1,17 @@
 package ru.hh.jclient.common;
 
 import io.netty.channel.ConnectTimeoutException;
-
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketException;
 import static java.util.Optional.ofNullable;
-
+import java.util.concurrent.TimeoutException;
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECTION_CLOSED_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECTION_RESET_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.REQUEST_TIMEOUT_MESSAGE;
-
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.util.concurrent.TimeoutException;
 
 final class TransportExceptionMapper {
   static MappedTransportErrorResponse map(Throwable t, Uri uri) {

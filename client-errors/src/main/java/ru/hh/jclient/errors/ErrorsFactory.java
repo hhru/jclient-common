@@ -1,12 +1,12 @@
 package ru.hh.jclient.errors;
 
+import java.util.function.BiFunction;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import java.util.function.BiFunction;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response.Status;
 import ru.hh.errors.common.AbstractErrors;
 import ru.hh.errors.common.Errors;
 import ru.hh.jclient.errors.impl.ErrorResponseBuilder;

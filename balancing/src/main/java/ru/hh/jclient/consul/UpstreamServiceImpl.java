@@ -1,30 +1,5 @@
 package ru.hh.jclient.consul;
 
-import static java.util.stream.Collectors.toMap;
-import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
-
-import ru.hh.consul.Consul;
-import ru.hh.consul.HealthClient;
-import ru.hh.consul.cache.ConsulCache;
-import ru.hh.consul.cache.ServiceHealthCache;
-import ru.hh.consul.cache.ServiceHealthKey;
-import ru.hh.consul.model.ConsulResponse;
-import ru.hh.consul.model.catalog.ImmutableServiceWeights;
-import ru.hh.consul.model.catalog.ServiceWeights;
-import ru.hh.consul.model.health.Service;
-import ru.hh.consul.model.health.ServiceHealth;
-import ru.hh.consul.option.ConsistencyMode;
-import ru.hh.consul.option.ImmutableQueryOptions;
-import ru.hh.consul.option.QueryOptions;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.balancing.Server;
-import ru.hh.jclient.common.balancing.ServerStore;
-import ru.hh.jclient.common.balancing.UpstreamManager;
-import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
@@ -40,7 +15,30 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.hh.consul.Consul;
+import ru.hh.consul.HealthClient;
+import ru.hh.consul.cache.ConsulCache;
+import ru.hh.consul.cache.ServiceHealthCache;
+import ru.hh.consul.cache.ServiceHealthKey;
+import ru.hh.consul.model.ConsulResponse;
+import ru.hh.consul.model.catalog.ImmutableServiceWeights;
+import ru.hh.consul.model.catalog.ServiceWeights;
+import ru.hh.consul.model.health.Service;
+import ru.hh.consul.model.health.ServiceHealth;
+import ru.hh.consul.option.ConsistencyMode;
+import ru.hh.consul.option.ImmutableQueryOptions;
+import ru.hh.consul.option.QueryOptions;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
+import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
+import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.common.balancing.ServerStore;
+import ru.hh.jclient.common.balancing.UpstreamManager;
 
 public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamServiceImpl.class);

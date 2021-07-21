@@ -30,12 +30,10 @@
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common-utils</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!-- Async http client -->

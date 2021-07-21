@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.44</version>
+        <version>1.50.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -33,6 +33,41 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-common-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-balancing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-common-errors</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-common-testbase</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-common-utils</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.hh.jclient-common</groupId>
+                <artifactId>jclient-common-metrics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- Logging -->
             <dependency>
                 <groupId>org.slf4j</groupId>

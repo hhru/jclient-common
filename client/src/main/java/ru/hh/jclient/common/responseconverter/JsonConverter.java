@@ -1,14 +1,14 @@
 package ru.hh.jclient.common.responseconverter;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.Set.of;
-import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
+import static java.util.Set.of;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonConverter<T> extends SingleTypeConverter<T> {
 

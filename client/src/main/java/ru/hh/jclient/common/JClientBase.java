@@ -1,11 +1,9 @@
 package ru.hh.jclient.common;
 
-import ru.hh.jclient.common.util.storage.Storage;
-
 import java.util.Map;
-
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
+import ru.hh.jclient.common.util.storage.Storage;
 
 public abstract class JClientBase {
 

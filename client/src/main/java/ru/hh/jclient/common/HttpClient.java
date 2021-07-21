@@ -4,10 +4,21 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.MessageLite;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
-
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import static java.util.stream.Collectors.toList;
+import javax.xml.bind.JAXBContext;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
@@ -20,19 +31,6 @@ import ru.hh.jclient.common.responseconverter.XmlConverter;
 import ru.hh.jclient.common.util.SimpleRange;
 import ru.hh.jclient.common.util.storage.Storage;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
-
-import javax.xml.bind.JAXBContext;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 public abstract class HttpClient {
   public static final SimpleRange OK_RANGE = new SimpleRange(0, 399);

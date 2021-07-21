@@ -1,5 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClient;
@@ -7,9 +9,6 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngineBuilder;
 import ru.hh.jclient.common.RequestStrategy;
-
-import java.util.Optional;
-import java.util.Set;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);

@@ -1,17 +1,15 @@
 package ru.hh.jclient.common;
 
-import org.asynchttpclient.AsyncHttpClient;
-import ru.hh.jclient.common.metrics.MetricsProvider;
-import ru.hh.jclient.common.util.storage.Storage;
-
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
 import java.util.function.UnaryOperator;
-
-import static java.util.Objects.requireNonNull;
+import org.asynchttpclient.AsyncHttpClient;
+import ru.hh.jclient.common.metrics.MetricsProvider;
+import ru.hh.jclient.common.util.storage.Storage;
 
 public class HttpClientFactory {
 

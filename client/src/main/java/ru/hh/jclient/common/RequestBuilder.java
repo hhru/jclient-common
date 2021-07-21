@@ -1,20 +1,18 @@
 package ru.hh.jclient.common;
 
-import static java.util.stream.Collectors.toList;
-import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.asynchttpclient.request.body.multipart.Part;
-import ru.hh.jclient.common.exception.RequestConverterException;
-
+import static java.util.stream.Collectors.toList;
 import javax.ws.rs.core.MediaType;
+import org.asynchttpclient.request.body.multipart.Part;
+import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
+import ru.hh.jclient.common.exception.RequestConverterException;
 
 public class RequestBuilder {
 

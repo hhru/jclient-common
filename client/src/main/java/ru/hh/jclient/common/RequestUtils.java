@@ -1,14 +1,14 @@
 package ru.hh.jclient.common;
 
-import static java.util.Objects.requireNonNull;
-import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
-import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 
 public class RequestUtils {
 

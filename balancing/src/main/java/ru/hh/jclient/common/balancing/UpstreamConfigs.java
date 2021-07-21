@@ -1,10 +1,9 @@
 package ru.hh.jclient.common.balancing;
 
 import java.util.Map;
+import static java.util.Objects.requireNonNullElse;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.Objects.requireNonNullElse;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT_CONFIG;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT_CONNECT_TIMEOUT_MS;

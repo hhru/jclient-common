@@ -1,11 +1,10 @@
 package ru.hh.jclient.common;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
+import static java.util.Arrays.asList;
 import java.util.List;
 import java.util.Optional;
+import static org.junit.Assert.assertEquals;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 
 @SuppressWarnings("unused")

@@ -1,27 +1,22 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-
 import static org.mockito.Mockito.mock;
-
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.Monitoring;
-
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
-
-import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
 import ru.hh.jclient.common.balancing.config.Profile;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
 
 public class BalancingUpstreamManagerTest {
   private static final String TEST_BACKEND = "backend";

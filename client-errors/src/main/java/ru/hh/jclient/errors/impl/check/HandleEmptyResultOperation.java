@@ -2,11 +2,11 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.List;
 import java.util.Optional;
+import static java.util.Optional.empty;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
-import static java.util.Optional.empty;
 
 public class HandleEmptyResultOperation extends AbstractOperation<Void, HandleEmptyResultOperation> {
 

@@ -1,5 +1,11 @@
 package ru.hh.jclient.errors;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.function.Predicate;
+import javax.ws.rs.WebApplicationException;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -7,21 +13,15 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.NO_CONTENT;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
+import javax.ws.rs.ext.RuntimeDelegate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.concurrent.CompletionException;
-import java.util.function.Predicate;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.ext.RuntimeDelegate;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.hh.jclient.common.EmptyWithStatus;
-import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
+import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.jersey.RuntimeDelegateStub;
 
 public class MoreErrorsTest {

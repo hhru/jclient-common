@@ -1,9 +1,9 @@
 package ru.hh.jclient.common.util;
 
 import java.nio.charset.StandardCharsets;
-import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 import static ru.hh.jclient.common.util.ContentType.ANY;
 import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON;
 import static ru.hh.jclient.common.util.ContentType.TEXT_ANY;

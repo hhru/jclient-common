@@ -1,10 +1,13 @@
 package ru.hh.jclient.common.metrics;
 
 import io.netty.util.internal.StringUtil;
-
 import java.util.Map;
+import java.util.Optional;
+import static java.util.Optional.ofNullable;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import static java.util.stream.Collectors.toMap;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -12,12 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import ru.hh.jclient.common.Monitoring;
-
-import java.util.Optional;
-import java.util.Properties;
-
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toMap;
 
 public class KafkaUpstreamMonitoring implements Monitoring {
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaUpstreamMonitoring.class);

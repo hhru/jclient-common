@@ -1,5 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.Optional;
+import java.util.Set;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestContext;
@@ -7,9 +9,6 @@ import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
-
-import java.util.Optional;
-import java.util.Set;
 
 public class ExternalUrlRequestor extends RequestBalancer {
   public static final String DC_FOR_EXTERNAL_REQUESTS = "externalRequest";

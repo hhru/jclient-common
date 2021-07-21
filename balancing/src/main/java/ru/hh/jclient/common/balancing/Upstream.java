@@ -1,12 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
 import java.time.Clock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static java.util.stream.Collectors.toList;
-import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -15,6 +9,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import static java.util.stream.Collectors.toList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
 
 public class Upstream {
   private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);

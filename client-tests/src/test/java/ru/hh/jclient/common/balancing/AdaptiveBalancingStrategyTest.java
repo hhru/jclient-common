@@ -1,11 +1,9 @@
 package ru.hh.jclient.common.balancing;
 
-import org.junit.Test;
-
 import java.util.List;
-
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest {
   @Test

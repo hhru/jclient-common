@@ -1,12 +1,11 @@
 package ru.hh.jclient.common.responseconverter;
 
+import java.util.Collection;
+import java.util.Optional;
 import ru.hh.jclient.common.EmptyWithResponse;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-
-import java.util.Collection;
-import java.util.Optional;
 
 public class VoidConverter implements TypeConverter<Void> {
 

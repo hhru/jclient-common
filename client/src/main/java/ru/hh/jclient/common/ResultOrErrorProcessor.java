@@ -1,13 +1,13 @@
 package ru.hh.jclient.common;
 
-import static java.util.Objects.requireNonNull;
-import static ru.hh.jclient.common.HttpClient.OK_RANGE;
 import com.google.common.collect.Range;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import ru.hh.jclient.common.responseconverter.TypeConverter;
+import static ru.hh.jclient.common.HttpClient.OK_RANGE;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
+import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.util.SimpleRange;
 
 public class ResultOrErrorProcessor<T, E> {

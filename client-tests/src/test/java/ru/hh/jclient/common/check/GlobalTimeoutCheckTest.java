@@ -1,11 +1,5 @@
 package ru.hh.jclient.common.check;
 
-import org.junit.Test;
-import ru.hh.jclient.common.HttpClientTestBase;
-import ru.hh.jclient.common.HttpHeaderNames;
-import ru.hh.jclient.common.Request;
-import ru.hh.jclient.common.RequestBuilder;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,10 +8,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.Test;
 import static org.mockito.Mockito.mock;
+import ru.hh.jclient.common.HttpClientTestBase;
+import ru.hh.jclient.common.HttpHeaderNames;
+import ru.hh.jclient.common.Request;
+import ru.hh.jclient.common.RequestBuilder;
 import static ru.hh.jclient.common.util.ContentType.ANY;
 
 public class GlobalTimeoutCheckTest extends HttpClientTestBase {

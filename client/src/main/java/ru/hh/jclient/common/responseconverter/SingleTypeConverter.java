@@ -3,16 +3,16 @@ package ru.hh.jclient.common.responseconverter;
 import com.google.common.net.MediaType;
 import java.util.Collection;
 import java.util.Optional;
+import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.stream.Collectors;
+import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
 import ru.hh.jclient.common.util.ContentType;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-import static java.util.Optional.ofNullable;
-import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 
 /**
  * Converter that knows how to convert response to exactly one type of result. Knows and checks expected content type.

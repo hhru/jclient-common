@@ -1,9 +1,9 @@
 package ru.hh.jclient.common.enforcer;
 
-import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import static java.util.stream.Collectors.toList;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;

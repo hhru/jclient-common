@@ -1,42 +1,38 @@
 package ru.hh.jclient.common;
 
+import static java.lang.Boolean.TRUE;
 import java.time.Instant;
+import static java.time.Instant.now;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
+import static java.util.Set.of;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static java.lang.Boolean.TRUE;
-
+import static java.util.stream.Collectors.toList;
 import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.util.Set.of;
-import static java.util.stream.Collectors.toList;
 import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
-import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_LOAD_TESTING;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpHeaderNames.X_SOURCE;
 import static ru.hh.jclient.common.HttpParams.READ_ONLY_REPLICA;
-
 import ru.hh.jclient.common.RequestStrategy.RequestExecutor;
 import ru.hh.jclient.common.util.ContentType;
 import ru.hh.jclient.common.util.MDCCopy;
-import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 import ru.hh.jclient.common.util.storage.Storage;
-import static java.time.Instant.now;
+import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 
 class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);

@@ -1,16 +1,14 @@
 package ru.hh.jclient.common.balancing.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-
 import org.junit.Test;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
+import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import ru.hh.jclient.common.balancing.UpstreamConfigs;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ApplicationConfigTest {
 

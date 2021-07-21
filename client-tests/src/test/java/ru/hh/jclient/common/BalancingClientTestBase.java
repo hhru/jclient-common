@@ -1,7 +1,17 @@
 package ru.hh.jclient.common;
 
 import io.netty.channel.ConnectTimeoutException;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.util.Arrays;
 import static java.util.Collections.singleton;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
@@ -25,31 +35,20 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.ConfigStore;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
-import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
+import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
-import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
-import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
-import ru.hh.jclient.common.exception.ClientResponseException;
-import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
+import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
+import ru.hh.jclient.common.exception.ClientResponseException;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
+import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.TestUpstreamConfigService;
 import ru.hh.jclient.consul.TestUpstreamService;
-
-import java.io.IOException;
-import java.net.ConnectException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 abstract class BalancingClientTestBase extends HttpClientTestBase {
 

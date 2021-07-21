@@ -1,7 +1,6 @@
 package ru.hh.jclient.common.util;
 
 import java.util.concurrent.Callable;
-
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.ThrowableConsumer;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.ThrowableFunction;
 

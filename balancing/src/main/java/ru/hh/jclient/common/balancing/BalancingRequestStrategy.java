@@ -1,11 +1,10 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.function.UnaryOperator;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.consul.UpstreamConfigService;
 import ru.hh.jclient.consul.UpstreamService;
-
-import java.util.function.UnaryOperator;
 
 public class BalancingRequestStrategy implements RequestStrategy<RequestBalancerBuilder> {
 

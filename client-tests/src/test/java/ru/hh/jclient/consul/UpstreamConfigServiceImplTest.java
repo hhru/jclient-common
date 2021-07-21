@@ -1,40 +1,37 @@
 package ru.hh.jclient.consul;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Collection;
 import ru.hh.consul.Consul;
 import ru.hh.consul.KeyValueClient;
 import ru.hh.consul.config.ClientConfig;
 import ru.hh.consul.model.ConsulResponse;
 import ru.hh.consul.model.kv.ImmutableValue;
 import ru.hh.consul.model.kv.Value;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import java.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.mockito.Mockito.mock;
-import static ru.hh.consul.option.ConsistencyMode.DEFAULT;
-import static ru.hh.jclient.consul.UpstreamConfigServiceConsulConfig.copyOf;
-
 import ru.hh.consul.monitoring.ClientEventCallback;
 import ru.hh.consul.monitoring.ClientEventHandler;
+import static ru.hh.consul.option.ConsistencyMode.DEFAULT;
 import ru.hh.consul.option.QueryOptions;
 import ru.hh.jclient.common.balancing.ConfigStore;
 import ru.hh.jclient.common.balancing.ConfigStoreImpl;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamConfigs;
 import ru.hh.jclient.common.balancing.UpstreamManager;
-import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-
-import java.util.ArrayList;
-import java.util.List;
+import static ru.hh.jclient.consul.UpstreamConfigServiceConsulConfig.copyOf;
 
 public class UpstreamConfigServiceImplTest {
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);

@@ -2,6 +2,8 @@ package ru.hh.jclient.errors.impl.check;
 
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import java.util.function.Supplier;
+import javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
@@ -9,8 +11,6 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.GATEWAY_TIMEOUT;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import java.util.function.Supplier;
-import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
 
 public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperationSelector<E, ApplyResultOrErrorOperationSelector<T, E>> {

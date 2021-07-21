@@ -1,13 +1,11 @@
 package ru.hh.jclient.common.balancing.config;
 
+import java.util.Map;
+import java.util.Optional;
+import static java.util.stream.Collectors.toMap;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamConfigFormatException;
 import ru.hh.jclient.common.balancing.UpstreamConfigs;
-
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.stream.Collectors.toMap;
 
 public class ApplicationConfig {
   private Map<String, Host> hosts;

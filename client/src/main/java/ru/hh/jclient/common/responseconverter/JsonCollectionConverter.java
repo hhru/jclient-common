@@ -3,12 +3,12 @@ package ru.hh.jclient.common.responseconverter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.JsonTypeConverter;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-import java.util.Collection;
-import static java.util.Objects.requireNonNull;
 
 
 public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T>> {

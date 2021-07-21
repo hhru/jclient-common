@@ -1,17 +1,15 @@
 package ru.hh.jclient.common.balancing;
 
-import org.junit.Test;
-import ru.hh.jclient.common.Response;
-import ru.hh.jclient.common.ResponseMock;
-
+import java.util.Map;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
+import ru.hh.jclient.common.Response;
+import ru.hh.jclient.common.ResponseMock;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.REQUEST_TIMEOUT_MESSAGE;
-
-import java.util.Map;
 
 
 public class RetryPolicyTest {

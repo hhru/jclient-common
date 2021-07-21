@@ -1,5 +1,11 @@
 package ru.hh.jclient.errors.jersey;
 
+import java.lang.annotation.Annotation;
+import java.net.URI;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Link;
@@ -9,12 +15,6 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Variant;
-import java.lang.annotation.Annotation;
-import java.net.URI;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 @SuppressWarnings("unused")
 final class ResponseBuilderStub extends ResponseBuilder {

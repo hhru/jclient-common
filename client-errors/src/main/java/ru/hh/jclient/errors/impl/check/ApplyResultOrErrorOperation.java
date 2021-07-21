@@ -1,8 +1,8 @@
 package ru.hh.jclient.errors.impl.check;
 
-import static java.util.Optional.empty;
 import java.util.List;
 import java.util.Optional;
+import static java.util.Optional.empty;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;

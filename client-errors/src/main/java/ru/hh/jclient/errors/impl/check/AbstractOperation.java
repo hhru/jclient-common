@@ -1,14 +1,14 @@
 package ru.hh.jclient.errors.impl.check;
 
-import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
+import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.OperationBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
