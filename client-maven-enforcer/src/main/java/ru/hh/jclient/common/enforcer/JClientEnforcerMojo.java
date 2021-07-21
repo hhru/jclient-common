@@ -1,6 +1,13 @@
 package ru.hh.jclient.common.enforcer;
 
-import static java.util.stream.Collectors.toSet;
+import com.thoughtworks.qdox.JavaProjectBuilder;
+import com.thoughtworks.qdox.Searcher;
+import com.thoughtworks.qdox.model.JavaAnnotation;
+import com.thoughtworks.qdox.model.JavaClass;
+import com.thoughtworks.qdox.model.expression.AnnotationValue;
+import com.thoughtworks.qdox.model.expression.AnnotationValueList;
+import com.thoughtworks.qdox.model.impl.DefaultJavaAnnotation;
+import com.thoughtworks.qdox.model.impl.DefaultJavaMethod;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toSet;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -17,14 +25,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import com.thoughtworks.qdox.JavaProjectBuilder;
-import com.thoughtworks.qdox.Searcher;
-import com.thoughtworks.qdox.model.JavaAnnotation;
-import com.thoughtworks.qdox.model.JavaClass;
-import com.thoughtworks.qdox.model.expression.AnnotationValue;
-import com.thoughtworks.qdox.model.expression.AnnotationValueList;
-import com.thoughtworks.qdox.model.impl.DefaultJavaAnnotation;
-import com.thoughtworks.qdox.model.impl.DefaultJavaMethod;
 import ru.hh.jclient.common.JClient;
 import ru.hh.jclient.common.JResource;
 

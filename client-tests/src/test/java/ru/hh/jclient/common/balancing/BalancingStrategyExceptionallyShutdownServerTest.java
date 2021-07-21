@@ -1,14 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import org.junit.Before;
-import org.junit.Test;
-import ru.hh.jclient.common.HttpClientFactory;
-import ru.hh.jclient.common.HttpStatuses;
-import ru.hh.jclient.common.JClientBase;
-import ru.hh.jclient.common.Request;
-import ru.hh.jclient.common.RequestBuilder;
-import ru.hh.jclient.common.Response;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -19,9 +10,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import org.junit.Before;
+import org.junit.Test;
+import ru.hh.jclient.common.HttpClientFactory;
+import ru.hh.jclient.common.HttpStatuses;
+import ru.hh.jclient.common.JClientBase;
+import ru.hh.jclient.common.Request;
+import ru.hh.jclient.common.RequestBuilder;
+import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.balancing.config.Profile;
 
 public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBalancingStrategyTest {

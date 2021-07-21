@@ -1,10 +1,8 @@
 package ru.hh.jclient.common.metrics;
 
-import ru.hh.nab.metrics.StatsDSender;
-
-import java.util.Properties;
-
 import static java.util.Optional.ofNullable;
+import java.util.Properties;
+import ru.hh.nab.metrics.StatsDSender;
 
 public class MetricsConsumerFactory {
   private MetricsConsumerFactory() {}

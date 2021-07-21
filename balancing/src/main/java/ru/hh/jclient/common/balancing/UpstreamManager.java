@@ -1,10 +1,9 @@
 package ru.hh.jclient.common.balancing;
 
-import ru.hh.jclient.common.Monitoring;
-
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Set;
+import javax.annotation.Nullable;
+import ru.hh.jclient.common.Monitoring;
 
 public interface UpstreamManager {
   default Upstream getUpstream(String serviceName) {

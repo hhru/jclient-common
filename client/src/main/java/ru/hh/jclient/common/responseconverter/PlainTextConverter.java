@@ -1,14 +1,14 @@
 package ru.hh.jclient.common.responseconverter;
 
-import static java.util.Objects.requireNonNull;
-import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.ContentType;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
 public class PlainTextConverter extends SingleTypeConverter<String> {

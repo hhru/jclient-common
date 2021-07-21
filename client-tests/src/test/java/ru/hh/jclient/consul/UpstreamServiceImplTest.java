@@ -1,8 +1,17 @@
 package ru.hh.jclient.consul;
 
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import org.junit.Before;
+import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
@@ -23,22 +32,12 @@ import ru.hh.consul.model.health.ServiceHealth;
 import ru.hh.consul.monitoring.ClientEventCallback;
 import ru.hh.consul.monitoring.ClientEventHandler;
 import ru.hh.consul.option.ConsistencyMode;
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import static org.mockito.Mockito.mock;
 import ru.hh.consul.option.QueryOptions;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.ServerStoreImpl;
 import ru.hh.jclient.common.balancing.UpstreamManager;
-import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class UpstreamServiceImplTest {
   UpstreamServiceImpl upstreamService;

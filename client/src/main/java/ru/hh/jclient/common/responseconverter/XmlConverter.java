@@ -1,11 +1,9 @@
 package ru.hh.jclient.common.responseconverter;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.Set.of;
-import static ru.hh.jclient.common.util.ContentType.APPLICATION_XML;
-import static ru.hh.jclient.common.util.ContentType.TEXT_XML;
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
+import static java.util.Set.of;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.stream.XMLInputFactory;
@@ -14,6 +12,8 @@ import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_XML;
+import static ru.hh.jclient.common.util.ContentType.TEXT_XML;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
 public class XmlConverter<T> extends SingleTypeConverter<T> {

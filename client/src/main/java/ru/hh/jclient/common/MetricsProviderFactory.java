@@ -5,13 +5,11 @@ import io.netty.buffer.ByteBufAllocatorMetric;
 import io.netty.buffer.PoolArenaMetric;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocatorMetric;
+import java.util.Optional;
+import static java.util.Optional.ofNullable;
+import java.util.function.Supplier;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metrics.MetricsProvider;
-
-import java.util.Optional;
-import java.util.function.Supplier;
-
-import static java.util.Optional.ofNullable;
 
 public final class MetricsProviderFactory {
 

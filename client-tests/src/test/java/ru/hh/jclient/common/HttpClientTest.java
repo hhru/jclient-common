@@ -1,38 +1,14 @@
 package ru.hh.jclient.common;
 
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
-import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
-import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
-import static ru.hh.jclient.common.HttpParams.DEBUG;
-import static ru.hh.jclient.common.TestRequestDebug.Call.CLIENT_PROBLEM;
-import static ru.hh.jclient.common.TestRequestDebug.Call.CONVERTER_PROBLEM;
-import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
-import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
-import static ru.hh.jclient.common.util.ContentType.VIDEO_ANY;
-import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON_UTF_8;
-import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
-import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
-import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
-import static ru.hh.jclient.common.util.ContentType.TEXT_XML_UTF_8;
-import static ru.hh.jclient.common.util.ContentType.withCharset;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
+import static java.util.Collections.singletonList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,15 +19,29 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.asynchttpclient.AsyncHttpClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
+import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
+import static ru.hh.jclient.common.HttpParams.DEBUG;
+import static ru.hh.jclient.common.TestRequestDebug.Call.CLIENT_PROBLEM;
+import static ru.hh.jclient.common.TestRequestDebug.Call.CONVERTER_PROBLEM;
+import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
+import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
+import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
@@ -61,7 +51,13 @@ import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
 import ru.hh.jclient.common.model.XmlError;
 import ru.hh.jclient.common.model.XmlTest;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON_UTF_8;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN;
+import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
+import static ru.hh.jclient.common.util.ContentType.TEXT_XML_UTF_8;
+import static ru.hh.jclient.common.util.ContentType.VIDEO_ANY;
+import static ru.hh.jclient.common.util.ContentType.withCharset;
 
 public class HttpClientTest extends HttpClientTestBase {
 

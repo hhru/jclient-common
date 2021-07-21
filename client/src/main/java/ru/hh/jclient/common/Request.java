@@ -1,14 +1,14 @@
 package ru.hh.jclient.common;
 
-import static java.util.Collections.unmodifiableCollection;
-import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.toList;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableList;
 import java.util.List;
+import static java.util.stream.Collectors.toList;
 
 public class Request {
 

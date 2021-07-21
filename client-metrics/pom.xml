@@ -13,12 +13,10 @@
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-balancing</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>

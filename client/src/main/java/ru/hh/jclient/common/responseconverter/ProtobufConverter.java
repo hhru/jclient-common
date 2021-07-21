@@ -1,16 +1,15 @@
 package ru.hh.jclient.common.responseconverter;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.Set.of;
-import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
-import static ru.hh.jclient.common.util.ContentType.APPLICATION_X_PROTOBUF;
+import com.google.protobuf.GeneratedMessageV3;
 import java.io.InputStream;
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
-
-import com.google.protobuf.GeneratedMessageV3;
+import static java.util.Set.of;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_PROTOBUF;
+import static ru.hh.jclient.common.util.ContentType.APPLICATION_X_PROTOBUF;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
 public class ProtobufConverter<T extends GeneratedMessageV3> extends SingleTypeConverter<T> {

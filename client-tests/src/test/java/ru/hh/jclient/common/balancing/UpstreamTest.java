@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
@@ -9,11 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import static ru.hh.jclient.common.balancing.UpstreamConfigs.getDefaultConfig;
-import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
-
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-
-import java.util.List;
+import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
 
 public class UpstreamTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamTest.class);

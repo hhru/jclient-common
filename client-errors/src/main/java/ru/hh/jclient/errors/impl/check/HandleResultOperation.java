@@ -1,8 +1,8 @@
 package ru.hh.jclient.errors.impl.check;
 
-import static java.util.Optional.empty;
 import java.util.List;
 import java.util.Optional;
+import static java.util.Optional.empty;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;

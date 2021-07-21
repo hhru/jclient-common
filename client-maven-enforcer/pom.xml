@@ -114,7 +114,6 @@
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common-utils</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

@@ -1,11 +1,10 @@
 package ru.hh.jclient.common.metrics;
 
+import java.util.HashMap;
+import java.util.Map;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.nab.metrics.StatsDSender;
 import ru.hh.nab.metrics.Tag;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * UpstreamMonitoring sends requests metrics to okmeter.io using StatsD.

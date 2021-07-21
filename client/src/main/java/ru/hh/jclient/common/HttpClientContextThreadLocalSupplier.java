@@ -2,14 +2,14 @@ package ru.hh.jclient.common;
 
 import java.util.List;
 import java.util.Map;
+import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.util.storage.Storage;
-import ru.hh.jclient.common.util.storage.ThreadLocalStorage;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
-import static java.util.Optional.ofNullable;
+import ru.hh.jclient.common.util.storage.ThreadLocalStorage;
 
 /**
  * Creates and removes {@link HttpClientContext} using ThreadLocal to store it.

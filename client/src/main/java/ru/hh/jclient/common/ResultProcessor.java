@@ -1,23 +1,22 @@
 package ru.hh.jclient.common;
 
-import static java.util.Objects.requireNonNull;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.GeneratedMessageV3;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.concurrent.CompletableFuture;
 import javax.xml.bind.JAXBContext;
-
-import com.google.protobuf.GeneratedMessageV3;
-import ru.hh.jclient.common.responseconverter.JsonMapConverter;
-import ru.hh.jclient.common.responseconverter.TypeConverter;
-import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
-import ru.hh.jclient.common.responseconverter.JsonConverter;
-import ru.hh.jclient.common.responseconverter.PlainTextConverter;
-import ru.hh.jclient.common.responseconverter.ProtobufConverter;
-import ru.hh.jclient.common.responseconverter.XmlConverter;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
+import ru.hh.jclient.common.responseconverter.JsonConverter;
+import ru.hh.jclient.common.responseconverter.JsonMapConverter;
+import ru.hh.jclient.common.responseconverter.PlainTextConverter;
+import ru.hh.jclient.common.responseconverter.ProtobufConverter;
+import ru.hh.jclient.common.responseconverter.TypeConverter;
+import ru.hh.jclient.common.responseconverter.XmlConverter;
 
 public class ResultProcessor<T> {
 

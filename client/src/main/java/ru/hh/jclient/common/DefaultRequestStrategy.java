@@ -1,7 +1,6 @@
 package ru.hh.jclient.common;
 
 import static java.util.Optional.ofNullable;
-
 import java.util.function.UnaryOperator;
 
 public class DefaultRequestStrategy implements RequestStrategy<DefaultEngineBuilder> {

@@ -1,21 +1,19 @@
 package ru.hh.jclient.common.metrics;
 
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
-
-import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
-import ru.hh.jclient.common.balancing.ConfigStore;
-import ru.hh.jclient.common.balancing.ServerStore;
-import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-import ru.hh.nab.metrics.StatsDSender;
-
-import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import javax.annotation.Nullable;
+import ru.hh.jclient.common.Monitoring;
+import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
+import ru.hh.jclient.common.balancing.ConfigStore;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
+import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
+import ru.hh.jclient.common.balancing.ServerStore;
+import ru.hh.nab.metrics.StatsDSender;
 
 public class MonitoringBalancingUpstreamManagerFactory {
 

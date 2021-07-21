@@ -1,19 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.hh.jclient.common.HttpClientContext;
-import ru.hh.jclient.common.HttpClientFactory;
-import ru.hh.jclient.common.HttpClientFactoryBuilder;
-import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
-import ru.hh.jclient.common.util.storage.SingletonStorage;
-import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-import ru.hh.jclient.common.balancing.config.Host;
-import ru.hh.jclient.common.balancing.config.Profile;
-import ru.hh.jclient.consul.TestUpstreamConfigService;
-import ru.hh.jclient.consul.TestUpstreamService;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -30,6 +16,19 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Exchanger;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.HttpClientContext;
+import ru.hh.jclient.common.HttpClientFactory;
+import ru.hh.jclient.common.HttpClientFactoryBuilder;
+import ru.hh.jclient.common.Monitoring;
+import ru.hh.jclient.common.balancing.config.ApplicationConfig;
+import ru.hh.jclient.common.balancing.config.Host;
+import ru.hh.jclient.common.balancing.config.Profile;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
+import ru.hh.jclient.common.util.storage.SingletonStorage;
+import ru.hh.jclient.consul.TestUpstreamConfigService;
+import ru.hh.jclient.consul.TestUpstreamService;
 
 public abstract class AbstractBalancingStrategyTest {
 

@@ -1,9 +1,9 @@
 package ru.hh.jclient.errors.impl.check;
 
-import java.util.function.Consumer;
-import ru.hh.jclient.common.EmptyWithStatus;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import java.util.function.Consumer;
+import ru.hh.jclient.common.EmptyWithStatus;
 
 public class HandleEmptyResultOperationSelector extends AbstractOperationSelector<Void, HandleEmptyResultOperationSelector> {
 

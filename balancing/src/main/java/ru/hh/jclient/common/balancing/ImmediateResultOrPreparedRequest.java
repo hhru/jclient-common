@@ -1,11 +1,10 @@
 package ru.hh.jclient.common.balancing;
 
+import javax.annotation.Nonnull;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.Response;
-
-import javax.annotation.Nonnull;
 
 public final class ImmediateResultOrPreparedRequest {
   private final Response result;

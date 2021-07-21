@@ -1,16 +1,15 @@
 package ru.hh.jclient.common;
 
-import static java.util.Collections.emptySet;
-import static java.util.Objects.requireNonNull;
-import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import static java.util.Collections.emptySet;
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 

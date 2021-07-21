@@ -1,12 +1,11 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.HashMap;
+import java.util.Map;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
 import ru.hh.jclient.common.Response;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 public final class RetryPolicy {

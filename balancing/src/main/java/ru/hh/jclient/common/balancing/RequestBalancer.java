@@ -1,26 +1,21 @@
 package ru.hh.jclient.common.balancing;
 
 import java.util.ArrayList;
-
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientFactoryBuilder;
+import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngine;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
-
-import static ru.hh.jclient.common.JClientBase.HTTP_POST;
-
 import ru.hh.jclient.common.ResponseWrapper;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);

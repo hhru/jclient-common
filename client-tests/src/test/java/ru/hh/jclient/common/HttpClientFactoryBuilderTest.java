@@ -1,11 +1,5 @@
 package ru.hh.jclient.common;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.hamcrest.Matcher;
-import org.junit.Test;
-import ru.hh.jclient.common.util.storage.Storage;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -13,14 +7,18 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
-
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.hamcrest.Matcher;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import org.junit.Test;
 import static org.mockito.Mockito.mock;
+import ru.hh.jclient.common.util.storage.Storage;
 
 public class HttpClientFactoryBuilderTest {
 

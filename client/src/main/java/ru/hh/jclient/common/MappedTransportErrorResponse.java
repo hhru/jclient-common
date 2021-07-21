@@ -1,5 +1,8 @@
 package ru.hh.jclient.common;
 
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.cookie.Cookie;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.SocketAddress;
@@ -7,10 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
-
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.cookie.Cookie;
 import org.asynchttpclient.Response;
 import org.asynchttpclient.uri.Uri;
 import ru.hh.jclient.common.util.ContentType;

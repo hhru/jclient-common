@@ -1,15 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import ru.hh.jclient.common.HttpClientFactory;
-import ru.hh.jclient.common.HttpStatuses;
-import ru.hh.jclient.common.JClientBase;
-import ru.hh.jclient.common.Request;
-import ru.hh.jclient.common.RequestBuilder;
-import ru.hh.jclient.common.Response;
-
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,8 +15,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.junit.After;
 import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
+import ru.hh.jclient.common.HttpClientFactory;
+import ru.hh.jclient.common.HttpStatuses;
+import ru.hh.jclient.common.JClientBase;
+import ru.hh.jclient.common.Request;
+import ru.hh.jclient.common.RequestBuilder;
+import ru.hh.jclient.common.Response;
 
 public class BalancingStrategyLowBacklogServerTest extends AbstractBalancingStrategyTest {
 

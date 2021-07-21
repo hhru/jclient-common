@@ -1,5 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.UnaryOperator;
+import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -23,17 +31,8 @@ import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseWrapper;
-import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.UnaryOperator;
+import ru.hh.jclient.common.util.storage.SingletonStorage;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)

@@ -1,13 +1,11 @@
 package ru.hh.jclient.common.balancing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.RequestBalancer.WARM_UP_DEFAULT_TIME_MICROS;
 
 final class AdaptiveBalancingStrategy {

@@ -3,16 +3,14 @@ package ru.hh.jclient.common.responseconverter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ru.hh.jclient.common.Response;
-import ru.hh.jclient.common.ResultWithResponse;
-import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
-
 import java.util.Collection;
 import java.util.Map;
-
 import static java.util.Objects.requireNonNull;
+import ru.hh.jclient.common.Response;
+import ru.hh.jclient.common.ResultWithResponse;
 import static ru.hh.jclient.common.util.JsonTypeConverter.convertClassToJavaType;
 import static ru.hh.jclient.common.util.JsonTypeConverter.convertReferenceToJavaType;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
 
 
 public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
