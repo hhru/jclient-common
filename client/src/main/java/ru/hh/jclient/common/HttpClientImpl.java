@@ -21,6 +21,8 @@ import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
+import static ru.hh.jclient.common.HttpHeaderNames.X_CONTRACT_CONSUMER_NAME;
+import static ru.hh.jclient.common.HttpHeaderNames.X_CONTRACT_EXPECTED_RESPONSE;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_LOAD_TESTING;
@@ -37,14 +39,9 @@ import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
 
+  // todo remove contract headers in HH-134289
   static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION,
-    X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE);
-
-  /**
-   * Headers used for contract tests, details in PORTFOLIO-12423.
-   * Probably temporal solution, if contract tests will work then we should change hard-coded headers to predicates
-   */
-  static final String CONTRACTS_HEADERS_PREFIX = "X-Contract";
+    X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE, X_CONTRACT_EXPECTED_RESPONSE, X_CONTRACT_CONSUMER_NAME);
 
   private final Executor callbackExecutor;
 
@@ -97,8 +94,8 @@ class HttpClientImpl extends HttpClient {
     HttpHeaders headers = new HttpHeaders();
     if (!isExternalRequest()) {
       headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, Integer.toString(request.getRequestTimeout()));
-      getContext().getHeaders().keySet().stream()
-        .filter(header -> PASS_THROUGH_HEADERS.contains(header) || header.startsWith(CONTRACTS_HEADERS_PREFIX))
+      PASS_THROUGH_HEADERS.stream()
+        .filter(getContext().getHeaders()::containsKey)
         .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }
 
