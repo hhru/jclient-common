@@ -133,6 +133,7 @@ public class Upstream {
     });
 
     if (rescale[0] || rescale[1]) {
+      LOGGER.debug("Need to rescale servers {}", servers);
       iterateServers(servers, server -> {
         int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
         if (rescale[localOrRemote]) {

@@ -79,6 +79,7 @@ public class Server {
   }
 
   synchronized void rescaleStatsRequests() {
+    LOGGER.trace("Rescaling {}", this);
     statsRequests -= weight;
   }
 

@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +17,7 @@ final class BalancingStrategy {
                                   Clock clock) {
     int minIndex = -1;
     Weight minWeight = null;
-
+    String[] serverStatLog = LOGGER.isTraceEnabled() ? new String[servers.size()] : null;
     for (int index = 0; index < servers.size(); index++) {
       Server server = servers.get(index);
 
@@ -33,9 +34,12 @@ final class BalancingStrategy {
       float currentLoad = server.getCurrentLoad();
       float statLoad = server.getStatLoad(servers, clock);
       Weight weight = new Weight(isDifferentDC, currentLoad, statLoad);
-
-      LOGGER.debug("static balancer stats for {}, differentDC:{}, load:{}, stat_load:{}", server,
-              weight.isDifferentDC(), weight.getCurrentLoad(), weight.getStatLoad());
+      if (LOGGER.isTraceEnabled()) {
+        serverStatLog[index] = "{static balancer stats for " + server
+            + ", differentDC:" + weight.isDifferentDC()
+            + ", load:" + weight.getCurrentLoad()
+            + ", stat_load:" + weight.getStatLoad() + '}';
+      }
 
       if (!excludedServers.contains(index) && (minIndex < 0 || minWeight.compareTo(weight) > 0)) {
         minIndex = index;
@@ -44,8 +48,11 @@ final class BalancingStrategy {
     }
 
     if (minIndex != -1) {
-      LOGGER.debug("static balancer pick for {}, differentDC:{}, load:{}, stat_load:{}", minIndex,
-              minWeight.isDifferentDC(), minWeight.getCurrentLoad(), minWeight.getStatLoad());
+      LOGGER.debug("static balancer pick for {}, differentDC:{}, load:{}, stat_load:{}{}", minIndex,
+          minWeight.isDifferentDC(), minWeight.getCurrentLoad(), minWeight.getStatLoad(),
+          !LOGGER.isTraceEnabled() ? ""
+              :(" of " + Arrays.toString(serverStatLog) + " with excluded idx=" + excludedServers)
+      );
     } else {
       LOGGER.debug("no server available");
     }
