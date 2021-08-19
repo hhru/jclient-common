@@ -78,9 +78,11 @@ public class Server {
     }
   }
 
-  synchronized void rescaleStatsRequests() {
-    LOGGER.trace("Rescaling {}", this);
+  synchronized void rescaleStatsRequests(Collection<Server> allServers) {
     statsRequests -= weight;
+    if (statsRequests > weight * 2) {
+      LOGGER.warn("Rescaled server {}. Something wrong - too big stat reminder. Servers: {} ", this, allServers);
+    }
   }
 
   public String getAddress() {

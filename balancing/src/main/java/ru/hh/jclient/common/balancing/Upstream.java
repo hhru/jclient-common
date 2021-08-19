@@ -137,7 +137,7 @@ public class Upstream {
       iterateServers(servers, server -> {
         int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
         if (rescale[localOrRemote]) {
-          server.rescaleStatsRequests();
+          server.rescaleStatsRequests(servers);
         }
       });
     }
