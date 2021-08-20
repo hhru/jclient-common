@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
 
     <name>jclient-common-parent</name>
-    <version>3.8.11-SNAPSHOT</version>
+    <version>3.8.10-beta-fix-balancing</version>
 
     <modules>
         <module>client</module>
@@ -224,6 +224,6 @@
     <scm>
         <connection>scm:git:git@github.com:hhru/jclient-common.git</connection>
         <developerConnection>scm:git:git@github.com:hhru/jclient-common.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>jclient-common-parent-3.8.10-beta-fix-balancing</tag>
     </scm>
 </project>
