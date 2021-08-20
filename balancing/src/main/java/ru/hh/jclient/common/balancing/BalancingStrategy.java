@@ -31,14 +31,12 @@ final class BalancingStrategy {
         continue;
       }
 
-      float currentLoad = server.getCurrentLoad();
       float statLoad = server.getStatLoad(servers, clock);
-      Weight weight = new Weight(isDifferentDC, currentLoad, statLoad);
+      Weight weight = new Weight(isDifferentDC, statLoad);
       if (LOGGER.isTraceEnabled()) {
         serverStatLog[index] = "{static balancer stats for " + server
             + ", differentDC:" + weight.isDifferentDC()
-            + ", load:" + weight.getCurrentLoad()
-            + ", stat_load:" + weight.getStatLoad() + '}';
+            + ", load:" + weight.getLoad() + '}';
       }
 
       if (!excludedServers.contains(index) && (minIndex < 0 || minWeight.compareTo(weight) > 0)) {
@@ -48,8 +46,8 @@ final class BalancingStrategy {
     }
 
     if (minIndex != -1) {
-      LOGGER.debug("static balancer pick for {}, differentDC:{}, load:{}, stat_load:{}{}", minIndex,
-          minWeight.isDifferentDC(), minWeight.getCurrentLoad(), minWeight.getStatLoad(),
+      LOGGER.debug("static balancer pick for {}, differentDC:{}, load:{}{}", minIndex,
+          minWeight.isDifferentDC(), minWeight.getLoad(),
           !LOGGER.isTraceEnabled() ? ""
               :(" of " + Arrays.toString(serverStatLog) + " with excluded idx=" + excludedServers)
       );
@@ -64,28 +62,21 @@ final class BalancingStrategy {
 
   private static final class Weight implements Comparable<Weight> {
     private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isDifferentDC)
-        .thenComparingDouble(Weight::getCurrentLoad)
-        .thenComparingDouble(Weight::getStatLoad);
+        .thenComparingDouble(Weight::getLoad);
     private final boolean differentDC;
-    private final float currentLoad;
-    private final float statLoad;
+    private final float load;
 
-    Weight(boolean differentDC, float currentLoad, float statLoad) {
+    Weight(boolean differentDC, float load) {
       this.differentDC = differentDC;
-      this.currentLoad = currentLoad;
-      this.statLoad = statLoad;
+      this.load = load;
     }
 
     public boolean isDifferentDC() {
       return differentDC;
     }
 
-    public float getCurrentLoad() {
-      return currentLoad;
-    }
-
-    public float getStatLoad() {
-      return statLoad;
+    public float getLoad() {
+      return load;
     }
 
     @Override

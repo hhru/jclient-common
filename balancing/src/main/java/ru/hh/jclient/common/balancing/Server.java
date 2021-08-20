@@ -155,10 +155,6 @@ public class Server {
       '}';
   }
 
-  public float getCurrentLoad() {
-    return (float) this.requests / this.weight;
-  }
-
   public float getStatLoad(Collection<Server> currentServers, Clock clock) {
     if (slowStartModeEnabled) {
       long currentTimeMillis = getCurrentTimeMillis(clock);
@@ -185,7 +181,7 @@ public class Server {
   }
 
   private float calculateStatLoad() {
-    return (float) this.statsRequests / this.weight;
+    return (float) (this.statsRequests + this.requests) / this.weight;
   }
 
   protected long getCurrentTimeMillis(Clock clock) {
