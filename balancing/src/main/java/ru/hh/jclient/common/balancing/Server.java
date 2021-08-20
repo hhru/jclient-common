@@ -79,9 +79,12 @@ public class Server {
   }
 
   synchronized void rescaleStatsRequests(Collection<Server> allServers) {
-    statsRequests -= weight;
-    if (statsRequests > weight * 2) {
-      LOGGER.warn("Rescaled server {}. Something wrong - too big stat reminder. Servers: {} ", this, allServers);
+    if (statsRequests >= weight) {
+      statsRequests -= weight;
+    }
+    if (statsRequests > weight * 10) {
+      LOGGER.warn("Rescaled server {}. Something wrong - too big stat reminder. Resetting stats. Servers: {} ", this, allServers);
+      statsRequests %= weight;
     }
   }
 
@@ -171,14 +174,14 @@ public class Server {
     }
     if (!statisticsFilledWithInitialValues && statsRequests <= 0) {
       statisticsFilledWithInitialValues = true;
-      statsRequests = calculateStatRequestsForMaxOfCurrentLoads(currentServers, weight);
+      statsRequests = (int) Math.floor(calculateMaxRealStatLoad(currentServers) * weight);
       LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, statsRequests);
     }
     return calculateStatLoad();
   }
 
-  static int calculateStatRequestsForMaxOfCurrentLoads(Collection<Server> servers, int currentServerWeight) {
-    return (int) Math.floor(servers.stream().mapToDouble(Server::calculateStatLoad).max().orElse(0d) * currentServerWeight);
+  static double calculateMaxRealStatLoad(Collection<Server> servers) {
+    return servers.stream().mapToDouble(Server::calculateStatLoad).max().orElse(0d);
   }
 
   private float calculateStatLoad() {
