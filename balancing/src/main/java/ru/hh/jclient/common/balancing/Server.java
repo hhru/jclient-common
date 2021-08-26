@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import static java.util.Objects.requireNonNull;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
@@ -30,12 +31,12 @@ public class Server {
   private volatile long slowStartEndMillis = 0;
 
   /**
-   * not volatile for optimization. Should protect writes with {@link Server#statsRequests}, {@link Server#requests} or {@link Server#fails}
+   * not volatile for optimization. Should protect writes with {@link Server#slowStartEndMillis}
    */
   private boolean statisticsFilledWithInitialValues;
-  private volatile int requests = 0;
-  private volatile int fails = 0;
-  private volatile int statsRequests = 0;
+
+  private final AtomicInteger requests;
+  private final AtomicInteger fails;
 
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
@@ -47,26 +48,22 @@ public class Server {
 
     this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW);
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
+
+    this.requests = new AtomicInteger();
+    this.fails = new AtomicInteger();
   }
 
   public static String addressFromHostPort(String host, int port) {
     return host + DELIMITER + port;
   }
 
-  synchronized void acquire() {
-    requests++;
-    statsRequests++;
+  void acquire() {
+    requests.addAndGet(packRequests(1, 1));
   }
 
-  synchronized void release(boolean isError) {
-    if (requests > 0) {
-      requests--;
-    }
-    if (isError) {
-      fails++;
-    } else {
-      fails = 0;
-    }
+  void release(boolean isError) {
+    requests.updateAndGet(i -> i > 0 ? i - 1 : i);
+    fails.updateAndGet(i -> isError ? i + 1 : 0);
   }
 
   void releaseAdaptive(boolean isError, long responseTimeMicros) {
@@ -78,14 +75,19 @@ public class Server {
     }
   }
 
-  synchronized void rescaleStatsRequests(Collection<Server> allServers) {
-    if (statsRequests >= weight) {
-      statsRequests -= weight;
-    }
-    if (statsRequests > weight * 10) {
-      LOGGER.warn("Rescaled server {}. Something wrong - too big stat reminder. Resetting stats. Servers: {} ", this, allServers);
-      statsRequests %= weight;
-    }
+  void rescaleStatsRequests(Collection<Server> allServers) {
+    requests.updateAndGet(reqs -> {
+      int statRequests = unpackStatRequests(reqs);
+      if (statRequests < weight) {
+        return reqs;
+      }
+      int currentRequests = unpackCurrentRequests(reqs);
+      if (statRequests >= 32_767) {
+        LOGGER.warn("Rescaling server {}. Too big statRequests value for rescale. Resetting stats. Servers: {} ", this, allServers);
+        return packRequests(statRequests % weight, currentRequests);
+      }
+      return packRequests(statRequests - weight, currentRequests);
+    });
   }
 
   public String getAddress() {
@@ -100,16 +102,8 @@ public class Server {
     return datacenter;
   }
 
-  public int getRequests() {
-    return requests;
-  }
-
   public int getFails() {
-    return fails;
-  }
-
-  public int getStatsRequests() {
-    return statsRequests;
+    return fails.intValue();
   }
 
   public DowntimeDetector getDowntimeDetector() {
@@ -141,20 +135,6 @@ public class Server {
     return this;
   }
 
-  @Override
-  public String toString() {
-    return "Server{" +
-      "address='" + address + '\'' +
-      ", weight=" + weight +
-      ", datacenter='" + datacenter + '\'' +
-      ", meta=" + meta +
-      ", tags=" + tags +
-      ", requests=" + requests +
-      ", fails=" + fails +
-      ", statsRequests=" + statsRequests +
-      '}';
-  }
-
   public float getStatLoad(Collection<Server> currentServers, Clock clock) {
     if (slowStartModeEnabled) {
       long currentTimeMillis = getCurrentTimeMillis(clock);
@@ -168,20 +148,40 @@ public class Server {
       LOGGER.trace("Slow start for server {} ended", this);
       slowStartModeEnabled = false;
     }
-    if (!statisticsFilledWithInitialValues && statsRequests <= 0) {
+    if (!statisticsFilledWithInitialValues) {
       statisticsFilledWithInitialValues = true;
-      statsRequests = (int) Math.floor(calculateMaxRealStatLoad(currentServers) * weight);
-      LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, statsRequests);
+      slowStartEndMillis = -1;
+      requests.updateAndGet(value -> {
+        if (!slowStartModeEnabled) {
+          int initialStat = (int) Math.floor(calculateMaxRealStatLoad(currentServers) * weight);
+          LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, initialStat);
+          return packRequests(initialStat, unpackCurrentRequests(value));
+        }
+        return value;
+      });
     }
-    return calculateStatLoad();
+    return calculateLoad();
+  }
+
+  public int getRequests() {
+    return unpackCurrentRequests(requests.intValue());
+  }
+
+  public int getStatsRequests() {
+    return unpackStatRequests(requests.intValue());
+  }
+
+  boolean needToRescale() {
+    return getStatsRequests() >= weight;
   }
 
   static double calculateMaxRealStatLoad(Collection<Server> servers) {
-    return servers.stream().mapToDouble(Server::calculateStatLoad).max().orElse(0d);
+    return servers.stream().mapToDouble(Server::calculateLoad).max().orElse(0d);
   }
 
-  private float calculateStatLoad() {
-    return (float) (this.statsRequests + this.requests) / this.weight;
+  private float calculateLoad() {
+    int requests = this.requests.intValue();
+    return (float) (unpackStatRequests(requests) + unpackCurrentRequests(requests)) / this.weight;
   }
 
   protected long getCurrentTimeMillis(Clock clock) {
@@ -196,6 +196,46 @@ public class Server {
         LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
       }
     }
+  }
+
+  /**
+   * pack two metrics in one int to be consistent on read
+   * Attention: each value is effectively constraint by {@link java.lang.Short} with max value ~32k
+   * so be careful with rescaling
+   * @param statRequests stat requests
+   * @param currentRequests current requests
+   * @return int value containing two metrics
+   */
+  private static int packRequests(int statRequests, int currentRequests) {
+    int packedValue = (statRequests << 16) + currentRequests;
+    if (packedValue < 0) {
+      LOGGER.warn("Packed stats value overflow: stat={}, current={}. Setting Int.MAX value", statRequests, currentRequests);
+      packedValue = Integer.MAX_VALUE;
+    }
+    return packedValue;
+  }
+
+  private static int unpackStatRequests(int requestsValue) {
+    return requestsValue >> 16;
+  }
+
+  private static int unpackCurrentRequests(int requestsValue) {
+    return requestsValue & 0xFFFF;
+  }
+
+  @Override
+  public String toString() {
+    int requestsValue = requests.intValue();
+    return "Server{" +
+       "address='" + address + '\'' +
+       ", weight=" + weight +
+       ", datacenter='" + datacenter + '\'' +
+       ", meta=" + meta +
+       ", tags=" + tags +
+       ", requests=" + unpackCurrentRequests(requestsValue) +
+       ", fails=" + fails +
+       ", statsRequests=" + unpackStatRequests(requestsValue) +
+       '}';
   }
 
   @Override

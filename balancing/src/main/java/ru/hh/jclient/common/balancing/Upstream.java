@@ -129,7 +129,7 @@ public class Upstream {
     boolean[] rescale = {true, allowCrossDCRequests};
     iterateServers(servers, server -> {
       int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
-      rescale[localOrRemote] &= server.getStatsRequests() >= server.getWeight();
+      rescale[localOrRemote] &= server.needToRescale();
     });
 
     if (rescale[0] || rescale[1]) {

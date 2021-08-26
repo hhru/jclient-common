@@ -101,7 +101,7 @@ public class UpstreamTest {
 
   @Test
   public void acquireReleaseFromTwoThreads() throws Exception {
-    int numOfRequests = 100_000;
+    int numOfRequests = 100;
     int tests = 100;
     int weight = numOfRequests * tests * 2 + 1;
     List<Server> servers = List.of(new Server("a", weight, null));
