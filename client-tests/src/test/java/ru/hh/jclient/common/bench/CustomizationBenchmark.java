@@ -1,11 +1,10 @@
-package ru.hh.jclient.common.balancing;
+package ru.hh.jclient.common.bench;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
@@ -25,12 +24,14 @@ import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.Monitoring;
-import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
-import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
-import ru.hh.jclient.common.Response;
-import ru.hh.jclient.common.ResponseWrapper;
+import ru.hh.jclient.common.balancing.MockBalancerBuilder;
+import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
+import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.common.balancing.Upstream;
+import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.balancing.UpstreamMorozov;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 
@@ -45,11 +46,12 @@ public class CustomizationBenchmark {
     var opt = new OptionsBuilder()
         .include(CustomizationBenchmark.class.getSimpleName())
         .forks(1)
+        .jvmArgsAppend("-DrootLoggingLevel=WARN")
         .build();
     new Runner(opt).run();
   }
 
-  private static final Upstream upstream = new Upstream(UPSTREAM,
+  private static final Upstream upstream = new UpstreamMorozov(UPSTREAM,
     ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
     servers,
     null, false, true
@@ -72,13 +74,11 @@ public class CustomizationBenchmark {
     }
 
   };
-  private static final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
+  private final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;
 
   @Setup
   public void setUp() {
-
-
       factory = new HttpClientFactory(httpClient, Set.of("http://localhost"),
           new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
           Runnable::run,
@@ -117,33 +117,6 @@ public class CustomizationBenchmark {
     return new RequestBuilder("GET").setUrl("http://localhost/status");
   }
 
-  private static final class CustomBuilder extends RequestBalancerBuilder {
-
-    CustomBuilder(UpstreamManager upstreamManager, HttpClient client) {
-      super(upstreamManager, client);
-    }
-
-    @Override
-    public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
-      return super.build(request, new RequestStrategy.RequestExecutor() {
-        @Override
-        public CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context) {
-          return CompletableFuture.completedFuture(new ResponseWrapper(null, 1));
-        }
-
-        @Override
-        public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
-          return CompletableFuture.completedFuture(new ResponseWrapper(response, 0L));
-        }
-
-        @Override
-        public int getDefaultRequestTimeoutMs() {
-          return httpClient.getConfig().getRequestTimeout();
-        }
-      });
-    }
-  }
-
   private static final class CustomStrategy implements RequestStrategy<RequestBalancerBuilder> {
 
     private final UpstreamManager upstreamManager;
@@ -157,7 +130,7 @@ public class CustomizationBenchmark {
 
     @Override
     public RequestBalancerBuilder createRequestEngineBuilder(HttpClient client) {
-      return configAction.apply(new CustomBuilder(upstreamManager, client));
+      return configAction.apply(new MockBalancerBuilder(upstreamManager, client, null));
     }
 
     @Override
