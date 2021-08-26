@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
@@ -18,6 +20,10 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.JClientBase;
@@ -26,8 +32,11 @@ import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.Response;
 
 //flacking concurrency test - for manual run
+@RunWith(Parameterized.class)
 @Ignore
 public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
+  private static final Logger LOGGER = LoggerFactory.getLogger(TestBalancingStatsTest.class);
+
   private String server50Address;
   private String server200Address;
   private ConcurrentMap<String, List<Integer>> requestRouteTracking;
@@ -36,6 +45,13 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
 
   private Server server50;
   private Server server200;
+
+  @Parameterized.Parameters(name = "threadpool size: {0}")
+  public static Collection<Object[]> parameters() {
+    return List.of(new Object[] {16}, new Object[] {32}, new Object[] {96});
+  }
+  @Parameterized.Parameter
+  public int threads;
 
   @Before
   public void setUp() {
@@ -54,28 +70,36 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
   }
 
   @Test
-  public void testStat() throws ExecutionException, InterruptedException {
-    ExecutorService executorService = Executors.newFixedThreadPool(16);
-    executorService.invokeAll(IntStream.range(0, 1000).mapToObj(index -> (Callable<?>) () -> {
+  public void testStat() throws InterruptedException {
+    ExecutorService executorService = Executors.newFixedThreadPool(threads);
+    AtomicInteger counter = new AtomicInteger();
+    executorService.invokeAll(IntStream.range(0, 10_257).mapToObj(index -> (Callable<?>) () -> {
       try {
         Request request = new RequestBuilder(JClientBase.HTTP_GET).setUrl("http://" + TEST_UPSTREAM).build();
         Response response = httpClientFactory.with(request).unconverted().get();
         assertEquals(HttpStatuses.OK, response.getStatusCode());
-        Thread.sleep(10);
+        Thread.sleep(5);
+        LOGGER.info("Processed requests: {}", counter.incrementAndGet());
         return null;
       } catch (ExecutionException | InterruptedException e) {
         throw new RuntimeException(e);
       }
     }).collect(Collectors.toList()));
     List<Server> servers = serverStore.getServers(TEST_UPSTREAM);
-    long approxRatio = Math.round((double) requestRouteTracking.get(server200Address).size() / requestRouteTracking.get(server50Address).size());
-    assertEquals(4.0, approxRatio, 0.0001);
+
+    int maxWeight = servers.stream().mapToInt(Server::getWeight).max().getAsInt();
+    int sumWeight = servers.stream().mapToInt(Server::getWeight).sum();
+    int totalRequests = requestRouteTracking.values().stream().mapToInt(Collection::size).sum();
     for (Server server : servers) {
-      assertTrue(server.getAddress(), server.getStatsRequests() <= server200.getStatsRequests());
+      double weightPart = (double) server.getWeight() / sumWeight;
+      double requestsHandledPart = (double) requestRouteTracking.get(server.getAddress()).size() / totalRequests;
+      LOGGER.info("Server {}: weightPart={}, requestsHandledPart={}", server.getAddress(), weightPart, requestsHandledPart);
+      assertEquals(weightPart, requestsHandledPart, 0.01);
+      assertTrue(server.getAddress(), server.getStatsRequests() <= maxWeight);
     }
   }
 
-  private static String createServer() {
+  private String createServer() {
     return createServer(sock -> {
       try (Socket socket = sock;
            var inputStream = socket.getInputStream();
@@ -86,11 +110,11 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
         do {
           arg = in.readLine();
         } while (arg != null && !arg.isEmpty());
-        Thread.sleep(50);
+        Thread.sleep(5);
         output.println("HTTP/1.1 200 OK");
         output.println("");
         output.flush();
       }
-    });
+    }, threads * 10);
   }
 }

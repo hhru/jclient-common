@@ -146,9 +146,13 @@ public abstract class AbstractBalancingStrategyTest {
   }
 
   protected static String createServer(MoreFunctionalInterfaces.FailableConsumer<Socket, Exception> handler) {
+    return createServer(handler, 50);
+  }
+
+  protected static String createServer(MoreFunctionalInterfaces.FailableConsumer<Socket, Exception> handler, int backlog) {
     Exchanger<Integer> portHolder = new Exchanger<>();
     var t = new Thread(() -> {
-      try (ServerSocket ss = new ServerSocket(0)) {
+      try (ServerSocket ss = new ServerSocket(0, backlog)) {
         portHolder.exchange(ss.getLocalPort());
         while (true) {
           handler.accept(ss.accept());
