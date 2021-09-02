@@ -32,7 +32,7 @@ public class BalancingStrategyResettingServerTest extends AbstractBalancingStrat
       TEST_UPSTREAM,
       new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(resettingServerAddress, workingServerAddress))),
       requestRouteTracking
-    );
+    ).getKey();
   }
 
   @Test

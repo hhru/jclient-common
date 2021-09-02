@@ -39,7 +39,7 @@ public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBa
       new Profile().setMaxTimeoutTries(2),
       new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(exceptionallyClosingServerAddress, workingServerAddress))),
       requestRouteTracking
-    );
+    ).getKey();
   }
 
   @Test

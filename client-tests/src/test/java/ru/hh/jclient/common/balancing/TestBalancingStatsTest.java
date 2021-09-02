@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,6 +42,7 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
   private String server200Address;
   private ConcurrentMap<String, List<Integer>> requestRouteTracking;
   private HttpClientFactory httpClientFactory;
+  private UpstreamManager upstreamManager;
   private ServerStore serverStore;
 
   private Server server50;
@@ -62,15 +64,18 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
     server50 = new Server(server50Address, 50, DATACENTER);
     server200 = new Server(server200Address, 200, DATACENTER);
     serverStore.updateServers(TEST_UPSTREAM, List.of(server50, server200), List.of());
-    httpClientFactory = buildBalancingFactory(
+    Map.Entry<HttpClientFactory, UpstreamManager> factoryAndManager = buildBalancingFactory(
         TEST_UPSTREAM,
         serverStore,
         requestRouteTracking
     );
+    httpClientFactory = factoryAndManager.getKey();
+    upstreamManager = factoryAndManager.getValue();
   }
 
   @Test
   public void testStat() throws InterruptedException {
+    upstreamManager.getUpstream(TEST_UPSTREAM).setStatLimit(2_000);
     ExecutorService executorService = Executors.newFixedThreadPool(threads);
     AtomicInteger counter = new AtomicInteger();
     executorService.invokeAll(IntStream.range(0, 10_257).mapToObj(index -> (Callable<?>) () -> {
@@ -95,7 +100,7 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
       double requestsHandledPart = (double) requestRouteTracking.get(server.getAddress()).size() / totalRequests;
       LOGGER.info("Server {}: weightPart={}, requestsHandledPart={}", server.getAddress(), weightPart, requestsHandledPart);
       assertEquals(weightPart, requestsHandledPart, 0.01);
-      assertTrue(server.getAddress(), server.getStatsRequests() <= maxWeight);
+      assertTrue(server.getAddress(), server.getStatsRequests() <= 2_000);
     }
   }
 
