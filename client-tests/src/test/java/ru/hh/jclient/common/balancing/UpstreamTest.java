@@ -41,7 +41,7 @@ public class UpstreamTest {
     upstream.releaseServer(0, false, 100);
     upstream.releaseServer(1, false, 100);
 
-    assertServerCounters(servers, 0, 0,   1, 0);
+    assertServerCounters(servers, 0, 0, 1, 0);
     assertServerCounters(servers, 1, 1, 2, 0);
 
     upstream.releaseServer(1, false, 100);

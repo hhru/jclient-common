@@ -25,7 +25,6 @@ public class Server {
   private volatile int weight;
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
-  private int statLimit;
 
   /**
    * not volatile for optimization. Should protect writes with {@link Server#slowStartEndMillis}
@@ -38,13 +37,14 @@ public class Server {
    */
   private boolean statisticsFilledWithInitialValues;
 
+  private volatile StampedLock lock;
+  private volatile int statLimit;
+
   private final AtomicLong requests;
   private final AtomicInteger fails;
 
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
-
-  private StampedLock lock;
 
   public Server(String address, int weight, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
