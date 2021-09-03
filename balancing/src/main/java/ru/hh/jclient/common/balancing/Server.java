@@ -9,6 +9,7 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
@@ -43,6 +44,8 @@ public class Server {
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
 
+  private StampedLock lock;
+
   public Server(String address, int weight, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
     this.weight = weight;
@@ -60,12 +63,14 @@ public class Server {
   }
 
   void acquire() {
-    requests.addAndGet(packRequests(1, 1));
+    executeWithLockIfAvailable(()-> requests.addAndGet(packRequests(1, 1)));
   }
 
   void release(boolean isError) {
-    requests.updateAndGet(i -> i > 0 ? i - 1 : i);
-    fails.updateAndGet(i -> isError && i < Integer.MAX_VALUE ? i + 1 : 0);
+    executeWithLockIfAvailable(()-> {
+      requests.updateAndGet(i -> i > 0 ? i - 1 : i);
+      fails.updateAndGet(i -> isError && i < Integer.MAX_VALUE ? i + 1 : 0);
+    });
   }
 
   void releaseAdaptive(boolean isError, long responseTimeMicros) {
@@ -77,6 +82,9 @@ public class Server {
     }
   }
 
+  /**
+   * protected by {@link Upstream#rescale(java.util.List)}
+   */
   void rescaleStatsRequests() {
     requests.updateAndGet(reqs -> {
       int statRequests = unpackStatRequests(reqs);
@@ -186,6 +194,10 @@ public class Server {
     return clock.millis();
   }
 
+  public void setSharedLock(StampedLock lock) {
+    this.lock = lock;
+  }
+
   public void setStatLimit(int statLimit) {
     this.statLimit = statLimit;
   }
@@ -223,6 +235,20 @@ public class Server {
 
   private static int unpackCurrentRequests(long requestsValue) {
     return (int) requestsValue;
+  }
+
+  private void executeWithLockIfAvailable(Runnable action) {
+    if (lock == null) {
+      action.run();
+      return;
+    }
+
+    long stamp = lock.writeLock();
+    try {
+      action.run();
+    } finally {
+      lock.unlockWrite(stamp);
+    }
   }
 
   @Override

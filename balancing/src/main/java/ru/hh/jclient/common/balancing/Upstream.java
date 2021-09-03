@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 import static java.util.stream.Collectors.toList;
 import org.slf4j.Logger;
@@ -33,6 +34,8 @@ public class Upstream {
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
 
+  private final StampedLock lock = new StampedLock();
+
   Upstream(String upstreamName,
            UpstreamConfigs upstreamConfigs,
            List<Server> servers,
@@ -53,7 +56,14 @@ public class Upstream {
   ServerEntry acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
-      int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+      int index;
+      List<Server> servers = this.servers;
+      long readStamp;
+        do {
+          readStamp = lock.tryOptimisticRead();
+          index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+        } while (!lock.validate(readStamp));
+
       if (index >= 0) {
         Server server = servers.get(index);
         server.acquire();
@@ -136,7 +146,8 @@ public class Upstream {
 
     if (rescale[0] || rescale[1]) {
       LOGGER.trace("Need to rescale servers. Double checking with lock");
-      synchronized (this) {
+      long writeStamp = lock.writeLock();
+      try {
         iterateServers(servers, server -> {
           int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
           rescale[localOrRemote] &= server.needToRescale();
@@ -150,6 +161,8 @@ public class Upstream {
             }
           });
         }
+      } finally {
+        lock.unlockWrite(writeStamp);
       }
     }
   }
@@ -161,6 +174,7 @@ public class Upstream {
       this.servers = servers;
       this.servers.forEach(server -> {
         server.setStatLimit(statLimit);
+        server.setSharedLock(lock);
       });
       UpstreamConfig upstreamConfig = getUpstreamConfigOrThrow(DEFAULT_PROFILE);
       initSlowStart(upstreamConfig, Clock.systemDefaultZone());
