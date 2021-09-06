@@ -22,6 +22,13 @@ public class Server {
 
   private final String address;
   private final String datacenter;
+
+  private final AtomicLong requests;
+  private final AtomicInteger fails;
+
+  private final DowntimeDetector downtimeDetector;
+  private final ResponseTimeTracker responseTimeTracker;
+
   private volatile int weight;
   private volatile Map<String, String> meta;
   private volatile List<String> tags;
@@ -39,12 +46,6 @@ public class Server {
 
   private volatile StampedLock lock;
   private volatile int statLimit;
-
-  private final AtomicLong requests;
-  private final AtomicInteger fails;
-
-  private final DowntimeDetector downtimeDetector;
-  private final ResponseTimeTracker responseTimeTracker;
 
   public Server(String address, int weight, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
@@ -124,6 +125,7 @@ public class Server {
     return meta;
   }
 
+  //TODO can have effect on server selection but changes without locking
   public void setMeta(Map<String, String> meta) {
     this.meta = meta;
   }
@@ -132,10 +134,12 @@ public class Server {
     return tags;
   }
 
+  //TODO can have effect on server selection but changes without locking
   public void setTags(List<String> tags) {
     this.tags = tags;
   }
 
+  //TODO can have effect on server selection but changes without locking
   public Server setWeight(int weight) {
     this.weight = weight;
     return this;
