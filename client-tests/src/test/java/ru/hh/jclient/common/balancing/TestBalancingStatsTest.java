@@ -75,7 +75,8 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
 
   @Test
   public void testStat() throws InterruptedException {
-    upstreamManager.getUpstream(TEST_UPSTREAM).setStatLimit(2_000);
+    int statLimit = 1_000;
+    upstreamManager.getUpstream(TEST_UPSTREAM).setStatLimit(statLimit);
     ExecutorService executorService = Executors.newFixedThreadPool(threads);
     AtomicInteger counter = new AtomicInteger();
     executorService.invokeAll(IntStream.range(0, 10_257).mapToObj(index -> (Callable<?>) () -> {
@@ -92,7 +93,7 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
     }).collect(Collectors.toList()));
     List<Server> servers = serverStore.getServers(TEST_UPSTREAM);
 
-    int maxWeight = servers.stream().mapToInt(Server::getWeight).max().getAsInt();
+    int minWeight = servers.stream().mapToInt(Server::getWeight).min().getAsInt();
     int sumWeight = servers.stream().mapToInt(Server::getWeight).sum();
     int totalRequests = requestRouteTracking.values().stream().mapToInt(Collection::size).sum();
     for (Server server : servers) {
@@ -100,7 +101,7 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
       double requestsHandledPart = (double) requestRouteTracking.get(server.getAddress()).size() / totalRequests;
       LOGGER.info("Server {}: weightPart={}, requestsHandledPart={}", server.getAddress(), weightPart, requestsHandledPart);
       assertEquals(weightPart, requestsHandledPart, 0.01);
-      assertTrue(server.getAddress(), server.getStatsRequests() <= 2_000);
+      assertTrue("Weight: " + server.getWeight(), server.getStatsRequests() <= ((double) server.getWeight() / minWeight) * statLimit);
     }
   }
 
@@ -115,7 +116,6 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
         do {
           arg = in.readLine();
         } while (arg != null && !arg.isEmpty());
-        Thread.sleep(5);
         output.println("HTTP/1.1 200 OK");
         output.println("");
         output.flush();

@@ -92,7 +92,7 @@ public class Server {
         return reqs;
       }
       int currentRequests = unpackCurrentRequests(reqs);
-      return packRequests(statRequests / statLimit, currentRequests);
+      return packRequests(statRequests >> 1, currentRequests);
     });
   }
 
