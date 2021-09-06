@@ -1,11 +1,12 @@
 package ru.hh.jclient.common.balancing;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -130,13 +131,20 @@ public abstract class AbstractBalancingStrategyTest {
   }
 
   protected static String createNormallyWorkingServer() {
-    return createServer(sock -> {
-      try (Socket socket = sock;
+    return createServer(socket -> {
+      try (socket;
            var inputStream = socket.getInputStream();
+           var in = new BufferedReader(new InputStreamReader(inputStream));
            var output = new PrintWriter(socket.getOutputStream())
       ) {
         long start = System.currentTimeMillis();
-        LOGGER.trace(new String(startRead(inputStream), Charset.defaultCharset()));
+        StringBuilder request = new StringBuilder();
+        String line;
+        while ((line = in.readLine()) != null && !line.isEmpty()) {
+          request.append(line);
+        }
+        LOGGER.trace(request.toString());
+        Thread.sleep(5);
         output.println("HTTP/1.1 200 OK");
         output.println("");
         output.flush();
