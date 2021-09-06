@@ -58,11 +58,17 @@ public class Upstream {
     try {
       int index;
       List<Server> servers = this.servers;
-      long readStamp;
-        do {
-          readStamp = lock.tryOptimisticRead();
+      long readStamp = lock.tryOptimisticRead();
+      index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+      if (!lock.validate(readStamp)) {
+        //fallback to lock
+        readStamp = lock.readLock();
+        try {
           index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
-        } while (!lock.validate(readStamp));
+        } finally {
+          lock.unlockRead(readStamp);
+        }
+      }
 
       if (index >= 0) {
         Server server = servers.get(index);
