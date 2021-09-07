@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
 
     <name>jclient-common-parent</name>
-    <version>3.8.11-beta-fix-balancing</version>
+    <version>3.8.12-beta-fix-balancing-SNAPSHOT</version>
 
     <modules>
         <module>client</module>
