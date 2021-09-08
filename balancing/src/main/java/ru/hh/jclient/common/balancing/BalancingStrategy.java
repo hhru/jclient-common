@@ -46,8 +46,9 @@ final class BalancingStrategy {
     }
 
     if (minIndex != -1) {
-      LOGGER.debug("static balancer pick for {}, differentDC:{}, load:{}{}", minIndex,
+      LOGGER.debug("static balancer pick differentDC:{}, load:{} for server idx={}:{}{}",
           minWeight.isDifferentDC(), minWeight.getLoad(),
+          minIndex, servers.get(minIndex),
           !LOGGER.isTraceEnabled() ? ""
               :(" of " + Arrays.toString(serverStatLog) + " with excluded idx=" + excludedServers)
       );
