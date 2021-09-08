@@ -1,11 +1,12 @@
 package ru.hh.jclient.common.balancing;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -53,14 +54,14 @@ public abstract class AbstractBalancingStrategyTest {
     }
   };
 
-  protected static HttpClientFactory buildBalancingFactory(String upstreamName,
+  protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(String upstreamName,
                                                            ServerStore serverStore,
                                                            ConcurrentMap<String, List<Integer>> trackingHolder) {
     return buildBalancingFactory(upstreamName, EMPTY_PROFILE, serverStore, trackingHolder);
 
   }
 
-  protected static HttpClientFactory buildBalancingFactory(String upstreamName,
+  protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(String upstreamName,
                                                            Profile profile,
                                                            ServerStore serverStore,
                                                            ConcurrentMap<String, List<Integer>> trackingHolder) {
@@ -95,11 +96,11 @@ public abstract class AbstractBalancingStrategyTest {
     upstreamManager.updateUpstreams(Set.of(upstreamName));
     var strategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService());
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
-    return new HttpClientFactoryBuilder(contextSupplier, List.of())
+    return Map.entry(new HttpClientFactoryBuilder(contextSupplier, List.of())
       .withConnectTimeoutMs(100)
       .withRequestStrategy(strategy)
       .withCallbackExecutor(Runnable::run)
-      .build();
+      .build(), upstreamManager);
   }
 
   protected static class TestStoreFromAddress implements ServerStore {
@@ -130,13 +131,20 @@ public abstract class AbstractBalancingStrategyTest {
   }
 
   protected static String createNormallyWorkingServer() {
-    return createServer(sock -> {
-      try (Socket socket = sock;
+    return createServer(socket -> {
+      try (socket;
            var inputStream = socket.getInputStream();
+           var in = new BufferedReader(new InputStreamReader(inputStream));
            var output = new PrintWriter(socket.getOutputStream())
       ) {
         long start = System.currentTimeMillis();
-        LOGGER.trace(new String(startRead(inputStream), Charset.defaultCharset()));
+        StringBuilder request = new StringBuilder();
+        String line;
+        while ((line = in.readLine()) != null && !line.isEmpty()) {
+          request.append(line);
+        }
+        LOGGER.trace(request.toString());
+        Thread.sleep(5);
         output.println("HTTP/1.1 200 OK");
         output.println("");
         output.flush();
@@ -146,9 +154,13 @@ public abstract class AbstractBalancingStrategyTest {
   }
 
   protected static String createServer(MoreFunctionalInterfaces.FailableConsumer<Socket, Exception> handler) {
+    return createServer(handler, 50);
+  }
+
+  protected static String createServer(MoreFunctionalInterfaces.FailableConsumer<Socket, Exception> handler, int backlog) {
     Exchanger<Integer> portHolder = new Exchanger<>();
     var t = new Thread(() -> {
-      try (ServerSocket ss = new ServerSocket(0)) {
+      try (ServerSocket ss = new ServerSocket(0, backlog)) {
         portHolder.exchange(ss.getLocalPort());
         while (true) {
           handler.accept(ss.accept());

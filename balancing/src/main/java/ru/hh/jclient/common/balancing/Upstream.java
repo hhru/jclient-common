@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
 import static java.util.stream.Collectors.toList;
 import org.slf4j.Logger;
@@ -17,9 +18,11 @@ import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedSer
 public class Upstream {
   private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);
   static final String DEFAULT_PROFILE = "default";
+  static final int DEFAULT_STAT_LIMIT = 10_000_000;
 
   private final String upstreamName;
   private final String datacenter;
+  private int statLimit = DEFAULT_STAT_LIMIT;
   private final boolean allowCrossDCRequests;
   private final boolean enabled;
 
@@ -30,6 +33,8 @@ public class Upstream {
   private final ReadWriteLock configReadWriteLock = new ReentrantReadWriteLock();
   private final Lock configWriteLock = configReadWriteLock.writeLock();
   private final Lock configReadLock = configReadWriteLock.readLock();
+
+  private final StampedLock lock = new StampedLock();
 
   Upstream(String upstreamName,
            UpstreamConfigs upstreamConfigs,
@@ -51,7 +56,20 @@ public class Upstream {
   ServerEntry acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
-      int index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+      int index;
+      List<Server> servers = this.servers;
+      long readStamp = lock.tryOptimisticRead();
+      index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+      if (!lock.validate(readStamp)) {
+        //fallback to lock
+        readStamp = lock.readLock();
+        try {
+          index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+        } finally {
+          lock.unlockRead(readStamp);
+        }
+      }
+
       if (index >= 0) {
         Server server = servers.get(index);
         server.acquire();
@@ -129,17 +147,29 @@ public class Upstream {
     boolean[] rescale = {true, allowCrossDCRequests};
     iterateServers(servers, server -> {
       int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
-      rescale[localOrRemote] &= server.getStatsRequests() >= server.getWeight();
+      rescale[localOrRemote] &= server.needToRescale();
     });
 
     if (rescale[0] || rescale[1]) {
-      LOGGER.debug("Need to rescale servers {}", servers);
-      iterateServers(servers, server -> {
-        int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
-        if (rescale[localOrRemote]) {
-          server.rescaleStatsRequests();
+      LOGGER.trace("Need to rescale servers. Double checking with lock");
+      long writeStamp = lock.writeLock();
+      try {
+        iterateServers(servers, server -> {
+          int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
+          rescale[localOrRemote] &= server.needToRescale();
+        });
+        if (rescale[0] || rescale[1]) {
+          LOGGER.debug("Rescaling servers {}", servers);
+          iterateServers(servers, server -> {
+            int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
+            if (rescale[localOrRemote]) {
+              server.rescaleStatsRequests();
+            }
+          });
         }
-      });
+      } finally {
+        lock.unlockWrite(writeStamp);
+      }
     }
   }
 
@@ -148,6 +178,10 @@ public class Upstream {
     try {
       this.upstreamConfigs = newConfigs;
       this.servers = servers;
+      this.servers.forEach(server -> {
+        server.setStatLimit(statLimit);
+        server.setSharedLock(lock);
+      });
       UpstreamConfig upstreamConfig = getUpstreamConfigOrThrow(DEFAULT_PROFILE);
       initSlowStart(upstreamConfig, Clock.systemDefaultZone());
       this.failedSelection = false;
@@ -184,6 +218,12 @@ public class Upstream {
     } finally {
       configReadLock.unlock();
     }
+  }
+
+  //visible for testing
+  void setStatLimit(int statLimit) {
+    this.statLimit = statLimit;
+    servers.forEach(server -> server.setStatLimit(statLimit));
   }
 
   private static void iterateServers(List<Server> servers, Consumer<Server> function) {

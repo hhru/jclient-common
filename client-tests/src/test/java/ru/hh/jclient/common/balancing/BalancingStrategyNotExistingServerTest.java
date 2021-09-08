@@ -30,7 +30,7 @@ public class BalancingStrategyNotExistingServerTest extends AbstractBalancingStr
       TEST_UPSTREAM,
       new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(notExistingServerAddress, workingServerAddress))),
       requestRouteTracking
-    );
+    ).getKey();
   }
 
   @Test

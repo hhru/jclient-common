@@ -43,7 +43,7 @@ public class BalancingStrategyLowBacklogServerTest extends AbstractBalancingStra
       TEST_UPSTREAM,
       new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(lowBacklogServerAddress, workingServerAddress))),
       requestRouteTracking
-    );
+    ).getKey();
     HttpRequest req = HttpRequest.newBuilder(URI.create(lowBacklogServerAddress)).GET().build();
     HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(50)).build();
     AtomicBoolean inBacklog = new AtomicBoolean(true);

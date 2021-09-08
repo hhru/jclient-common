@@ -41,13 +41,13 @@ public class UpstreamTest {
     upstream.releaseServer(0, false, 100);
     upstream.releaseServer(1, false, 100);
 
-    assertServerCounters(servers, 0, 0, 0, 0);
-    assertServerCounters(servers, 1, 1, 0, 0);
+    assertServerCounters(servers, 0, 0, 1, 0);
+    assertServerCounters(servers, 1, 1, 2, 0);
 
     upstream.releaseServer(1, false, 100);
 
-    assertServerCounters(servers, 0, 0, 0, 0);
-    assertServerCounters(servers, 1, 0, 0, 0);
+    assertServerCounters(servers, 0, 0, 1, 0);
+    assertServerCounters(servers, 1, 0, 2, 0);
   }
 
   @Test
@@ -107,6 +107,7 @@ public class UpstreamTest {
     List<Server> servers = List.of(new Server("a", weight, null));
 
     Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers, null, false, true);
+    upstream.setStatLimit(weight);
     Server server = servers.get(0);
 
     Runnable acquireReleaseTask = () -> acquireReleaseUpstream(upstream, numOfRequests);

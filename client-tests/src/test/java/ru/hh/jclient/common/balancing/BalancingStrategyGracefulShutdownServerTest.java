@@ -34,7 +34,7 @@ public class BalancingStrategyGracefulShutdownServerTest extends AbstractBalanci
       TEST_UPSTREAM,
       new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(gracefullyClosingServerAddress, workingServerAddress))),
       requestRouteTracking
-    );
+    ).getKey();
   }
 
   @Test
