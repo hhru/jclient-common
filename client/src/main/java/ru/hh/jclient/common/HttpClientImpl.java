@@ -25,6 +25,7 @@ import static ru.hh.jclient.common.HttpHeaderNames.X_CONTRACT_CONSUMER_NAME;
 import static ru.hh.jclient.common.HttpHeaderNames.X_CONTRACT_EXPECTED_RESPONSE;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
+import static ru.hh.jclient.common.HttpHeaderNames.X_HH_PROFESSIONAL_ROLES_MODE;
 import static ru.hh.jclient.common.HttpHeaderNames.X_LOAD_TESTING;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REAL_IP;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
@@ -40,8 +41,17 @@ class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
 
   // todo remove contract headers in HH-134289
-  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID, X_REAL_IP, AUTHORIZATION, HH_PROTO_SESSION,
-    X_HH_DEBUG, FRONTIK_DEBUG_AUTH, X_LOAD_TESTING, X_SOURCE, X_CONTRACT_EXPECTED_RESPONSE, X_CONTRACT_CONSUMER_NAME);
+  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID,
+      X_REAL_IP,
+      AUTHORIZATION,
+      HH_PROTO_SESSION,
+      X_HH_DEBUG,
+      FRONTIK_DEBUG_AUTH,
+      X_LOAD_TESTING,
+      X_SOURCE,
+      X_CONTRACT_EXPECTED_RESPONSE,
+      X_CONTRACT_CONSUMER_NAME,
+      X_HH_PROFESSIONAL_ROLES_MODE);
 
   private final Executor callbackExecutor;
 
