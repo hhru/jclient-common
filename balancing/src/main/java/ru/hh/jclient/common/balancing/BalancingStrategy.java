@@ -32,22 +32,23 @@ final class BalancingStrategy {
       }
 
       float statLoad = server.getStatLoad(servers, clock);
-      Weight weight = new Weight(isDifferentDC, statLoad);
+      Weight weight = new Weight(excludedServers.contains(index), isDifferentDC, statLoad);
       if (LOGGER.isTraceEnabled()) {
         serverStatLog[index] = "{static balancer stats for " + server
+            + ", excluded:" + weight.isExcluded()
             + ", differentDC:" + weight.isDifferentDC()
             + ", load:" + weight.getLoad() + '}';
       }
 
-      if (!excludedServers.contains(index) && (minIndex < 0 || minWeight.compareTo(weight) > 0)) {
+      if (minIndex < 0 || minWeight.compareTo(weight) > 0) {
         minIndex = index;
         minWeight = weight;
       }
     }
 
     if (minIndex != -1) {
-      LOGGER.debug("static balancer pick differentDC:{}, load:{} for server idx={}:{}{}",
-          minWeight.isDifferentDC(), minWeight.getLoad(),
+      LOGGER.debug("static balancer pick excluded:{} differentDC:{}, load:{} for server idx={}:{}{}",
+          minWeight.isExcluded(), minWeight.isDifferentDC(), minWeight.getLoad(),
           minIndex, servers.get(minIndex),
           !LOGGER.isTraceEnabled() ? ""
               :(" of " + Arrays.toString(serverStatLog) + " with excluded idx=" + excludedServers)
@@ -62,12 +63,14 @@ final class BalancingStrategy {
   }
 
   private static final class Weight implements Comparable<Weight> {
-    private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isDifferentDC)
+    private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isExcluded).thenComparing(Weight::isDifferentDC)
         .thenComparingDouble(Weight::getLoad);
+    private final boolean excluded;
     private final boolean differentDC;
     private final float load;
 
-    Weight(boolean differentDC, float load) {
+    Weight(boolean excluded, boolean differentDC, float load) {
+      this.excluded = excluded;
       this.differentDC = differentDC;
       this.load = load;
     }
@@ -78,6 +81,10 @@ final class BalancingStrategy {
 
     public float getLoad() {
       return load;
+    }
+
+    public boolean isExcluded() {
+      return excluded;
     }
 
     @Override
