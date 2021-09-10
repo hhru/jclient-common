@@ -71,7 +71,9 @@ public class Server {
     executeWithLockIfAvailable(()-> {
       requests.updateAndGet(i -> {
         int stat = unpackStatRequests(i);
-        stat = isRetry ? (stat > 0 ? stat - 1 : 0) : stat;
+        if (isRetry) {
+          stat = stat > 0 ? stat - 1 : 0;
+        }
         int current = unpackCurrentRequests(i);
         current = current > 0 ? current - 1 : 0;
         return packRequests(stat, current);
