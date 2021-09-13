@@ -2,10 +2,10 @@ package ru.hh.jclient.common.balancing;
 
 import java.time.Clock;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 final class BalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
-  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests,
+  static int getLeastLoadedServer(List<Server> servers, Collection<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests,
                                   Clock clock) {
     int minIndex = -1;
     Weight minWeight = null;

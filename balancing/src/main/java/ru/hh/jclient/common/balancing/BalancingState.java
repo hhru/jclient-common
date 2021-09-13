@@ -1,18 +1,18 @@
 package ru.hh.jclient.common.balancing;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BalancingState {
   protected final Upstream upstream;
   protected final String profile;
-  private final Set<Integer> triedServers;
+  private final List<Integer> triedServers;
   private ServerEntry currentServer;
 
   public BalancingState(Upstream upstream, String profile) {
     this.upstream = upstream;
     this.profile = profile;
-    this.triedServers = new HashSet<>();
+    this.triedServers = new ArrayList<>();
   }
 
   public UpstreamConfig getUpstreamConfig() {
@@ -48,11 +48,11 @@ public class BalancingState {
 
   public void releaseServer(long timeToLastByteMicros, boolean isServerError) {
     if (isServerAvailable()) {
-      upstream.releaseServer(getCurrentServer().getIndex(), !getTriedServers().isEmpty(), isServerError, timeToLastByteMicros, false);
+      upstream.releaseServer(getCurrentServer().getIndex(), isServerError, timeToLastByteMicros, false);
     }
   }
 
-  protected Set<Integer> getTriedServers() {
+  private List<Integer> getTriedServers() {
     return triedServers;
   }
 
