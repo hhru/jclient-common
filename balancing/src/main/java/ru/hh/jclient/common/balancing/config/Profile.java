@@ -9,9 +9,9 @@ public class Profile {
   @JsonProperty("max_timeout_tries")
   private Integer maxTimeoutTries;
   @JsonProperty("connect_timeout_sec")
-  private Float connectTimeoutMs;
+  private Float connectTimeoutSec;
   @JsonProperty("request_timeout_sec")
-  private Float requestTimeoutMs;
+  private Float requestTimeoutSec;
   @JsonProperty("slow_start_interval_sec")
   private Integer slowStartIntervalSec;
   @JsonProperty("retry_policy")
@@ -44,21 +44,21 @@ public class Profile {
     return this;
   }
 
-  public Float getConnectTimeoutMs() {
-    return connectTimeoutMs;
+  public Float getConnectTimeoutSec() {
+    return connectTimeoutSec;
   }
 
-  public Profile setConnectTimeoutMs(Float connectTimeoutMs) {
-    this.connectTimeoutMs = connectTimeoutMs;
+  public Profile setConnectTimeoutSec(Float connectTimeoutSec) {
+    this.connectTimeoutSec = connectTimeoutSec;
     return this;
   }
 
-  public Float getRequestTimeoutMs() {
-    return requestTimeoutMs;
+  public Float getRequestTimeoutSec() {
+    return requestTimeoutSec;
   }
 
-  public Profile setRequestTimeoutMs(Float requestTimeoutMs) {
-    this.requestTimeoutMs = requestTimeoutMs;
+  public Profile setRequestTimeoutSec(Float requestTimeoutSec) {
+    this.requestTimeoutSec = requestTimeoutSec;
     return this;
   }
 
@@ -76,8 +76,8 @@ public class Profile {
     return "Profile{" +
         ", maxTries=" + maxTries +
         ", maxTimeoutTries=" + maxTimeoutTries +
-        ", connectTimeoutMs=" + connectTimeoutMs +
-        ", requestTimeoutMs=" + requestTimeoutMs +
+        ", connectTimeoutMs=" + connectTimeoutSec +
+        ", requestTimeoutMs=" + requestTimeoutSec +
         ", slowStartIntervalSec=" + slowStartIntervalSec +
         ", retryPolicy=" + retryPolicy +
         '}';

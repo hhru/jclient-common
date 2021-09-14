@@ -33,14 +33,14 @@ public final class UpstreamConfigs {
   }
 
   public static UpstreamConfig createUpstreamConfigWithDefaults(Integer maxTries, Integer maxTimeoutTries,
-                                                                Float connectTimeoutMs, Float requestTimeoutMs,
+                                                                Float connectTimeoutSec, Float requestTimeoutSec,
                                                                 Integer slowStartIntervalSec,
                                                                 Map<Integer, Boolean> retryPolicyConfig) {
     UpstreamConfig upstreamConfig = new UpstreamConfig(
       requireNonNullElse(maxTries, DEFAULT_MAX_TRIES),
       requireNonNullElse(maxTimeoutTries, DEFAULT_MAX_TIMEOUT_TRIES),
-      convertToMillisOrFallback(connectTimeoutMs, DEFAULT_CONNECT_TIMEOUT_MS),
-      convertToMillisOrFallback(requestTimeoutMs, DEFAULT_REQUEST_TIMEOUT_MS)
+      convertToMillisOrFallback(connectTimeoutSec, DEFAULT_CONNECT_TIMEOUT_MS),
+      convertToMillisOrFallback(requestTimeoutSec, DEFAULT_REQUEST_TIMEOUT_MS)
     );
     upstreamConfig.getRetryPolicy().update(retryPolicyConfig);
     upstreamConfig.setSlowStartIntervalSec(requireNonNullElse(slowStartIntervalSec, 0));

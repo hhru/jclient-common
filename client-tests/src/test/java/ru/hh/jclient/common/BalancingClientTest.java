@@ -262,9 +262,9 @@ public class BalancingClientTest extends BalancingClientTestBase {
     String profileFoo = "foo";
     String profileBar = "bar";
     Map<String, Profile> profiles = Map.of(
-        DEFAULT, new Profile().setRequestTimeoutMs(33f),
-        profileFoo, new Profile().setRequestTimeoutMs(22f),
-        profileBar, new Profile().setRequestTimeoutMs(11f)
+        DEFAULT, new Profile().setRequestTimeoutSec(33f),
+        profileFoo, new Profile().setRequestTimeoutSec(22f),
+        profileBar, new Profile().setRequestTimeoutSec(11f)
     );
 
     ApplicationConfig applicationConfig = new ApplicationConfig().setHosts(Map.of(DEFAULT, new Host().setProfiles(profiles)));
