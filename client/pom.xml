@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>3.8.13-beta-balancing-fix</version>
+        <version>3.8.14-beta-balancing-fix-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
