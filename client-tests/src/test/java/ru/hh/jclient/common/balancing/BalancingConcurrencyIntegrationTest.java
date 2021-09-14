@@ -6,7 +6,6 @@ import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -34,12 +33,11 @@ import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.balancing.config.Profile;
 
-//flacking concurrency test - for manual run
-@RunWith(Parameterized.class)
+// the test uses local but real and big http load hence is not so reliable. So, for manual use at the moment
 @Ignore
-public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
-  private static final Logger LOGGER = LoggerFactory.getLogger(TestBalancingStatsTest.class);
-  private static final Random RND = new Random();
+@RunWith(Parameterized.class)
+public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrategyTest {
+  private static final Logger LOGGER = LoggerFactory.getLogger(BalancingConcurrencyIntegrationTest.class);
 
   private String server50Address;
   private String server200Address;
@@ -52,18 +50,12 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
   private Server server50;
   private Server server200;
 
-  @Parameterized.Parameters(name = "threadpool size: {0}, fail probability: {1}")
+  @Parameterized.Parameters(name = "threadpool size: {0}")
   public static Collection<Object[]> parameters() {
-    return List.of(
-      new Object[] {16, 0f}, new Object[] {32 , 0f}, new Object[] {96, 0f},
-      new Object[] {16, 0.5f}, new Object[] {32 , 0.5f}, new Object[] {96, 0.5f},
-      new Object[] {16, 1f}, new Object[] {32 , 1f}, new Object[] {96, 1f}
-    );
+    return List.of(new Object[] {1}, new Object[] {16}, new Object[] {32}, new Object[] {96});
   }
   @Parameterized.Parameter(0)
   public int threads;
-  @Parameterized.Parameter(1)
-  public float failPercent;
 
   @Before
   public void setUp() {
@@ -77,7 +69,7 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
     serverStore.updateServers(TEST_UPSTREAM, List.of(server50, server200), List.of());
     Map.Entry<HttpClientFactory, UpstreamManager> factoryAndManager = buildBalancingFactory(
         TEST_UPSTREAM,
-        new Profile().setRequestTimeoutMs(100f),
+        new Profile().setRequestTimeoutSec(100f),
         serverStore,
         requestRouteTracking,
         retries
@@ -97,7 +89,6 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
         Request request = new RequestBuilder(JClientBase.HTTP_GET).setUrl("http://" + TEST_UPSTREAM).build();
         Response response = httpClientFactory.with(request).unconverted().get();
         assertEquals(HttpStatuses.OK, response.getStatusCode());
-        Thread.sleep(1);
         LOGGER.info("Processed requests: {}", counter.incrementAndGet());
         return null;
       } catch (ExecutionException | InterruptedException e) {
@@ -132,10 +123,6 @@ public class TestBalancingStatsTest extends AbstractBalancingStrategyTest {
            var in = new BufferedReader(new InputStreamReader(inputStream));
            var output = new PrintWriter(socket.getOutputStream())
       ) {
-        if (RND.nextFloat() < failPercent) {
-          socket.close();
-          return;
-        }
         String arg;
         do {
           arg = in.readLine();

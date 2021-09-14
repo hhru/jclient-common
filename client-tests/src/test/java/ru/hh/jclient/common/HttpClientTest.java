@@ -468,12 +468,12 @@ public class HttpClientTest extends HttpClientTestBase {
 
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], VIDEO_ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    http.with(request).expectEmpty().result().get();
+    http.with(request).expectNoContent().result().get();
     assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
-    http.with(request).expectEmpty().result().get();
+    http.with(request).expectNoContent().result().get();
     assertFalse(actualRequest.get().getHeaders().contains(HttpHeaderNames.HH_PROTO_SESSION));
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -483,7 +483,7 @@ public class HttpClientTest extends HttpClientTestBase {
     withEmptyContext().request(VIDEO_ANY, 403);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     try {
-      http.with(request).expectEmpty().result().get();
+      http.with(request).expectNoContent().result().get();
     }
     catch (ExecutionException e) {
       // exception about bad response status, not reported to debug, so no CLIENT_PROBLEM here
