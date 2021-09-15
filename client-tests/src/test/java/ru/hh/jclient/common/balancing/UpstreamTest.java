@@ -1,6 +1,7 @@
 package ru.hh.jclient.common.balancing;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.singleton;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -37,13 +38,13 @@ public class UpstreamTest {
     assertEquals("b", upstream.acquireServer().getAddress());
     assertServerCounters(servers, 1, 2, 2, 0);
 
-    upstream.releaseServer(0, false, 100);
-    upstream.releaseServer(1, false, 100);
+    upstream.releaseServer(0, false, false, 100);
+    upstream.releaseServer(1, false, false, 100);
 
     assertServerCounters(servers, 0, 0, 1, 0);
     assertServerCounters(servers, 1, 1, 2, 0);
 
-    upstream.releaseServer(1, false, 100);
+    upstream.releaseServer(1, false, false, 100);
 
     assertServerCounters(servers, 0, 0, 1, 0);
     assertServerCounters(servers, 1, 0, 2, 0);
@@ -56,7 +57,7 @@ public class UpstreamTest {
 
     int excludedServerIndex = 0;
 
-    ServerEntry serverEntry = upstream.acquireServer(List.of(excludedServerIndex));
+    ServerEntry serverEntry = upstream.acquireServer(singleton(excludedServerIndex));
 
     assertEquals("b", serverEntry.getAddress());
 
@@ -73,7 +74,7 @@ public class UpstreamTest {
     assertEquals(0, server.getFails());
 
     assertEquals(serverIndex, upstream.acquireServer().getIndex());
-    upstream.releaseServer(serverIndex, true, 100);
+    upstream.releaseServer(serverIndex, false, true, 100);
 
 
     assertEquals(1, server.getFails());
@@ -91,7 +92,7 @@ public class UpstreamTest {
 
     Upstream upstream = createTestUpstream(TEST_SERVICE_NAME, servers, configMap);
     int index = upstream.acquireServer().getIndex();
-    upstream.releaseServer(index, true, 100);
+    upstream.releaseServer(index, false, true, 100);
 
     int serverIndex = 0;
 
@@ -140,7 +141,7 @@ public class UpstreamTest {
     for (int i = 0; i < times; i++) {
       ServerEntry serverEntry = upstream.acquireServer();
       if (serverEntry != null) {
-        upstream.releaseServer(serverEntry.getIndex(), false, 100);
+        upstream.releaseServer(serverEntry.getIndex(), false, false, 100);
       }
     }
   }

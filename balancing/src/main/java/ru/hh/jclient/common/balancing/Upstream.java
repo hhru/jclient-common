@@ -2,16 +2,14 @@ package ru.hh.jclient.common.balancing;
 
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import static java.util.stream.Collectors.toList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +53,7 @@ public class Upstream {
     return servers;
   }
 
-  ServerEntry acquireServer(List<Integer> excludedServers) {
+  ServerEntry acquireServer(Set<Integer> excludedServers) {
     configReadLock.lock();
     try {
       int index;
@@ -74,10 +72,7 @@ public class Upstream {
 
       if (index >= 0) {
         Server server = servers.get(index);
-        Optional<Server> retryCausedServer = Optional.of(excludedServers)
-          .filter(Predicate.not(Collection::isEmpty))
-          .map(collection -> servers.get(collection.get(collection.size() - 1)));
-        server.acquire(retryCausedServer);
+        server.acquire();
         failedSelection = false;
         return new ServerEntry(index, server.getAddress(), server.getDatacenter());
       }
@@ -118,14 +113,14 @@ public class Upstream {
   }
 
   ServerEntry acquireServer() {
-    return acquireServer(List.of());
+    return acquireServer(Set.of());
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros) {
-    releaseServer(serverIndex, isError, responseTimeMicros, false);
+  void releaseServer(int serverIndex, boolean isRetry, boolean isError, long responseTimeMicros) {
+    releaseServer(serverIndex, isRetry, isError, responseTimeMicros, false);
   }
 
-  void releaseServer(int serverIndex, boolean isError, long responseTimeMicros, boolean adaptive) {
+  void releaseServer(int serverIndex, boolean isRetry, boolean isError, long responseTimeMicros, boolean adaptive) {
     configReadLock.lock();
     try {
       if (serverIndex < 0 || serverIndex >= servers.size()) {
@@ -136,7 +131,7 @@ public class Upstream {
         if (adaptive) {
           server.releaseAdaptive(isError, responseTimeMicros);
         } else {
-          server.release(isError);
+          server.release(isRetry, isError);
         }
       }
 

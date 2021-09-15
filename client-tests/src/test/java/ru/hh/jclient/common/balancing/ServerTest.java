@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -21,7 +20,7 @@ public class ServerTest {
   public void testAcquire() {
     Server server = new Server("test", 1, null);
 
-    server.acquire(Optional.empty());
+    server.acquire();
 
     assertEquals(0, server.getFails());
     assertEquals(1, server.getRequests());
@@ -32,8 +31,8 @@ public class ServerTest {
   public void testAcquireRelease() {
     Server server = new Server("test", 1,  null);
 
-    server.acquire(Optional.empty());
-    server.release(false);
+    server.acquire();
+    server.release(false, false);
 
     assertEquals(0, server.getFails());
     assertEquals(0, server.getRequests());
@@ -44,8 +43,8 @@ public class ServerTest {
   public void testAcquireReleaseWithFail() {
     Server server = new Server("test", 1,  null);
 
-    server.acquire(Optional.empty());
-    server.release(true);
+    server.acquire();
+    server.release(false, true);
 
     assertEquals(1, server.getFails());
     assertEquals(0, server.getRequests());
