@@ -41,7 +41,7 @@ public class ApplicationConfig {
   private static UpstreamConfig convertProfileToUpstreamConfig(Profile profile) {
     return UpstreamConfigs.createUpstreamConfigWithDefaults(
       profile.getMaxTries(), profile.getMaxTimeoutTries(),
-      profile.getConnectTimeoutMs(), profile.getRequestTimeoutMs(),
+      profile.getConnectTimeoutSec(), profile.getRequestTimeoutSec(),
       profile.getSlowStartIntervalSec(),
       Optional.ofNullable(profile.getRetryPolicy())
         .map(policy -> policy.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> e.getValue().isIdempotent())))

@@ -67,10 +67,24 @@ public class Server {
     executeWithLockIfAvailable(()-> requests.addAndGet(packRequests(1, 1)));
   }
 
-  void release(boolean isError) {
+  void release(boolean isRetry, boolean isError) {
     executeWithLockIfAvailable(()-> {
-      requests.updateAndGet(i -> i > 0 ? i - 1 : i);
-      fails.updateAndGet(i -> isError && i < Integer.MAX_VALUE ? i + 1 : 0);
+      requests.updateAndGet(i -> {
+        int stat = unpackStatRequests(i);
+        if (isRetry) {
+          stat = stat > 0 ? stat - 1 : 0;
+        }
+        int current = unpackCurrentRequests(i);
+        current = current > 0 ? current - 1 : 0;
+        return packRequests(stat, current);
+      });
+      fails.updateAndGet(i -> {
+        if (isError) {
+          return i < Integer.MAX_VALUE ? i + 1 : Integer.MAX_VALUE;
+        } else {
+          return 0;
+        }
+      });
     });
   }
 

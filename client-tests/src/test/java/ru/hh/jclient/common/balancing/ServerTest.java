@@ -32,7 +32,7 @@ public class ServerTest {
     Server server = new Server("test", 1,  null);
 
     server.acquire();
-    server.release(false);
+    server.release(false, false);
 
     assertEquals(0, server.getFails());
     assertEquals(0, server.getRequests());
@@ -44,7 +44,7 @@ public class ServerTest {
     Server server = new Server("test", 1,  null);
 
     server.acquire();
-    server.release(true);
+    server.release(false, true);
 
     assertEquals(1, server.getFails());
     assertEquals(0, server.getRequests());

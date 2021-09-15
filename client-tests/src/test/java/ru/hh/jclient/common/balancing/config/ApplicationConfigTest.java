@@ -30,7 +30,7 @@ public class ApplicationConfigTest {
   public void testTwoProfiles() {
     String secondProfileName = "secondProfile";
     Profile secondProfile = new Profile()
-        .setRequestTimeoutMs(8f)
+        .setRequestTimeoutSec(8f)
         .setMaxTries(7);
 
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -73,9 +73,9 @@ public class ApplicationConfigTest {
   public static ApplicationConfig buildTestConfig() {
 
     Profile profile = new Profile()
-        .setConnectTimeoutMs(0.2f)
+        .setConnectTimeoutSec(0.2f)
         .setMaxTries(3)
-        .setRequestTimeoutMs(2f)
+        .setRequestTimeoutSec(2f)
         .setMaxTimeoutTries(2)
         .setRetryPolicy(new HashMap<>());
 

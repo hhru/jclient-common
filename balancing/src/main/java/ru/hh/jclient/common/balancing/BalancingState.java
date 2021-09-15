@@ -48,11 +48,11 @@ public class BalancingState {
 
   public void releaseServer(long timeToLastByteMicros, boolean isServerError) {
     if (isServerAvailable()) {
-      upstream.releaseServer(getCurrentServer().getIndex(), isServerError, timeToLastByteMicros, false);
+      upstream.releaseServer(getCurrentServer().getIndex(), !getTriedServers().isEmpty(), isServerError, timeToLastByteMicros, false);
     }
   }
 
-  private Set<Integer> getTriedServers() {
+  protected Set<Integer> getTriedServers() {
     return triedServers;
   }
 

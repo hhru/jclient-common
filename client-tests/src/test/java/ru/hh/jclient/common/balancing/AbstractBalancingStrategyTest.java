@@ -16,7 +16,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Exchanger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
@@ -57,14 +59,15 @@ public abstract class AbstractBalancingStrategyTest {
   protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(String upstreamName,
                                                            ServerStore serverStore,
                                                            ConcurrentMap<String, List<Integer>> trackingHolder) {
-    return buildBalancingFactory(upstreamName, EMPTY_PROFILE, serverStore, trackingHolder);
+    return buildBalancingFactory(upstreamName, EMPTY_PROFILE, serverStore, trackingHolder, null);
 
   }
 
   protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(String upstreamName,
-                                                           Profile profile,
-                                                           ServerStore serverStore,
-                                                           ConcurrentMap<String, List<Integer>> trackingHolder) {
+                                                                                       Profile profile,
+                                                                                       ServerStore serverStore,
+                                                                                       ConcurrentMap<String, List<Integer>> trackingHolder,
+                                                                                       @Nullable ConcurrentMap<String, LongAdder> retries) {
     var tracking = new Monitoring() {
       @Override
       public void countRequest(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
@@ -77,7 +80,9 @@ public abstract class AbstractBalancingStrategyTest {
 
       @Override
       public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
-                             int firstStatusCode, int retryCount) {}
+                             int firstStatusCode, int retryCount) {
+        Optional.ofNullable(retries).ifPresent(map -> map.computeIfAbsent(serverAddress, ignored -> new LongAdder()).increment());
+      }
 
       @Override
       public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
