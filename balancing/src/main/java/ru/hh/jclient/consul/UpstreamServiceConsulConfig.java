@@ -37,7 +37,7 @@ public class UpstreamServiceConsulConfig {
       .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
       .map(Boolean::parseBoolean)
       .orElse(false);
-    boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(false);
+    boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);
     var dcList = Optional.ofNullable(props.getProperty(DC_LIST_KEY))
