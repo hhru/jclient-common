@@ -18,6 +18,10 @@ public class Param {
     return new Param(name == null ? null : name.toString(), value == null ? null : value.toString());
   }
 
+  static org.asynchttpclient.Param toParamDelegate(String name, Object value) {
+    return new org.asynchttpclient.Param(name, Objects.toString(value, null));
+  }
+
   public String getName() {
     return delegate.getName();
   }

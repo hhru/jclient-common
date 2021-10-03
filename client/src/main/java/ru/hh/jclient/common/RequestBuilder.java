@@ -5,13 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import static java.util.stream.Collectors.toList;
+import java.util.Objects;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.MediaType;
 import org.asynchttpclient.request.body.multipart.Part;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
+import static ru.hh.jclient.common.Param.toParamDelegate;
 import ru.hh.jclient.common.exception.RequestConverterException;
 
 public class RequestBuilder {
@@ -47,7 +51,7 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setCookies(Collection<Cookie> cookies) {
-    delegate.setCookies(cookies.stream().map(Cookie::getDelegate).collect(toList()));
+    delegate.setCookies(cookies.stream().map(Cookie::getDelegate).collect(toMutableList()));
     return this;
   }
 
@@ -74,9 +78,13 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder addFormParam(String key, String value) {
-    delegate.addFormParam(key, value);
+  public RequestBuilder addFormParam(String name, String value) {
+    delegate.addFormParam(name, value);
     return this;
+  }
+
+  public RequestBuilder addFormParam(String name, Object value) {
+    return addFormParam(name, Objects.toString(value, null));
   }
 
   public RequestBuilder resetFormParams() {
@@ -89,37 +97,53 @@ public class RequestBuilder {
     return this;
   }
 
+  public RequestBuilder addQueryParam(String name, Object value) {
+    return addQueryParam(name, Objects.toString(value, null));
+  }
+
   public RequestBuilder addQueryParams(List<Param> queryParams) {
-    delegate.addQueryParams(queryParams.stream().map(Param::getDelegate).collect(toList()));
+    delegate.addQueryParams(queryParams.stream().map(Param::getDelegate).collect(toMutableList()));
     return this;
   }
 
   public RequestBuilder setQueryParams(List<Param> params) {
-    delegate.setQueryParams(params.stream().map(Param::getDelegate).collect(toList()));
-    return this;
+    return resetQuery().addQueryParams(params);
   }
 
+  public RequestBuilder setQueryParamMultiMap(Map<String, ? extends List<?>> params) {
+    return resetQuery().addQueryParamMultiMap(params);
+  }
+
+  /**
+   * @deprecated use {@link #setQueryParamMultiMap(Map)} for more consistent naming
+   */
+  @Deprecated
   public RequestBuilder setQueryParams(Map<String, List<String>> params) {
-    delegate.setQueryParams(params);
-    return this;
+    return setQueryParamMultiMap(params);
   }
 
-  public RequestBuilder addQueryParamMap(Map<String, Object> params) {
+  public RequestBuilder addQueryParamMap(Map<String, ?> params) {
     delegate.addQueryParams(
       params.entrySet().stream()
-        .map(entry -> new Param(entry.getKey(), entry.getValue().toString()))
-        .map(Param::getDelegate)
-        .collect(toList())
+        .map(entry -> toParamDelegate(entry.getKey(), entry.getValue()))
+        .collect(toMutableList())
     );
     return this;
   }
 
+  /**
+   * @deprecated use {@link #addQueryParamMultiMap(Map)} for more consistent naming
+   */
+  @Deprecated
   public RequestBuilder addQueryParams(Map<String, List<Object>> params) {
+    return addQueryParamMultiMap(params);
+  }
+
+  public RequestBuilder addQueryParamMultiMap(Map<String, ? extends List<?>> params) {
     delegate.addQueryParams(
       params.entrySet().stream()
-        .flatMap(entry -> entry.getValue().stream().map(value -> new Param(entry.getKey(), value.toString())))
-        .map(Param::getDelegate)
-        .collect(toList())
+        .flatMap(entry -> entry.getValue().stream().map(value -> toParamDelegate(entry.getKey(), value)))
+        .collect(toMutableList())
     );
     return this;
   }
@@ -200,7 +224,7 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setFormParams(List<Param> params) {
-    delegate.setFormParams(params.stream().map(Param::getDelegate).collect(toList()));
+    delegate.setFormParams(params.stream().map(Param::getDelegate).collect(toMutableList()));
     return this;
   }
 
@@ -269,5 +293,9 @@ public class RequestBuilder {
 
   org.asynchttpclient.RequestBuilder getDelegate() {
     return delegate;
+  }
+
+  private static <T> Collector<T, ?, List<T>> toMutableList() {
+    return Collectors.toCollection(ArrayList::new);
   }
 }
