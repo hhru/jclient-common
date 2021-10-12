@@ -99,6 +99,16 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
     private final Map<String, List<String>> queryParams = new HashMap<>();
     private final List<Supplier<RequestDebug>> debugSuppliers = new ArrayList<>();
 
+    private HttpClientContext previousContext;
+    private String previousRequestId;
+
+    public ContextBuilder() {
+      String requestId = MDC.get("rid");
+      if (requestId != null) {
+        this.headers.put(X_REQUEST_ID, List.of(requestId));
+      }
+    }
+
     public ContextBuilder withHeaders(Map<String, List<String>> headers) {
       this.headers.putAll(headers);
       return this;
@@ -128,55 +138,48 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
       });
     }
 
-    public void executeFailable(FailableRunnable<InterruptedException> runnable) throws InterruptedException {
-      var context = prepareContext();
-      try {
+    public <E extends Throwable> void executeFailable(FailableRunnable<E> runnable) throws E {
+      executeFailable(() -> {
         runnable.run();
-      } finally {
-        resetContext(context);
-      }
+        return null;
+      });
     }
 
     public <T> T execute(Supplier<T> supplier) {
-      var context = prepareContext();
+      return executeFailable(supplier::get);
+    }
+
+    public <T, E extends Throwable> T executeFailable(FailableSupplier<T, E> supplier) throws E {
+      prepareContext();
       try {
         return supplier.get();
       } finally {
-        resetContext(context);
+        resetContext();
       }
     }
 
-    public <T> T executeFailable(FailableSupplier<T, InterruptedException> supplier) throws InterruptedException {
-      var context = prepareContext();
-      try {
-        return supplier.get();
-      } finally {
-        resetContext(context);
-      }
-    }
+    private void prepareContext() {
+      previousContext = get();
+      previousRequestId = Optional.ofNullable(previousContext)
+        .map(HttpClientContext::getHeaders)
+        .flatMap(RequestUtils::getRequestId)
+        .orElseGet(() -> MDC.get("rid"));
 
-
-    private HttpClientContext prepareContext() {
-      var context = get();
       Optional<String> requestId = RequestUtils.getRequestId(headers);
       set(new HttpClientContext(headers, queryParams, debugSuppliers, storagesForTransfer));
       requestId.ifPresent(s -> MDC.put("rid", s));
-      return context;
     }
 
-    private void resetContext(HttpClientContext context) {
-      if (context == null) {
+    private void resetContext() {
+      if (previousContext == null) {
         clear();
-        MDC.remove("rid");
-        return;
-      }
-
-      set(context);
-      Optional<String> requestId = RequestUtils.getRequestId(context.getHeaders());
-      if (requestId.isPresent()) {
-        MDC.put("rid", requestId.get());
       } else {
+        set(previousContext);
+      }
+      if (previousRequestId == null) {
         MDC.remove("rid");
+      } else {
+        MDC.put("rid", previousRequestId);
       }
     }
   }
