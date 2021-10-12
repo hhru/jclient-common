@@ -1,11 +1,18 @@
 package ru.hh.jclient.common;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import org.slf4j.MDC;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableRunnable;
+import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableSupplier;
 import ru.hh.jclient.common.util.storage.Storage;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
@@ -81,5 +88,96 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
    */
   public void addContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
     set(new HttpClientContext(headers, queryParams, requestDebugSuppliers, storagesForTransfer));
+  }
+
+  public ContextBuilder forCurrentThread() {
+    return new ContextBuilder();
+  }
+
+  public class ContextBuilder {
+    private final Map<String, List<String>> headers = new HashMap<>();
+    private final Map<String, List<String>> queryParams = new HashMap<>();
+    private final List<Supplier<RequestDebug>> debugSuppliers = new ArrayList<>();
+
+    public ContextBuilder withHeaders(Map<String, List<String>> headers) {
+      this.headers.putAll(headers);
+      return this;
+    }
+
+    public ContextBuilder withQueryParams(Map<String, List<String>> queryParams) {
+      this.queryParams.putAll(queryParams);
+      return this;
+    }
+
+    public ContextBuilder withRequestId(String requestId) {
+      if (requestId != null) {
+        this.headers.put(X_REQUEST_ID, List.of(requestId));
+      }
+      return this;
+    }
+
+    public ContextBuilder withDebugSuppliers(List<Supplier<RequestDebug>> debugSuppliers) {
+      this.debugSuppliers.addAll(debugSuppliers);
+      return this;
+    }
+
+    public void execute(Runnable runnable) {
+      execute(() -> {
+        runnable.run();
+        return null;
+      });
+    }
+
+    public void executeFailable(FailableRunnable<InterruptedException> runnable) throws InterruptedException {
+      var context = prepareContext();
+      try {
+        runnable.run();
+      } finally {
+        resetContext(context);
+      }
+    }
+
+    public <T> T execute(Supplier<T> supplier) {
+      var context = prepareContext();
+      try {
+        return supplier.get();
+      } finally {
+        resetContext(context);
+      }
+    }
+
+    public <T> T executeFailable(FailableSupplier<T, InterruptedException> supplier) throws InterruptedException {
+      var context = prepareContext();
+      try {
+        return supplier.get();
+      } finally {
+        resetContext(context);
+      }
+    }
+
+
+    private HttpClientContext prepareContext() {
+      var context = get();
+      Optional<String> requestId = RequestUtils.getRequestId(headers);
+      set(new HttpClientContext(headers, queryParams, debugSuppliers, storagesForTransfer));
+      requestId.ifPresent(s -> MDC.put("rid", s));
+      return context;
+    }
+
+    private void resetContext(HttpClientContext context) {
+      if (context == null) {
+        clear();
+        MDC.remove("rid");
+        return;
+      }
+
+      set(context);
+      Optional<String> requestId = RequestUtils.getRequestId(context.getHeaders());
+      if (requestId.isPresent()) {
+        MDC.put("rid", requestId.get());
+      } else {
+        MDC.remove("rid");
+      }
+    }
   }
 }
