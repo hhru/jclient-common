@@ -5,8 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
@@ -114,13 +118,16 @@ public class UpstreamServiceImplTest {
     List<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
-    Server server = servers.get(0);
-    assertEquals(Server.addressFromHostPort(address1, port1), server.getAddress());
-    assertEquals(weight, server.getWeight());
-    assertEquals(DATA_CENTER, server.getDatacenter());
+    Map<String, Server> serverMap = servers.stream().collect(Collectors.toMap(Server::getAddress, Function.identity()));
+    String address1FromHostPort = Server.addressFromHostPort(address1, port1);
 
-    Server server2 = servers.get(1);
-    assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
+    assertTrue(serverMap.containsKey(address1FromHostPort));
+    Server server1 = serverMap.get(address1FromHostPort);
+    assertNotNull(server1);
+    assertEquals(weight, server1.getWeight());
+    assertEquals(DATA_CENTER, server1.getDatacenter());
+
+    assertTrue(serverMap.containsKey(Server.addressFromHostPort(address2, port2)));
   }
 
   @Test

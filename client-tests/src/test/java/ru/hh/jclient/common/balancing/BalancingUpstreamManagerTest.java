@@ -3,6 +3,8 @@ package ru.hh.jclient.common.balancing;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import static org.hamcrest.MatcherAssert.assertThat;
+import org.hamcrest.Matchers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -76,10 +78,11 @@ public class BalancingUpstreamManagerTest {
     );
     serverStore.updateServers(TEST_BACKEND, initialServers);
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.0);
-    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+
+    assertThat(initialServers, Matchers.containsInAnyOrder(manager.getUpstream(TEST_BACKEND).getServers().toArray()));
     serverStore.updateServers(TEST_BACKEND, List.of(new Server("server3", 100, "test")));
     manager.updateUpstreams(Set.of(TEST_BACKEND));
-    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+    assertThat(initialServers, Matchers.containsInAnyOrder(manager.getUpstream(TEST_BACKEND).getServers().toArray()));
   }
 
   @Test
@@ -92,11 +95,11 @@ public class BalancingUpstreamManagerTest {
     );
     serverStore.updateServers(TEST_BACKEND, initialServers);
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
-    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+    assertThat(initialServers, Matchers.containsInAnyOrder(manager.getUpstream(TEST_BACKEND).getServers().toArray()));
     List<Server> servers = List.of(new Server("server3", 100, "test"));
     serverStore.updateServers(TEST_BACKEND, servers);
     manager.updateUpstreams(Set.of(TEST_BACKEND));
-    assertEquals(servers, manager.getUpstream(TEST_BACKEND).getServers());
+    assertThat(servers, Matchers.containsInAnyOrder(manager.getUpstream(TEST_BACKEND).getServers().toArray()));
   }
 
   @Test
@@ -112,7 +115,7 @@ public class BalancingUpstreamManagerTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     manager.updateUpstreams(Set.of(TEST_BACKEND));
-    assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
+    assertThat(initialServers, Matchers.containsInAnyOrder(manager.getUpstream(TEST_BACKEND).getServers().toArray()));
   }
 
   @Test
