@@ -227,7 +227,7 @@ public class BalancingWorkloadModelTest {
     public void removeServer(String name) {
       Server serverToRemove = servers.remove(name);
       serverRequests.remove(name);
-      serverStore.updateServers(upstreamName, List.of(), List.of(serverToRemove));
+      serverStore.updateServers(upstreamName, List.of());
       upstreamManager.updateUpstreams(Set.of(upstreamName));
     }
 
@@ -236,7 +236,7 @@ public class BalancingWorkloadModelTest {
         if (servers.isEmpty()) {
           throw new IllegalStateException("add servers before getting client");
         }
-        serverStore.updateServers(upstreamName, servers.values(), Set.of());
+        serverStore.updateServers(upstreamName, List.copyOf(servers.values()));
         var configStore = new ConfigStoreImpl();
         ApplicationConfig applicationConfig = new ApplicationConfig()
             .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));

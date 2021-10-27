@@ -91,7 +91,7 @@ public class BalancingPerformanceBenchmark {
 
   @Setup
   public void setUp() {
-    serverStore.updateServers("test", servers, Set.of());
+    serverStore.updateServers("test", servers);
     configStore.updateConfig("test", ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), UpstreamConfig.DEFAULT));
     manager.updateUpstreams(Set.of("test"));
     factory = new HttpClientFactory(httpClient, Set.of(),

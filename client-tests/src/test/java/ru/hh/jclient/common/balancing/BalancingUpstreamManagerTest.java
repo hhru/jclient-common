@@ -74,10 +74,10 @@ public class BalancingUpstreamManagerTest {
       new Server("server1", 100, "test"),
       new Server("server2", 100, "test")
     );
-    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
+    serverStore.updateServers(TEST_BACKEND, initialServers);
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.0);
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
-    serverStore.updateServers(TEST_BACKEND, List.of(new Server("server3", 100, "test")), initialServers);
+    serverStore.updateServers(TEST_BACKEND, List.of(new Server("server3", 100, "test")));
     manager.updateUpstreams(Set.of(TEST_BACKEND));
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
   }
@@ -90,11 +90,11 @@ public class BalancingUpstreamManagerTest {
       new Server("server1", 100, "test"),
       new Server("server2", 100, "test")
     );
-    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
+    serverStore.updateServers(TEST_BACKEND, initialServers);
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
     List<Server> servers = List.of(new Server("server3", 100, "test"));
-    serverStore.updateServers(TEST_BACKEND, servers, initialServers);
+    serverStore.updateServers(TEST_BACKEND, servers);
     manager.updateUpstreams(Set.of(TEST_BACKEND));
     assertEquals(servers, manager.getUpstream(TEST_BACKEND).getServers());
   }
@@ -105,7 +105,7 @@ public class BalancingUpstreamManagerTest {
         new Server("server1", 100, "test"),
         new Server("server2", 100, "test")
     );
-    serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
+    serverStore.updateServers(TEST_BACKEND, initialServers);
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND), 0.8);
     manager.updateUpstreams(Set.of(TEST_BACKEND));
     assertNull(manager.getUpstream(TEST_BACKEND));
