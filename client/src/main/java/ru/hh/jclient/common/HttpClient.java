@@ -174,6 +174,18 @@ public abstract class HttpClient {
   }
 
   /**
+   * Specifies that the type of result must be JSON.
+   *
+   * @param mapper Jackson mapper used to parse response
+   * @param jsonClass type of result allowing generics
+   */
+  public <T> ResultProcessor<T> expectJson(ObjectMapper mapper, TypeReference<T> jsonClass) {
+    TypeConverter<T> converter = new JsonConverter<>(mapper, jsonClass);
+    expectedMediaTypes = converter.getSupportedContentTypes();
+    return new ResultProcessor<>(this, converter);
+  }
+
+  /**
    * Specifies that the type of result must be a collection of JSON objects.
    *
    * @param mapper Jackson mapper used to parse response

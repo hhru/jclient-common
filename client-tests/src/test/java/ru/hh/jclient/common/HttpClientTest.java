@@ -641,6 +641,17 @@ public class HttpClientTest extends HttpClientTestBase {
   }
 
   @Test
+  public void testGenericValueJson() throws IOException, ExecutionException, InterruptedException {
+    var testValue = Set.of("test");
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
+    withEmptyContext().okRequest(jsonBytes(testValue), APPLICATION_JSON_UTF_8);
+    var valueType = new TypeReference<Set<String>>() {};
+    Set<String> result = http.with(request).expectJson(objectMapper, valueType).result().get();
+    assertEquals(testValue.size(), result.size());
+    assertEquals(testValue.stream().findFirst(), result.stream().findFirst());
+  }
+
+  @Test
   public void testGenericValueJsonCollection() throws IOException, ExecutionException, InterruptedException {
     var testValue = Set.of(Set.of("test"));
     Request request = new RequestBuilder("GET").setUrl("http://localhost/content").build();
