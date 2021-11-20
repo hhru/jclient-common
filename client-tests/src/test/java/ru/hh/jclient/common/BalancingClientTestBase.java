@@ -401,8 +401,13 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   static void assertHostEquals(Request request, String host) {
     assertEquals(host, request.getUri().getHost());
   }
+
   static void assertRequestTimeoutEquals(Request request, long timeoutMs) {
     assertEquals((int) timeoutMs, request.getRequestTimeout());
+  }
+
+  static void assertRequestTimeoutEquals(Request request, double timeoutMs) {
+    assertRequestTimeoutEquals(request, (long) timeoutMs);
   }
 
   private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, String datacenter, List<String> upstreamList,

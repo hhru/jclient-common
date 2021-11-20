@@ -197,7 +197,7 @@ public class HttpClientTestBase {
     return new HttpClientFactory(httpClient, singleton("http://localhost"),
         new SingletonStorage<>(() -> httpClientContext),
         Runnable::run,
-        new DefaultRequestStrategy().createCustomizedCopy(engimeBuilder -> engimeBuilder.withTimeoutMultiplier(timeoutMultiplier)),
+        new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier)),
         eventListeners
     );
   }

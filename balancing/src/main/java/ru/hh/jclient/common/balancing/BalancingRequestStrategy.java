@@ -40,6 +40,7 @@ public class BalancingRequestStrategy implements RequestStrategy<RequestBalancer
 
   @Override
   public BalancingRequestStrategy createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
-    return new BalancingRequestStrategy(this.upstreamManager, upstreamService, upstreamConfigService, configAction);
+    UnaryOperator<RequestBalancerBuilder> chainedConfigAction = this.configAction.andThen(configAction)::apply;
+    return new BalancingRequestStrategy(upstreamManager, upstreamService, upstreamConfigService, chainedConfigAction);
   }
 }
