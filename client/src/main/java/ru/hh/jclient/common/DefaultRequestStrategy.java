@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
-import static java.util.Optional.ofNullable;
 import java.util.function.UnaryOperator;
+import static java.util.function.UnaryOperator.identity;
 
 public class DefaultRequestStrategy implements RequestStrategy<DefaultEngineBuilder> {
   private final UnaryOperator<DefaultEngineBuilder> configAction;
@@ -11,16 +11,16 @@ public class DefaultRequestStrategy implements RequestStrategy<DefaultEngineBuil
   }
 
   public DefaultRequestStrategy() {
-    this(null);
+    this(identity());
   }
 
   @Override
   public DefaultEngineBuilder createRequestEngineBuilder(HttpClient client) {
-    return ofNullable(configAction).map(action -> action.apply(new DefaultEngineBuilder(client))).orElseGet(() -> new DefaultEngineBuilder(client));
+    return configAction.apply(new DefaultEngineBuilder(client));
   }
 
   @Override
   public RequestStrategy<DefaultEngineBuilder> createCustomizedCopy(UnaryOperator<DefaultEngineBuilder> configAction) {
-    return new DefaultRequestStrategy(configAction);
+    return new DefaultRequestStrategy(this.configAction.andThen(configAction)::apply);
   }
 }

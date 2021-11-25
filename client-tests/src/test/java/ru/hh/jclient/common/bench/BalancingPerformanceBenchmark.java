@@ -151,7 +151,7 @@ public class BalancingPerformanceBenchmark {
 
     @Override
     public RequestStrategy<RequestBalancerBuilder> createCustomizedCopy(UnaryOperator<RequestBalancerBuilder> configAction) {
-      return new CustomStrategy(upstreamManager, configAction);
+      return new CustomStrategy(upstreamManager, this.configAction.andThen(configAction)::apply);
     }
   }
 

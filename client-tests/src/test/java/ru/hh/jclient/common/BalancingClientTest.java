@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.UnaryOperator;
 import org.asynchttpclient.Request;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -26,6 +27,7 @@ import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
 import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
+import ru.hh.jclient.common.balancing.UpstreamConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
@@ -517,6 +519,40 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
+  }
+
+  @Test
+  public void testTimeoutMultiplierWithCustomizedCopy() throws Exception {
+    double defaultMultiplier = 3.5;
+    createHttpClientFactory(defaultMultiplier);
+
+    int defaultTimeout = UpstreamConfig.DEFAULT_CONFIG.getRequestTimeoutMs();
+
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
+
+    // identical copy
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, UnaryOperator.identity()).get();
+    assertRequestTimeoutEquals(request[0], defaultTimeout * defaultMultiplier);
+
+    // different multiplier
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withTimeoutMultiplier(2.5)).get();
+    assertRequestTimeoutEquals(request[0], defaultTimeout * 2.5);
+
+    // different multiplier and then identity
+    getTestClient()
+        .withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withTimeoutMultiplier(1.5))
+        .withPreconfiguredEngine(RequestBalancerBuilder.class, UnaryOperator.identity())
+        .get();
+    assertRequestTimeoutEquals(request[0], defaultTimeout * 1.5);
+
+    // change something else
+    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, RequestBalancerBuilder::forceIdempotence).get();
+    assertRequestTimeoutEquals(request[0], defaultTimeout * defaultMultiplier);
   }
 
   @Override
