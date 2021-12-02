@@ -66,7 +66,7 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
     serverStore = new ServerStoreImpl();
     server50 = new Server(server50Address, 50, DATACENTER);
     server200 = new Server(server200Address, 200, DATACENTER);
-    serverStore.updateServers(TEST_UPSTREAM, List.of(server50, server200));
+    serverStore.updateServers(TEST_UPSTREAM, List.of(server50, server200), List.of());
     Map.Entry<HttpClientFactory, UpstreamManager> factoryAndManager = buildBalancingFactory(
         TEST_UPSTREAM,
         new Profile().setRequestTimeoutSec(100f),
