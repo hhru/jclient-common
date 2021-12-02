@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -129,7 +130,7 @@ public abstract class AbstractBalancingStrategyTest {
     }
 
     @Override
-    public void updateServers(String serviceName, List<Server> aliveServers) {
+    public void updateServers(String serviceName, Collection<Server> aliveServers, Collection<Server> deadServers) {
 
     }
   }

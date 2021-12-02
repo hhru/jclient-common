@@ -1,5 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -8,16 +11,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class ServerStoreImpl implements ServerStore {
-  private final ConcurrentMap<String, List<Server>> serverList = new ConcurrentHashMap<>();
-  private final Map<String, Integer> initialCapacities = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Set<Server>> serverList = new ConcurrentHashMap<>();
+  private final Map<String, Integer> initialCapacities = new HashMap<>();
 
   @Override
   public List<Server> getServers(String serviceName) {
-    List<Server> servers = serverList.get(serviceName);
+    Set<Server> servers = serverList.get(serviceName);
     if (servers == null) {
       return List.of();
     }
-    return servers;
+    return List.copyOf(servers);
   }
 
   @Override
@@ -26,12 +29,17 @@ public class ServerStoreImpl implements ServerStore {
   }
 
   @Override
-  public void updateServers(String serviceName, List<Server> aliveServers) {
-    serverList.compute(serviceName, (upstream, serverList) -> {
-      if (serverList == null) {
-        initialCapacities.put(serviceName, aliveServers.size());
+  public void updateServers(String serviceName, Collection<Server> aliveServers, Collection<Server> deadServers) {
+    serverList.compute(serviceName, (upstream, serverSet) -> {
+      if (serverSet != null) {
+        serverSet.addAll(aliveServers);
+        serverSet.removeAll(deadServers);
+        return serverSet;
       }
-      return List.copyOf(Set.copyOf(aliveServers));
+      serverSet = new HashSet<>();
+      serverSet.addAll(aliveServers);
+      initialCapacities.put(serviceName, aliveServers.size());
+      return serverSet;
     });
   }
 }
