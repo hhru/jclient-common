@@ -114,47 +114,13 @@ public class UpstreamServiceImplTest {
     List<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
-    Server server = servers.get(1);
+    Server server = servers.get(0);
     assertEquals(Server.addressFromHostPort(address1, port1), server.getAddress());
     assertEquals(weight, server.getWeight());
     assertEquals(DATA_CENTER, server.getDatacenter());
 
-    Server server2 = servers.get(0);
+    Server server2 = servers.get(1);
     assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
-  }
-
-  @Test
-  public void testUpdateReplacedServers() {
-
-    String address1 = "a1";
-    String address2 = "a2";
-    String address3 = "a3";
-    int weight = 12;
-    int port1 = 124;
-    int port2 = 126;
-    int port3 = 127;
-
-    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
-    ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, NODE_NAME, weight, true);
-    ServiceHealth serviceHealth3 = buildServiceHealth(address3, port3, DATA_CENTER, NODE_NAME, weight, true);
-
-    Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
-    upstreams.put(buildKey(address1), serviceHealth);
-    upstreams.put(buildKey(address2), serviceHealth2);
-
-    upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
-
-    List<Server> servers = serverStore.getServers(SERVICE_NAME);
-    assertEquals(2, servers.size());
-
-    upstreamService.updateUpstreams(Map.of(buildKey(address3), serviceHealth3), SERVICE_NAME, DATA_CENTER);
-    List<Server> updatedServers = serverStore.getServers(SERVICE_NAME);
-
-    assertEquals(1, updatedServers.size());
-    Server server = updatedServers.get(0);
-    assertEquals(Server.addressFromHostPort(address3, port3), server.getAddress());
-    assertEquals(weight, server.getWeight());
-    assertEquals(DATA_CENTER, server.getDatacenter());
   }
 
   @Test
