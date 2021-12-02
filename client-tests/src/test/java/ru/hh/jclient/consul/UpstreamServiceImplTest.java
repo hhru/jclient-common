@@ -114,12 +114,12 @@ public class UpstreamServiceImplTest {
     List<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
-    Server server = servers.get(0);
+    Server server = servers.get(1);
     assertEquals(Server.addressFromHostPort(address1, port1), server.getAddress());
     assertEquals(weight, server.getWeight());
     assertEquals(DATA_CENTER, server.getDatacenter());
 
-    Server server2 = servers.get(1);
+    Server server2 = servers.get(0);
     assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
   }
 

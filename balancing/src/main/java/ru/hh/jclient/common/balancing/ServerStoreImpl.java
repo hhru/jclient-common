@@ -1,15 +1,15 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class ServerStoreImpl implements ServerStore {
   private final ConcurrentMap<String, List<Server>> serverList = new ConcurrentHashMap<>();
-  private final Map<String, Integer> initialCapacities = new ConcurrentHashMap<>();
+  private final Map<String, Integer> initialCapacities = new HashMap<>();
 
   @Override
   public List<Server> getServers(String serviceName) {
@@ -31,7 +31,7 @@ public class ServerStoreImpl implements ServerStore {
       if (serverList == null) {
         initialCapacities.put(serviceName, aliveServers.size());
       }
-      return List.copyOf(Set.copyOf(aliveServers));
+      return aliveServers;
     });
   }
 }
