@@ -5,8 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -162,6 +166,9 @@ public class UpstreamServiceImplTest {
     assertEquals(Server.addressFromHostPort(address3, port3), server.getAddress());
     assertEquals(weight, server.getWeight());
     assertEquals(DATA_CENTER, server.getDatacenter());
+
+    Server server2 = servers.get(1);
+    assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
   }
 
   @Test
@@ -211,6 +218,29 @@ public class UpstreamServiceImplTest {
       .getUpstreamStore()
       .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
+  }
+
+  @Test
+  public void testConcurrentUpdateServers() throws ExecutionException, InterruptedException {
+    List<String> addresses = List.of("a1", "a2", "a3");
+    List<String> dcS = IntStream.range(0, 1000).boxed().map(String::valueOf).collect(Collectors.toList());
+
+    int weight = 12;
+    int port = 124;
+
+    var updatedUpstream = dcS.stream()
+        .map(dc -> addresses.stream().map(s -> buildServiceHealth(s, port, dc, NODE_NAME, weight, true))
+            .collect(Collectors.toMap(s -> buildKey(s.getService().getAddress()), Function.identity())))
+        .map(dc -> CompletableFuture.runAsync(() ->
+                upstreamService.updateUpstreams(dc, SERVICE_NAME, dc.values().stream().findFirst().get().getNode().getDatacenter().get()),
+            Executors.newFixedThreadPool(dcS.size())))
+        .toArray(CompletableFuture[]::new);
+
+    CompletableFuture.allOf(updatedUpstream).get();
+
+
+    List<Server> servers = serverStore.getServers(SERVICE_NAME);
+    assertEquals(addresses.size() * dcS.size(), servers.size());
   }
 
   @Test
