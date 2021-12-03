@@ -2,7 +2,6 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +35,8 @@ public class ServerStoreImpl implements ServerStore {
         serverSet.removeAll(deadServers);
         return serverSet;
       }
-      serverSet = new HashSet<>();
+      serverSet = ConcurrentHashMap.newKeySet();
+
       serverSet.addAll(aliveServers);
       initialCapacities.put(serviceName, aliveServers.size());
       return serverSet;
