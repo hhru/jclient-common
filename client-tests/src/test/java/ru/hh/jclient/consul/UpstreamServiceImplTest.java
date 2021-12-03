@@ -226,10 +226,10 @@ public class UpstreamServiceImplTest {
     List<String> dcS = IntStream.range(0, 1000).boxed().map(String::valueOf).collect(Collectors.toList());
 
     int weight = 12;
-    int port1 = 124;
+    int port = 124;
 
     var updatedUpstream = dcS.stream()
-        .map(dc -> addresses.stream().map(s -> buildServiceHealth(s, port1, dc, NODE_NAME, weight, true))
+        .map(dc -> addresses.stream().map(s -> buildServiceHealth(s, port, dc, NODE_NAME, weight, true))
             .collect(Collectors.toMap(s -> buildKey(s.getService().getAddress()), Function.identity())))
         .map(dc -> CompletableFuture.runAsync(() ->
                 upstreamService.updateUpstreams(dc, SERVICE_NAME, dc.values().stream().findFirst().get().getNode().getDatacenter().get()),
