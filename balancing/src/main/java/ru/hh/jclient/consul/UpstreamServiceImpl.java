@@ -69,6 +69,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
                              ServerStore serverStore, UpstreamManager upstreamManager,
                              UpstreamServiceConsulConfig consulConfig,
                              Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks) {
+    LOGGER.info("config: {}", consulConfig);
     this.upstreamList = Set.copyOf(consulConfig.getUpstreams());
     if (this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
@@ -91,14 +92,14 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
     this.watchSeconds = consulConfig.getWatchSeconds();
     this.consistencyMode = consulConfig.getConsistencyMode();
+    this.ignoreNoServersInCurrentDC = consulConfig.isIgnoreNoServersInCurrentDC();
     if (!this.datacenterList.contains(this.currentDC)) {
       LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
 
     if (consulConfig.isSyncInit()) {
-      this.ignoreNoServersInCurrentDC = consulConfig.isIgnoreNoServersInCurrentDC();
+      LOGGER.info("Sync update servers");
       this.initialIndexes = new ConcurrentHashMap<>(datacenterList.size());
-      LOGGER.debug("Trying to sync update servers");
       syncUpdateUpstreams();
       checkServersForAllUpstreamsExist(true);
       if (!ignoreNoServersInCurrentDC) {
@@ -107,7 +108,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       this.callbacks.forEach(cb -> cb.accept(upstreamList));
     } else {
       this.initialIndexes = Map.of();
-      this.ignoreNoServersInCurrentDC = false;
     }
     upstreamList.forEach(this::subscribeToUpstream);
   }
@@ -172,9 +172,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
       updateUpstreams(newValues, upstreamName, datacenter);
       checkServersForAllUpstreamsExist(false);
-      if (!ignoreNoServersInCurrentDC) {
-        checkServersForAllUpstreamsInCurrentDcExist(false);
-      }
+      checkServersForAllUpstreamsInCurrentDcExist(false);
+
       callbacks.forEach(cb -> cb.accept(Set.of(upstreamName)));
     });
     serviceHealthCaches.add(svHealth);

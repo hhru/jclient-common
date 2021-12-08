@@ -154,4 +154,19 @@ public class UpstreamServiceConsulConfig {
     this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
     return this;
   }
+
+  @Override
+  public String toString() {
+    return "UpstreamServiceConsulConfig{" +
+        "upstreams=" + upstreams +
+        ", allowCrossDC=" + allowCrossDC +
+        ", healthPassing=" + healthPassing +
+        ", watchSeconds=" + watchSeconds +
+        ", consistencyMode=" + consistencyMode +
+        ", datacenterList=" + datacenterList +
+        ", selfNodeFilteringEnabled=" + selfNodeFilteringEnabled +
+        ", syncInit=" + syncInit +
+        ", ignoreNoServersInCurrentDC=" + ignoreNoServersInCurrentDC +
+        '}';
+  }
 }
