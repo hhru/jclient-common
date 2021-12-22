@@ -57,12 +57,11 @@ class HttpClientImpl extends HttpClient {
 
   HttpClientImpl(AsyncHttpClient http,
                  Request request,
-                 Set<String> hostsWithSession,
                  RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
                  Storage<HttpClientContext> contextSupplier,
                  Executor callbackExecutor,
                  List<HttpClientEventListener> eventListeners) {
-    super(http, request, hostsWithSession, requestStrategy, contextSupplier, eventListeners);
+    super(http, request, requestStrategy, contextSupplier, eventListeners);
     this.callbackExecutor = callbackExecutor;
   }
 
@@ -78,7 +77,7 @@ class HttpClientImpl extends HttpClient {
 
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
-    Request request = addHeadersAndParams(originalRequest);
+    Request request = addHeadersAndParams(originalRequest, context);
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     }
@@ -97,7 +96,7 @@ class HttpClientImpl extends HttpClient {
     return promise;
   }
 
-  private Request addHeadersAndParams(Request request) {
+  private Request addHeadersAndParams(Request request, RequestContext context) {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
@@ -119,7 +118,7 @@ class HttpClientImpl extends HttpClient {
 
     headers.add(request.getHeaders());
 
-    if (isNoSessionRequired()) {
+    if (isNoSessionRequired(context)) {
       headers.remove(HH_PROTO_SESSION);
     }
 

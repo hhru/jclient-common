@@ -16,6 +16,8 @@ public class Profile {
   private Integer slowStartIntervalSec;
   @JsonProperty("retry_policy")
   private Map<Integer, RetryPolicyConfig> retryPolicy;
+  @JsonProperty("session_required")
+  private Boolean isSessionRequired;
 
   public Map<Integer, RetryPolicyConfig> getRetryPolicy() {
     return retryPolicy;
@@ -71,6 +73,15 @@ public class Profile {
     return this;
   }
 
+  public Boolean isSessionRequired() {
+    return this.isSessionRequired;
+  }
+
+  public Profile setSessionRequired(boolean sessionRequired) {
+    this.isSessionRequired = sessionRequired;
+    return this;
+  }
+
   @Override
   public String toString() {
     return "Profile{" +
@@ -79,6 +90,7 @@ public class Profile {
         ", connectTimeoutMs=" + connectTimeoutSec +
         ", requestTimeoutMs=" + requestTimeoutSec +
         ", slowStartIntervalSec=" + slowStartIntervalSec +
+        ", isSessionRequired=" + isSessionRequired +
         ", retryPolicy=" + retryPolicy +
         '}';
   }

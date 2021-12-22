@@ -79,7 +79,7 @@ public class CustomizationBenchmark {
 
   @Setup
   public void setUp() {
-      factory = new HttpClientFactory(httpClient, Set.of("http://localhost"),
+      factory = new HttpClientFactory(httpClient,
           new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
           Runnable::run,
           new CustomStrategy(manager, UnaryOperator.identity())

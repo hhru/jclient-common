@@ -20,6 +20,7 @@ public final class UpstreamConfig {
   private final RetryPolicy retryPolicy = new RetryPolicy();
 
   private int slowStartIntervalSec;
+  private boolean isSessionRequired;
 
   UpstreamConfig(int maxTries, int maxTimeoutTries, int connectTimeoutMs, int requestTimeoutMs) {
     this.maxTries = maxTries;
@@ -48,12 +49,21 @@ public final class UpstreamConfig {
     return slowStartIntervalSec;
   }
 
+  public boolean isSessionRequired() {
+    return isSessionRequired;
+  }
+
   public RetryPolicy getRetryPolicy() {
     return retryPolicy;
   }
 
   UpstreamConfig setSlowStartIntervalSec(int slowStartIntervalSec) {
     this.slowStartIntervalSec = slowStartIntervalSec;
+    return this;
+  }
+
+  public UpstreamConfig setSessionRequired(boolean sessionRequired) {
+    this.isSessionRequired = sessionRequired;
     return this;
   }
 
@@ -64,6 +74,7 @@ public final class UpstreamConfig {
       + ", connect_timeout_ms=" + connectTimeoutMs
       + ", request_timeout_ms=" + requestTimeoutMs
       + ", slow_start_interval_sec=" + slowStartIntervalSec
+      + ", is_session_required=" + isSessionRequired
       + '}';
   }
 }

@@ -35,6 +35,7 @@ public final class UpstreamConfigs {
   public static UpstreamConfig createUpstreamConfigWithDefaults(Integer maxTries, Integer maxTimeoutTries,
                                                                 Float connectTimeoutSec, Float requestTimeoutSec,
                                                                 Integer slowStartIntervalSec,
+                                                                Boolean isSessionRequired,
                                                                 Map<Integer, Boolean> retryPolicyConfig) {
     UpstreamConfig upstreamConfig = new UpstreamConfig(
       requireNonNullElse(maxTries, DEFAULT_MAX_TRIES),
@@ -44,7 +45,7 @@ public final class UpstreamConfigs {
     );
     upstreamConfig.getRetryPolicy().update(retryPolicyConfig);
     upstreamConfig.setSlowStartIntervalSec(requireNonNullElse(slowStartIntervalSec, 0));
-
+    upstreamConfig.setSessionRequired(requireNonNullElse(isSessionRequired, false));
 
     return upstreamConfig;
   }

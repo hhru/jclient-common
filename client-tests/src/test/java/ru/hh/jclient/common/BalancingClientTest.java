@@ -2,6 +2,8 @@ package ru.hh.jclient.common;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import static java.util.Collections.singletonList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.function.UnaryOperator;
 import org.asynchttpclient.Request;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -553,6 +556,70 @@ public class BalancingClientTest extends BalancingClientTestBase {
     // change something else
     getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, RequestBalancerBuilder::forceIdempotence).get();
     assertRequestTimeoutEquals(request[0], defaultTimeout * defaultMultiplier);
+  }
+
+  @Test
+  public void testHostsWithSession() throws Exception {
+    AtomicLong currentTimeMillis = new AtomicLong(Integer.MAX_VALUE);
+    Server server1 = new Server("server1", 5, null) {
+      @Override
+      protected long getCurrentTimeMillis(Clock clock) {
+        return currentTimeMillis.get();
+      }
+    };
+
+    var servers = List.of(server1);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setSessionRequired(true);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class))).then(iom -> {
+      request[0] = completeWith(200, iom);
+      return null;
+    });
+
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
+    withContext(headers);
+    getTestClient().get(TEST_UPSTREAM);
+
+    assertEquals("somesession", request[0].getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
+  }
+
+  @Test
+  public void testHostsWithoutSession() throws Exception {
+    AtomicLong currentTimeMillis = new AtomicLong(Integer.MAX_VALUE);
+    Server server1 = new Server("server1", 5, null) {
+      @Override
+      protected long getCurrentTimeMillis(Clock clock) {
+        return currentTimeMillis.get();
+      }
+    };
+
+    var servers = List.of(server1);
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
+
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setSessionRequired(false);
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+
+    createHttpClientFactory(List.of(TEST_UPSTREAM));
+    Request[] request = new Request[1];
+    when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class))).then(iom -> {
+      request[0] = completeWith(200, iom);
+      return null;
+    });
+
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
+    withContext(headers);
+    getTestClient().get(TEST_UPSTREAM);
+
+    assertNull(request[0].getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
   }
 
   @Override

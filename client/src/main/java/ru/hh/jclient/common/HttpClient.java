@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -37,7 +36,6 @@ public abstract class HttpClient {
   public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
   private final AsyncHttpClient http;
-  private final Set<String> hostsWithSession;
   private final HttpClientContext context;
   private final Storages storages;
   private final RequestEngineBuilder<?> requestEngineBuilder;
@@ -56,13 +54,11 @@ public abstract class HttpClient {
 
   HttpClient(AsyncHttpClient http,
              Request request,
-             Set<String> hostsWithSession,
              RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
              Storage<HttpClientContext> contextSupplier,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;
     this.request = request;
-    this.hostsWithSession = hostsWithSession;
     this.requestEngineBuilder = requestStrategy.createRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
 
@@ -316,9 +312,8 @@ public abstract class HttpClient {
 
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
 
-  boolean isNoSessionRequired() {
-    String host = request.getUri().getHost();
-    return noSession || hostsWithSession.stream().map(Uri::create).map(Uri::getHost).noneMatch(host::equals);
+  boolean isNoSessionRequired(RequestContext context) {
+    return noSession || !context.isSessionRequired;
   }
 
   // getters for tools

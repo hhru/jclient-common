@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import static java.util.Collections.singleton;
 import java.util.List;
 import java.util.Map;
 import static java.util.Optional.empty;
@@ -194,7 +193,7 @@ public class HttpClientTestBase {
   }
 
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
-    return new HttpClientFactory(httpClient, singleton("http://localhost"),
+    return new HttpClientFactory(httpClient,
         new SingletonStorage<>(() -> httpClientContext),
         Runnable::run,
         new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier)),
