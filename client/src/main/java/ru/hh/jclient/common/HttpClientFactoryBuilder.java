@@ -2,12 +2,9 @@ package ru.hh.jclient.common;
 
 import io.netty.handler.ssl.SslContext;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import static java.util.Optional.ofNullable;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import org.asynchttpclient.AsyncHttpClient;
@@ -24,7 +21,6 @@ public class HttpClientFactoryBuilder {
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy = new DefaultRequestStrategy();
   private Executor callbackExecutor;
-  private Set<String> hostsWithSession;
   private Storage<HttpClientContext> contextSupplier;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private MetricsConsumer metricsConsumer;
@@ -39,7 +35,6 @@ public class HttpClientFactoryBuilder {
   private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
     this(new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
         prototype.requestStrategy, prototype.callbackExecutor,
-        ofNullable(prototype.hostsWithSession).map(Set::copyOf).orElse(null),
         prototype.contextSupplier,
         prototype.timeoutMultiplier,
         prototype.metricsConsumer,
@@ -50,14 +45,13 @@ public class HttpClientFactoryBuilder {
   private HttpClientFactoryBuilder(DefaultAsyncHttpClientConfig.Builder configBuilder,
                                    RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
                                    Executor callbackExecutor,
-                                   Set<String> hostsWithSession, Storage<HttpClientContext> contextSupplier,
+                                   Storage<HttpClientContext> contextSupplier,
                                    double timeoutMultiplier,
                                    MetricsConsumer metricsConsumer,
                                    List<HttpClientEventListener> eventListeners) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
     this.callbackExecutor = callbackExecutor;
-    this.hostsWithSession = hostsWithSession;
     this.contextSupplier = contextSupplier;
     this.timeoutMultiplier = timeoutMultiplier;
     this.metricsConsumer = metricsConsumer;
@@ -133,12 +127,6 @@ public class HttpClientFactoryBuilder {
     return target;
   }
 
-  public HttpClientFactoryBuilder withHostsWithSession(Collection<String> hostsWithSession) {
-    var target = getCopy();
-    target.hostsWithSession = new HashSet<>(hostsWithSession);
-    return target;
-  }
-
   public HttpClientFactoryBuilder withStorage(Storage<HttpClientContext> contextSupplier) {
     var target = getCopy();
     target.contextSupplier = contextSupplier;
@@ -172,7 +160,6 @@ public class HttpClientFactoryBuilder {
   public HttpClientFactory build() {
     HttpClientFactory httpClientFactory = new HttpClientFactory(
       buildClient(),
-      ofNullable(hostsWithSession).map(Set::copyOf).orElseGet(Set::of),
       contextSupplier,
       callbackExecutor,
       initStrategy(),
@@ -202,7 +189,7 @@ public class HttpClientFactoryBuilder {
     builder.setRequestTimeout(config.getRequestTimeout() > 0 ? (int)(config.getRequestTimeout() * timeoutMultiplier) : config.getRequestTimeout());
     return builder;
   }
-  
+
   HttpClientFactoryBuilder getCopy() {
     return new HttpClientFactoryBuilder(this);
   }

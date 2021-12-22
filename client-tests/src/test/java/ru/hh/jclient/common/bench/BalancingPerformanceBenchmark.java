@@ -94,7 +94,7 @@ public class BalancingPerformanceBenchmark {
     serverStore.updateServers("test", servers, Set.of());
     configStore.updateConfig("test", ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), UpstreamConfig.DEFAULT));
     manager.updateUpstreams(Set.of("test"));
-    factory = new HttpClientFactory(httpClient, Set.of(),
+    factory = new HttpClientFactory(httpClient,
         new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
         Runnable::run,
         new CustomStrategy(manager, UnaryOperator.identity())

@@ -5,12 +5,18 @@ public class RequestContext {
 
   public final String upstreamName;
   public final String datacenter;
+  public final boolean isSessionRequired;
 
   private RequestDebug contextDebug;
 
   public RequestContext(String upstreamName, String datacenter) {
+    this(upstreamName, datacenter, false);
+  }
+
+  public RequestContext(String upstreamName, String datacenter, boolean isSessionRequired) {
     this.upstreamName = upstreamName;
     this.datacenter = datacenter;
+    this.isSessionRequired = isSessionRequired;
   }
 
   public RequestDebug getContextDebug() {
@@ -23,6 +29,6 @@ public class RequestContext {
 
   @Override
   public String toString() {
-    return "upstream: " + upstreamName + ", dc: " + datacenter;
+    return "upstream: " + upstreamName + ", dc: " + datacenter + ", isSessionRequired: " + isSessionRequired;
   }
 }

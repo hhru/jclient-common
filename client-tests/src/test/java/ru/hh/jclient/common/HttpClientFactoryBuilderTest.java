@@ -34,7 +34,7 @@ public class HttpClientFactoryBuilderTest {
     properties.put("requestTimeoutMs", "1000");
     properties.put("timeoutMultiplier", "5.0");
     var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).withCallbackExecutor(Executors.newSingleThreadExecutor());
-    var client = initial.withProperties(properties).withHostsWithSession(List.of("localhost")).build();
+    var client = initial.withProperties(properties).build();
     assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
     assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());
   }

@@ -43,6 +43,7 @@ public class ApplicationConfig {
       profile.getMaxTries(), profile.getMaxTimeoutTries(),
       profile.getConnectTimeoutSec(), profile.getRequestTimeoutSec(),
       profile.getSlowStartIntervalSec(),
+      profile.isSessionRequired(),
       Optional.ofNullable(profile.getRetryPolicy())
         .map(policy -> policy.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> e.getValue().isIdempotent())))
         .orElseGet(Map::of)

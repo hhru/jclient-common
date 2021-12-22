@@ -4,7 +4,6 @@ import io.netty.channel.ConnectTimeoutException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Arrays;
-import static java.util.Collections.singleton;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -423,7 +422,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     upstreamManager.updateUpstreams(upstreamList);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService())
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
-    return new HttpClientFactory(httpClient, singleton("http://" + TEST_UPSTREAM),
+    return new HttpClientFactory(httpClient,
         new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
   }
 
