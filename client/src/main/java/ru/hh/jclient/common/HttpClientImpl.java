@@ -67,10 +67,6 @@ class HttpClientImpl extends HttpClient {
 
   @Override
   CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext context) {
-    for (RequestDebug requestDebug : getDebugs()) {
-      originalRequest = requestDebug.onRequestStart(originalRequest, getContext().getHeaders(), originalRequest.getQueryParams(),
-          isExternalRequest());
-    }
     for (HttpClientEventListener check : getEventListeners()) {
       check.beforeExecute(this, originalRequest);
     }
@@ -150,10 +146,12 @@ class HttpClientImpl extends HttpClient {
     }
 
     // add both debug param and debug header (for backward compatibility)
-    if (enableDebug) {
+    if (enableDebug && !isExternalRequest()) {
       requestBuilder.setHeader(X_HH_DEBUG, "true");
       requestBuilder.addQueryParam(HttpParams.DEBUG, HttpParams.getDebugValue());
     }
+
+    requestBuilder.setExternalRequest(isExternalRequest());
 
     // sanity check for debug header/param if debug is not enabled
     if (!enableDebug) {
@@ -195,9 +193,6 @@ class HttpClientImpl extends HttpClient {
 
       @Override
       public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
-        for (RequestDebug requestDebug : getDebugs()) {
-          request = requestDebug.onRequestStart(request, getContext().getHeaders(), request.getQueryParams(), isExternalRequest());
-        }
         for (RequestDebug requestDebug : getDebugs()) {
           requestDebug.onRequest(request, getRequestBodyEntity(), requestContext);
         }

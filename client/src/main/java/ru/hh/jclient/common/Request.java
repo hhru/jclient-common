@@ -13,9 +13,11 @@ import static java.util.stream.Collectors.toList;
 public class Request {
 
   private final org.asynchttpclient.Request delegate;
+  private final boolean externalRequest;
 
-  Request(org.asynchttpclient.Request request) {
+  Request(org.asynchttpclient.Request request, boolean isExternal) {
     this.delegate = request;
+    this.externalRequest = isExternal;
   }
 
   /**
@@ -156,6 +158,10 @@ public class Request {
    */
   public Charset getCharset() {
     return delegate.getCharset();
+  }
+
+  public boolean isExternalRequest() {
+    return externalRequest;
   }
 
   @Override
