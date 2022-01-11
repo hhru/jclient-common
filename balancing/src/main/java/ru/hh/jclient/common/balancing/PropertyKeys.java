@@ -27,6 +27,8 @@ public final class PropertyKeys {
     public static final String CONSISTENCY_MODE_KEY = String.join(".", CONSUL_PREFIX, CONSISTENCY_PATH);
     public static final String HEALTHY_ONLY_PATH = "healthPassed";
     public static final String HEALTHY_ONLY_KEY = String.join(".", CONSUL_PREFIX, HEALTHY_ONLY_PATH);
+    public static final String COMPRESSION_ENABLED_PATH = "httpCompressionEnabled";
+    public static final String COMPRESSION_ENABLED_KEY = String.join(".", CONSUL_PREFIX, COMPRESSION_ENABLED_PATH);
 
     private PropertyKeys() {
     }

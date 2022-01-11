@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 import ru.hh.consul.option.ConsistencyMode;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
+import static ru.hh.jclient.common.balancing.PropertyKeys.COMPRESSION_ENABLED_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.DC_LIST_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.HEALTHY_ONLY_KEY;
@@ -27,6 +28,7 @@ public class UpstreamServiceConsulConfig {
   private boolean selfNodeFilteringEnabled;
   private boolean syncInit = true;
   private boolean ignoreNoServersInCurrentDC;
+  private boolean httpCompressionEnabled;
 
   public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
@@ -50,6 +52,8 @@ public class UpstreamServiceConsulConfig {
     boolean syncUpdate = Optional.ofNullable(props.getProperty(SYNC_UPDATE_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean ignoreNoServersInCurrentDC = Optional.ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY)).map(Boolean::parseBoolean)
       .orElse(false);
+    boolean httpCompressionEnabled = Optional.ofNullable(props.getProperty(COMPRESSION_ENABLED_KEY)).map(Boolean::parseBoolean)
+      .orElse(true);
     return new UpstreamServiceConsulConfig()
       .setUpstreams(upstreams)
       .setAllowCrossDC(allowCrossDC)
@@ -59,6 +63,7 @@ public class UpstreamServiceConsulConfig {
       .setDatacenterList(dcList)
       .setConsistencyMode(consistencyMode.consistencyMode)
       .setSyncInit(syncUpdate)
+      .setHttpCompressionEnabled(httpCompressionEnabled)
       .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC);
   }
 
@@ -71,6 +76,7 @@ public class UpstreamServiceConsulConfig {
       .setConsistencyMode(config.consistencyMode)
       .setDatacenterList(config.datacenterList)
       .setSelfNodeFilteringEnabled(config.selfNodeFilteringEnabled)
+      .setHttpCompressionEnabled(config.httpCompressionEnabled)
       .setSyncInit(config.syncInit);
   }
 
@@ -155,6 +161,15 @@ public class UpstreamServiceConsulConfig {
     return this;
   }
 
+  public boolean isHttpCompressionEnabled() {
+    return httpCompressionEnabled;
+  }
+
+  public UpstreamServiceConsulConfig setHttpCompressionEnabled(boolean httpCompressionEnabled) {
+    this.httpCompressionEnabled = httpCompressionEnabled;
+    return this;
+  }
+
   @Override
   public String toString() {
     return "UpstreamServiceConsulConfig{" +
@@ -167,6 +182,7 @@ public class UpstreamServiceConsulConfig {
         ", selfNodeFilteringEnabled=" + selfNodeFilteringEnabled +
         ", syncInit=" + syncInit +
         ", ignoreNoServersInCurrentDC=" + ignoreNoServersInCurrentDC +
+        ", httpCompressionEnabled=" + httpCompressionEnabled +
         '}';
   }
 }

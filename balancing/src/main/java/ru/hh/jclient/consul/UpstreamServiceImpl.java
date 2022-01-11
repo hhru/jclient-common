@@ -59,7 +59,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private final boolean allowCrossDC;
   private final boolean healthPassing;
   private final boolean selfNodeFiltering;
-  private final boolean ignoreNoServersInCurrentDC;
+  private final boolean httpCompressionEnabled;
 
   private final Map<String, BigInteger> initialIndexes;
   private final List<ServiceHealthCache> serviceHealthCaches = new CopyOnWriteArrayList<>();
@@ -92,7 +92,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
     this.watchSeconds = consulConfig.getWatchSeconds();
     this.consistencyMode = consulConfig.getConsistencyMode();
-    this.ignoreNoServersInCurrentDC = consulConfig.isIgnoreNoServersInCurrentDC();
+    this.httpCompressionEnabled = consulConfig.isHttpCompressionEnabled();
     if (!this.datacenterList.contains(this.currentDC)) {
       LOGGER.warn("datacenterList: {} doesn't consist currentDC {}", datacenterList, currentDC);
     }
@@ -102,7 +102,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       this.initialIndexes = new ConcurrentHashMap<>(datacenterList.size());
       syncUpdateUpstreams();
       checkServersForAllUpstreamsExist(true);
-      if (!ignoreNoServersInCurrentDC) {
+      if (!consulConfig.isIgnoreNoServersInCurrentDC()) {
         checkServersForAllUpstreamsInCurrentDcExist(true);
       }
       this.callbacks.forEach(cb -> cb.accept(upstreamList));
@@ -135,11 +135,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   }
 
   private void syncUpdateServiceInDC(String serviceName, String dataCenter) {
-    QueryOptions queryOptions = ImmutableQueryOptions.builder()
-      .datacenter(dataCenter.toLowerCase())
-      .caller(currentServiceName)
-      .consistencyMode(consistencyMode)
-      .build();
+    QueryOptions queryOptions = buildQueryOptions(dataCenter);
+
     ConsulResponse<List<ServiceHealth>> response = healthClient.getHealthyServiceInstances(serviceName, queryOptions);
     initialIndexes.put(dataCenter, response.getIndex());
     Map<ServiceHealthKey, ServiceHealth> state = response.getResponse().stream()
@@ -158,12 +155,19 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     }
   }
 
+  private QueryOptions buildQueryOptions(String datacenter) {
+    ImmutableQueryOptions.Builder queryOptions = ImmutableQueryOptions.builder()
+        .datacenter(datacenter.toLowerCase())
+        .caller(currentServiceName)
+        .consistencyMode(consistencyMode);
+    if (!httpCompressionEnabled) {
+      queryOptions.header(Map.of("Accept-Encoding", "identity"));
+    }
+    return queryOptions.build();
+  }
+
   private void initializeCache(String upstreamName, String datacenter) {
-    QueryOptions queryOptions = ImmutableQueryOptions.builder()
-      .datacenter(datacenter.toLowerCase())
-      .caller(currentServiceName)
-      .consistencyMode(consistencyMode)
-      .build();
+    QueryOptions queryOptions = buildQueryOptions(datacenter);
     ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, upstreamName,
       healthPassing, watchSeconds, Optional.ofNullable(initialIndexes.get(datacenter)).orElse(null),
       queryOptions
