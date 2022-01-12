@@ -21,6 +21,7 @@ import ru.hh.jclient.common.exception.RequestConverterException;
 public class RequestBuilder {
 
   private final org.asynchttpclient.RequestBuilder delegate;
+  private boolean externalRequest;
 
   public RequestBuilder() {
     delegate = new org.asynchttpclient.RequestBuilder();
@@ -154,7 +155,7 @@ public class RequestBuilder {
   }
 
   public Request build() {
-    return new Request(delegate.build());
+    return new Request(delegate.build(), externalRequest);
   }
 
   @Deprecated
@@ -288,6 +289,11 @@ public class RequestBuilder {
 
   public RequestBuilder setCharset(Charset charset) {
     delegate.setCharset(charset);
+    return this;
+  }
+
+  public RequestBuilder setExternalRequest(boolean externalRequest) {
+    this.externalRequest = externalRequest;
     return this;
   }
 
