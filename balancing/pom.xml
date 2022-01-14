@@ -10,7 +10,7 @@
     <artifactId>jclient-balancing</artifactId>
 
     <properties>
-        <consul.client.version>1.2.10</consul.client.version>
+        <consul.client.version>1.2.11</consul.client.version>
     </properties>
 
     <dependencies>
