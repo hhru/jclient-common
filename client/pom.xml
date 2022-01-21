@@ -12,14 +12,16 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jackson.version>2.10.5.20201202</jackson.version>
+        <asynchttpclient.version>2.12.3</asynchttpclient.version>
+        <jackson.version>2.13.1</jackson.version>
+        <guava.version>31.0.1-jre</guava.version>
     </properties>
-<dependencyManagement>
+    <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>2.10.5.20201202</version>
+                <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -40,7 +42,7 @@
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>2.8.1</version>
+            <version>${asynchttpclient.version}</version>
         </dependency>
 
         <!-- Protobuf -->
@@ -80,7 +82,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>29.0-jre</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>
