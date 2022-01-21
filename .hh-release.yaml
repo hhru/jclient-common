@@ -1,4 +1,4 @@
-version: 3.9.3
+version: 3.9.4
 build_image: registry.pyn.ru/openjdk11-building:2021.07.06
 docker_files:
   none: none
