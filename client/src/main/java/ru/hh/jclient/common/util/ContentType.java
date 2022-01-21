@@ -13,6 +13,8 @@ public class ContentType {
   public static final String TEXT_ANY = "text/*";
   public static final String TEXT_PLAIN = "text/plain";
   public static final String TEXT_PLAIN_UTF_8 = withCharset(TEXT_PLAIN, "utf-8");
+  public static final String TEXT_HTML = "text/html";
+  public static final String TEXT_HTML_UTF_8 = withCharset(TEXT_HTML, "utf-8");
   public static final String APPLICATION_JSON = "application/json";
   public static final String APPLICATION_JSON_UTF_8 = withCharset(APPLICATION_JSON, "utf-8");
   public static final String TEXT_XML = "text/xml";
