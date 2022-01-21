@@ -1,6 +1,5 @@
 package ru.hh.jclient.common;
 
-import com.google.common.collect.Range;
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -41,12 +40,6 @@ public class ResultOrErrorProcessor<T, E> {
     }
     this.errorsRange = statusCodes;
     return this;
-  }
-
-  // use forStatus(SimpleRange statusCodes)
-  @Deprecated(forRemoval = true)
-  public ResultOrErrorProcessor<T, E> forStatus(Range<Integer> statusCodes) {
-    return forStatus(new SimpleRange(statusCodes.lowerEndpoint(), statusCodes.upperEndpoint()));
   }
 
   /**

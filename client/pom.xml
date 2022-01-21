@@ -14,7 +14,6 @@
     <properties>
         <asynchttpclient.version>2.12.3</asynchttpclient.version>
         <jackson.version>2.13.1</jackson.version>
-        <guava.version>31.0.1-jre</guava.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -79,12 +78,6 @@
         </dependency>
 
         <!-- Util -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
