@@ -1,11 +1,9 @@
 package ru.hh.jclient.common.responseconverter;
 
-import com.google.common.net.MediaType;
 import java.util.Collection;
 import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import java.util.Set;
-import java.util.stream.Collectors;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
@@ -30,12 +28,6 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
     return Set.of();
   }
 
-  // override getContentTypes()
-  @Deprecated(forRemoval = true)
-  protected Collection<MediaType> getMediaTypes() {
-    return Set.of();
-  }
-
   /**
    * Returns converter function that, ignoring content type, just converts the response.
    *
@@ -45,7 +37,7 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
 
   @Override
   public Optional<Collection<String>> getSupportedContentTypes() {
-    return Optional.of(collectContentTypes());
+    return Optional.of(getContentTypes());
   }
 
   @Override
@@ -54,18 +46,11 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
     return checkFunction.andThen(singleTypeConverterFunction());
   }
 
-  private Collection<String> collectContentTypes() {
-    if (!getMediaTypes().isEmpty()) {
-      return getMediaTypes().stream().map(MediaType::toString).collect(Collectors.toSet());
-    }
-    return getContentTypes();
-  }
-
   private Response checkContentType(Response r) {
     String contentTypeString = r.getHeader(CONTENT_TYPE);
     ContentType contentType = ofNullable(contentTypeString).map(ContentType::new).orElseThrow(() -> new NoContentTypeException(r));
 
-    if (collectContentTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
+    if (getContentTypes().stream().map(ContentType::new).noneMatch(ct -> ct.allows(contentType))) {
       throw new UnexpectedContentTypeException(r, contentTypeString, getContentTypes());
     }
     return r;
