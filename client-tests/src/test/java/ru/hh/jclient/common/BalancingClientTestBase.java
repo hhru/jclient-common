@@ -423,7 +423,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     requestingStrategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService())
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
     return new HttpClientFactory(httpClient,
-        new SingletonStorage<>(() -> httpClientContext), Runnable::run, requestingStrategy);
+        new SingletonStorage<>(() -> httpClientContext), Set.of(), Runnable::run, requestingStrategy);
   }
 
   Request failWith(Throwable t, InvocationOnMock iom) {

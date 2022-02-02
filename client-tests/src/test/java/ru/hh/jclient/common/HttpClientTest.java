@@ -461,6 +461,23 @@ public class HttpClientTest extends HttpClientTestBase {
     debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
+  @Test
+  public void testHostsWithSession() throws InterruptedException, ExecutionException {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.HH_PROTO_SESSION, singletonList("somesession"));
+
+    Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], VIDEO_ANY);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+    http.with(request).expectNoContent().result().get();
+    assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+
+    request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
+    http.with(request).expectNoContent().result().get();
+    assertFalse(actualRequest.get().getHeaders().contains(HttpHeaderNames.HH_PROTO_SESSION));
+    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+  }
+
   @Test(expected = ClientResponseException.class)
   public void testResponseError() throws Throwable {
     withEmptyContext().request(VIDEO_ANY, 403);

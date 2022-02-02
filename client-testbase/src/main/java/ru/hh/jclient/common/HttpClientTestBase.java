@@ -11,6 +11,7 @@ import java.util.Map;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import java.util.function.Supplier;
@@ -195,6 +196,7 @@ public class HttpClientTestBase {
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
     return new HttpClientFactory(httpClient,
         new SingletonStorage<>(() -> httpClientContext),
+        Set.of("http://localhost"),
         Runnable::run,
         new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier)),
         eventListeners

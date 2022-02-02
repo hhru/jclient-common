@@ -13,9 +13,11 @@ import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import javax.xml.bind.JAXBContext;
 import org.asynchttpclient.AsyncHttpClient;
@@ -37,6 +39,7 @@ public abstract class HttpClient {
 
   private final AsyncHttpClient http;
   private final HttpClientContext context;
+  private final Set<String> customHostsWithSession;
   private final Storages storages;
   private final RequestEngineBuilder<?> requestEngineBuilder;
   private final List<HttpClientEventListener> eventListeners;
@@ -56,11 +59,13 @@ public abstract class HttpClient {
              Request request,
              RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
              Storage<HttpClientContext> contextSupplier,
+             Set<String> customHostsWithSession,
              List<HttpClientEventListener> eventListeners) {
     this.http = http;
     this.request = request;
     this.requestEngineBuilder = requestStrategy.createRequestEngineBuilder(this);
     this.eventListeners = eventListeners;
+    this.customHostsWithSession = customHostsWithSession.stream().map(Uri::create).map(Uri::getHost).collect(Collectors.toSet());
 
     context = Optional.ofNullable(contextSupplier)
         .map(Supplier::get)
@@ -313,7 +318,15 @@ public abstract class HttpClient {
   abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
 
   boolean isNoSessionRequired(RequestContext context) {
-    return noSession || !context.isSessionRequired;
+    if (noSession) {
+      return true;
+    }
+
+    if (context.isSessionRequired) {
+      return false;
+    }
+
+    return !customHostsWithSession.contains(request.getUri().getHost());
   }
 
   // getters for tools

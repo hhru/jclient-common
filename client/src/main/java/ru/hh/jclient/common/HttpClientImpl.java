@@ -59,9 +59,10 @@ class HttpClientImpl extends HttpClient {
                  Request request,
                  RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
                  Storage<HttpClientContext> contextSupplier,
+                 Set<String> customHostsWithSession,
                  Executor callbackExecutor,
                  List<HttpClientEventListener> eventListeners) {
-    super(http, request, requestStrategy, contextSupplier, eventListeners);
+    super(http, request, requestStrategy, contextSupplier, customHostsWithSession, eventListeners);
     this.callbackExecutor = callbackExecutor;
   }
 
