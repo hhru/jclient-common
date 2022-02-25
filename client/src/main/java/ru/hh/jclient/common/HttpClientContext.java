@@ -21,42 +21,56 @@ public class HttpClientContext {
 
   private final LocalDateTime requestStart;
   private final Map<String, List<String>> headers;
+  private final Map<String, List<String>> passQueryParams;
   private final boolean debugMode;
   private final List<Supplier<RequestDebug>> debugSuppliers;
   private final Optional<String> requestId;
   private final Storages storages;
 
-  public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, List<Supplier<RequestDebug>> debugSuppliers) {
+  public HttpClientContext(Map<String, List<String>> headers,
+                           Map<String, List<String>> queryParams,
+                           List<Supplier<RequestDebug>> debugSuppliers) {
     this(headers, queryParams, debugSuppliers, StorageUtils.build(emptySet()));
   }
 
-  public HttpClientContext(
-      Map<String, List<String>> headers,
-      Map<String, List<String>> queryParams,
-      List<Supplier<RequestDebug>> debugSuppliers,
-      Storages storages) {
+  public HttpClientContext(Map<String, List<String>> headers,
+                           Map<String, List<String>> queryParams,
+                           List<Supplier<RequestDebug>> debugSuppliers,
+                           Storages storages) {
     this(LocalDateTime.now(), headers, queryParams, debugSuppliers, storages);
+  }
+
+  public HttpClientContext(LocalDateTime requestStart,
+                           Map<String, List<String>> headers,
+                           Map<String, List<String>> queryParams,
+                           List<Supplier<RequestDebug>> debugSuppliers,
+                           Storages storages) {
+    this(requestStart, headers, queryParams, Map.of(), debugSuppliers, storages);
   }
 
   /**
    * Creates context.
    *
-   * @param requestStart time of global request start
-   * @param headers headers of global request. Some of them can be used by the local request.
-   * @param queryParams query params of global request
-   * @param debugSuppliers list of suppliers of object used to gather debug information
-   * @param storages object storages that needs to be transferred to ning threads executing requests and completable future chains
+   * @param requestStart    time of global request start
+   * @param headers         headers of global request. Some of them can be used by the local request.
+   * @param queryParams     query params of global request
+   * @param passQueryParams query params of to pass
+   * @param debugSuppliers  list of suppliers of object used to gather debug information
+   * @param storages        object storages that needs to be transferred to ning threads executing requests and completable future chains
    */
-  public HttpClientContext(
-      LocalDateTime requestStart,
-      Map<String, List<String>> headers,
-      Map<String, List<String>> queryParams,
-      List<Supplier<RequestDebug>> debugSuppliers,
-      Storages storages) {
+  public HttpClientContext(LocalDateTime requestStart,
+                           Map<String, List<String>> headers,
+                           Map<String, List<String>> queryParams,
+                           Map<String, List<String>> passQueryParams,
+                           List<Supplier<RequestDebug>> debugSuppliers,
+                           Storages storages) {
     this.requestStart = requestStart;
     requireNonNull(headers, "headers must not be null");
     this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     this.headers.putAll(headers);
+
+    this.passQueryParams = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    this.passQueryParams.putAll(passQueryParams);
 
     this.debugMode = isInDebugMode(headers, queryParams);
     this.debugSuppliers = new ArrayList<>(debugSuppliers);
@@ -70,6 +84,10 @@ public class HttpClientContext {
 
   public Map<String, List<String>> getHeaders() {
     return headers;
+  }
+
+  public Map<String, List<String>> getPassQueryParams() {
+    return passQueryParams;
   }
 
   public boolean isDebugMode() {

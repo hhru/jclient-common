@@ -41,7 +41,8 @@ class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
 
   // todo remove contract headers in HH-134289
-  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID,
+  static final Set<String> PASS_THROUGH_HEADERS = of(
+      X_REQUEST_ID,
       X_REAL_IP,
       AUTHORIZATION,
       HH_PROTO_SESSION,
@@ -51,7 +52,8 @@ class HttpClientImpl extends HttpClient {
       X_SOURCE,
       X_CONTRACT_EXPECTED_RESPONSE,
       X_CONTRACT_CONSUMER_NAME,
-      X_HH_PROFESSIONAL_ROLES_MODE);
+      X_HH_PROFESSIONAL_ROLES_MODE
+  );
 
   private final Executor callbackExecutor;
 
@@ -104,6 +106,10 @@ class HttpClientImpl extends HttpClient {
         .filter(getContext().getHeaders()::containsKey)
         .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }
+
+    getContext().getPassQueryParams().forEach((name, values) ->
+        values.forEach(value -> requestBuilder.addQueryParam(name, value))
+    );
 
     boolean canUnwrapDebugResponse = getDebugs().stream().anyMatch(RequestDebug::canUnwrapDebugResponse);
     boolean enableDebug = !isNoDebug() && !isExternalRequest() && getContext().isDebugMode() && canUnwrapDebugResponse;

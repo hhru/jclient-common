@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +98,7 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
   public class ContextBuilder {
     private final Map<String, List<String>> headers = new HashMap<>();
     private final Map<String, List<String>> queryParams = new HashMap<>();
+    private final Map<String, List<String>> passQueryParams = new HashMap<>();
     private final List<Supplier<RequestDebug>> debugSuppliers = new ArrayList<>();
 
     private HttpClientContext previousContext;
@@ -116,6 +118,11 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
 
     public ContextBuilder withQueryParams(Map<String, List<String>> queryParams) {
       this.queryParams.putAll(queryParams);
+      return this;
+    }
+
+    public ContextBuilder withPassQueryParams(Map<String, List<String>> passQueryParams) {
+      this.passQueryParams.putAll(passQueryParams);
       return this;
     }
 
@@ -166,7 +173,7 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
         .orElseGet(() -> MDC.get("rid"));
 
       Optional<String> requestId = RequestUtils.getRequestId(headers);
-      set(new HttpClientContext(headers, queryParams, debugSuppliers, storagesForTransfer));
+      set(new HttpClientContext(LocalDateTime.now(), headers, queryParams, passQueryParams, debugSuppliers, storagesForTransfer));
       requestId.ifPresent(s -> MDC.put("rid", s));
     }
 
