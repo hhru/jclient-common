@@ -183,6 +183,18 @@ public class HttpClientTestBase {
     return completedFuture(new EmptyOrErrorWithStatus<>(of(error), status));
   }
 
+  public static <T, E> CompletableFuture<ResultOrErrorWithResponse<T, E>> orErrorWithResponseSuccess(T value) {
+    return completedFuture(new ResultOrErrorWithResponse<>(ofNullable(value), empty(), ResponseMock.ok()));
+  }
+
+  public static <T, E> CompletableFuture<ResultOrErrorWithResponse<T, E>> orErrorWithResponseEmpty(T value) {
+    return completedFuture(new ResultOrErrorWithResponse<>(ofNullable(value), empty(), ResponseMock.empty()));
+  }
+
+  public static <T, E> CompletableFuture<ResultOrErrorWithResponse<T, E>> orErrorWithResponse(int status, E error) {
+    return completedFuture(new ResultOrErrorWithResponse<>(empty(), of(error), new ResponseMock(status, null)));
+  }
+
   public HttpClientTestBase withNoListeners() {
     eventListeners = List.of();
     return this;
