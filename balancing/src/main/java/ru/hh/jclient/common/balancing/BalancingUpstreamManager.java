@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
@@ -27,20 +26,17 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final Set<Monitoring> monitoring;
   private final String datacenter;
   private final boolean allowCrossDCRequests;
-  private final ValidationSettings validationSettings;
 
 public BalancingUpstreamManager(ConfigStore configStore,
                                 ServerStore serverStore,
                                 Set<Monitoring> monitoring,
                                 JClientInfrastructureConfig infrastructureConfig,
-                                boolean allowCrossDCRequests,
-                                ValidationSettings validationSettings) {
+                                boolean allowCrossDCRequests) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC();
     this.allowCrossDCRequests = allowCrossDCRequests;
     this.serverStore = serverStore;
     this.configStore = configStore;
-    this.validationSettings = validationSettings;
   }
 
   @Override
@@ -49,17 +45,11 @@ public BalancingUpstreamManager(ConfigStore configStore,
   }
 
   private void updateUpstream(@Nonnull String upstreamName) {
-    Optional<Integer> minAllowedSize = serverStore.getInitialSize(upstreamName)
-      .map(initialCapacity -> (int) Math.ceil(initialCapacity * (1 - validationSettings.allowedDegradationPart)));
     List<Server> servers = serverStore.getServers(upstreamName);
 
-    if (minAllowedSize.isPresent() && servers.size() < minAllowedSize.get()) {
+    if (servers.isEmpty() && serverStore.getInitialSize(upstreamName).filter(val -> val > 0).isPresent()) {
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
-      LOGGER.warn("Ignoring update which contains {} servers, for upstream {} allowed minimum is {}",
-        LOGGER.isDebugEnabled() ? servers : servers.size(),
-        upstreamName,
-        minAllowedSize
-      );
+      LOGGER.warn("Ignoring empty update for upstream {}", upstreamName);
       return;
     }
 
@@ -99,14 +89,5 @@ public BalancingUpstreamManager(ConfigStore configStore,
 
   Map<String, Upstream> getUpstreams() {
     return upstreams;
-  }
-
-  public static class ValidationSettings {
-    private double allowedDegradationPart = 0.5d;
-
-    public ValidationSettings setAllowedDegradationPart(double allowedDegradationPart) {
-      this.allowedDegradationPart = allowedDegradationPart;
-      return this;
-    }
   }
 }

@@ -75,7 +75,8 @@ public class BalancingPerformanceBenchmark {
   private final UpstreamManager manager = new BalancingUpstreamManager(
     configStore, serverStore,
     Set.of(),
-    infrastructureConfig, false, new BalancingUpstreamManager.ValidationSettings()
+    infrastructureConfig,
+    false
   );
   private final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;

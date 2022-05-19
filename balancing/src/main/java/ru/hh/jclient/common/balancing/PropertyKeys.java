@@ -9,8 +9,6 @@ public final class PropertyKeys {
     public static final String SYNC_UPDATE_KEY = String.join(".", JCLIENT_PREFIX, SYNC_UPDATE_PATH);
     public static final String SELF_NODE_FILTERING_PATH = "selfNodeFiltering.enabled";
     public static final String SELF_NODE_FILTERING_KEY = String.join(".", JCLIENT_PREFIX, SELF_NODE_FILTERING_PATH);
-    public static final String ALLOWED_DEGRADATION_PART_PATH = "allowedDegradationPart";
-    public static final String ALLOWED_DEGRADATION_PART_KEY = String.join(".", JCLIENT_PREFIX, ALLOWED_DEGRADATION_PART_PATH);
     public static final String IGNORE_NO_SERVERS_IN_CURRENT_DC_PATH = "ignoreNoServersInCurrentDC";
     public static final String IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY = String.join(".", JCLIENT_PREFIX, IGNORE_NO_SERVERS_IN_CURRENT_DC_PATH);
 

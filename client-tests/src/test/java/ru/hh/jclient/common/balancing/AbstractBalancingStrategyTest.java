@@ -91,12 +91,10 @@ public abstract class AbstractBalancingStrategyTest {
     ApplicationConfig applicationConfig = new ApplicationConfig()
       .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
     configStore.updateConfig(upstreamName, ApplicationConfig.toUpstreamConfigs(applicationConfig, UpstreamConfig.DEFAULT));
-    BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings();
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
       configStore, serverStore,
       Set.of(tracking), infrastructureConfig,
-      false,
-      validationSettings
+      false
     );
     upstreamManager.updateUpstreams(Set.of(upstreamName));
     var strategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService());

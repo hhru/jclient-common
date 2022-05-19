@@ -9,7 +9,6 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.ConfigStore;
 import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOWED_DEGRADATION_PART_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
 import ru.hh.jclient.common.balancing.ServerStore;
@@ -27,14 +26,10 @@ public class MonitoringBalancingUpstreamManagerFactory {
       .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
       .map(Boolean::parseBoolean)
       .orElse(false);
-    double allowedUpstreamDegradationPart = Optional.ofNullable(strategyProperties.getProperty(ALLOWED_DEGRADATION_PART_KEY)).stream()
-      .mapToDouble(Double::parseDouble).findFirst().orElse(0.5d);
-    BalancingUpstreamManager.ValidationSettings validationSettings = new BalancingUpstreamManager.ValidationSettings()
-      .setAllowedDegradationPart(allowedUpstreamDegradationPart);
     return new BalancingUpstreamManager(
       configStore, serverStore,
       buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
-      infrastructureConfig, allowCrossDCRequests, validationSettings
+      infrastructureConfig, allowCrossDCRequests
     );
   }
 
