@@ -313,8 +313,7 @@ public class BalancingWorkloadModelTest {
       return new BalancingUpstreamManager(
           configStore, serverStore,
           Set.of(), buildInfraConfig("test", currentDc),
-          false,
-          new BalancingUpstreamManager.ValidationSettings()
+          false
       );
     }
 
