@@ -57,11 +57,11 @@ public class JClientEnforcerMojo extends AbstractMojo {
 
     JavaProjectBuilder builder = prepareBuilder(sourceDirectory);
     Map<JavaAnnotation, Collection<String>> resourceAnnotations = findAndResolve(builder, JClient.class);
-    Set<String> resourceAnnotationValues = resourceAnnotations.values().stream().flatMap(v -> v.stream()).collect(toSet());
+    Set<String> resourceAnnotationValues = resourceAnnotations.values().stream().flatMap(Collection::stream).collect(toSet());
 
     builder = prepareBuilder(clientSourceDirectory);
     Map<JavaAnnotation, Collection<String>> clientAnnotations = findAndResolve(builder, JResource.class);
-    Set<String> clientAnnotationValues = clientAnnotations.values().stream().flatMap(v -> v.stream()).collect(toSet());
+    Set<String> clientAnnotationValues = clientAnnotations.values().stream().flatMap(Collection::stream).collect(toSet());
 
     boolean resourcesInvalid = resourceAnnotations
         .entrySet()
