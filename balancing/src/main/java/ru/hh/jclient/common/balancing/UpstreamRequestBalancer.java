@@ -16,7 +16,7 @@ import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
-import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
+import static ru.hh.jclient.common.balancing.RequestBalancerBuilder.SCHEMA_SEPARATOR;
 
 public class UpstreamRequestBalancer extends RequestBalancer {
   private static final Logger LOGGER = LoggerFactory.getLogger(UpstreamRequestBalancer.class);
@@ -42,10 +42,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   @Override
   protected ImmediateResultOrPreparedRequest getResultOrContext(Request request) {
     String upstreamName = state.getUpstreamName();
-    if (!state.isUpstreamEnabled()) {
-      LOGGER.warn("Upstream {} is disabled. Returning serverNotAvailableResponse", upstreamName);
-      return new ImmediateResultOrPreparedRequest(getServerNotAvailableResponse(request, upstreamName), new RequestContext(upstreamName, "unknown"));
-    }
     state.acquireServer();
     if (!state.isServerAvailable()) {
       return new ImmediateResultOrPreparedRequest(getServerNotAvailableResponse(request, upstreamName), new RequestContext(upstreamName, "unknown"));

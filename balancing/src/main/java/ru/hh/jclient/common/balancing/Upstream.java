@@ -20,11 +20,10 @@ public class Upstream {
   static final String DEFAULT_PROFILE = "default";
   static final int DEFAULT_STAT_LIMIT = 10_000_000;
 
-  private final String upstreamName;
+  private final String name;
   private final String datacenter;
   private int statLimit = DEFAULT_STAT_LIMIT;
   private final boolean allowCrossDCRequests;
-  private final boolean enabled;
 
   private volatile List<Server> servers;
   private volatile UpstreamConfigs upstreamConfigs;
@@ -36,17 +35,15 @@ public class Upstream {
 
   private final StampedLock lock = new StampedLock();
 
-  Upstream(String upstreamName,
+  Upstream(String name,
            UpstreamConfigs upstreamConfigs,
            List<Server> servers,
            String datacenter,
-           boolean allowCrossDCRequests,
-           boolean enabled) {
-    this.upstreamName = upstreamName;
+           boolean allowCrossDCRequests) {
+    this.name = name;
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
-    this.enabled = enabled;
-    this.updateConfig(upstreamConfigs, servers);
+    this.update(upstreamConfigs, servers);
   }
 
   List<Server> getServers() {
@@ -173,7 +170,7 @@ public class Upstream {
     }
   }
 
-  void updateConfig(UpstreamConfigs newConfigs, List<Server> servers) {
+  void update(UpstreamConfigs newConfigs, List<Server> servers) {
     configWriteLock.lock();
     try {
       this.upstreamConfigs = newConfigs;
@@ -199,11 +196,7 @@ public class Upstream {
   }
 
   String getName() {
-    return upstreamName;
-  }
-
-  public boolean isEnabled() {
-    return enabled;
+    return name;
   }
 
   public String getDatacenter() {
@@ -239,11 +232,10 @@ public class Upstream {
   @Override
   public String toString() {
     return "Upstream{" +
-      "upstreamName=" + upstreamName +
+      "name=" + name +
       ", upstreamConfig=" + upstreamConfigs +
       ", datacenter='" + datacenter + '\'' +
       ", allowCrossDCRequests=" + allowCrossDCRequests +
-      ", enabled=" + enabled +
       ", servers=" + servers +
       '}';
   }

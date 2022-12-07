@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
-import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -54,12 +53,12 @@ public class CustomizationBenchmark {
   private static final Upstream upstream = new UpstreamMorozov(UPSTREAM,
     ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
     servers,
-    null, false, true
+    null, false
   );
   private static final UpstreamManager manager = new UpstreamManager() {
 
     @Override
-    public Upstream getUpstream(String serviceName, @Nullable String profile) {
+    public Upstream getUpstream(String name) {
       return upstream;
     }
 

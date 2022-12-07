@@ -13,6 +13,9 @@ import ru.hh.jclient.common.RequestStrategy;
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
 
+  private static final int SCHEMA_SEPARATOR_LEN = 3;
+  public static final String SCHEMA_SEPARATOR = "://";
+
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
 
@@ -30,7 +33,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   @Override
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
     String host = request.getUri().getHost();
-    Upstream upstream = upstreamManager.getUpstream(host, profile);
+    Upstream upstream = upstreamManager.getUpstream(extractUpstreamName(host));
     Set<Monitoring> monitoring = upstreamManager.getMonitoring();
 
     if (LOGGER.isTraceEnabled()) {
@@ -38,9 +41,9 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
               "maxTimeoutTries: {}, forceIdempotence: {}, adaptive: {}",
           request, profile, upstream, timeoutMultiplier, maxTimeoutTries, forceIdempotence, adaptive);
     }
-    if (upstream == null || !upstream.isEnabled()) {
+    if (upstream == null) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
-      return new ExternalUrlRequestor(upstream, request, requestExecutor,
+      return new ExternalUrlRequestor(request, requestExecutor,
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_CONFIG.getMaxTries(),
         timeoutMultiplier, forceIdempotence, monitoring);
     } else {
@@ -87,5 +90,10 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   public RequestBalancerBuilder withProfile(String profile) {
     this.profile = profile;
     return this;
+  }
+
+  String extractUpstreamName(String host) {
+    int beginIndex = host.indexOf(SCHEMA_SEPARATOR) + SCHEMA_SEPARATOR_LEN;
+    return beginIndex > 2 ? host.substring(beginIndex) : host;
   }
 }
