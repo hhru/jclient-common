@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import static java.util.Objects.requireNonNull;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
@@ -24,7 +23,6 @@ public class Server {
   private final String datacenter;
 
   private final AtomicLong requests;
-  private final AtomicInteger fails;
 
   private final DowntimeDetector downtimeDetector;
   private final ResponseTimeTracker responseTimeTracker;
@@ -56,18 +54,32 @@ public class Server {
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
 
     this.requests = new AtomicLong();
-    this.fails = new AtomicInteger();
   }
 
   public static String addressFromHostPort(String host, int port) {
     return host + DELIMITER + port;
   }
 
+  // TODO can have effect on server selection but changes without locking
+  public void update(int weight, Map<String, String> meta, List<String> tags) {
+    if (this.weight != weight) {
+      double ratio = (double) weight / this.weight;
+      this.requests.updateAndGet(reqs -> {
+        int statRequests = unpackStatRequests(reqs);
+        int currentRequests = unpackCurrentRequests(reqs);
+        return packRequests((int)(statRequests * ratio), currentRequests);
+      });
+    }
+    this.weight = weight;
+    this.meta = meta;
+    this.tags = tags;
+  }
+
   void acquire() {
     executeWithLockIfAvailable(()-> requests.addAndGet(packRequests(1, 1)));
   }
 
-  void release(boolean isRetry, boolean isError) {
+  void release(boolean isRetry) {
     executeWithLockIfAvailable(()-> {
       requests.updateAndGet(i -> {
         int stat = unpackStatRequests(i);
@@ -77,13 +89,6 @@ public class Server {
         int current = unpackCurrentRequests(i);
         current = current > 0 ? current - 1 : 0;
         return packRequests(stat, current);
-      });
-      fails.updateAndGet(i -> {
-        if (isError) {
-          return i < Integer.MAX_VALUE ? i + 1 : Integer.MAX_VALUE;
-        } else {
-          return 0;
-        }
       });
     });
   }
@@ -123,10 +128,6 @@ public class Server {
     return datacenter;
   }
 
-  public int getFails() {
-    return fails.get();
-  }
-
   public DowntimeDetector getDowntimeDetector() {
     return downtimeDetector;
   }
@@ -139,24 +140,8 @@ public class Server {
     return meta;
   }
 
-  //TODO can have effect on server selection but changes without locking
-  public void setMeta(Map<String, String> meta) {
-    this.meta = meta;
-  }
-
   public List<String> getTags() {
     return tags;
-  }
-
-  //TODO can have effect on server selection but changes without locking
-  public void setTags(List<String> tags) {
-    this.tags = tags;
-  }
-
-  //TODO can have effect on server selection but changes without locking
-  public Server setWeight(int weight) {
-    this.weight = weight;
-    return this;
   }
 
   public float getStatLoad(Collection<Server> currentServers, Clock clock) {
@@ -177,9 +162,9 @@ public class Server {
       slowStartEndMillis = -1;
       requests.updateAndGet(value -> {
         if (!slowStartModeEnabled) {
-          int initialStat = (int) Math.floor(calculateMaxRealStatLoad(currentServers) * weight);
-          LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, initialStat);
-          return packRequests(initialStat, unpackCurrentRequests(value));
+          int initialStatRequests = (int) Math.floor(calculateMaxRealStatLoad(currentServers) * weight);
+          LOGGER.trace("Server {} statistics has no init value. Calculated initial statRequests={}", this, initialStatRequests);
+          return packRequests(initialStatRequests, unpackCurrentRequests(value));
         }
         return value;
       });
@@ -187,7 +172,7 @@ public class Server {
     return calculateLoad();
   }
 
-  public int getRequests() {
+  public int getCurrentRequests() {
     return unpackCurrentRequests(requests.get());
   }
 
@@ -221,12 +206,10 @@ public class Server {
   }
 
   public void setSlowStartEndTimeIfNeeded(int slowStartSeconds, Clock clock) {
-    if (slowStartSeconds > 0) {
-      if (slowStartEndMillis == 0) {
-        slowStartModeEnabled = true;
-        this.slowStartEndMillis = (long) (getCurrentTimeMillis(clock) + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
-        LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
-      }
+    if (slowStartSeconds > 0 && slowStartEndMillis == 0) {
+      slowStartModeEnabled = true;
+      this.slowStartEndMillis = (long) (getCurrentTimeMillis(clock) + (Math.random() * Duration.ofSeconds(slowStartSeconds).toMillis()));
+      LOGGER.trace("Set slow start for server {}. Slow start is going to end at {} epoch millis", this, slowStartEndMillis);
     }
   }
 
@@ -278,8 +261,7 @@ public class Server {
        ", datacenter='" + datacenter + '\'' +
        ", meta=" + meta +
        ", tags=" + tags +
-       ", requests=" + unpackCurrentRequests(requestsValue) +
-       ", fails=" + fails +
+       ", currentRequests=" + unpackCurrentRequests(requestsValue) +
        ", statsRequests=" + unpackStatRequests(requestsValue) +
        '}';
   }
