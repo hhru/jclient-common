@@ -46,7 +46,7 @@ public abstract class RequestBalancer implements RequestEngine {
 
     requestTimeoutMs = (int)((request.getRequestTimeout() > 0 ? request.getRequestTimeout() : requestTimeoutMs) * this.timeoutMultiplier);
 
-    requestTimeLeftMs = (int)(requestTimeoutMs * maxRequestTimeoutTries * this.timeoutMultiplier);
+    requestTimeLeftMs = requestTimeoutMs * maxRequestTimeoutTries;
     this.maxTries = maxTries;
     this.trace = new ArrayList<>();
 
