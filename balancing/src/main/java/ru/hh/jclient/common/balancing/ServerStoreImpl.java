@@ -15,11 +15,9 @@ public class ServerStoreImpl implements ServerStore {
 
   @Override
   public List<Server> getServers(String serviceName) {
-    Set<Server> servers = serverList.get(serviceName);
-    if (servers == null) {
-      return List.of();
-    }
-    return List.copyOf(servers);
+    return Optional.ofNullable(serverList.get(serviceName))
+        .map(List::copyOf)
+        .orElseGet(List::of);
   }
 
   @Override

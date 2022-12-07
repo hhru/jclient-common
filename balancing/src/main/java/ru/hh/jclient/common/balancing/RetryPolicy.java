@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
 import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
 import ru.hh.jclient.common.Response;
@@ -29,12 +30,9 @@ public final class RetryPolicy {
       return true;
     }
 
-    Boolean retryNonIdempotent = rules.get(statusCode);
-    if (retryNonIdempotent == null) {
-      return false;
-    }
-
-    return retryNonIdempotent || idempotent;
+    return Optional.ofNullable(rules.get(statusCode))
+        .map(retryNonIdempotent -> idempotent || retryNonIdempotent)
+        .orElse(false);
   }
 
   public boolean isServerError(Response response) {
