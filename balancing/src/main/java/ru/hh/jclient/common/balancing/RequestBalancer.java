@@ -30,7 +30,6 @@ public abstract class RequestBalancer implements RequestEngine {
   private int triesLeft;
   private int requestTimeLeftMs;
   private final double timeoutMultiplier;
-  protected int requestTimeoutMs;
 
   RequestBalancer(Request request,
                   RequestStrategy.RequestExecutor requestExecutor,
@@ -44,7 +43,6 @@ public abstract class RequestBalancer implements RequestEngine {
     this.request = request;
     this.requestExecutor = requestExecutor;
     this.forceIdempotence = forceIdempotence;
-    this.requestTimeoutMs = requestTimeoutMs;
 
     requestTimeoutMs = (int)((request.getRequestTimeout() > 0 ? request.getRequestTimeout() : requestTimeoutMs) * this.timeoutMultiplier);
 
