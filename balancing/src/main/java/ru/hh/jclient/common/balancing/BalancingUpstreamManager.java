@@ -27,11 +27,11 @@ public class BalancingUpstreamManager implements UpstreamManager {
   private final String datacenter;
   private final boolean allowCrossDCRequests;
 
-public BalancingUpstreamManager(ConfigStore configStore,
-                                ServerStore serverStore,
-                                Set<Monitoring> monitoring,
-                                JClientInfrastructureConfig infrastructureConfig,
-                                boolean allowCrossDCRequests) {
+  public BalancingUpstreamManager(ConfigStore configStore,
+                                  ServerStore serverStore,
+                                  Set<Monitoring> monitoring,
+                                  JClientInfrastructureConfig infrastructureConfig,
+                                  boolean allowCrossDCRequests) {
     this.monitoring = requireNonNull(monitoring, "monitorings must not be null");
     this.datacenter = infrastructureConfig.getCurrentDC() == null ? null : infrastructureConfig.getCurrentDC();
     this.allowCrossDCRequests = allowCrossDCRequests;
@@ -62,14 +62,14 @@ public BalancingUpstreamManager(ConfigStore configStore,
       if (upstream == null) {
         upstream = createUpstream(upstreamName, newConfig, servers);
       } else {
-        upstream.updateConfig(newConfig, servers);
+        upstream.update(newConfig, servers);
       }
       return upstream;
     });
   }
 
   private Upstream createUpstream(String upstreamName, UpstreamConfigs upstreamConfigs, List<Server> servers) {
-    return new Upstream(upstreamName, upstreamConfigs, servers, datacenter, allowCrossDCRequests, true);
+    return new Upstream(upstreamName, upstreamConfigs, servers, datacenter, allowCrossDCRequests);
   }
 
   @Override

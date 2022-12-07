@@ -57,7 +57,7 @@ class HttpClientImpl extends HttpClient {
 
   HttpClientImpl(AsyncHttpClient http,
                  Request request,
-                 RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
+                 RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
                  Storage<HttpClientContext> contextSupplier,
                  Set<String> customHostsWithSession,
                  Executor callbackExecutor,
