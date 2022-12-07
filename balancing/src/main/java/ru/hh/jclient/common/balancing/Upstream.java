@@ -128,7 +128,7 @@ public class Upstream {
         if (adaptive) {
           server.releaseAdaptive(isError, responseTimeMicros);
         } else {
-          server.release(isRetry, isError);
+          server.release(isRetry);
         }
       }
 

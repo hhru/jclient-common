@@ -68,13 +68,13 @@ public class BalancingClientTest extends BalancingClientTestBase {
       getTestClient().get();
     }
 
-    assertEquals(0, servers.get(0).getRequests());
+    assertEquals(0, servers.get(0).getCurrentRequests());
     assertEquals(6, servers.get(0).getStatsRequests());
 
-    assertEquals(0, servers.get(1).getRequests());
+    assertEquals(0, servers.get(1).getCurrentRequests());
     assertEquals(3, servers.get(1).getStatsRequests());
 
-    assertEquals(0, servers.get(2).getRequests());
+    assertEquals(0, servers.get(2).getCurrentRequests());
     assertEquals(1, servers.get(2).getStatsRequests());
   }
 
@@ -252,13 +252,13 @@ public class BalancingClientTest extends BalancingClientTestBase {
       getTestClient().get();
     }
 
-    assertEquals(0, servers.get(0).getRequests());
+    assertEquals(0, servers.get(0).getCurrentRequests());
     assertEquals(0, servers.get(0).getStatsRequests());
 
-    assertEquals(0, servers.get(1).getRequests());
+    assertEquals(0, servers.get(1).getCurrentRequests());
     assertEquals(4, servers.get(1).getStatsRequests());
 
-    assertEquals(0, servers.get(2).getRequests());
+    assertEquals(0, servers.get(2).getCurrentRequests());
     assertEquals(1, servers.get(2).getStatsRequests());
   }
 
