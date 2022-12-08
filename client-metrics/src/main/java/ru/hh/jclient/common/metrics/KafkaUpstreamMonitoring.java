@@ -65,7 +65,7 @@ public class KafkaUpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRetry(String upstreamName, String dc, String serverAddress, int statusCode, int firstStatusCode, int retryCount) {
+  public void countRetry(String upstreamName, String dc, String serverAddress, int statusCode, int firstStatusCode, int triesUsed) {
 
   }
 

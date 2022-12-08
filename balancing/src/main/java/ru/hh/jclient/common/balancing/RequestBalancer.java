@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
@@ -21,15 +22,15 @@ public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);
   static final int WARM_UP_DEFAULT_TIME_MICROS = 100_000;
 
-  protected final Request request;
   private final RequestStrategy.RequestExecutor requestExecutor;
-  protected final int maxTries;
   private final boolean forceIdempotence;
-  private final List<TraceFrame> trace;
-
   private int triesLeft;
   private int requestTimeLeftMs;
   private final double timeoutMultiplier;
+
+  protected final Request request;
+  protected final int maxTries;
+  protected final List<TraceFrame> trace;
 
   RequestBalancer(Request request,
                   RequestStrategy.RequestExecutor requestExecutor,
@@ -72,13 +73,10 @@ public abstract class RequestBalancer implements RequestEngine {
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
   private void finishRequest(ResponseWrapper wrapper) {
-    long timeToLastByteMicros = WARM_UP_DEFAULT_TIME_MICROS;
-    if (wrapper != null) {
-      timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
-      updateLeftTriesAndTime((int) timeToLastByteMicros);
-      Response response = wrapper.getResponse();
-      this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
-    }
+    long timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
+    updateLeftTriesAndTime((int) timeToLastByteMicros);
+    Response response = wrapper.getResponse();
+    this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
     onRequestReceived(wrapper, timeToLastByteMicros);
   }
   protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMicros);
@@ -94,15 +92,16 @@ public abstract class RequestBalancer implements RequestEngine {
   protected CompletableFuture<Response> unwrapOrRetry(ResponseWrapper wrapper) {
     Response response = wrapper.getResponse();
     boolean doRetry = checkRetry(response);
+
     int triesUsed = maxTries - triesLeft;
+    int retriesCount = triesUsed - 1;
+
+    logResponse(response, retriesCount, doRetry);
     onResponse(wrapper, triesUsed, doRetry);
-    int statusCode = response.getStatusCode();
     if (doRetry) {
-      logRetryResponse(statusCode, response);
-      onRetry(statusCode, response, triesUsed);
+      onRetry();
       return execute();
     }
-    logFinalResponse(statusCode, response);
     return completedFuture(response);
   }
 
@@ -118,35 +117,36 @@ public abstract class RequestBalancer implements RequestEngine {
 
   protected abstract boolean checkRetry(Response response, boolean isIdempotent);
 
-  protected abstract void onRetry(int statusCode, Response response, int triesUsed);
+  protected abstract void onRetry();
 
-  private void logFinalResponse(int statusCode, Response response) {
-    String messageTemplate = "{}: {} {} on {} {}, trace: {}";
-    if (statusCode >= 500) {
-      LOGGER.warn(messageTemplate, "balanced_request_final_error", response.getStatusCode(), response.getStatusText(),
-        request.getMethod(), request.getUri(), getTrace()
-      );
-    } else {
-      LOGGER.info(messageTemplate, "balanced_request_final_response", response.getStatusCode(), response.getStatusText(),
-        request.getMethod(), request.getUri(), getTrace()
-      );
-    }
-  }
+  private void logResponse(Response response, int retriesCount, boolean doRetry) {
+    String logMessage;
+    Consumer<String> logMethod;
 
-  private void logRetryResponse(int statusCode, Response response) {
-    String messageTemplate = "balanced_request_response: {} {} on {} {}";
-    if (statusCode >= 500) {
-      LOGGER.info(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), response.getUri());
+    String size = Optional.ofNullable(response.getResponseBody())
+        .map(body -> String.format(" %d bytes", body.getBytes().length))
+        .orElse("");
+    boolean isServerError = response.getStatusCode() >= 500;
+
+    if (doRetry) {
+      String retry = retriesCount > 0 ? String.format(" on retry %s", retriesCount) : "";
+      logMessage = String.format("balanced_request_response: %s %s got%s%s, will retry %s %s",
+          response.getStatusCode(), response.getStatusText(), size, retry, request.getMethod(), response.getUri());
+      logMethod = isServerError ? LOGGER::info : LOGGER::debug;
     } else {
-      LOGGER.debug(messageTemplate, response.getStatusCode(), response.getStatusText(), request.getMethod(), response.getUri());
+      String msgLabel = isServerError ? "balanced_request_final_error" : "balanced_request_final_response";
+      logMessage = String.format("%s: %s %s got%s %s %s, trace: %s", msgLabel, response.getStatusCode(), response.getStatusText(),
+          size, request.getMethod(), request.getUri(), getTrace());
+      logMethod = isServerError ? LOGGER::warn : LOGGER::info;
     }
+    logMethod.accept(logMessage);
   }
 
   private String getTrace() {
-    return this.trace.stream().map(TraceFrame::toString).collect(Collectors.joining("->"));
+    return this.trace.stream().map(TraceFrame::toString).collect(Collectors.joining(" -> "));
   }
 
-  private static final class TraceFrame {
+  protected static final class TraceFrame {
     private final String address;
     private final int responseCode;
     private final String msg;
@@ -155,6 +155,10 @@ public abstract class RequestBalancer implements RequestEngine {
       this.address = address;
       this.responseCode = responseCode;
       this.msg = msg;
+    }
+
+    public int getResponseCode() {
+      return responseCode;
     }
 
     @Override

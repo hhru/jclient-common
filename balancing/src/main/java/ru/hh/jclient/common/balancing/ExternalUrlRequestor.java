@@ -14,7 +14,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
   private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
   private final Set<Monitoring> monitorings;
-  private int firstStatusCode;
 
   public ExternalUrlRequestor(Request request, RequestStrategy.RequestExecutor requestExecutor,
                               int requestTimeoutMs, int maxRequestTimeoutTries, int maxTries,
@@ -32,7 +31,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
 
   @Override
   protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMicros) {
-
   }
 
   @Override
@@ -49,7 +47,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
       monitoring.countRequestTime(serverAddress, DC_FOR_EXTERNAL_REQUESTS, requestTimeMicros);
 
       if (triesUsed > 1) {
-        monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, firstStatusCode, triesUsed);
+        monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
       }
     }
   }
@@ -60,9 +58,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
   }
 
   @Override
-  protected void onRetry(int statusCode, Response response, int triesUsed) {
-    if (triesUsed == 1) {
-      firstStatusCode = statusCode;
-    }
+  protected void onRetry() {
   }
 }

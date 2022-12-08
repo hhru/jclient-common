@@ -24,7 +24,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   private final BalancingState state;
 
   private final Set<Monitoring> monitorings;
-  private int firstStatusCode;
 
   public UpstreamRequestBalancer(BalancingState state, Request request, RequestStrategy.RequestExecutor requestExecutor,
                                  int maxTimeoutTries, boolean forceIdempotence,
@@ -97,7 +96,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       monitoring.countRequestTime(upstreamName, dcName, requestTimeMicros);
 
       if (triesUsed > 1) {
-        monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, firstStatusCode, triesUsed);
+        monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
       }
     }
   }
@@ -108,10 +107,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   }
 
   @Override
-  protected void onRetry(int statusCode, Response response, int triesUsed) {
-    if (triesUsed == 1) {
-      firstStatusCode = response.getStatusCode();
-    }
+  protected void onRetry() {
     state.incrementTries();
   }
 
