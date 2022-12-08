@@ -29,7 +29,7 @@ public class RequestBalancerBuilderTest {
   @Test
   public void testExternalUrlRequestorBuilding() {
     Request request = createRequest();
-    when(upstreamManager.getUpstream(UPSTREAM_NAME)).thenReturn(null);
+    when(upstreamManager.getUpstream(URL)).thenReturn(null);
 
     RequestBalancer requestBalancer = requestBalancerBuilder.build(request, requestExecutor);
     assertTrue(requestBalancer instanceof ExternalUrlRequestor);
@@ -40,7 +40,7 @@ public class RequestBalancerBuilderTest {
     Request request = createRequest();
     Upstream upstream = mock(Upstream.class);
     when(upstream.getConfig(any())).thenReturn(UpstreamConfig.DEFAULT_CONFIG);
-    when(upstreamManager.getUpstream(UPSTREAM_NAME)).thenReturn(upstream);
+    when(upstreamManager.getUpstream(UPSTREAM_NAME, null)).thenReturn(upstream);
 
     RequestBalancer requestBalancer = requestBalancerBuilder.build(request, requestExecutor);
     assertTrue(requestBalancer instanceof UpstreamRequestBalancer);
