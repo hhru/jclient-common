@@ -1,0 +1,13 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: jclient-common
+  annotations:
+    github.com/project-slug: hhru/jclient-common
+  tags:
+    - backend
+    - java
+spec:
+  type: library
+  lifecycle: production
