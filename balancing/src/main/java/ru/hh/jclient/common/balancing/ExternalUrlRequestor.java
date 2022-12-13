@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import java.util.Optional;
 import java.util.Set;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
@@ -14,19 +13,14 @@ public class ExternalUrlRequestor extends RequestBalancer {
   public static final String DC_FOR_EXTERNAL_REQUESTS = "externalRequest";
   private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
-  private final String upstreamName;
-  private final String dc;
   private final Set<Monitoring> monitorings;
-  private int firstStatusCode;
 
-  public ExternalUrlRequestor(Upstream upstream, Request request, RequestStrategy.RequestExecutor requestExecutor,
+  public ExternalUrlRequestor(Request request, RequestStrategy.RequestExecutor requestExecutor,
                               int requestTimeoutMs, int maxRequestTimeoutTries, int maxTries,
                               Double timeoutMultiplier, boolean forceIdempotence,
                               Set<Monitoring> monitorings
   ) {
     super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier, forceIdempotence);
-    this.upstreamName = Optional.ofNullable(upstream).map(Upstream::getName).orElse(null);
-    this.dc = Optional.ofNullable(upstream).map(Upstream::getDatacenter).orElse(DC_FOR_EXTERNAL_REQUESTS);
     this.monitorings = monitorings;
   }
 
@@ -37,7 +31,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
 
   @Override
   protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMicros) {
-
   }
 
   @Override
@@ -46,17 +39,15 @@ public class ExternalUrlRequestor extends RequestBalancer {
       int statusCode = wrapper.getResponse().getStatusCode();
       long requestTimeMicros = wrapper.getTimeToLastByteMicros();
 
-      String serverAddress;
       Uri originalUri = request.getUri();
       Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
-      serverAddress = baseUri.toString();
-      String name = upstreamName != null ? upstreamName : serverAddress;
+      String serverAddress = baseUri.toString();
 
-      monitoring.countRequest(name, dc, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
-      monitoring.countRequestTime(name, dc, requestTimeMicros);
+      monitoring.countRequest(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
+      monitoring.countRequestTime(serverAddress, DC_FOR_EXTERNAL_REQUESTS, requestTimeMicros);
 
       if (triesUsed > 1) {
-        monitoring.countRetry(name, dc, serverAddress, statusCode, firstStatusCode, triesUsed);
+        monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
       }
     }
   }
@@ -67,9 +58,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
   }
 
   @Override
-  protected void onRetry(int statusCode, Response response, int triesUsed) {
-    if (triesUsed == 1) {
-      firstStatusCode = statusCode;
-    }
+  protected void onRetry() {
   }
 }

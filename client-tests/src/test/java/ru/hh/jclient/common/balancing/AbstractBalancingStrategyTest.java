@@ -80,7 +80,7 @@ public abstract class AbstractBalancingStrategyTest {
 
       @Override
       public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
-                             int firstStatusCode, int retryCount) {
+                             int firstStatusCode, int triesUsed) {
         Optional.ofNullable(retries).ifPresent(map -> map.computeIfAbsent(serverAddress, ignored -> new LongAdder()).increment());
       }
 

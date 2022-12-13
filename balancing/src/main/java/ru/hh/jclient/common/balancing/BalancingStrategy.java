@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 final class BalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
-  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String datacenter, boolean allowCrossDCRequests,
+  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String currentDatacenter, boolean allowCrossDCRequests,
                                   Clock clock) {
     int minIndex = -1;
     Weight minWeight = null;
@@ -25,7 +25,7 @@ final class BalancingStrategy {
         continue;
       }
 
-      boolean isDifferentDC = !Objects.equals(datacenter, server.getDatacenter());
+      boolean isDifferentDC = !Objects.equals(currentDatacenter, server.getDatacenter());
 
       if (isDifferentDC && !allowCrossDCRequests) {
         continue;

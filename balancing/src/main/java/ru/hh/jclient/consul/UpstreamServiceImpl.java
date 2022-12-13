@@ -241,10 +241,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
         server = new Server(address, serverWeight, nodeDatacenter);
         currentServers.add(server);
       }
-
-      server.setMeta(service.getMeta());
-      server.setTags(service.getTags());
-      server.setWeight(serverWeight);
+      server.update(serverWeight, service.getMeta(), service.getTags());
     }
     serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
     LOGGER.info("upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}", serviceName, datacenter,

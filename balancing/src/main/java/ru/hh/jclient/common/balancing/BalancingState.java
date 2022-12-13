@@ -19,10 +19,6 @@ public class BalancingState {
     return upstream.getConfig(profile);
   }
 
-  public boolean isUpstreamEnabled() {
-    return upstream.isEnabled();
-  }
-
   public String getUpstreamName() {
     return upstream.getName();
   }

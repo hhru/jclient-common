@@ -42,11 +42,11 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   @Override
-  public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, int firstStatusCode, int retryCount) {
+  public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, int firstStatusCode, int triesUsed) {
     Map<String, String> tags = getCommonTags(serviceName, upstreamName, serverDatacenter);
     tags.put("status", String.valueOf(statusCode));
     tags.put("first_status", String.valueOf(firstStatusCode));
-    tags.put("tries", String.valueOf(retryCount));
+    tags.put("tries", String.valueOf(triesUsed));
     statsDSender.sendCount("http.client.retries", 1, toTagsArray(tags));
   }
 

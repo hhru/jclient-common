@@ -54,7 +54,7 @@ public class CustomizationBenchmark {
   private static final Upstream upstream = new UpstreamMorozov(UPSTREAM,
     ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
     servers,
-    null, false, true
+    null, false
   );
   private static final UpstreamManager manager = new UpstreamManager() {
 
