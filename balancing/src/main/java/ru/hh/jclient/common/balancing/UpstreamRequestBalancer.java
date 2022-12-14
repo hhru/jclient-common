@@ -81,6 +81,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
 
   @Override
   protected void onResponse(ResponseWrapper wrapper, int triesUsed, boolean willFireRetry) {
+    boolean isRequestFinal = !willFireRetry;
     for (Monitoring monitoring : monitorings) {
       int statusCode = wrapper.getResponse().getStatusCode();
       long requestTimeMicros = wrapper.getTimeToLastByteMicros();
@@ -92,10 +93,10 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       var serverAddress = state.getCurrentServer().getAddress();
       var dcName = state.getCurrentServer().getDatacenter();
       String upstreamName = state.getUpstreamName();
-      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMicros, !willFireRetry);
+      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMicros, isRequestFinal);
       monitoring.countRequestTime(upstreamName, dcName, requestTimeMicros);
 
-      if (triesUsed > 1) {
+      if (isRequestFinal && triesUsed > 1) {
         monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
       }
     }
