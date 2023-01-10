@@ -29,10 +29,9 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
       Supplier<String> errorMessage,
       List<PredicateWithStatus<E>> predicates,
       Optional<T> defaultValue) {
-    super(errorStatusCode, errorMessage);
+    super(AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty()), wrapper.getStatusCode(), errorMessage);
     this.wrapper = wrapper;
     this.defaultValue = defaultValue;
-    this.errorStatusCode = AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty());
     this.predicates = Optional.ofNullable(predicates);
   }
 
@@ -74,7 +73,7 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
 
   protected ResultWithStatus<T> defaultOrThrow(String cause) {
     if (defaultValue.isPresent()) {
-      logger.warn("Default value is set to result because error happened: {}. Description: {}", cause, errorResponseBuilder.getMessage());
+      logger.warn("Default value is set to result because error happened: {}. Description: {}", cause, exceptionBuilder.getMessage());
       return new ResultWithStatus<>(defaultValue.get(), wrapper.getStatusCode());
     }
     throw toException(cause);

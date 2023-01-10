@@ -2,6 +2,7 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.OperationBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
@@ -19,9 +21,9 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   protected final ResultWithStatus<T> wrapper;
 
   protected Optional<List<PredicateWithStatus<T>>> predicates = Optional.empty();
+  protected Set<Integer> allowStatuses = Set.of();
   protected Optional<T> defaultValue = Optional.empty();
   protected Optional<List<Integer>> proxiedStatusCodes;
-  protected Optional<Function<Integer, Integer>> statusCodesConverter;
 
   protected AbstractOperation(
       ResultWithStatus<T> wrapper,
@@ -29,13 +31,17 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
       Optional<List<Integer>> proxiedStatusCodes,
       Optional<Function<Integer, Integer>> statusCodesConverter,
       Supplier<String> errorMessage,
-      List<PredicateWithStatus<T>> predicates) {
-    super(errorStatusCode, errorMessage);
+      List<PredicateWithStatus<T>> predicates,
+      Set<Integer> allowStatuses,
+      ExceptionBuilder<?, ?> exceptionBuilder) {
+    super(getStatusCodeIfAbsent(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter),
+        wrapper == null ? null : wrapper.getStatusCode(),
+        errorMessage,
+        exceptionBuilder);
     this.wrapper = wrapper;
     this.proxiedStatusCodes = proxiedStatusCodes;
-    this.statusCodesConverter = statusCodesConverter;
-    this.errorStatusCode = getStatusCodeIfAbsent(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter);
     this.predicates = Optional.ofNullable(predicates);
+    this.allowStatuses = allowStatuses;
   }
 
   protected AbstractOperation(
@@ -45,8 +51,10 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
       Optional<Function<Integer, Integer>> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
-      Optional<T> defaultValue) {
-    this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates);
+      Optional<T> defaultValue,
+      Set<Integer> allowStatuses,
+      ExceptionBuilder<?, ?> exceptionBuilder) {
+    this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, allowStatuses, exceptionBuilder);
     this.defaultValue = defaultValue;
   }
 
@@ -55,7 +63,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   protected Optional<T> checkForAnyError() {
     Optional<T> optional = checkForStatusCodeError(); // status code check and unwrap
     optional = checkForPredicates(optional); // predicate check
-    if (optional.isPresent()) {
+    if (optional.isPresent() || !allowStatuses.isEmpty()) {
       return optional;
     }
     return defaultOrThrow("result is empty");
@@ -65,11 +73,14 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
     if (wrapper.isSuccess()) {
       return wrapper.get();
     }
+    if (allowStatuses.contains(wrapper.getStatusCode())) {
+      return defaultValue.or(wrapper::get);
+    }
     return defaultOrThrow("status code " + wrapper.getStatusCode() + " is not OK");
   }
 
   protected Optional<T> checkForPredicates(Optional<T> response) {
-    if (!response.isPresent() || !predicates.isPresent()) {
+    if (response.isEmpty() || predicates.isEmpty()) {
       return response;
     }
     T responseUnwrapped = response.get();
@@ -83,7 +94,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
 
   private boolean testPredicate(PredicateWithStatus<T> predicate, T response) {
     if (predicate.getPredicate().test(response)) {
-      errorStatusCode = predicate.getStatus().map(Optional::of).orElse(errorStatusCode);
+      errorStatusCode = predicate.getStatus().or(() -> errorStatusCode);
       return true;
     }
     return false;
@@ -95,7 +106,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
 
   protected Optional<T> defaultOrThrow(String cause) {
     if (useDefault()) {
-      logger.warn("Default value is returned because error happened: {}. Description: {}", cause, errorResponseBuilder.getMessage());
+      logger.warn("Default value is returned because error happened: {}. Description: {}", cause, exceptionBuilder.getMessage());
       return defaultValue;
     }
     throw toException(cause);
@@ -118,11 +129,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
         // replace 503 with 502 to avoid retries at intbal
         .map(s -> s == SERVICE_UNAVAILABLE.getStatusCode() ? HttpStatuses.BAD_GATEWAY : s);
 
-    if (!currentStatusCode.isPresent()) {
-      return errorStatusCode;
-    }
-
-    if (!errorStatusCode.isPresent()) {
+    if (errorStatusCode.isEmpty()) {
       errorStatusCode = currentStatusCode;
     }
 

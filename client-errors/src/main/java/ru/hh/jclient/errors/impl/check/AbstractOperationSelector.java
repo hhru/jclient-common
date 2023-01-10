@@ -1,11 +1,15 @@
 package ru.hh.jclient.errors.impl.check;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import javax.ws.rs.core.Response.Status;
+import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.OperationSelectorBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
+import ru.hh.jclient.errors.impl.WebApplicationExceptionBuilder;
 
 public abstract class AbstractOperationSelector<T, D extends AbstractOperationSelector<T, D>> extends OperationSelectorBase {
 
@@ -14,6 +18,8 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
   }
 
   protected List<PredicateWithStatus<T>> predicates = null;
+  protected Set<Integer> allowedStatuses = new HashSet<>();
+  protected ExceptionBuilder<?, ?> exceptionBuilder = new WebApplicationExceptionBuilder();
 
   private List<PredicateWithStatus<T>> predicates() {
     if (predicates == null) {
@@ -84,6 +90,21 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    */
   public D failIf(Predicate<T> predicate, Status status) {
     return failIf(predicate, status.getStatusCode());
+  }
+
+  public D allow(Status status) {
+    allowedStatuses.add(status.getStatusCode());
+    return getSelf();
+  }
+
+  public D allow(int code) {
+    allowedStatuses.add(code);
+    return getSelf();
+  }
+
+  public D exceptionBuilder(ExceptionBuilder<?, ?> exceptionBuilder) {
+    this.exceptionBuilder = exceptionBuilder;
+    return getSelf();
   }
 
   @SuppressWarnings("unchecked")

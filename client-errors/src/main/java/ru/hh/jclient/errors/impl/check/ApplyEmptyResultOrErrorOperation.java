@@ -28,9 +28,8 @@ public class ApplyEmptyResultOrErrorOperation<E> extends OperationBase<ApplyEmpt
       Supplier<String> errorMessage,
       List<PredicateWithStatus<E>> predicates,
       boolean returnEmpty) {
-    super(errorStatusCode, errorMessage);
+    super(AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty()), wrapper.getStatusCode(), errorMessage);
     this.wrapper = wrapper;
-    this.errorStatusCode = AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty());
     this.predicates = Optional.ofNullable(predicates);
     this.returnEmpty = returnEmpty;
   }
@@ -72,7 +71,7 @@ public class ApplyEmptyResultOrErrorOperation<E> extends OperationBase<ApplyEmpt
 
   protected EmptyWithStatus emptyOrThrow(String cause) {
     if (returnEmpty) {
-      logger.warn("Default value is set to result because error happened: {}. Description: {}", cause, errorResponseBuilder.getMessage());
+      logger.warn("Default value is set to result because error happened: {}. Description: {}", cause, exceptionBuilder.getMessage());
       return new EmptyWithStatus(wrapper.getStatusCode());
     }
     throw toException(cause);

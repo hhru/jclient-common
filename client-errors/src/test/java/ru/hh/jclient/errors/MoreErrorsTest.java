@@ -16,6 +16,8 @@ import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import javax.ws.rs.ext.RuntimeDelegate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -348,4 +350,26 @@ public class MoreErrorsTest {
     }
   }
 
+  // with allowed statuses
+  @Test
+  public void testAllowStatuses() {
+    ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    String value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyError();
+    assertNull(value);
+
+    assertThrows(
+        WebApplicationException.class,
+        () -> MoreErrors.check(result, "error").allow(NOT_FOUND).throwBadGateway().onAnyError()
+    );
+  }
+
+  // with custom exception builder
+  @Test
+  public void testCustomExceptionBuilder() {
+    ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    assertThrows(
+        CustomException.class,
+        () -> MoreErrors.check(result, "error").exceptionBuilder(new CustomExceptionBuilder()).throwBadGateway().onAnyError()
+    );
+  }
 }

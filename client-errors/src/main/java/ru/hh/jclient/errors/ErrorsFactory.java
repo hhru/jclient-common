@@ -9,8 +9,8 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import ru.hh.errors.common.AbstractErrors;
 import ru.hh.errors.common.Errors;
-import ru.hh.jclient.errors.impl.ErrorResponseBuilder;
 import ru.hh.jclient.errors.impl.OperationBase;
+import ru.hh.jclient.errors.impl.WebApplicationExceptionBuilder;
 
 public class ErrorsFactory {
 
@@ -40,7 +40,12 @@ public class ErrorsFactory {
    *          error description
    */
   public static WebApplicationException error(int code, Object errorKey, String description, Throwable cause) {
-    return new ErrorResponseBuilder(() -> description).setStatus(code).setEntityCreator(error(errorKey)).setCause(cause).toWebApplicationException();
+    return new WebApplicationExceptionBuilder()
+        .appendToMessage(description)
+        .setStatus(code)
+        .setEntityCreator(error(errorKey))
+        .setCause(cause)
+        .toException();
   }
 
   /**
@@ -50,7 +55,7 @@ public class ErrorsFactory {
    *          errors container
    */
   public static WebApplicationException error(AbstractErrors<?> errors) {
-    return new ErrorResponseBuilder(null).setStatus(errors.getCode()).setEntityCreator((s, i) -> errors).toWebApplicationException();
+    return new WebApplicationExceptionBuilder().setStatus(errors.getCode()).setEntityCreator((s, i) -> errors).toException();
   }
 
   /**

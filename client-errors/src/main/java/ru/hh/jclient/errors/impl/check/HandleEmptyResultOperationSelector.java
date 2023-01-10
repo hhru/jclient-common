@@ -20,7 +20,7 @@ public class HandleEmptyResultOperationSelector extends AbstractOperationSelecto
    * Specifies that any errors (incorrect result or exception) should be ignored and empty result returned.
    */
   public HandleEmptyResultOperation ignore() {
-    return new HandleEmptyResultOperation(emptyWithStatus, throwable, errorMessage, predicates, empty());
+    return new HandleEmptyResultOperation(emptyWithStatus, throwable, errorMessage, predicates, empty(), allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -30,6 +30,6 @@ public class HandleEmptyResultOperationSelector extends AbstractOperationSelecto
    *          error consumer
    */
   public HandleEmptyResultOperation acceptError(Consumer<Throwable> consumer) {
-    return new HandleEmptyResultOperation(emptyWithStatus, throwable, errorMessage, predicates, of(consumer));
+    return new HandleEmptyResultOperation(emptyWithStatus, throwable, errorMessage, predicates, of(consumer), allowedStatuses, exceptionBuilder);
   }
 }
