@@ -63,7 +63,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   protected Optional<T> checkForAnyError() {
     Optional<T> optional = checkForStatusCodeError(); // status code check and unwrap
     optional = checkForPredicates(optional); // predicate check
-    if (optional.isPresent() || !allowStatuses.isEmpty()) {
+    if (optional.isPresent() || allowStatuses.contains(wrapper.getStatusCode())) {
       return optional;
     }
     return defaultOrThrow("result is empty");

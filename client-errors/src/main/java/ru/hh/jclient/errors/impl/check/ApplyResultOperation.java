@@ -68,9 +68,9 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
     return checkForAnyError().orElse(null);
   }
 
-  public ResultWithStatus<T> onAnyErrorWrapped() {
+  public CheckedResultWithStatus<T> onAnyErrorWrapped() {
     checkForAnyError();
-    return wrapper;
+    return new CheckedResultWithStatus<>(wrapper);
   }
 
   /**
@@ -90,9 +90,9 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
     return checkForEmpty();
   }
 
-  public ResultWithStatus<T> onEmptyWrapped() {
+  public CheckedResultWithStatus<T> onEmptyWrapped() {
     checkForEmpty();
-    return wrapper;
+    return new CheckedResultWithStatus<>(wrapper);
   }
 
   /**
@@ -112,9 +112,9 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
     return checkForStatusCodeError();
   }
 
-  public ResultWithStatus<T> onStatusCodeErrorWrapped() {
+  public CheckedResultWithStatus<T> onStatusCodeErrorWrapped() {
     checkForStatusCodeError();
-    return wrapper;
+    return new CheckedResultWithStatus<>(wrapper);
   }
 
   /**
@@ -134,9 +134,8 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
     return checkForPredicates(wrapper.get());
   }
 
-  public ResultWithStatus<T> onPredicateWrapped() {
+  public CheckedResultWithStatus<T> onPredicateWrapped() {
     checkForPredicates(wrapper.get());
-    return wrapper;
+    return new CheckedResultWithStatus<>(wrapper);
   }
-
 }

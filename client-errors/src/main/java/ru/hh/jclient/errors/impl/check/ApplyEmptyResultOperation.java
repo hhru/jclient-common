@@ -59,6 +59,11 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
     return checkForStatusCodeError();
   }
 
+  public CheckedResultWithStatus<Void> onStatusCodeErrorWrapped() {
+    checkForStatusCodeError();
+    return new CheckedResultWithStatus<>(wrapper);
+  }
+
   /**
    * <p>
    * Returns result or throws {@link WebApplicationException} with provided status code if predicate specified with
@@ -74,6 +79,11 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
    */
   public Optional<Void> onPredicate() {
     return checkForPredicates(wrapper.get());
+  }
+
+  public CheckedResultWithStatus<Void> onPredicateWrapped() {
+    checkForPredicates(wrapper.get());
+    return new CheckedResultWithStatus<>(wrapper);
   }
 
   @Override
