@@ -2,6 +2,7 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -174,6 +175,28 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
         errorMessage,
         predicates,
         of(value),
+        allowedStatuses,
+        exceptionBuilder);
+  }
+
+  /**
+   * <p>
+   * Sets default value to null.
+   * </p>
+   * <p>
+   * Calling {@link #proxyOnly(Status...)} or {@link #convertAndProxy(Status, Status)} does nothing when used with this operation.
+   * </p>
+   *
+   */
+  public ApplyResultOperation<T> returnNull() {
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        empty(),
+        empty(),
+        empty(),
+        errorMessage,
+        predicates,
+        Optional.empty(),
         allowedStatuses,
         exceptionBuilder);
   }

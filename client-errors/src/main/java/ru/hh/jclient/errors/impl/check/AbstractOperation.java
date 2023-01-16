@@ -20,9 +20,10 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
 
   protected final ResultWithStatus<T> wrapper;
 
-  protected Optional<List<PredicateWithStatus<T>>> predicates = Optional.empty();
-  protected Set<Integer> allowStatuses = Set.of();
+  protected Optional<List<PredicateWithStatus<T>>> predicates;
+  protected Set<Integer> allowStatuses;
   protected Optional<T> defaultValue = Optional.empty();
+  private boolean useDefault = false;
   protected Optional<List<Integer>> proxiedStatusCodes;
 
   protected AbstractOperation(
@@ -56,6 +57,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
       ExceptionBuilder<?, ?> exceptionBuilder) {
     this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, allowStatuses, exceptionBuilder);
     this.defaultValue = defaultValue;
+    this.useDefault = true;
   }
 
   // internal terminal operation implementations
@@ -113,7 +115,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   }
 
   protected boolean useDefault() {
-    return defaultValue.isPresent();
+    return useDefault;
   }
 
   protected static Optional<Integer> getStatusCodeIfAbsent(

@@ -151,6 +151,11 @@ public class MoreErrorsTest {
     result = new ResultWithStatus<>("zxc", OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onPredicate();
     assertEquals(value.get(), "error");
+
+    // null default
+    result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
+    realValue = MoreErrors.check(result, "error").failIf(predicate).returnNull().onAnyError();
+    assertNull(realValue);
   }
 
   // empty value

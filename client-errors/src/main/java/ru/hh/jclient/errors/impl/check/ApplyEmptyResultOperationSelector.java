@@ -178,7 +178,6 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
         errorMessage,
         predicates,
         empty(),
-        true,
         allowedStatuses,
         exceptionBuilder);
   }

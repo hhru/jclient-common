@@ -33,6 +33,14 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
   }
 
   /**
+   * Specifies default null to set to result if error is present.
+   *
+   */
+  public ApplyResultOrErrorOperation<T, E> setDefaultNull() {
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, empty());
+  }
+
+  /**
    * Specifies default value to set to result if error is present.
    *
    * @param defaultValue
@@ -43,7 +51,7 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
   }
 
   private ApplyResultOrErrorOperation<T, E> throwWithCode(int code) {
-    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(code), errorMessage, predicates, empty());
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, of(code), errorMessage, predicates);
   }
 
   public ApplyResultOrErrorOperation<T, E> throwBadGateway() {
@@ -79,6 +87,6 @@ public class ApplyResultOrErrorOperationSelector<T, E> extends AbstractOperation
    * {@link Status#SERVICE_UNAVAILABLE} will be replaced with {@link Status#BAD_GATEWAY}.
    */
   public ApplyResultOrErrorOperation<T, E> proxyStatusCode() {
-    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates, empty());
+    return new ApplyResultOrErrorOperation<>(resultOrErrorWithStatus, empty(), errorMessage, predicates);
   }
 }

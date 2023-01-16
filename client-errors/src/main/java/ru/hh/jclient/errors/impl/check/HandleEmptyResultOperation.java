@@ -23,7 +23,7 @@ public class HandleEmptyResultOperation extends AbstractOperation<Void, HandleEm
       Optional<Consumer<Throwable>> errorConsumer,
       Set<Integer> allowedStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
-    super(wrapper, empty(), empty(), empty(), errorMessage, predicates, empty(), allowedStatuses, exceptionBuilder);
+    super(wrapper, empty(), empty(), empty(), errorMessage, predicates, allowedStatuses, exceptionBuilder);
     this.throwable = throwable;
     this.errorConsumer = errorConsumer;
   }

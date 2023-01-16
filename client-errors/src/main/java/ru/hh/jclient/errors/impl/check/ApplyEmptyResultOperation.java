@@ -12,8 +12,6 @@ import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
 public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmptyResultOperation> {
 
-  private boolean returnEmpty;
-
   public ApplyEmptyResultOperation(
       ResultWithStatus<Void> wrapper,
       Optional<Integer> errorStatusCode,
@@ -34,12 +32,10 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
       Supplier<String> errorMessage,
       List<PredicateWithStatus<Void>> predicates,
       Optional<Void> defaultValue,
-      boolean returnEmpty,
       Set<Integer> allowedStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
     super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage,
         predicates, defaultValue, allowedStatuses, exceptionBuilder);
-    this.returnEmpty = returnEmpty;
   }
 
   /**
@@ -84,10 +80,5 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
   public CheckedResultWithStatus<Void> onPredicateWrapped() {
     checkForPredicates(wrapper.get());
     return new CheckedResultWithStatus<>(wrapper);
-  }
-
-  @Override
-  protected boolean useDefault() {
-    return super.useDefault() || returnEmpty;
   }
 }
