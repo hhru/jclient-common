@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.ws.rs.core.Response.Status;
+import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.OperationSelectorBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
@@ -112,21 +113,25 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    *
    */
   public D allow(Status status) {
-    allowedStatuses.add(status.getStatusCode());
-    return getSelf();
+    return allow(status.getStatusCode());
   }
 
   public D allow(Status... statuses) {
-    Stream.of(statuses).map(Status::getStatusCode).forEach(allowedStatuses::add);
-    return getSelf();
+    return allow(Stream.of(statuses).map(Status::getStatusCode).toArray(Integer[]::new));
   }
 
   public D allow(int code) {
+    if (HttpClient.OK_RANGE.contains(code)) {
+      throw new IllegalArgumentException("allowed statuses must be contains only fail statuses");
+    }
     allowedStatuses.add(code);
     return getSelf();
   }
 
   public D allow(Integer... code) {
+    if (Stream.of(code).anyMatch(HttpClient.OK_RANGE::contains)) {
+      throw new IllegalArgumentException("allowed statuses must be contains only fail statuses");
+    }
     allowedStatuses.addAll(Arrays.asList(code));
     return getSelf();
   }

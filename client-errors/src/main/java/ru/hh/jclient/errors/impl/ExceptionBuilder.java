@@ -11,7 +11,8 @@ public abstract class ExceptionBuilder<E extends RuntimeException, T extends Exc
 
   public T appendToMessage(String addition) {
     if (message == null) {
-      message = new StringBuilder(addition);
+      message = new StringBuilder();
+      message.append(addition);
     } else {
       message.append(" ");
       message.append(addition);

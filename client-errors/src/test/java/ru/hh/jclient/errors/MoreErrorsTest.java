@@ -156,6 +156,10 @@ public class MoreErrorsTest {
     result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
     realValue = MoreErrors.check(result, "error").failIf(predicate).returnNull().onAnyError();
     assertNull(realValue);
+
+    result = new ResultWithStatus<>(null, NOT_FOUND.getStatusCode());
+    realValue = MoreErrors.check(result, "error").allow(NOT_FOUND).returnNull().onAnyError();
+    assertNull(realValue);
   }
 
   // empty value
@@ -187,6 +191,14 @@ public class MoreErrorsTest {
     }
     catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), HttpStatuses.BAD_GATEWAY);
+    }
+
+    result = new ResultWithStatus<>(null, OK.getStatusCode());
+    try {
+      MoreErrors.check(result, "error").proxyStatusCode().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals(e.getResponse().getStatus(), HttpStatuses.OK);
     }
   }
 
@@ -382,6 +394,11 @@ public class MoreErrorsTest {
         WebApplicationException.class,
         () -> MoreErrors.check(emptyResult, "error").allow(NOT_FOUND).throwBadGateway().onAnyError()
     );
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> MoreErrors.check(badResult, "error").allow(OK)
+    );
   }
 
   // with custom exception builder
@@ -400,7 +417,7 @@ public class MoreErrorsTest {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
     String value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyErrorWrapped()
         .map(v -> "success")
-        .onSuccess(v -> {
+        .onSuccessStatus(v -> {
           throw new RuntimeException("onSuccess shouldn`t be executed");
         })
         .orElse(v -> "fail");
@@ -409,7 +426,7 @@ public class MoreErrorsTest {
     result = new ResultWithStatus<>("value", OK.getStatusCode());
     value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyErrorWrapped()
         .map(v -> "success")
-        .onStatus(BAD_REQUEST, () -> {
+        .onStatus(BAD_REQUEST, v -> {
           throw new RuntimeException("onStatus shouldn`t be executed");
         })
         .orElse(v -> "fail");

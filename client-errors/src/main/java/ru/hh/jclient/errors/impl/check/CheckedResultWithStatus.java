@@ -1,6 +1,7 @@
 package ru.hh.jclient.errors.impl.check;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -35,31 +36,43 @@ public class CheckedResultWithStatus<T> {
   }
 
   public CheckedResultWithStatus<T> ifPresent(Consumer<T> consumer) {
-    value.ifPresent(consumer);
+    return ifPresent((value, status) -> consumer.accept(value));
+  }
+
+  public CheckedResultWithStatus<T> ifPresent(BiConsumer<T, Integer> consumer) {
+    value.ifPresent(v -> consumer.accept(v, status));
     return this;
   }
 
-  public CheckedResultWithStatus<T> onSuccess(Consumer<T> consumer) {
+  public CheckedResultWithStatus<T> onSuccessStatus(BiConsumer<T, Integer> consumer) {
     if (HttpClient.OK_RANGE.contains(status)) {
-      value.ifPresent(consumer);
+      consumer.accept(value.orElse(null), status);
     }
     return this;
   }
 
-  public CheckedResultWithStatus<T> onFailure(Runnable runnable) {
+  public CheckedResultWithStatus<T> onSuccessStatus(Consumer<T> consumer) {
+    return onSuccessStatus((value, status) -> consumer.accept(value));
+  }
+
+  public CheckedResultWithStatus<T> onFailureStatus(Runnable runnable) {
+    return onFailureStatus(status -> runnable.run());
+  }
+
+  public CheckedResultWithStatus<T> onFailureStatus(Consumer<Integer> consumer) {
     if (!HttpClient.OK_RANGE.contains(status)) {
-      runnable.run();
+      consumer.accept(status);
     }
     return this;
   }
 
-  public CheckedResultWithStatus<T> onStatus(Status status, Runnable runnable) {
-    return onStatus(status.getStatusCode(), runnable);
+  public CheckedResultWithStatus<T> onStatus(Status status, Consumer<T> consumer) {
+    return onStatus(status.getStatusCode(), consumer);
   }
 
-  public CheckedResultWithStatus<T> onStatus(int status, Runnable runnable) {
+  public CheckedResultWithStatus<T> onStatus(int status, Consumer<T> consumer) {
     if (this.status == status) {
-      runnable.run();
+      consumer.accept(value.orElse(null));
     }
     return this;
   }
