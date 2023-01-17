@@ -122,7 +122,7 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
 
   public D allow(int code) {
     if (HttpClient.OK_RANGE.contains(code)) {
-      throw new IllegalArgumentException("allowed statuses must be contains only fail statuses");
+      throw new IllegalArgumentException("allowed status can't be lower than 400");
     }
     allowedStatuses.add(code);
     return getSelf();
@@ -130,7 +130,7 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
 
   public D allow(Integer... code) {
     if (Stream.of(code).anyMatch(HttpClient.OK_RANGE::contains)) {
-      throw new IllegalArgumentException("allowed statuses must be contains only fail statuses");
+      throw new IllegalArgumentException("allowed status can't be lower than 400");
     }
     allowedStatuses.addAll(Arrays.asList(code));
     return getSelf();
