@@ -5,6 +5,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.ResultWithStatus;
@@ -81,8 +82,16 @@ public class CheckedResultWithStatus<T> {
     return value.orElseGet(() -> supplier.apply(status));
   }
 
-  public Optional<T> get() {
-    return value;
+  public T orElse(T t) {
+    return value.orElse(t);
+  }
+
+  public T orElse(Supplier<T> supplier) {
+    return value.orElseGet(supplier);
+  }
+
+  public T get() {
+    return value.get();
   }
 
   public int getStatus() {
