@@ -188,7 +188,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * </p>
    *
    */
-  public ApplyResultOperation<T> returnNull() {
+  public ApplyResultOperation<T> returnEmpty() {
     return new ApplyResultOperation<>(
         resultWithStatus,
         empty(),

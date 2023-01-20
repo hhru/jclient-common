@@ -147,6 +147,10 @@ public class MoreErrorsTest {
     realValue = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onEmpty();
     assertEquals(realValue, "error");
 
+    result = new ResultWithStatus<>(null, OK.getStatusCode());
+    realValue = MoreErrors.check(result, "error").failIf(predicate).returnEmpty().onEmpty();
+    assertNull(realValue);
+
     // predicate
     result = new ResultWithStatus<>("zxc", OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onPredicate();
@@ -154,11 +158,11 @@ public class MoreErrorsTest {
 
     // null default
     result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
-    realValue = MoreErrors.check(result, "error").failIf(predicate).returnNull().onAnyError();
+    realValue = MoreErrors.check(result, "error").failIf(predicate).returnEmpty().onAnyError();
     assertNull(realValue);
 
     result = new ResultWithStatus<>(null, NOT_FOUND.getStatusCode());
-    realValue = MoreErrors.check(result, "error").allow(NOT_FOUND).returnNull().onAnyError();
+    realValue = MoreErrors.check(result, "error").allow(NOT_FOUND).returnEmpty().onAnyError();
     assertNull(realValue);
   }
 
@@ -431,5 +435,10 @@ public class MoreErrorsTest {
         })
         .orElse(v -> "fail");
     assertEquals("success", value);
+
+    result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    value = MoreErrors.check(result, "error").returnDefault("default").onAnyErrorWrapped()
+        .orElse(v -> "fail");
+    assertEquals("default", value);
   }
 }

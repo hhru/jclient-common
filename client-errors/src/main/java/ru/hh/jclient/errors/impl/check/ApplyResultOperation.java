@@ -62,15 +62,14 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
    *
    * @throws WebApplicationException
    *           with provided status code and message in case of error (if default value is not specified)
-   * @return unwrapped result or default value (if specified) in case of error
+   * @return unwrapped non null (except default is null) result or default value (if specified) in case of error
    */
   public T onAnyError() {
     return checkForAnyError().orElse(null);
   }
 
   public CheckedResultWithStatus<T> onAnyErrorWrapped() {
-    checkForAnyError();
-    return new CheckedResultWithStatus<>(wrapper);
+    return new CheckedResultWithStatus<>(checkForAnyError(), wrapper.getStatusCode());
   }
 
   /**
@@ -84,15 +83,14 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
    *
    * @throws WebApplicationException
    *           with provided status code and message in case of error (if default value is not specified)
-   * @return unwrapped non null result or default value (if specified) in case of error
+   * @return unwrapped non null (except default is null) result or default value (if specified) in case of error
    */
   public T onEmpty() {
-    return checkForEmpty();
+    return checkForEmpty().orElse(null);
   }
 
   public CheckedResultWithStatus<T> onEmptyWrapped() {
-    checkForEmpty();
-    return new CheckedResultWithStatus<>(wrapper);
+    return new CheckedResultWithStatus<>(checkForEmpty(), wrapper.getStatusCode());
   }
 
   /**
@@ -113,8 +111,7 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   public CheckedResultWithStatus<T> onStatusCodeErrorWrapped() {
-    checkForStatusCodeError();
-    return new CheckedResultWithStatus<>(wrapper);
+    return new CheckedResultWithStatus<>(checkForStatusCodeError(), wrapper.getStatusCode());
   }
 
   /**
@@ -135,7 +132,6 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   public CheckedResultWithStatus<T> onPredicateWrapped() {
-    checkForPredicates(wrapper.get());
-    return new CheckedResultWithStatus<>(wrapper);
+    return new CheckedResultWithStatus<>(checkForPredicates(wrapper.get()), wrapper.getStatusCode());
   }
 }
