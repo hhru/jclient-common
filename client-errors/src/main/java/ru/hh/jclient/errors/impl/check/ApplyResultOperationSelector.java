@@ -2,6 +2,7 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
@@ -21,7 +22,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
 
   protected ResultWithStatus<T> resultWithStatus;
   private List<Integer> proxiedStatusCodes;
-  private Function<Integer, Integer> statusCodesConverter;
+  private Function<Integer, Integer> statusCodesConverter = Function.identity();
 
   public ApplyResultOperationSelector(ResultWithStatus<T> resultWithStatus, String errorMessage, Object... params) {
     super(errorMessage, params);
@@ -75,13 +76,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * </p>
    */
   public ApplyResultOperationSelector<T> convertAndProxy(Integer source, Integer target) {
-    Function<Integer, Integer> converter = i -> i.equals(source) ? target : i;
-    if (statusCodesConverter == null) {
-      statusCodesConverter = converter;
-    }
-    else {
-      statusCodesConverter = statusCodesConverter.andThen(converter);
-    }
+    statusCodesConverter = statusCodesConverter.andThen(i -> i.equals(source) ? target : i);
     return getSelf();
   }
 
@@ -105,9 +100,11 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
     return new ApplyResultOperation<>(resultWithStatus,
         of(code),
         ofNullable(proxiedStatusCodes),
-        ofNullable(statusCodesConverter),
+        of(statusCodesConverter),
         errorMessage,
-        predicates);
+        predicates,
+        allowedStatuses,
+        exceptionBuilder);
   }
 
   /**
@@ -155,7 +152,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * </p>
    */
   public ApplyResultOperation<T> proxyStatusCode() {
-    return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates);
+    return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -170,7 +167,38 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    *          default value to return in case of error
    */
   public ApplyResultOperation<T> returnDefault(T value) {
-    return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, of(value));
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        empty(),
+        empty(),
+        empty(),
+        errorMessage,
+        predicates,
+        of(value),
+        allowedStatuses,
+        exceptionBuilder);
+  }
+
+  /**
+   * <p>
+   * Sets default value to null.
+   * </p>
+   * <p>
+   * Calling {@link #proxyOnly(Status...)} or {@link #convertAndProxy(Status, Status)} does nothing when used with this operation.
+   * </p>
+   *
+   */
+  public ApplyResultOperation<T> returnEmpty() {
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        empty(),
+        empty(),
+        empty(),
+        errorMessage,
+        predicates,
+        Optional.empty(),
+        allowedStatuses,
+        exceptionBuilder);
   }
 
   /**
@@ -185,6 +213,15 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    *          default value to return in case of error
    */
   public ApplyResultOperation<T> returnDefault(Supplier<T> value) {
-    return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, of(value.get()));
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        empty(),
+        empty(),
+        empty(),
+        errorMessage,
+        predicates,
+        of(value.get()),
+        allowedStatuses,
+        exceptionBuilder);
   }
 }

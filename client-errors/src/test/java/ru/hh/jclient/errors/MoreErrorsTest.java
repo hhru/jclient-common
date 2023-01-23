@@ -16,6 +16,8 @@ import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import javax.ws.rs.ext.RuntimeDelegate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -145,10 +147,23 @@ public class MoreErrorsTest {
     realValue = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onEmpty();
     assertEquals(realValue, "error");
 
+    result = new ResultWithStatus<>(null, OK.getStatusCode());
+    realValue = MoreErrors.check(result, "error").failIf(predicate).returnEmpty().onEmpty();
+    assertNull(realValue);
+
     // predicate
     result = new ResultWithStatus<>("zxc", OK.getStatusCode());
     value = MoreErrors.check(result, "error").failIf(predicate).returnDefault("error").onPredicate();
     assertEquals(value.get(), "error");
+
+    // null default
+    result = new ResultWithStatus<>(null, INTERNAL_SERVER_ERROR.getStatusCode());
+    realValue = MoreErrors.check(result, "error").failIf(predicate).returnEmpty().onAnyError();
+    assertNull(realValue);
+
+    result = new ResultWithStatus<>(null, NOT_FOUND.getStatusCode());
+    realValue = MoreErrors.check(result, "error").allow(NOT_FOUND).returnEmpty().onAnyError();
+    assertNull(realValue);
   }
 
   // empty value
@@ -180,6 +195,14 @@ public class MoreErrorsTest {
     }
     catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), HttpStatuses.BAD_GATEWAY);
+    }
+
+    result = new ResultWithStatus<>(null, OK.getStatusCode());
+    try {
+      MoreErrors.check(result, "error").proxyStatusCode().onAnyError();
+    }
+    catch (WebApplicationException e) {
+      assertEquals(e.getResponse().getStatus(), HttpStatuses.OK);
     }
   }
 
@@ -348,4 +371,74 @@ public class MoreErrorsTest {
     }
   }
 
+  // with allowed statuses
+  @Test
+  public void testAllowStatuses() {
+    ResultWithStatus<String> badResult = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    String value = MoreErrors.check(badResult, "error").allow(BAD_REQUEST).throwBadGateway().onAnyError();
+    assertNull(value);
+
+    value = MoreErrors.check(badResult, "error").allow(400).throwBadGateway().onAnyError();
+    assertNull(value);
+
+    value = MoreErrors.check(badResult, "error").allow(BAD_REQUEST, NOT_FOUND).throwBadGateway().onAnyError();
+    assertNull(value);
+
+    value = MoreErrors.check(badResult, "error").allow(400, 403).throwBadGateway().onAnyError();
+    assertNull(value);
+
+    assertThrows(
+        WebApplicationException.class,
+        () -> MoreErrors.check(badResult, "error").allow(NOT_FOUND).throwBadGateway().onAnyError()
+    );
+
+    ResultWithStatus<String> emptyResult = new ResultWithStatus<>(null, OK.getStatusCode());
+
+    assertThrows(
+        WebApplicationException.class,
+        () -> MoreErrors.check(emptyResult, "error").allow(NOT_FOUND).throwBadGateway().onAnyError()
+    );
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> MoreErrors.check(badResult, "error").allow(OK)
+    );
+  }
+
+  // with custom exception builder
+  @Test
+  public void testCustomExceptionBuilder() {
+    ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    assertThrows(
+        CustomException.class,
+        () -> MoreErrors.check(result, "error").exceptionBuilder(new CustomExceptionBuilder()).throwBadGateway().onAnyError()
+    );
+  }
+
+  // with checked wrapper
+  @Test
+  public void testWrappedOperations() {
+    ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    String value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyErrorWrapped()
+        .map(v -> "success")
+        .onSuccessStatus(v -> {
+          throw new RuntimeException("onSuccess shouldn`t be executed");
+        })
+        .orElse(v -> "fail");
+    assertEquals("fail", value);
+
+    result = new ResultWithStatus<>("value", OK.getStatusCode());
+    value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyErrorWrapped()
+        .map(v -> "success")
+        .onStatus(BAD_REQUEST, v -> {
+          throw new RuntimeException("onStatus shouldn`t be executed");
+        })
+        .orElse(v -> "fail");
+    assertEquals("success", value);
+
+    result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
+    value = MoreErrors.check(result, "error").returnDefault("default").onAnyErrorWrapped()
+        .orElse(v -> "fail");
+    assertEquals("default", value);
+  }
 }

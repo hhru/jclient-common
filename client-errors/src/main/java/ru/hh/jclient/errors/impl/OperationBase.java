@@ -10,19 +10,29 @@ import ru.hh.jclient.errors.ErrorsFactory;
 public abstract class OperationBase<OB extends OperationBase<OB>> {
 
   protected Optional<Integer> errorStatusCode;
-  protected final ErrorResponseBuilder errorResponseBuilder;
+  private final Integer originalStatusCode;
+  protected ExceptionBuilder<?, ?> exceptionBuilder;
   protected Supplier<BiFunction<String, Integer, Object>> errorEntityCreatorSupplier;
 
-  public OperationBase(Optional<Integer> errorStatusCode, Supplier<String> errorMessage) {
-    this.errorStatusCode = errorStatusCode;
-    this.errorResponseBuilder = new ErrorResponseBuilder(errorMessage);
+  public OperationBase(Optional<Integer> errorStatusCode, Integer originalStatusCode, Supplier<String> errorMessage) {
+    this(errorStatusCode, originalStatusCode, errorMessage, new WebApplicationExceptionBuilder());
   }
 
-  protected WebApplicationException toException(String cause) {
+  public OperationBase(
+      Optional<Integer> errorStatusCode,
+      Integer originalStatusCode,
+      Supplier<String> errorMessage,
+      ExceptionBuilder<?, ?> exceptionBuilder) {
+    this.errorStatusCode = errorStatusCode;
+    this.originalStatusCode = originalStatusCode;
+    this.exceptionBuilder = exceptionBuilder.appendToMessage(errorMessage.get());
+  }
+
+  protected RuntimeException toException(String cause) {
     if (errorEntityCreatorSupplier != null) {
-      this.errorResponseBuilder.setEntityCreator(errorEntityCreatorSupplier.get());
+      this.exceptionBuilder.setEntityCreator(errorEntityCreatorSupplier.get());
     }
-    return errorResponseBuilder.setStatus(errorStatusCode.get()).appendToMessage("- " + cause).toWebApplicationException();
+    return exceptionBuilder.setOriginalStatus(originalStatusCode).setStatus(errorStatusCode.get()).appendToMessage("- " + cause).toException();
   }
 
   /**

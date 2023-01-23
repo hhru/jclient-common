@@ -21,7 +21,7 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    * Specifies that any errors (incorrect result or exception) should be ignored and empty result returned.
    */
   public HandleResultOperation<T> ignore() {
-    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), empty());
+    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), empty(), allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -31,7 +31,15 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    *          default value to return
    */
   public HandleResultOperation<T> returnDefault(T defaultValue) {
-    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue), empty());
+    return new HandleResultOperation<>(
+        resultWithStatus,
+        throwable,
+        errorMessage,
+        predicates,
+        of(defaultValue),
+        empty(),
+        allowedStatuses,
+        exceptionBuilder);
   }
 
   /**
@@ -41,7 +49,15 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    *          default value to return
    */
   public HandleResultOperation<T> returnDefault(Supplier<T> defaultValue) {
-    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, of(defaultValue.get()), empty());
+    return new HandleResultOperation<>(
+        resultWithStatus,
+        throwable,
+        errorMessage,
+        predicates,
+        of(defaultValue.get()),
+        empty(),
+        allowedStatuses,
+        exceptionBuilder);
   }
 
   /**
@@ -51,6 +67,14 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    *          error consumer
    */
   public HandleResultOperation<T> acceptError(Consumer<Throwable> consumer) {
-    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), of(consumer));
+    return new HandleResultOperation<>(
+        resultWithStatus,
+        throwable,
+        errorMessage,
+        predicates,
+        empty(),
+        of(consumer),
+        allowedStatuses,
+        exceptionBuilder);
   }
 }

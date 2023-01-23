@@ -3,10 +3,12 @@ package ru.hh.jclient.errors.impl.check;
 import java.util.List;
 import java.util.Optional;
 import static java.util.Optional.empty;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.ResultWithStatus;
+import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
 
 /**
@@ -23,8 +25,10 @@ public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultO
       Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
       Optional<T> defaultValue,
-      Optional<Consumer<Throwable>> errorConsumer) {
-    super(wrapper, empty(), empty(), empty(), errorMessage, predicates, defaultValue);
+      Optional<Consumer<Throwable>> errorConsumer,
+      Set<Integer> allowedStatuses,
+      ExceptionBuilder<?, ?> exceptionBuilder) {
+    super(wrapper, empty(), empty(), empty(), errorMessage, predicates, defaultValue, allowedStatuses, exceptionBuilder);
     this.throwable = throwable;
     this.errorConsumer = errorConsumer;
   }
@@ -48,7 +52,7 @@ public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultO
    */
   public Optional<T> onAnyError() {
     if (throwable != null) {
-      logger.warn("Exception happened but was intendedly ignored: {} ({})", throwable.toString(), errorResponseBuilder.getMessage());
+      logger.warn("Exception happened but was intendedly ignored: {} ({})", throwable.toString(), exceptionBuilder.getMessage());
       errorConsumer.ifPresent(c -> c.accept(throwable));
       return defaultValue;
     }
@@ -69,7 +73,7 @@ public class HandleResultOperation<T> extends AbstractOperation<T, HandleResultO
    */
   public Optional<T> onStatusCodeError() {
     if (throwable != null) {
-      logger.warn("Exception happened but was intendedly ignored: {} ({})", throwable.toString(), errorResponseBuilder.getMessage());
+      logger.warn("Exception happened but was intendedly ignored: {} ({})", throwable.toString(), exceptionBuilder.getMessage());
       errorConsumer.ifPresent(c -> c.accept(throwable));
       return defaultValue;
     }

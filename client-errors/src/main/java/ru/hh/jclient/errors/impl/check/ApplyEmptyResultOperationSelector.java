@@ -108,7 +108,9 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
         ofNullable(proxiedStatusCodes),
         ofNullable(statusCodesConverter),
         errorMessage,
-        predicates);
+        predicates,
+        allowedStatuses,
+        exceptionBuilder);
   }
 
   /**
@@ -156,7 +158,7 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
    * </p>
    */
   public ApplyEmptyResultOperation proxyStatusCode() {
-    return new ApplyEmptyResultOperation(emptyWithStatus, empty(), empty(), empty(), errorMessage, predicates);
+    return new ApplyEmptyResultOperation(emptyWithStatus, empty(), empty(), empty(), errorMessage, predicates, allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -168,7 +170,16 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
    * </p>
    */
   public ApplyEmptyResultOperation returnEmpty() {
-    return new ApplyEmptyResultOperation(emptyWithStatus, empty(), empty(), empty(), errorMessage, predicates, empty(), true);
+    return new ApplyEmptyResultOperation(
+        emptyWithStatus,
+        empty(),
+        empty(),
+        empty(),
+        errorMessage,
+        predicates,
+        empty(),
+        allowedStatuses,
+        exceptionBuilder);
   }
 
 }

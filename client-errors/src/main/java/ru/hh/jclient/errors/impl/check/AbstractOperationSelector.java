@@ -1,19 +1,29 @@
 package ru.hh.jclient.errors.impl.check;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import javax.ws.rs.core.Response.Status;
+import ru.hh.jclient.common.HttpClient;
+import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.OperationSelectorBase;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;
+import ru.hh.jclient.errors.impl.WebApplicationExceptionBuilder;
 
 public abstract class AbstractOperationSelector<T, D extends AbstractOperationSelector<T, D>> extends OperationSelectorBase {
 
   public AbstractOperationSelector(String errorMessage, Object... params) {
     super(errorMessage, params);
+    this.exceptionBuilder = new WebApplicationExceptionBuilder();
   }
 
   protected List<PredicateWithStatus<T>> predicates = null;
+  protected final Set<Integer> allowedStatuses = new HashSet<>();
+  protected ExceptionBuilder<?, ?> exceptionBuilder;
 
   private List<PredicateWithStatus<T>> predicates() {
     if (predicates == null) {
@@ -84,6 +94,51 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    */
   public D failIf(Predicate<T> predicate, Status status) {
     return failIf(predicate, status.getStatusCode());
+  }
+
+  /**
+   * <p>
+   * Specifies status that will be allowed in range of fail statuses. For this status checkStatusCodeError will not throw Exception,
+   * and empty result will be returned. If called multiple times, all statuses will be allowed.
+   * </p>
+   * <code>
+   * .thenApply(rws -> check(rws, "failed to get vacancy")<b>.allow(Status.NOT_FOUND)</b>.throwForbidden().onAnyError();
+   * </code>
+   * <p>
+   * This will throw WAE with 403 for any failure status except 404.
+   * </p>
+   *
+   * @param status
+   *          allowed response status
+   *
+   */
+  public D allow(Status status) {
+    return allow(status.getStatusCode());
+  }
+
+  public D allow(Status... statuses) {
+    return allow(Stream.of(statuses).map(Status::getStatusCode).toArray(Integer[]::new));
+  }
+
+  public D allow(int code) {
+    if (HttpClient.OK_RANGE.contains(code)) {
+      throw new IllegalArgumentException("allowed status can't be lower than 400");
+    }
+    allowedStatuses.add(code);
+    return getSelf();
+  }
+
+  public D allow(Integer... code) {
+    if (Stream.of(code).anyMatch(HttpClient.OK_RANGE::contains)) {
+      throw new IllegalArgumentException("allowed status can't be lower than 400");
+    }
+    allowedStatuses.addAll(Arrays.asList(code));
+    return getSelf();
+  }
+
+  public D exceptionBuilder(ExceptionBuilder<?, ?> exceptionBuilder) {
+    this.exceptionBuilder = exceptionBuilder;
+    return getSelf();
   }
 
   @SuppressWarnings("unchecked")
