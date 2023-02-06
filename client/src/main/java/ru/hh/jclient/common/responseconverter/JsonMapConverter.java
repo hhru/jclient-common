@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.responseconverter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,5 +50,14 @@ public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
   @Override
   protected Collection<String> getContentTypes() {
     return JsonConverter.MEDIA_TYPES;
+  }
+
+  @Override
+  public String reverseConverterFunction(Map<K, V> value) {
+    try {
+      return objectMapper.writeValueAsString(value);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

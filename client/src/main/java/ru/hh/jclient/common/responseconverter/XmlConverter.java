@@ -1,11 +1,14 @@
 package ru.hh.jclient.common.responseconverter;
 
+import java.io.StringWriter;
 import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import static java.util.Set.of;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
@@ -37,6 +40,19 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
       JAXBElement<T> root = context.createUnmarshaller().unmarshal(reader, xmlClass);
       return new ResultWithResponse<>(root.getValue(), r);
     };
+  }
+
+  @Override
+  public String reverseConverterFunction(T value) {
+    try {
+      Marshaller marshaller = context.createMarshaller();
+      StringWriter stringWriter = new StringWriter();
+      marshaller.marshal(value, stringWriter);
+
+      return stringWriter.toString();
+    } catch (JAXBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

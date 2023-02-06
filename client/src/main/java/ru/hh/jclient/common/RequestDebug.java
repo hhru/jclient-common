@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import java.util.Optional;
 import ru.hh.jclient.common.exception.ResponseConverterException;
+import ru.hh.jclient.common.responseconverter.TypeConverter;
 
 /**
  * Describes object used to gather debug information on performing local (outgoing) request.
@@ -90,4 +91,6 @@ public interface RequestDebug {
    */
   void onProcessingFinished();
 
+  default <T> void onCreateResultProcessor(HttpClient httpClient, TypeConverter<T> converter) {
+  }
 }

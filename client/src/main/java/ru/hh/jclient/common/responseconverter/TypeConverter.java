@@ -15,6 +15,10 @@ public interface TypeConverter<T> {
 
   FailableFunction<Response, ResultWithResponse<T>, Exception> converterFunction();
 
+  default String reverseConverterFunction(T obj) {
+    throw new UnsupportedOperationException("Method was not implemented");
+  }
+
   default Optional<Collection<String>> getSupportedContentTypes() {
     return Optional.empty();
   }

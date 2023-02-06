@@ -37,4 +37,9 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
   protected Collection<String> getContentTypes() {
     return Set.of(ContentType.withCharset(TEXT_PLAIN, charset));
   }
+
+  @Override
+  public String reverseConverterFunction(String value) {
+    return value;
+  }
 }
