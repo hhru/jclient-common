@@ -5,6 +5,7 @@ import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import static java.util.Set.of;
+import java.util.function.Function;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -43,16 +44,18 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
   }
 
   @Override
-  public String reverseConverterFunction(T value) {
-    try {
-      Marshaller marshaller = context.createMarshaller();
-      StringWriter stringWriter = new StringWriter();
-      marshaller.marshal(value, stringWriter);
+  public Function<T, String> reverseConverterFunction() {
+    return value -> {
+      try {
+        Marshaller marshaller = context.createMarshaller();
+        StringWriter stringWriter = new StringWriter();
+        marshaller.marshal(value, stringWriter);
 
-      return stringWriter.toString();
-    } catch (JAXBException e) {
-      throw new RuntimeException(e);
-    }
+        return stringWriter.toString();
+      } catch (JAXBException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 
   @Override

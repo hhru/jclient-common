@@ -2,6 +2,7 @@ package ru.hh.jclient.common.responseconverter;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Function;
 import ru.hh.jclient.common.EmptyWithResponse;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
@@ -20,7 +21,7 @@ public class VoidConverter implements TypeConverter<Void> {
   }
 
   @Override
-  public String reverseConverterFunction(Void obj) {
-    return null;
+  public Function<Void, String> reverseConverterFunction() {
+    return value -> null;
   }
 }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import static java.util.Objects.requireNonNull;
+import java.util.function.Function;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.JsonTypeConverter;
@@ -43,11 +44,13 @@ public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T
   }
 
   @Override
-  public String reverseConverterFunction(Collection<T> value) {
-    try {
-      return objectMapper.writeValueAsString(value);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+  public Function<Collection<T>, String> reverseConverterFunction() {
+    return value -> {
+      try {
+        return objectMapper.writerFor(elementType).writeValueAsString(value);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 }
