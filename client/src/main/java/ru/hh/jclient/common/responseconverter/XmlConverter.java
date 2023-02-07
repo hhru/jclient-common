@@ -43,6 +43,9 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
     };
   }
 
+  /**
+   * @return function that could be used for data serialization
+   */
   @Override
   public Function<T, String> reverseConverterFunction() {
     return value -> {
