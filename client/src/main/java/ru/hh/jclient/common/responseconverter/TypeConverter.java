@@ -16,6 +16,9 @@ public interface TypeConverter<T> {
 
   FailableFunction<Response, ResultWithResponse<T>, Exception> converterFunction();
 
+  /**
+   * @return function that could be used for data serialization
+   */
   default Function<T, String> reverseConverterFunction() {
     throw new UnsupportedOperationException("Method was not implemented");
   }
