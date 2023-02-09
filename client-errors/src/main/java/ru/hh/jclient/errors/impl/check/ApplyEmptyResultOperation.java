@@ -55,9 +55,9 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
     return checkForStatusCodeError();
   }
 
-  public CheckedResultWithStatus<Void> onStatusCodeErrorWrapped() {
+  public CheckedEmptyWithStatus onStatusCodeErrorWrapped() {
     checkForStatusCodeError();
-    return new CheckedResultWithStatus<>(wrapper);
+    return new CheckedEmptyWithStatus(wrapper);
   }
 
   /**
@@ -77,8 +77,8 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
     return checkForPredicates(wrapper.get());
   }
 
-  public CheckedResultWithStatus<Void> onPredicateWrapped() {
+  public CheckedEmptyWithStatus onPredicateWrapped() {
     checkForPredicates(wrapper.get());
-    return new CheckedResultWithStatus<>(wrapper);
+    return new CheckedEmptyWithStatus(wrapper);
   }
 }
