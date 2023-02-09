@@ -440,5 +440,17 @@ public class MoreErrorsTest {
     value = MoreErrors.check(result, "error").returnDefault("default").onAnyErrorWrapped()
         .orElse(v -> "fail");
     assertEquals("default", value);
+
+    EmptyWithStatus emptyResult = new EmptyWithStatus(OK.getStatusCode());
+    value = MoreErrors.check(emptyResult, "error").returnEmpty().onStatusCodeErrorWrapped()
+        .map(() -> "success")
+        .orElse("fail");
+    assertEquals("success", value);
+
+    emptyResult = new EmptyWithStatus(BAD_REQUEST.getStatusCode());
+    value = MoreErrors.check(emptyResult, "error").returnEmpty().onStatusCodeErrorWrapped()
+        .map(() -> "success")
+        .orElse("fail");
+    assertEquals("fail", value);
   }
 }
