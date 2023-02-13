@@ -9,3 +9,4 @@ wiki_links:
 - https://wiki.hh.ru/pages/viewpage.action?pageId=322903998
 - https://github.com/hhru/jclient-common/releases
 type: library
+changelog: true
