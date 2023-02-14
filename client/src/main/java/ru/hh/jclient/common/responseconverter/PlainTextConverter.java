@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
-import java.util.function.Function;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.ContentType;
@@ -40,7 +39,7 @@ public class PlainTextConverter extends SingleTypeConverter<String> {
   }
 
   @Override
-  public Function<String, String> reverseConverterFunction() {
+  public FailableFunction<String, String, Exception> reverseConverterFunction() {
     return value -> new String(value.getBytes(charset));
   }
 }

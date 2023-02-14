@@ -2,7 +2,6 @@ package ru.hh.jclient.common.responseconverter;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.function.Function;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
@@ -19,7 +18,7 @@ public interface TypeConverter<T> {
   /**
    * @return function that could be used for data serialization
    */
-  default Function<T, String> reverseConverterFunction() {
+  default FailableFunction<T, String, Exception> reverseConverterFunction() {
     throw new UnsupportedOperationException("Method was not implemented");
   }
 

@@ -5,7 +5,6 @@ import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import static java.util.Set.of;
-import java.util.function.Function;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -44,7 +43,7 @@ public class XmlConverter<T> extends SingleTypeConverter<T> {
   }
 
   @Override
-  public Function<T, String> reverseConverterFunction() {
+  public FailableFunction<T, String, Exception> reverseConverterFunction() {
     return value -> {
       try {
         Marshaller marshaller = context.createMarshaller();

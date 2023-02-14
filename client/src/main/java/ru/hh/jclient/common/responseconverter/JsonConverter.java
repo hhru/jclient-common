@@ -8,7 +8,6 @@ import java.util.Collection;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import static java.util.Set.of;
-import java.util.function.Function;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON;
@@ -47,7 +46,7 @@ public class JsonConverter<T> extends SingleTypeConverter<T> {
   }
 
   @Override
-  public Function<T, String> reverseConverterFunction() {
+  public FailableFunction<T, String, Exception> reverseConverterFunction() {
     return value -> {
       try {
         return objectMapper.writerFor(jsonType).writeValueAsString(value);

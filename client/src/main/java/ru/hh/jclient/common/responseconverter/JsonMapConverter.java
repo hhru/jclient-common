@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
-import java.util.function.Function;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import static ru.hh.jclient.common.util.JsonTypeConverter.convertClassToJavaType;
@@ -54,7 +53,7 @@ public class JsonMapConverter<K, V> extends SingleTypeConverter<Map<K, V>> {
   }
 
   @Override
-  public Function<Map<K, V>, String> reverseConverterFunction() {
+  public FailableFunction<Map<K, V>, String, Exception> reverseConverterFunction() {
     return value -> {
       try {
         return objectMapper.writerFor(mapType).writeValueAsString(value);
