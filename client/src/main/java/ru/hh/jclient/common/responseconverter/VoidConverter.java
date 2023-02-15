@@ -18,4 +18,9 @@ public class VoidConverter implements TypeConverter<Void> {
   public Optional<Collection<String>> getSupportedContentTypes() {
     return Optional.empty();
   }
+
+  @Override
+  public FailableFunction<Void, String, Exception> reverseConverterFunction() {
+    return value -> null;
+  }
 }

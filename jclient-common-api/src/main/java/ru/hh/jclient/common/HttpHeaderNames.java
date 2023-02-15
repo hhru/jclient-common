@@ -17,8 +17,6 @@ public class HttpHeaderNames {
   public static final String ACCEPT = "Accept";
   public static final String AUTHORIZATION = "Authorization";
   public static final String CONTENT_TYPE = "Content-Type";
-  public static final String X_CONTRACT_CONSUMER_NAME = "X-Contract-Consumer-Name";
-  public static final String X_CONTRACT_EXPECTED_RESPONSE = "X-Contract-Expected-Response";
   public static final String X_HH_PROFESSIONAL_ROLES_MODE = "X-HH-ProfessionalRolesMode";
 
 }

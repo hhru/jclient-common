@@ -26,6 +26,7 @@ public class ResultProcessor<T> {
   ResultProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
     this.converter = requireNonNull(converter, "converter must not be null");
+    this.httpClient.getDebugs().forEach(d -> d.onCreateResultProcessor(httpClient, converter));
   }
 
   HttpClient getHttpClient() {

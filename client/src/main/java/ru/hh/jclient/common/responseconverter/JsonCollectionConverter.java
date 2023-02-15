@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.responseconverter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,5 +40,16 @@ public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T
   @Override
   protected Collection<String> getContentTypes() {
     return JsonConverter.MEDIA_TYPES;
+  }
+
+  @Override
+  public FailableFunction<Collection<T>, String, Exception> reverseConverterFunction() {
+    return value -> {
+      try {
+        return objectMapper.writerFor(elementType).writeValueAsString(value);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    };
   }
 }
