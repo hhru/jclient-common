@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
 
     <name>jclient-common-parent</name>
-    <version>3.9.15</version>
+    <version>3.9.16-SNAPSHOT</version>
 
     <modules>
         <module>client</module>
