@@ -1,3 +1,9 @@
+-   name: 3.9.15
+    date: '2023-03-23T15:34:48.052014+03:00'
+    description: ''
+    instructions: ''
+    compatible: true
+
 -   name: 3.9.14
     date: '2023-02-15T08:59:29.026578+03:00'
     description: Add support of contract tests with reverse convert functions
