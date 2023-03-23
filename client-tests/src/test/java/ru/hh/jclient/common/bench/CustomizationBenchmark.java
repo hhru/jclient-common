@@ -39,8 +39,10 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 @BenchmarkMode(Mode.Throughput)
 public class CustomizationBenchmark {
   private static final String UPSTREAM = "up1";
-  private static final List<Server> servers = List.of(new Server("server1", 1, null),
-          new Server("server2", 1, null));
+  private static final List<Server> servers = List.of(
+      new Server("server1", 1, null),
+      new Server("server2", 1, null)
+  );
 
   public static void main(String[] args) throws RunnerException {
     var opt = new OptionsBuilder()
@@ -51,10 +53,12 @@ public class CustomizationBenchmark {
     new Runner(opt).run();
   }
 
-  private static final Upstream upstream = new UpstreamMorozov(UPSTREAM,
-    ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
-    servers,
-    null, false
+  private static final Upstream upstream = new UpstreamMorozov(
+      UPSTREAM,
+      ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
+      servers,
+      null,
+      false
   );
   private static final UpstreamManager manager = new UpstreamManager() {
 
@@ -79,19 +83,19 @@ public class CustomizationBenchmark {
 
   @Setup
   public void setUp() {
-      factory = new HttpClientFactory(httpClient,
-          new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
-          Set.of(),
-          Runnable::run,
-          new CustomStrategy(manager, UnaryOperator.identity())
-      );
+    factory = new HttpClientFactory(
+        httpClient,
+        new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
+        Set.of(),
+        Runnable::run,
+        new CustomStrategy(manager, UnaryOperator.identity())
+    );
   }
 
   @TearDown
   public void tearDown() throws IOException {
     httpClient.close();
   }
-
 
 
   @Benchmark

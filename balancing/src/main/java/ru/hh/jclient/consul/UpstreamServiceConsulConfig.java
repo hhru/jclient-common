@@ -32,52 +32,52 @@ public class UpstreamServiceConsulConfig {
 
   public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
-      .filter(Predicate.not(String::isBlank))
-      .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
-      .orElseGet(List::of);
+        .filter(Predicate.not(String::isBlank))
+        .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
+        .orElseGet(List::of);
     boolean allowCrossDC = Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY))
-      .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
-      .map(Boolean::parseBoolean)
-      .orElse(false);
+        .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
+        .map(Boolean::parseBoolean)
+        .orElse(false);
     boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);
     var dcList = Optional.ofNullable(props.getProperty(DC_LIST_KEY))
-      .filter(Predicate.not(String::isBlank))
-      .map(separatedDcList -> List.of(separatedDcList.split("[,\\s]+")))
-      .orElseGet(List::of);
+        .filter(Predicate.not(String::isBlank))
+        .map(separatedDcList -> List.of(separatedDcList.split("[,\\s]+")))
+        .orElseGet(List::of);
     var consistencyMode = Optional.ofNullable(props.getProperty(CONSISTENCY_MODE_KEY))
-      .map(ConsistencyModeConfig::valueOf)
-      .orElse(ConsistencyModeConfig.DEFAULT);
+        .map(ConsistencyModeConfig::valueOf)
+        .orElse(ConsistencyModeConfig.DEFAULT);
     boolean syncUpdate = Optional.ofNullable(props.getProperty(SYNC_UPDATE_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean ignoreNoServersInCurrentDC = Optional.ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY)).map(Boolean::parseBoolean)
-      .orElse(false);
+        .orElse(false);
     boolean httpCompressionEnabled = Optional.ofNullable(props.getProperty(COMPRESSION_ENABLED_KEY)).map(Boolean::parseBoolean)
-      .orElse(true);
+        .orElse(true);
     return new UpstreamServiceConsulConfig()
-      .setUpstreams(upstreams)
-      .setAllowCrossDC(allowCrossDC)
-      .setHealthPassing(healthyOnly)
-      .setSelfNodeFilteringEnabled(selfNodeFiltering)
-      .setWatchSeconds(watchSeconds)
-      .setDatacenterList(dcList)
-      .setConsistencyMode(consistencyMode.consistencyMode)
-      .setSyncInit(syncUpdate)
-      .setHttpCompressionEnabled(httpCompressionEnabled)
-      .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC);
+        .setUpstreams(upstreams)
+        .setAllowCrossDC(allowCrossDC)
+        .setHealthPassing(healthyOnly)
+        .setSelfNodeFilteringEnabled(selfNodeFiltering)
+        .setWatchSeconds(watchSeconds)
+        .setDatacenterList(dcList)
+        .setConsistencyMode(consistencyMode.consistencyMode)
+        .setSyncInit(syncUpdate)
+        .setHttpCompressionEnabled(httpCompressionEnabled)
+        .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC);
   }
 
   public static UpstreamServiceConsulConfig copyOf(UpstreamServiceConsulConfig config) {
     return new UpstreamServiceConsulConfig()
-      .setUpstreams(config.upstreams)
-      .setAllowCrossDC(config.allowCrossDC)
-      .setHealthPassing(config.healthPassing)
-      .setWatchSeconds(config.watchSeconds)
-      .setConsistencyMode(config.consistencyMode)
-      .setDatacenterList(config.datacenterList)
-      .setSelfNodeFilteringEnabled(config.selfNodeFilteringEnabled)
-      .setHttpCompressionEnabled(config.httpCompressionEnabled)
-      .setSyncInit(config.syncInit);
+        .setUpstreams(config.upstreams)
+        .setAllowCrossDC(config.allowCrossDC)
+        .setHealthPassing(config.healthPassing)
+        .setWatchSeconds(config.watchSeconds)
+        .setConsistencyMode(config.consistencyMode)
+        .setDatacenterList(config.datacenterList)
+        .setSelfNodeFilteringEnabled(config.selfNodeFilteringEnabled)
+        .setHttpCompressionEnabled(config.httpCompressionEnabled)
+        .setSyncInit(config.syncInit);
   }
 
   public List<String> getUpstreams() {

@@ -29,7 +29,7 @@ public class ResultWithResponse<T> extends ResultWithStatus<T> {
   }
 
   /**
-   * @return this wrapper cast to {@link ResultWithStatus<T>}
+   * @return this wrapper cast to {@link ResultWithStatus}
    */
   public ResultWithStatus<T> hideResponse() {
     return this;

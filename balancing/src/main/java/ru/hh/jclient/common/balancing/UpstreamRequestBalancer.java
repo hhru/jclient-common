@@ -25,14 +25,23 @@ public class UpstreamRequestBalancer extends RequestBalancer {
 
   private final Set<Monitoring> monitorings;
 
-  public UpstreamRequestBalancer(BalancingState state, Request request, RequestStrategy.RequestExecutor requestExecutor,
-                                 int maxTimeoutTries, boolean forceIdempotence,
-                                 @Nullable Double timeoutMultiplier, Set<Monitoring> monitorings) {
-    super(request, requestExecutor,
-      state.getUpstreamConfig().getRequestTimeoutMs(),
-      maxTimeoutTries,
-      state.getUpstreamConfig().getMaxTries(),
-      timeoutMultiplier, forceIdempotence
+  public UpstreamRequestBalancer(
+      BalancingState state,
+      Request request,
+      RequestStrategy.RequestExecutor requestExecutor,
+      int maxTimeoutTries,
+      boolean forceIdempotence,
+      @Nullable Double timeoutMultiplier,
+      Set<Monitoring> monitorings
+  ) {
+    super(
+        request,
+        requestExecutor,
+        state.getUpstreamConfig().getRequestTimeoutMs(),
+        maxTimeoutTries,
+        state.getUpstreamConfig().getMaxTries(),
+        timeoutMultiplier,
+        forceIdempotence
     );
     this.state = state;
     this.monitorings = monitorings;
@@ -45,8 +54,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     if (!state.isServerAvailable()) {
       return new ImmediateResultOrPreparedRequest(getServerNotAvailableResponse(request, upstreamName), new RequestContext(upstreamName, "unknown"));
     }
-    int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout()
-      : state.getUpstreamConfig().getRequestTimeoutMs();
+    int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : state.getUpstreamConfig().getRequestTimeoutMs();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
     requestBuilder.setUrl(getBalancedUrl(request, state.getCurrentServer().getAddress()));
@@ -70,7 +78,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   public static Response getServerNotAvailableResponse(Request request, String upstreamName) {
     Uri uri = request.getUri();
     return ResponseConverterUtils.convert(
-      new MappedTransportErrorResponse(BAD_GATEWAY, "No available servers for upstream: " + upstreamName, uri)
+        new MappedTransportErrorResponse(BAD_GATEWAY, "No available servers for upstream: " + upstreamName, uri)
     );
   }
 

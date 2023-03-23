@@ -16,30 +16,33 @@ import ru.hh.nab.metrics.StatsDSender;
 
 public class MonitoringBalancingUpstreamManagerFactory {
 
-  public static BalancingUpstreamManager createWithDefaults(JClientInfrastructureConfig infrastructureConfig,
-                                                            StatsDSender statsDSender,
-                                                            ConfigStore configStore,
-                                                            ServerStore serverStore,
-                                                            Properties strategyProperties,
-                                                            @Nullable Properties kafkaUpstreamMonitoringProperties) {
+  public static BalancingUpstreamManager createWithDefaults(
+      JClientInfrastructureConfig infrastructureConfig,
+      StatsDSender statsDSender,
+      ConfigStore configStore,
+      ServerStore serverStore,
+      Properties strategyProperties,
+      @Nullable Properties kafkaUpstreamMonitoringProperties
+  ) {
     boolean allowCrossDCRequests = Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
-      .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
-      .map(Boolean::parseBoolean)
-      .orElse(false);
+        .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
+        .map(Boolean::parseBoolean)
+        .orElse(false);
     return new BalancingUpstreamManager(
-      configStore, serverStore,
-      buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
-      infrastructureConfig, allowCrossDCRequests
+        configStore, serverStore,
+        buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
+        infrastructureConfig, allowCrossDCRequests
     );
   }
 
-  private static Set<Monitoring> buildMonitoring(String serviceName, String dc, StatsDSender statsDSender,
-                                                 Properties kafkaUpstreamMonitoringProperties) {
+  private static Set<Monitoring> buildMonitoring(
+      String serviceName,
+      String dc,
+      StatsDSender statsDSender,
+      Properties kafkaUpstreamMonitoringProperties
+  ) {
     Set<Monitoring> monitoring = new HashSet<>();
-
-    KafkaUpstreamMonitoring.fromProperties(serviceName, dc, kafkaUpstreamMonitoringProperties)
-      .ifPresent(monitoring::add);
-
+    KafkaUpstreamMonitoring.fromProperties(serviceName, dc, kafkaUpstreamMonitoringProperties).ifPresent(monitoring::add);
     monitoring.add(new UpstreamMonitoring(statsDSender, serviceName));
 
     return monitoring;

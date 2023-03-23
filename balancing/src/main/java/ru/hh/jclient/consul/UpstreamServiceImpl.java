@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,10 +64,14 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private final List<ServiceHealthCache> serviceHealthCaches = new CopyOnWriteArrayList<>();
 
 
-  public UpstreamServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient,
-                             ServerStore serverStore, UpstreamManager upstreamManager,
-                             UpstreamServiceConsulConfig consulConfig,
-                             Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks) {
+  public UpstreamServiceImpl(
+      JClientInfrastructureConfig infrastructureConfig,
+      Consul consulClient,
+      ServerStore serverStore,
+      UpstreamManager upstreamManager,
+      UpstreamServiceConsulConfig consulConfig,
+      Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks
+  ) {
     LOGGER.info("config: {}", consulConfig);
     this.upstreamList = Set.copyOf(consulConfig.getUpstreams());
     if (this.upstreamList.isEmpty()) {
@@ -78,9 +81,10 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
     this.serverStore = serverStore;
-    this.callbacks = Stream.of(upstreamUpdateCallbacks.stream(), Stream.of((Consumer<Collection<String>>)upstreamManager::updateUpstreams))
-      .flatMap(Function.identity())
-      .collect(Collectors.toList());
+    this.callbacks = Stream
+        .of(upstreamUpdateCallbacks.stream(), Stream.of((Consumer<Collection<String>>) upstreamManager::updateUpstreams))
+        .flatMap(Function.identity())
+        .collect(Collectors.toList());
     this.currentServiceName = infrastructureConfig.getServiceName();
     this.currentDC = infrastructureConfig.getCurrentDC();
     this.currentNode = infrastructureConfig.getCurrentNodeName();
@@ -117,8 +121,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       if (allowCrossDC) {
         ExecutorService executorService = Executors.newFixedThreadPool(datacenterList.size());
         var tasks = datacenterList.stream()
-          .map(dc -> CompletableFuture.runAsync(() -> syncUpdateServiceInDC(serviceName, dc), executorService))
-          .toArray(CompletableFuture[]::new);
+            .map(dc -> CompletableFuture.runAsync(() -> syncUpdateServiceInDC(serviceName, dc), executorService))
+            .toArray(CompletableFuture[]::new);
         try {
           CompletableFuture.allOf(tasks).get();
           executorService.shutdown();
@@ -140,7 +144,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     ConsulResponse<List<ServiceHealth>> response = healthClient.getHealthyServiceInstances(serviceName, queryOptions);
     initialIndexes.put(dataCenter, response.getIndex());
     Map<ServiceHealthKey, ServiceHealth> state = response.getResponse().stream()
-      .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
+        .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
     LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
     updateUpstreams(state, serviceName, dataCenter);
   }
@@ -156,7 +160,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   }
 
   private QueryOptions buildQueryOptions(String datacenter) {
-    ImmutableQueryOptions.Builder queryOptions = ImmutableQueryOptions.builder()
+    ImmutableQueryOptions.Builder queryOptions = ImmutableQueryOptions
+        .builder()
         .datacenter(datacenter.toLowerCase())
         .caller(currentServiceName)
         .consistencyMode(consistencyMode);
@@ -168,9 +173,13 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
 
   private void initializeCache(String upstreamName, String datacenter) {
     QueryOptions queryOptions = buildQueryOptions(datacenter);
-    ServiceHealthCache svHealth = ServiceHealthCache.newCache(healthClient, upstreamName,
-      healthPassing, watchSeconds, Optional.ofNullable(initialIndexes.get(datacenter)).orElse(null),
-      queryOptions
+    ServiceHealthCache svHealth = ServiceHealthCache.newCache(
+        healthClient,
+        upstreamName,
+        healthPassing,
+        watchSeconds,
+        initialIndexes.get(datacenter),
+        queryOptions
     );
 
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
@@ -186,13 +195,14 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   }
 
   private void checkServersForAllUpstreamsInCurrentDcExist(boolean throwIfError) {
-    var upstreamsNotPresentInCurrentDC = upstreamList.stream()
-      .filter(upstream -> serverStore.getServers(upstream).stream().noneMatch(this::isInCurrentDc))
-      .collect(Collectors.toSet());
+    var upstreamsNotPresentInCurrentDC = upstreamList
+        .stream()
+        .filter(upstream -> serverStore.getServers(upstream).stream().noneMatch(this::isInCurrentDc))
+        .collect(Collectors.toSet());
     if (!upstreamsNotPresentInCurrentDC.isEmpty()) {
       if (throwIfError) {
         throw new IllegalStateException("There's no instances in DC " + currentDC + " for services: " + upstreamsNotPresentInCurrentDC
-          + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
+            + ". If it is intentional config use " + IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY + " property to disable this check"
         );
       }
       LOGGER.warn("There's no instances in DC {} for services: {}", currentDC, upstreamsNotPresentInCurrentDC);
@@ -204,21 +214,24 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   }
 
   private void checkServersForAllUpstreamsExist(boolean throwIfError) {
-    var emptyUpstreams = upstreamList.stream()
-      .filter(upstream -> serverStore.getServers(upstream).isEmpty())
-      .collect(Collectors.toSet());
+    var emptyUpstreams = upstreamList
+        .stream()
+        .filter(upstream -> serverStore.getServers(upstream).isEmpty())
+        .collect(Collectors.toSet());
     if (!emptyUpstreams.isEmpty()) {
       if (throwIfError) {
         throw new IllegalStateException("There's no instances for services: " + emptyUpstreams
-          + ". If it is intentional config use " + SYNC_UPDATE_KEY + " property to disable this check");
+            + ". If it is intentional config use " + SYNC_UPDATE_KEY + " property to disable this check");
       }
       LOGGER.warn("There's no instances for services: {}", emptyUpstreams);
     }
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<Server> currentServers = serverStore.getServers(serviceName).stream()
-      .filter(server -> datacenter.equals(server.getDatacenter())).collect(Collectors.toSet());
+    Set<Server> currentServers = serverStore
+        .getServers(serviceName)
+        .stream()
+        .filter(server -> datacenter.equals(server.getDatacenter())).collect(Collectors.toSet());
 
     Map<String, Server> serverToRemoveByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
 
@@ -244,9 +257,12 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       server.update(serverWeight, service.getMeta(), service.getTags());
     }
     serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
-    LOGGER.info("upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}", serviceName, datacenter,
-      LOGGER.isDebugEnabled() ? currentServers : currentServers.size(),
-      LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()
+    LOGGER.info(
+        "upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}",
+        serviceName,
+        datacenter,
+        LOGGER.isDebugEnabled() ? currentServers : currentServers.size(),
+        LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()
     );
   }
 

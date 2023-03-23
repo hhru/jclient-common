@@ -31,24 +31,42 @@ public class StatsDMetricsConsumer implements MetricsConsumer {
     }
 
     statsDSender.sendPeriodically(() -> {
-      statsDSender.sendGauge(getFullMetricName("async.client.connection.total.count", nameTag),
-        metricsProvider.totalConnectionCount().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.connection.active.count", nameTag),
-        metricsProvider.totalActiveConnectionCount().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.connection.idle.count", nameTag),
-        metricsProvider.totalIdleConnectionCount().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.usedDirectMemory", nameTag),
-        metricsProvider.usedDirectMemory().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.usedHeapMemory", nameTag),
-        metricsProvider.usedHeapMemory().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.numActiveTinyAllocations", nameTag),
-        metricsProvider.numActiveTinyAllocations().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.numActiveSmallAllocations", nameTag),
-        metricsProvider.numActiveSmallAllocations().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.numActiveNormalAllocations", nameTag),
-        metricsProvider.numActiveNormalAllocations().get());
-      statsDSender.sendGauge(getFullMetricName("async.client.numActiveHugeAllocations", nameTag),
-        metricsProvider.numActiveHugeAllocations().get());
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.connection.total.count", nameTag),
+          metricsProvider.totalConnectionCount().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.connection.active.count", nameTag),
+          metricsProvider.totalActiveConnectionCount().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.connection.idle.count", nameTag),
+          metricsProvider.totalIdleConnectionCount().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.usedDirectMemory", nameTag),
+          metricsProvider.usedDirectMemory().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.usedHeapMemory", nameTag),
+          metricsProvider.usedHeapMemory().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.numActiveTinyAllocations", nameTag),
+          metricsProvider.numActiveTinyAllocations().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.numActiveSmallAllocations", nameTag),
+          metricsProvider.numActiveSmallAllocations().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.numActiveNormalAllocations", nameTag),
+          metricsProvider.numActiveNormalAllocations().get()
+      );
+      statsDSender.sendGauge(
+          getFullMetricName("async.client.numActiveHugeAllocations", nameTag),
+          metricsProvider.numActiveHugeAllocations().get()
+      );
     }, sendIntervalInSeconds);
 
     log.info("Successfully scheduled metrics sending");

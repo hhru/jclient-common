@@ -125,9 +125,9 @@ public class RequestBuilder {
 
   public RequestBuilder addQueryParamMap(Map<String, ?> params) {
     delegate.addQueryParams(
-      params.entrySet().stream()
-        .map(entry -> toParamDelegate(entry.getKey(), entry.getValue()))
-        .collect(toMutableList())
+        params.entrySet().stream()
+            .map(entry -> toParamDelegate(entry.getKey(), entry.getValue()))
+            .collect(toMutableList())
     );
     return this;
   }
@@ -142,9 +142,9 @@ public class RequestBuilder {
 
   public RequestBuilder addQueryParamMultiMap(Map<String, ? extends List<?>> params) {
     delegate.addQueryParams(
-      params.entrySet().stream()
-        .flatMap(entry -> entry.getValue().stream().map(value -> toParamDelegate(entry.getKey(), value)))
-        .collect(toMutableList())
+        params.entrySet().stream()
+            .flatMap(entry -> entry.getValue().stream().map(value -> toParamDelegate(entry.getKey(), value)))
+            .collect(toMutableList())
     );
     return this;
   }

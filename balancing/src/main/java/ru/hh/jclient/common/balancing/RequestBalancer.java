@@ -32,20 +32,21 @@ public abstract class RequestBalancer implements RequestEngine {
   protected final int maxTries;
   protected final List<TraceFrame> trace;
 
-  RequestBalancer(Request request,
-                  RequestStrategy.RequestExecutor requestExecutor,
-                  int requestTimeoutMs,
-                  int maxRequestTimeoutTries,
-                  int maxTries,
-                  @Nullable Double timeoutMultiplier,
-                  boolean forceIdempotence
+  RequestBalancer(
+      Request request,
+      RequestStrategy.RequestExecutor requestExecutor,
+      int requestTimeoutMs,
+      int maxRequestTimeoutTries,
+      int maxTries,
+      @Nullable Double timeoutMultiplier,
+      boolean forceIdempotence
   ) {
     this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
     this.request = request;
     this.requestExecutor = requestExecutor;
     this.forceIdempotence = forceIdempotence;
 
-    requestTimeoutMs = (int)((request.getRequestTimeout() > 0 ? request.getRequestTimeout() : requestTimeoutMs) * this.timeoutMultiplier);
+    requestTimeoutMs = (int) ((request.getRequestTimeout() > 0 ? request.getRequestTimeout() : requestTimeoutMs) * this.timeoutMultiplier);
 
     requestTimeLeftMs = requestTimeoutMs * maxRequestTimeoutTries;
     this.maxTries = maxTries;
@@ -61,13 +62,14 @@ public abstract class RequestBalancer implements RequestEngine {
       return requestExecutor.handleFailFastResponse(request, resultOrContext.getRequestContext(), resultOrContext.getResult())
           .thenApply(ResponseWrapper::getResponse);
     }
-    return requestExecutor.executeRequest(
-      resultOrContext.getBalancedRequest(this.timeoutMultiplier),
-      maxTries - triesLeft,
-      resultOrContext.getRequestContext()
-    )
-      .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
-      .thenCompose(this::unwrapOrRetry);
+    return requestExecutor
+        .executeRequest(
+            resultOrContext.getBalancedRequest(this.timeoutMultiplier),
+            maxTries - triesLeft,
+            resultOrContext.getRequestContext()
+        )
+        .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
+        .thenCompose(this::unwrapOrRetry);
   }
 
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
@@ -79,11 +81,12 @@ public abstract class RequestBalancer implements RequestEngine {
     this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
     onRequestReceived(wrapper, timeToLastByteMicros);
   }
+
   protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMicros);
 
   private void updateLeftTriesAndTime(int responseTimeMicros) {
     var responseTimeMs = responseTimeMicros / 1000;
-    requestTimeLeftMs = requestTimeLeftMs >= responseTimeMs ? requestTimeLeftMs - responseTimeMs: 0;
+    requestTimeLeftMs = requestTimeLeftMs >= responseTimeMs ? requestTimeLeftMs - responseTimeMs : 0;
     if (triesLeft > 0) {
       triesLeft--;
     }
@@ -123,20 +126,36 @@ public abstract class RequestBalancer implements RequestEngine {
     String logMessage;
     Consumer<String> logMethod;
 
-    String size = Optional.ofNullable(response.getResponseBody())
+    String size = Optional
+        .ofNullable(response.getResponseBody())
         .map(body -> String.format(" %d bytes", body.getBytes().length))
         .orElse("");
     boolean isServerError = response.getStatusCode() >= 500;
 
     if (doRetry) {
       String retry = retriesCount > 0 ? String.format(" on retry %s", retriesCount) : "";
-      logMessage = String.format("balanced_request_response: %s %s got%s%s, will retry %s %s",
-          response.getStatusCode(), response.getStatusText(), size, retry, request.getMethod(), response.getUri());
+      logMessage = String.format(
+          "balanced_request_response: %s %s got%s%s, will retry %s %s",
+          response.getStatusCode(),
+          response.getStatusText(),
+          size,
+          retry,
+          request.getMethod(),
+          response.getUri()
+      );
       logMethod = isServerError ? LOGGER::info : LOGGER::debug;
     } else {
       String msgLabel = isServerError ? "balanced_request_final_error" : "balanced_request_final_response";
-      logMessage = String.format("%s: %s %s got%s %s %s, trace: %s", msgLabel, response.getStatusCode(), response.getStatusText(),
-          size, request.getMethod(), request.getUri(), getTrace());
+      logMessage = String.format(
+          "%s: %s %s got%s %s %s, trace: %s",
+          msgLabel,
+          response.getStatusCode(),
+          response.getStatusText(),
+          size,
+          request.getMethod(),
+          request.getUri(),
+          getTrace()
+      );
       logMethod = isServerError ? LOGGER::warn : LOGGER::info;
     }
     logMethod.accept(logMessage);

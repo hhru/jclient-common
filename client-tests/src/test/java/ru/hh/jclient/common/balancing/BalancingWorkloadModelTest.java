@@ -62,7 +62,7 @@ public class BalancingWorkloadModelTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     executorService.shutdownNow();
   }
 
@@ -156,8 +156,12 @@ public class BalancingWorkloadModelTest {
     assertServerRequestDistribution(Set.of(failingServerName));
   }
 
-  private Object executeBalancingRequest(String upstreamName, HttpClientFactory client,
-                                         AtomicInteger clientRequestsCounter, AtomicInteger clientErrors) {
+  private Object executeBalancingRequest(
+      String upstreamName,
+      HttpClientFactory client,
+      AtomicInteger clientRequestsCounter,
+      AtomicInteger clientErrors
+  ) {
     try {
       Request request = new RequestBuilder(JClientBase.HTTP_GET).setUrl("http://" + upstreamName).build();
       Response response = client.with(request).unconverted().get();
@@ -185,8 +189,8 @@ public class BalancingWorkloadModelTest {
     List<Matcher<? super Map<String, LongAdder>>> matchers = testServerManager.servers.entrySet().stream()
         .filter(e -> !excludedNames.contains(e.getKey()))
         .map(nameToServer -> {
-            double weightPart = (double) nameToServer.getValue().getWeight() / sumWeight;
-            return new IsMapContaining<>(Matchers.equalTo(nameToServer.getKey()), new HandledRequestPartMatcher(weightPart, allRequests, 0.01));
+          double weightPart = (double) nameToServer.getValue().getWeight() / sumWeight;
+          return new IsMapContaining<>(Matchers.equalTo(nameToServer.getKey()), new HandledRequestPartMatcher(weightPart, allRequests, 0.01));
         })
         .collect(Collectors.toList());
     MatcherAssert.assertThat(filteredRequests, Matchers.allOf(matchers));

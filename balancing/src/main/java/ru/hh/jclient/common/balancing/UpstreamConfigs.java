@@ -32,16 +32,20 @@ public final class UpstreamConfigs {
     return DEFAULT_CONFIGS;
   }
 
-  public static UpstreamConfig createUpstreamConfigWithDefaults(Integer maxTries, Integer maxTimeoutTries,
-                                                                Float connectTimeoutSec, Float requestTimeoutSec,
-                                                                Integer slowStartIntervalSec,
-                                                                Boolean isSessionRequired,
-                                                                Map<Integer, Boolean> retryPolicyConfig) {
+  public static UpstreamConfig createUpstreamConfigWithDefaults(
+      Integer maxTries,
+      Integer maxTimeoutTries,
+      Float connectTimeoutSec,
+      Float requestTimeoutSec,
+      Integer slowStartIntervalSec,
+      Boolean isSessionRequired,
+      Map<Integer, Boolean> retryPolicyConfig
+  ) {
     UpstreamConfig upstreamConfig = new UpstreamConfig(
-      requireNonNullElse(maxTries, DEFAULT_MAX_TRIES),
-      requireNonNullElse(maxTimeoutTries, DEFAULT_MAX_TIMEOUT_TRIES),
-      convertToMillisOrFallback(connectTimeoutSec, DEFAULT_CONNECT_TIMEOUT_MS),
-      convertToMillisOrFallback(requestTimeoutSec, DEFAULT_REQUEST_TIMEOUT_MS)
+        requireNonNullElse(maxTries, DEFAULT_MAX_TRIES),
+        requireNonNullElse(maxTimeoutTries, DEFAULT_MAX_TIMEOUT_TRIES),
+        convertToMillisOrFallback(connectTimeoutSec, DEFAULT_CONNECT_TIMEOUT_MS),
+        convertToMillisOrFallback(requestTimeoutSec, DEFAULT_REQUEST_TIMEOUT_MS)
     );
     upstreamConfig.getRetryPolicy().update(retryPolicyConfig);
     upstreamConfig.setSlowStartIntervalSec(requireNonNullElse(slowStartIntervalSec, 0));
@@ -52,8 +56,9 @@ public final class UpstreamConfigs {
 
 
   private static int convertToMillisOrFallback(Float value, int defaultValue) {
-    return Optional.ofNullable(value)
-      .map(nonNullValue -> Math.round(nonNullValue * TimeUnit.SECONDS.toMillis(1)))
-      .orElse(defaultValue);
+    return Optional
+        .ofNullable(value)
+        .map(nonNullValue -> Math.round(nonNullValue * TimeUnit.SECONDS.toMillis(1)))
+        .orElse(defaultValue);
   }
 }

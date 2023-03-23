@@ -57,6 +57,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   BalancingUpstreamManager upstreamManager;
   ConfigStore configStore = mock(ConfigStore.class);
   ServerStore serverStore = mock(ServerStore.class);
+
   @Before
   public void setUpTest() {
     withEmptyContext();
@@ -64,7 +65,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
     when(serverStore.getServers(TEST_UPSTREAM))
-            .thenReturn(List.of(new Server("server1", 1, null), new Server("server2", 2, null)));
+        .thenReturn(List.of(new Server("server1", 1, null), new Server("server2", 2, null)));
   }
 
   @Test
@@ -133,10 +134,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-      .then(iom -> {
-        failWith(new IOException("Connection reset by peer"), iom);
-        return null;
-      });
+        .then(iom -> {
+          failWith(new IOException("Connection reset by peer"), iom);
+          return null;
+        });
 
     try {
       getTestClient().post();
@@ -151,23 +152,24 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   private Request[] mockRetryIOException(String exceptionText) {
     Request[] request = new Request[2];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-      .then(iom -> {
-        request[0] = failWith(new IOException(exceptionText), iom);
-        return null;
-      })
-      .then(iom -> {
-        request[1] = completeWith(200, iom);
-        return null;
-      });
+        .then(iom -> {
+          request[0] = failWith(new IOException(exceptionText), iom);
+          return null;
+        })
+        .then(iom -> {
+          request[1] = completeWith(200, iom);
+          return null;
+        });
     return request;
   }
 
   @Test
   public void retryConnectException() throws Exception {
-    List<Server> servers = List.of(new Server("server1", 1, null),
-            new Server("server2", 1, null),
-            new Server("server3", 1, null),
-            new Server("server4", 1, null)
+    List<Server> servers = List.of(
+        new Server("server1", 1, null),
+        new Server("server2", 1, null),
+        new Server("server3", 1, null),
+        new Server("server4", 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -207,9 +209,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retry503() throws Exception {
-    List<Server> servers = List.of(new Server("server1", 1, null),
-            new Server("server2", 1, null),
-            new Server("server3", 1, null)
+    List<Server> servers = List.of(
+        new Server("server1", 1, null),
+        new Server("server2", 1, null),
+        new Server("server3", 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -227,7 +230,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -251,7 +254,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
-
 
 
   //test set multiplier HttpClientFactoryBuilderTest.testMultiplierApplication()
@@ -297,9 +299,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retry503ForNonIdempotentRequest() throws Exception {
-    List<Server> servers = List.of(new Server("server1", 1, null),
-            new Server("server2", 1, null),
-            new Server("server3", 1, null)
+    List<Server> servers = List.of(
+        new Server("server1", 1, null),
+        new Server("server2", 1, null),
+        new Server("server3", 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -316,14 +319,15 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE,  RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void retryConnectTimeoutException() throws Exception {
-    List<Server> servers = List.of(new Server("server1", 1, null),
-            new Server("server2", 1, null),
-            new Server("server3", 1, null)
+    List<Server> servers = List.of(
+        new Server("server1", 1, null),
+        new Server("server2", 1, null),
+        new Server("server3", 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -346,9 +350,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
-    List<Server> servers = List.of(new Server("server1", 1, null),
-            new Server("server2", 1, null),
-            new Server("server3", 1, null)
+    List<Server> servers = List.of(
+        new Server("server1", 1, null),
+        new Server("server2", 1, null),
+        new Server("server3", 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -409,20 +414,27 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     assertRequestTimeoutEquals(request, (long) timeoutMs);
   }
 
-  private HttpClientFactory createHttpClientFactory(AsyncHttpClient httpClient, String datacenter, List<String> upstreamList,
-                                                    boolean allowCrossDCRequests, double multiplier) {
+  private HttpClientFactory createHttpClientFactory(
+      AsyncHttpClient httpClient,
+      String datacenter,
+      List<String> upstreamList,
+      boolean allowCrossDCRequests,
+      double multiplier
+  ) {
     Monitoring monitoring = mock(Monitoring.class);
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
     when(infrastructureConfig.getCurrentDC()).thenReturn(datacenter);
     upstreamManager = new BalancingUpstreamManager(
-      configStore, serverStore,
-      Set.of(monitoring), infrastructureConfig,
-      allowCrossDCRequests);
+        configStore,
+        serverStore,
+        Set.of(monitoring),
+        infrastructureConfig,
+        allowCrossDCRequests
+    );
     upstreamManager.updateUpstreams(upstreamList);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService())
         .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
-    return new HttpClientFactory(httpClient,
-        new SingletonStorage<>(() -> httpClientContext), Set.of(), Runnable::run, requestingStrategy);
+    return new HttpClientFactory(httpClient, new SingletonStorage<>(() -> httpClientContext), Set.of(), Runnable::run, requestingStrategy);
   }
 
   Request failWith(Throwable t, InvocationOnMock iom) {

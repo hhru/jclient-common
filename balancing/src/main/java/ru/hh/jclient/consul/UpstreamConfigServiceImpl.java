@@ -44,20 +44,25 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
   private volatile BigInteger initialIndex;
   private KVCache kvCache;
 
-  public UpstreamConfigServiceImpl(JClientInfrastructureConfig infrastructureConfig, Consul consulClient,
-                                   ConfigStore configStore, UpstreamManager upstreamManager,
-                                   UpstreamConfigServiceConsulConfig config,
-                                   Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks) {
+  public UpstreamConfigServiceImpl(
+      JClientInfrastructureConfig infrastructureConfig,
+      Consul consulClient,
+      ConfigStore configStore,
+      UpstreamManager upstreamManager,
+      UpstreamConfigServiceConsulConfig config,
+      Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks
+  ) {
     this.upstreamList = Set.copyOf(config.getUpstreams());
     if (this.upstreamList == null || this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
-    this.callbacks = Stream.of(
-      upstreamUpdateCallbacks.stream(),
-      Stream.of((Consumer<Collection<String>>)upstreamManager::updateUpstreams)
-    )
-      .flatMap(Function.identity())
-      .collect(Collectors.toList());
+    this.callbacks = Stream
+        .of(
+            upstreamUpdateCallbacks.stream(),
+            Stream.of((Consumer<Collection<String>>) upstreamManager::updateUpstreams)
+        )
+        .flatMap(Function.identity())
+        .collect(Collectors.toList());
     this.kvClient = consulClient.keyValueClient();
     this.configStore = configStore;
     this.watchSeconds = config.getWatchSeconds();
@@ -73,9 +78,10 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
   }
 
   private void syncUpdateConfig() {
-    ImmutableQueryOptions options = ImmutableQueryOptions.builder()
-      .caller(currentServiceName)
-      .consistencyMode(consistencyMode).build();
+    ImmutableQueryOptions options = ImmutableQueryOptions
+        .builder()
+        .caller(currentServiceName)
+        .consistencyMode(consistencyMode).build();
     ConsulResponse<List<Value>> consulResponseWithValues = kvClient.getConsulResponseWithValues(ROOT_PATH, options);
     initialIndex = consulResponseWithValues.getIndex();
     List<Value> values = consulResponseWithValues.getResponse();
@@ -106,8 +112,8 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
 
   private void checkAllUpstreamConfigsExist(boolean throwIfError) {
     var absentConfigs = upstreamList.stream()
-      .filter(upstream -> configStore.getUpstreamConfig(upstream) == null)
-      .collect(Collectors.toSet());
+        .filter(upstream -> configStore.getUpstreamConfig(upstream) == null)
+        .collect(Collectors.toSet());
     if (!absentConfigs.isEmpty()) {
       if (throwIfError) {
         throw new IllegalStateException("No valid configs found for services: " + absentConfigs);
@@ -118,9 +124,9 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
 
   private void initConfigCache() {
     ImmutableQueryOptions queryOptions = ImmutableQueryOptions.builder()
-      .caller(currentServiceName)
-      .consistencyMode(consistencyMode)
-      .build();
+        .caller(currentServiceName)
+        .consistencyMode(consistencyMode)
+        .build();
     kvCache = KVCache.newCache(kvClient, ROOT_PATH, watchSeconds, initialIndex, queryOptions);
     LOGGER.debug("subscribe to config:{}", ROOT_PATH);
     kvCache.addListener(newValues -> {

@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.50.0</version>
+        <version>1.53.1</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -27,7 +27,6 @@
 
     <properties>
         <jdk.version>11</jdk.version>
-        <junit.version>4.13.1</junit.version>
         <surefire.encoding>UTF-8</surefire.encoding>
     </properties>
 
@@ -68,36 +67,6 @@
                 <artifactId>jclient-common-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <!-- Logging -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>1.7.30</version>
-            </dependency>
-
-            <!-- Logging for tests -->
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>1.2.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>1.7.30</version>
-            </dependency>
-
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka-clients</artifactId>
-                <version>2.6.0</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -105,7 +74,6 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
-            <version>3.0.2</version>
         </dependency>
     </dependencies>
 
@@ -115,13 +83,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <fork>true</fork>
                     <release>${jdk.version}</release>
-                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
+
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>3.6.0.1398</version>
             </plugin>
@@ -175,7 +142,6 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.2</version>
                         <executions>
                             <execution>
                                 <goals>
@@ -216,7 +182,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.0</version>
             </plugin>
         </plugins>
     </reporting>

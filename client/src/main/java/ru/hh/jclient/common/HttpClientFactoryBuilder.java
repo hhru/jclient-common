@@ -47,14 +47,16 @@ public class HttpClientFactoryBuilder {
     );
   }
 
-  private HttpClientFactoryBuilder(DefaultAsyncHttpClientConfig.Builder configBuilder,
-                                   RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
-                                   Executor callbackExecutor,
-                                   Storage<HttpClientContext> contextSupplier,
-                                   Set<String> customHostsWithSession,
-                                   double timeoutMultiplier,
-                                   MetricsConsumer metricsConsumer,
-                                   List<HttpClientEventListener> eventListeners) {
+  private HttpClientFactoryBuilder(
+      DefaultAsyncHttpClientConfig.Builder configBuilder,
+      RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
+      Executor callbackExecutor,
+      Storage<HttpClientContext> contextSupplier,
+      Set<String> customHostsWithSession,
+      double timeoutMultiplier,
+      MetricsConsumer metricsConsumer,
+      List<HttpClientEventListener> eventListeners
+  ) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
     this.callbackExecutor = callbackExecutor;
@@ -68,30 +70,30 @@ public class HttpClientFactoryBuilder {
   public HttpClientFactoryBuilder withProperties(Properties properties) {
     var target = getCopy();
     ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
-      .ifPresent(target.configBuilder::setMaxConnections);
+        .ifPresent(target.configBuilder::setMaxConnections);
     ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
-      .ifPresent(target.configBuilder::setMaxRequestRetry);
+        .ifPresent(target.configBuilder::setMaxRequestRetry);
     ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(target.configBuilder::setConnectTimeout);
+        .ifPresent(target.configBuilder::setConnectTimeout);
     ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(target.configBuilder::setReadTimeout);
+        .ifPresent(target.configBuilder::setReadTimeout);
     ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt)
-      .ifPresent(target.configBuilder::setRequestTimeout);
+        .ifPresent(target.configBuilder::setRequestTimeout);
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble)
-      .ifPresent(timeoutMultiplier -> target.timeoutMultiplier = timeoutMultiplier);
+        .ifPresent(timeoutMultiplier -> target.timeoutMultiplier = timeoutMultiplier);
     ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
-      .ifPresent(target.configBuilder::setUserAgent);
+        .ifPresent(target.configBuilder::setUserAgent);
 
     ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean)
-      .ifPresent(target.configBuilder::setFollowRedirect);
+        .ifPresent(target.configBuilder::setFollowRedirect);
     ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean)
-      .ifPresent(target.configBuilder::setCompressionEnforced);
+        .ifPresent(target.configBuilder::setCompressionEnforced);
     ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
-      .ifPresent(target.configBuilder::setUseInsecureTrustManager);
+        .ifPresent(target.configBuilder::setUseInsecureTrustManager);
     ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean)
-      .ifPresent(target.configBuilder::setKeepAlive);
+        .ifPresent(target.configBuilder::setKeepAlive);
     ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt)
-      .ifPresent(target.configBuilder::setIoThreadsCount);
+        .ifPresent(target.configBuilder::setIoThreadsCount);
 
     return target;
   }
@@ -172,12 +174,12 @@ public class HttpClientFactoryBuilder {
 
   public HttpClientFactory build() {
     HttpClientFactory httpClientFactory = new HttpClientFactory(
-      buildClient(),
-      contextSupplier,
-      ofNullable(customHostsWithSession).map(Set::copyOf).orElseGet(Set::of),
-      callbackExecutor,
-      initStrategy(),
-      List.copyOf(eventListeners)
+        buildClient(),
+        contextSupplier,
+        ofNullable(customHostsWithSession).map(Set::copyOf).orElseGet(Set::of),
+        callbackExecutor,
+        initStrategy(),
+        List.copyOf(eventListeners)
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
     return httpClientFactory;
@@ -185,8 +187,8 @@ public class HttpClientFactoryBuilder {
 
   private AsyncHttpClient buildClient() {
     AsyncHttpClientConfig clientConfig = applyTimeoutMultiplier(configBuilder)
-      .setCookieStore(null)
-      .build();
+        .setCookieStore(null)
+        .build();
 
     return MDCCopy.doWithoutContext(() -> new DefaultAsyncHttpClient(clientConfig));
   }
@@ -198,9 +200,9 @@ public class HttpClientFactoryBuilder {
   private DefaultAsyncHttpClientConfig.Builder applyTimeoutMultiplier(DefaultAsyncHttpClientConfig.Builder clientConfigBuilder) {
     AsyncHttpClientConfig config = clientConfigBuilder.build();
     DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder(config);
-    builder.setConnectTimeout(config.getConnectTimeout() > 0 ? (int)(config.getConnectTimeout() * timeoutMultiplier) : config.getConnectTimeout());
-    builder.setReadTimeout(config.getReadTimeout() > 0 ? (int)(config.getReadTimeout() * timeoutMultiplier) : config.getReadTimeout());
-    builder.setRequestTimeout(config.getRequestTimeout() > 0 ? (int)(config.getRequestTimeout() * timeoutMultiplier) : config.getRequestTimeout());
+    builder.setConnectTimeout(config.getConnectTimeout() > 0 ? (int) (config.getConnectTimeout() * timeoutMultiplier) : config.getConnectTimeout());
+    builder.setReadTimeout(config.getReadTimeout() > 0 ? (int) (config.getReadTimeout() * timeoutMultiplier) : config.getReadTimeout());
+    builder.setRequestTimeout(config.getRequestTimeout() > 0 ? (int) (config.getRequestTimeout() * timeoutMultiplier) : config.getRequestTimeout());
     return builder;
   }
 

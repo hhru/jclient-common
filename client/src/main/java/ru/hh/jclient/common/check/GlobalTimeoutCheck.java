@@ -47,8 +47,12 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
    * @param uriCompactionFunction function to compact same urls with variable parts
    * @param intervalMs logging interval
    */
-  public GlobalTimeoutCheck(Duration threshold, ScheduledExecutorService executorService,
-                            Function<Uri, String> uriCompactionFunction, long intervalMs) {
+  public GlobalTimeoutCheck(
+      Duration threshold,
+      ScheduledExecutorService executorService,
+      Function<Uri, String> uriCompactionFunction,
+      long intervalMs
+  ) {
     this.threshold = threshold;
     this.timeoutStatistics = new ConcurrentHashMap<>();
     this.uriCompactionFunction = uriCompactionFunction;
@@ -62,9 +66,10 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
       long currentRequestCount = timeoutCounter.longAdder.sum();
       long maxAlreadySpentMs = timeoutCounter.maxSpent.get();
 
-      LOGGER.warn("For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
-                   + "but calling <{}> with timeout {} ms. "
-                   + "Arbitrary we spend up to {} ms before the call",
+      LOGGER.warn(
+          "For last {} ms, got {} requests from <{}> expecting timeout={} ms, "
+              + "but calling <{}> with timeout {} ms. "
+              + "Arbitrary we spend up to {} ms before the call",
           intervalMs,
           currentRequestCount,
           data.userAgent,
@@ -80,32 +85,36 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   @Override
   public void beforeExecute(HttpClient httpClient, Request request) {
     ofNullable(httpClient.getContext().getHeaders())
-      .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
-      .flatMap(values -> values.stream().findFirst())
-      .map(Long::valueOf).map(Duration::ofMillis)
-      .ifPresent(outerTimeout -> {
-        var alreadySpentTime = Duration.between(httpClient.getContext().getRequestStart(), getNow());
-        var expectedTimeout = outerTimeout.minus(alreadySpentTime);
-        var requestTimeout = Duration.ofMillis(request.getRequestTimeout());
-        var diff = requestTimeout.minus(expectedTimeout);
-        if (diff.compareTo(threshold) > 0) {
-          var userAgent = ofNullable(httpClient.getContext().getHeaders())
-              .map(headers -> headers.get(HttpHeaderNames.USER_AGENT))
-              .flatMap(values -> values.stream().findFirst())
-              .orElse("unknown");
-          handleTimeoutExceeded(userAgent, request, outerTimeout, alreadySpentTime, requestTimeout);
-        }
-      });
+        .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
+        .flatMap(values -> values.stream().findFirst())
+        .map(Long::valueOf).map(Duration::ofMillis)
+        .ifPresent(outerTimeout -> {
+          var alreadySpentTime = Duration.between(httpClient.getContext().getRequestStart(), getNow());
+          var expectedTimeout = outerTimeout.minus(alreadySpentTime);
+          var requestTimeout = Duration.ofMillis(request.getRequestTimeout());
+          var diff = requestTimeout.minus(expectedTimeout);
+          if (diff.compareTo(threshold) > 0) {
+            var userAgent = ofNullable(httpClient.getContext().getHeaders())
+                .map(headers -> headers.get(HttpHeaderNames.USER_AGENT))
+                .flatMap(values -> values.stream().findFirst())
+                .orElse("unknown");
+            handleTimeoutExceeded(userAgent, request, outerTimeout, alreadySpentTime, requestTimeout);
+          }
+        });
   }
 
   protected LocalDateTime getNow() {
     return LocalDateTime.now();
   }
 
-  protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
-                                       Duration alreadySpentTime, Duration requestTimeout) {
-    var data = new LoggingData(userAgent, uriCompactionFunction.apply(request.getUri()),
-                               requestTimeout, outerTimeout);
+  protected void handleTimeoutExceeded(
+      String userAgent,
+      Request request,
+      Duration outerTimeout,
+      Duration alreadySpentTime,
+      Duration requestTimeout
+  ) {
+    var data = new LoggingData(userAgent, uriCompactionFunction.apply(request.getUri()), requestTimeout, outerTimeout);
     timeoutStatistics.computeIfAbsent(data, key -> new TimeoutCounter()).increment(alreadySpentTime.toMillis());
   }
 

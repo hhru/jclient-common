@@ -43,9 +43,9 @@ public class UpstreamConfigServiceImplTest {
   static int watchSeconds = 10;
 
   private static final ImmutableValue template = ImmutableValue.builder().key("template").value("template")
-          .createIndex(System.currentTimeMillis()).modifyIndex(System.currentTimeMillis())
-          .lockIndex(System.currentTimeMillis()).flags(System.currentTimeMillis())
-          .build();
+      .createIndex(System.currentTimeMillis()).modifyIndex(System.currentTimeMillis())
+      .lockIndex(System.currentTimeMillis()).flags(System.currentTimeMillis())
+      .build();
   public UpstreamConfigServiceConsulConfig configTemplate = new UpstreamConfigServiceConsulConfig()
       .setWatchSeconds(watchSeconds)
       .setConsistencyMode(DEFAULT);
@@ -64,11 +64,11 @@ public class UpstreamConfigServiceImplTest {
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(List.copyOf(values)));
 
     var service = new UpstreamConfigServiceImpl(
-      infrastructureConfig,
-      consulClient,
-      configStore, upstreamManager,
-      copyOf(configTemplate).setUpstreams(List.of("app-name", "app2")),
-      List.of()
+        infrastructureConfig,
+        consulClient,
+        configStore, upstreamManager,
+        copyOf(configTemplate).setUpstreams(List.of("app-name", "app2")),
+        List.of()
     );
 
     UpstreamConfigs profiles = configStore.getUpstreamConfig("app-name");
@@ -86,13 +86,14 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testNoConfig() {
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
-      .thenReturn(wrapWithResponse(List.of()));
+        .thenReturn(wrapWithResponse(List.of()));
     UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("app-name"));
-    assertThrows(IllegalStateException.class,
-      () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of())
+    assertThrows(
+        IllegalStateException.class,
+        () -> new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of())
     );
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class)))
-      .thenReturn(wrapWithResponse(List.copyOf(prepareValues())));
+        .thenReturn(wrapWithResponse(List.copyOf(prepareValues())));
     new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of());
     assertNotNull(configStore.getUpstreamConfig("app-name"));
   }
@@ -101,15 +102,16 @@ public class UpstreamConfigServiceImplTest {
   public void testBadConfig() {
     String badFormatKey = "badFormat";
     var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
-      .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
+        .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(values));
-    var ex = assertThrows(IllegalStateException.class,
-      () -> {
-        UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat"));
-        new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of());
-      }
+    var ex = assertThrows(
+        IllegalStateException.class,
+        () -> {
+          UpstreamConfigServiceConsulConfig config = copyOf(configTemplate).setUpstreams(List.of("app-name", "badFormat"));
+          new UpstreamConfigServiceImpl(infrastructureConfig, consulClient, configStore, upstreamManager, config, List.of());
+        }
     );
     assertTrue(ex.getMessage().contains(badFormatKey));
   }
@@ -121,11 +123,11 @@ public class UpstreamConfigServiceImplTest {
         "\"retry_policy\": {\"599\": {\"idempotent\": \"false\"},\"503\": {\"idempotent\": \"true\"}}},\"" +
         "externalRequestsProfile\": {\"fail_timeout_sec\": \"5\"}}}}}";
     values.add(ImmutableValue.copyOf(template).withKey("upstream/app-name/")
-            .withValue(new String(Base64.getEncoder().encode(twoProfiles.getBytes()))));
+        .withValue(new String(Base64.getEncoder().encode(twoProfiles.getBytes()))));
 
     String secondAppProfile = "{\"hosts\": {\"default\": {\"profiles\": {\"default\": {\"max_tries\": \"56\"}}}}}";
     values.add(ImmutableValue.copyOf(template).withKey("upstream/app2/")
-            .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes()))));
+        .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes()))));
     return values;
   }
 

@@ -31,7 +31,7 @@ public class ResultOrErrorWithResponse<T, E> extends ResultOrErrorWithStatus<T, 
   }
 
   /**
-   * @return this wrapper cast to {@link ResultOrErrorWithStatus<T>}
+   * @return this wrapper cast to {@link ResultOrErrorWithStatus}
    */
   public ResultOrErrorWithStatus<T, E> hideResponse() {
     return this;

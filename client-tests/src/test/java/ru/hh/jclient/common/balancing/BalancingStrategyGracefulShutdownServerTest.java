@@ -31,9 +31,9 @@ public class BalancingStrategyGracefulShutdownServerTest extends AbstractBalanci
     workingServerAddress = createNormallyWorkingServer();
     gracefullyClosingServerAddress = createGracefullyClosingServer();
     httpClientFactory = buildBalancingFactory(
-      TEST_UPSTREAM,
-      new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(gracefullyClosingServerAddress, workingServerAddress))),
-      requestRouteTracking
+        TEST_UPSTREAM,
+        new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(gracefullyClosingServerAddress, workingServerAddress))),
+        requestRouteTracking
     ).getKey();
   }
 
@@ -59,8 +59,8 @@ public class BalancingStrategyGracefulShutdownServerTest extends AbstractBalanci
       try (Socket socket = sock;
            var inputStream = socket.getInputStream()
       ) {
-       //to not eliminate read
-       OutputStream.nullOutputStream().write(startRead(inputStream));
+        //to not eliminate read
+        OutputStream.nullOutputStream().write(startRead(inputStream));
       }
     });
   }

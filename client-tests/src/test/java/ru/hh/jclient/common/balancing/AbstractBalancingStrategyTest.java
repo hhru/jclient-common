@@ -56,22 +56,31 @@ public abstract class AbstractBalancingStrategyTest {
     }
   };
 
-  protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(String upstreamName,
-                                                           ServerStore serverStore,
-                                                           ConcurrentMap<String, List<Integer>> trackingHolder) {
+  protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(
+      String upstreamName,
+      ServerStore serverStore,
+      ConcurrentMap<String, List<Integer>> trackingHolder
+  ) {
     return buildBalancingFactory(upstreamName, EMPTY_PROFILE, serverStore, trackingHolder, null);
-
   }
 
-  protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(String upstreamName,
-                                                                                       Profile profile,
-                                                                                       ServerStore serverStore,
-                                                                                       ConcurrentMap<String, List<Integer>> trackingHolder,
-                                                                                       @Nullable ConcurrentMap<String, LongAdder> retries) {
+  protected static Map.Entry<HttpClientFactory, UpstreamManager> buildBalancingFactory(
+      String upstreamName,
+      Profile profile,
+      ServerStore serverStore,
+      ConcurrentMap<String, List<Integer>> trackingHolder,
+      @Nullable ConcurrentMap<String, LongAdder> retries
+  ) {
     var tracking = new Monitoring() {
       @Override
-      public void countRequest(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
-                               long requestTimeMicros, boolean isRequestFinal) {
+      public void countRequest(
+          String upstreamName,
+          String serverDatacenter,
+          String serverAddress,
+          int statusCode,
+          long requestTimeMicros,
+          boolean isRequestFinal
+      ) {
         trackingHolder.computeIfAbsent(serverAddress, addr -> new CopyOnWriteArrayList<>()).add(statusCode);
       }
 
@@ -79,8 +88,14 @@ public abstract class AbstractBalancingStrategyTest {
       public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMicros) {}
 
       @Override
-      public void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode,
-                             int firstStatusCode, int triesUsed) {
+      public void countRetry(
+          String upstreamName,
+          String serverDatacenter,
+          String serverAddress,
+          int statusCode,
+          int firstStatusCode,
+          int triesUsed
+      ) {
         Optional.ofNullable(retries).ifPresent(map -> map.computeIfAbsent(serverAddress, ignored -> new LongAdder()).increment());
       }
 
@@ -89,48 +104,26 @@ public abstract class AbstractBalancingStrategyTest {
     };
     var configStore = new ConfigStoreImpl();
     ApplicationConfig applicationConfig = new ApplicationConfig()
-      .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
+        .setHosts(Map.of(UpstreamConfig.DEFAULT, new Host().setProfiles(Map.of(UpstreamConfig.DEFAULT, profile))));
     configStore.updateConfig(upstreamName, ApplicationConfig.toUpstreamConfigs(applicationConfig, UpstreamConfig.DEFAULT));
     BalancingUpstreamManager upstreamManager = new BalancingUpstreamManager(
-      configStore, serverStore,
-      Set.of(tracking), infrastructureConfig,
-      false
+        configStore,
+        serverStore,
+        Set.of(tracking),
+        infrastructureConfig,
+        false
     );
     upstreamManager.updateUpstreams(Set.of(upstreamName));
     var strategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService());
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
-    return Map.entry(new HttpClientFactoryBuilder(contextSupplier, List.of())
-      .withConnectTimeoutMs(100)
-      .withRequestStrategy(strategy)
-      .withCallbackExecutor(Runnable::run)
-      .build(), upstreamManager);
-  }
-
-  protected static class TestStoreFromAddress implements ServerStore {
-    private final String datacenterName;
-    private final Map<Integer, List<String>> adressesByWeight;
-
-    public TestStoreFromAddress(String datacenterName, Map<Integer, List<String>> adressesByWeight) {
-      this.datacenterName = datacenterName;
-      this.adressesByWeight = adressesByWeight;
-    }
-
-    @Override
-    public List<Server> getServers(String serviceName) {
-      return adressesByWeight.entrySet().stream()
-        .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
-        .collect(Collectors.toList());
-    }
-
-    @Override
-    public Optional<Integer> getInitialSize(String serviceName) {
-      return Optional.of(adressesByWeight.values().stream().mapToInt(List::size).sum());
-    }
-
-    @Override
-    public void updateServers(String serviceName, Collection<Server> aliveServers, Collection<Server> deadServers) {
-
-    }
+    return Map.entry(
+        new HttpClientFactoryBuilder(contextSupplier, List.of())
+            .withConnectTimeoutMs(100)
+            .withRequestStrategy(strategy)
+            .withCallbackExecutor(Runnable::run)
+            .build(),
+        upstreamManager
+    );
   }
 
   protected static String createNormallyWorkingServer() {
@@ -193,5 +186,34 @@ public abstract class AbstractBalancingStrategyTest {
     byte[] buffer = new byte[4];
     int length = inputStream.read(buffer);
     return Arrays.copyOf(buffer, length);
+  }
+
+  protected static class TestStoreFromAddress implements ServerStore {
+    private final String datacenterName;
+    private final Map<Integer, List<String>> adressesByWeight;
+
+    public TestStoreFromAddress(String datacenterName, Map<Integer, List<String>> adressesByWeight) {
+      this.datacenterName = datacenterName;
+      this.adressesByWeight = adressesByWeight;
+    }
+
+    @Override
+    public List<Server> getServers(String serviceName) {
+      return adressesByWeight
+          .entrySet()
+          .stream()
+          .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
+          .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Integer> getInitialSize(String serviceName) {
+      return Optional.of(adressesByWeight.values().stream().mapToInt(List::size).sum());
+    }
+
+    @Override
+    public void updateServers(String serviceName, Collection<Server> aliveServers, Collection<Server> deadServers) {
+
+    }
   }
 }

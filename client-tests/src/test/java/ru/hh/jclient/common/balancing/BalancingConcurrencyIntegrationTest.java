@@ -52,8 +52,9 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
 
   @Parameterized.Parameters(name = "threadpool size: {0}")
   public static Collection<Object[]> parameters() {
-    return List.of(new Object[] {1}, new Object[] {16}, new Object[] {32}, new Object[] {96});
+    return List.of(new Object[]{1}, new Object[]{16}, new Object[]{32}, new Object[]{96});
   }
+
   @Parameterized.Parameter(0)
   public int threads;
 
@@ -100,15 +101,15 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
     int minWeight = servers.stream().mapToInt(Server::getWeight).min().getAsInt();
     int sumWeight = servers.stream().mapToInt(Server::getWeight).sum();
     int totalUserRequests = requestRouteTracking.entrySet().stream()
-      .mapToInt(addressToReponseCodes -> {
-        int retries = this.retries.getOrDefault(addressToReponseCodes.getKey(), new LongAdder()).intValue();
-        return addressToReponseCodes.getValue().size() - retries;
-      })
-      .sum();
+        .mapToInt(addressToReponseCodes -> {
+          int retries = this.retries.getOrDefault(addressToReponseCodes.getKey(), new LongAdder()).intValue();
+          return addressToReponseCodes.getValue().size() - retries;
+        })
+        .sum();
     for (Server server : servers) {
       double weightPart = (double) server.getWeight() / sumWeight;
       double userRequestsHandled = requestRouteTracking.get(server.getAddress()).size()
-        - retries.getOrDefault(server.getAddress(), new LongAdder()).intValue();
+          - retries.getOrDefault(server.getAddress(), new LongAdder()).intValue();
       double requestsHandledPart = userRequestsHandled / totalUserRequests;
       LOGGER.info("Server {}: weightPart={}, requestsHandledPart={}", server, weightPart, requestsHandledPart);
       assertEquals(weightPart, requestsHandledPart, 0.01);

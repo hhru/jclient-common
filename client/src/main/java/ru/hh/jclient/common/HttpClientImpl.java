@@ -39,7 +39,8 @@ import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
 
-  static final Set<String> PASS_THROUGH_HEADERS = of(X_REQUEST_ID,
+  static final Set<String> PASS_THROUGH_HEADERS = of(
+      X_REQUEST_ID,
       X_REAL_IP,
       AUTHORIZATION,
       HH_PROTO_SESSION,
@@ -48,17 +49,20 @@ class HttpClientImpl extends HttpClient {
       FRONTIK_DEBUG_AUTH,
       X_LOAD_TESTING,
       X_SOURCE,
-      X_HH_PROFESSIONAL_ROLES_MODE);
+      X_HH_PROFESSIONAL_ROLES_MODE
+  );
 
   private final Executor callbackExecutor;
 
-  HttpClientImpl(AsyncHttpClient http,
-                 Request request,
-                 RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
-                 Storage<HttpClientContext> contextSupplier,
-                 Set<String> customHostsWithSession,
-                 Executor callbackExecutor,
-                 List<HttpClientEventListener> eventListeners) {
+  HttpClientImpl(
+      AsyncHttpClient http,
+      Request request,
+      RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
+      Storage<HttpClientContext> contextSupplier,
+      Set<String> customHostsWithSession,
+      Executor callbackExecutor,
+      List<HttpClientEventListener> eventListeners
+  ) {
     super(http, request, requestStrategy, contextSupplier, customHostsWithSession, eventListeners);
     this.callbackExecutor = callbackExecutor;
   }
@@ -98,8 +102,8 @@ class HttpClientImpl extends HttpClient {
     if (!isExternalRequest()) {
       headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, Integer.toString(request.getRequestTimeout()));
       PASS_THROUGH_HEADERS.stream()
-        .filter(getContext().getHeaders()::containsKey)
-        .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
+          .filter(getContext().getHeaders()::containsKey)
+          .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }
 
     boolean canUnwrapDebugResponse = getDebugs().stream().anyMatch(RequestDebug::canUnwrapDebugResponse);
@@ -124,7 +128,8 @@ class HttpClientImpl extends HttpClient {
     }
 
     if (!areAllowedMediaTypesForResponseAndErrorCompatible()) {
-      LOGGER.warn("Different MediaTypes for successful answer and for errors on {} {} s: {} e: {} ",
+      LOGGER.warn(
+          "Different MediaTypes for successful answer and for errors on {} {} s: {} e: {} ",
           request.getMethod(),
           request.getUri(),
           getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")),
@@ -214,7 +219,8 @@ class HttpClientImpl extends HttpClient {
       List<RequestDebug> requestDebugs,
       Transfers contextTransfers,
       CompletableFuture<ResponseWrapper> promise,
-      Executor callbackExecutor) {
+      Executor callbackExecutor
+  ) {
 
     for (RequestDebug debug : requestDebugs) {
       response = debug.onResponse(response);
@@ -226,8 +232,7 @@ class HttpClientImpl extends HttpClient {
         // install context(s) in current (callback) thread so chained tasks have context to run with
         contextTransfers.perform();
         promise.complete(wrapper);
-      }
-      finally {
+      } finally {
         // remove context(s) once the promise completes
         contextTransfers.rollback();
       }
@@ -245,8 +250,14 @@ class HttpClientImpl extends HttpClient {
     private final Transfers contextTransfers;
     private final Executor callbackExecutor;
 
-    CompletionHandler(CompletableFuture<ResponseWrapper> promise, Request request, Instant requestStart,
-                      List<RequestDebug> requestDebugs, Transfers contextTransfers, Executor callbackExecutor) {
+    CompletionHandler(
+        CompletableFuture<ResponseWrapper> promise,
+        Request request,
+        Instant requestStart,
+        List<RequestDebug> requestDebugs,
+        Transfers contextTransfers,
+        Executor callbackExecutor
+    ) {
       this.requestStart = requestStart;
       mdcCopy = MDCCopy.capture();
       this.promise = promise;
@@ -263,7 +274,8 @@ class HttpClientImpl extends HttpClient {
 
       long timeToLastByteMicros = getTimeToLastByte();
       mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} micros on {} {}",
-          responseStatusCode, responseStatusText, timeToLastByteMicros, request.getMethod(), request.getUri()));
+          responseStatusCode, responseStatusText, timeToLastByteMicros, request.getMethod(), request.getUri()
+      ));
 
       return proceedWithResponse(response, timeToLastByteMicros);
     }
@@ -280,7 +292,8 @@ class HttpClientImpl extends HttpClient {
               request.getMethod(),
               request.getUri(),
               t,
-              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"));
+              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"
+          ));
 
       if (response != null) {
         proceedWithResponse(response, timeToLastByteMicros);
@@ -300,7 +313,8 @@ class HttpClientImpl extends HttpClient {
           requestDebugs,
           contextTransfers,
           promise,
-          callbackExecutor);
+          callbackExecutor
+      );
     }
 
     private void completeExceptionally(Throwable t) {

@@ -13,8 +13,13 @@ import org.slf4j.LoggerFactory;
 final class BalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingStrategy.class);
 
-  static int getLeastLoadedServer(List<Server> servers, Set<Integer> excludedServers, String currentDatacenter, boolean allowCrossDCRequests,
-                                  Clock clock) {
+  static int getLeastLoadedServer(
+      List<Server> servers,
+      Set<Integer> excludedServers,
+      String currentDatacenter,
+      boolean allowCrossDCRequests,
+      Clock clock
+  ) {
     int minIndex = -1;
     Weight minWeight = null;
     String[] serverStatLog = LOGGER.isTraceEnabled() ? new String[servers.size()] : null;
@@ -51,7 +56,7 @@ final class BalancingStrategy {
           minWeight.isExcluded(), minWeight.isDifferentDC(), minWeight.getLoad(),
           minIndex, servers.get(minIndex),
           !LOGGER.isTraceEnabled() ? ""
-              :(" of " + Arrays.toString(serverStatLog) + " with excluded idx=" + excludedServers)
+              : (" of " + Arrays.toString(serverStatLog) + " with excluded idx=" + excludedServers)
       );
     } else {
       LOGGER.debug("no server available");
