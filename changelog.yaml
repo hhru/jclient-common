@@ -1,6 +1,6 @@
 -   name: 3.9.15
     date: '2023-03-23T15:34:48.052014+03:00'
-    description: ''
+    description: 'Update com.google.protobuf 3.19.3 -> 3.22.2'
     instructions: ''
     compatible: true
 
