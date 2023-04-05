@@ -21,6 +21,7 @@ import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
+import static ru.hh.jclient.common.HttpHeaderNames.TMS_PROTO_SESSION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_PROFESSIONAL_ROLES_MODE;
@@ -42,6 +43,7 @@ class HttpClientImpl extends HttpClient {
       X_REAL_IP,
       AUTHORIZATION,
       HH_PROTO_SESSION,
+      TMS_PROTO_SESSION,
       X_HH_DEBUG,
       FRONTIK_DEBUG_AUTH,
       X_LOAD_TESTING,
@@ -112,6 +114,7 @@ class HttpClientImpl extends HttpClient {
 
     if (isNoSessionRequired(context)) {
       headers.remove(HH_PROTO_SESSION);
+      headers.remove(TMS_PROTO_SESSION);
     }
 
     requestBuilder.setHeaders(headers);
