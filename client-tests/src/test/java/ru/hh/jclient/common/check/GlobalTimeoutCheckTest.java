@@ -26,19 +26,24 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
   public void testShouldNotTriggerIfTimeoutsOk() throws ExecutionException, InterruptedException {
     LocalDateTime now = LocalDateTime.now();
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
-      .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
-        @Override
-        protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
-                                             Duration alreadySpentTime, Duration requestTimeout) {
-          fail(GlobalTimeoutCheck.class + " false triggered");
-        }
+        .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
+          @Override
+          protected void handleTimeoutExceeded(
+              String userAgent,
+              Request request,
+              Duration outerTimeout,
+              Duration alreadySpentTime,
+              Duration requestTimeout
+          ) {
+            fail(GlobalTimeoutCheck.class + " false triggered");
+          }
 
-        @Override
-        protected LocalDateTime getNow() {
-          return now;
-        }
-      })
-      .okRequest(new byte[0], ANY);
+          @Override
+          protected LocalDateTime getNow() {
+            return now;
+          }
+        })
+        .okRequest(new byte[0], ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(50).build();
     http.with(request).expectNoContent().result().get();
   }
@@ -50,8 +55,13 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
         .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
           @Override
-          protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
-                                               Duration alreadySpentTime, Duration requestTimeout) {
+          protected void handleTimeoutExceeded(
+              String userAgent,
+              Request request,
+              Duration outerTimeout,
+              Duration alreadySpentTime,
+              Duration requestTimeout
+          ) {
             triggered.set(true);
           }
 
@@ -73,8 +83,13 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
         .withEventListener(new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
           @Override
-          protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
-                                               Duration alreadySpentTime, Duration requestTimeout) {
+          protected void handleTimeoutExceeded(
+              String userAgent,
+              Request request,
+              Duration outerTimeout,
+              Duration alreadySpentTime,
+              Duration requestTimeout
+          ) {
             triggered.set(true);
           }
 
@@ -95,8 +110,13 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     withContext(Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")))
         .withEventListener(new GlobalTimeoutCheck(Duration.ofMillis(30), mock(ScheduledExecutorService.class), 0) {
           @Override
-          protected void handleTimeoutExceeded(String userAgent, Request request, Duration outerTimeout,
-                                               Duration alreadySpentTime, Duration requestTimeout) {
+          protected void handleTimeoutExceeded(
+              String userAgent,
+              Request request,
+              Duration outerTimeout,
+              Duration alreadySpentTime,
+              Duration requestTimeout
+          ) {
             fail(GlobalTimeoutCheck.class + " false triggered");
           }
 

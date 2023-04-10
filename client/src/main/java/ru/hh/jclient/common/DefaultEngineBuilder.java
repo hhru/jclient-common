@@ -15,8 +15,8 @@ public class DefaultEngineBuilder implements RequestEngineBuilder<DefaultEngineB
     return () -> {
       var requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : executor.getDefaultRequestTimeoutMs();
       var requestWithTimeout = new RequestBuilder(request)
-        .setRequestTimeout(ofNullable(timeoutMultiplier).map(multiplier -> (int) (multiplier * requestTimeout)).orElse(requestTimeout))
-        .build();
+          .setRequestTimeout(ofNullable(timeoutMultiplier).map(multiplier -> (int) (multiplier * requestTimeout)).orElse(requestTimeout))
+          .build();
       return executor.executeRequest(requestWithTimeout, 0, RequestContext.EMPTY_CONTEXT)
           .thenApply(ResponseWrapper::getResponse);
     };

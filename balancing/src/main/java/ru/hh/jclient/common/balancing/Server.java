@@ -67,7 +67,7 @@ public class Server {
       this.requests.updateAndGet(reqs -> {
         int statRequests = unpackStatRequests(reqs);
         int currentRequests = unpackCurrentRequests(reqs);
-        return packRequests((int)(statRequests * ratio), currentRequests);
+        return packRequests((int) (statRequests * ratio), currentRequests);
       });
     }
     this.weight = weight;
@@ -76,11 +76,11 @@ public class Server {
   }
 
   void acquire() {
-    executeWithLockIfAvailable(()-> requests.addAndGet(packRequests(1, 1)));
+    executeWithLockIfAvailable(() -> requests.addAndGet(packRequests(1, 1)));
   }
 
   void release(boolean isRetry) {
-    executeWithLockIfAvailable(()-> {
+    executeWithLockIfAvailable(() -> {
       requests.updateAndGet(i -> {
         int stat = unpackStatRequests(i);
         if (isRetry) {
@@ -149,8 +149,10 @@ public class Server {
       long currentTimeMillis = getCurrentTimeMillis(clock);
       if (slowStartEndMillis > 0 && currentTimeMillis <= slowStartEndMillis) {
         LOGGER.trace(
-          "Server {} is on slowStart, returning infinite load. Current epoch millis: {}, slow start end epoch millis: {}",
-          this, currentTimeMillis, slowStartEndMillis
+            "Server {} is on slowStart, returning infinite load. Current epoch millis: {}, slow start end epoch millis: {}",
+            this,
+            currentTimeMillis,
+            slowStartEndMillis
         );
         return Float.POSITIVE_INFINITY;
       }
@@ -256,14 +258,14 @@ public class Server {
   public String toString() {
     long requestsValue = requests.get();
     return "Server{" +
-       "address='" + address + '\'' +
-       ", weight=" + weight +
-       ", datacenter='" + datacenter + '\'' +
-       ", meta=" + meta +
-       ", tags=" + tags +
-       ", currentRequests=" + unpackCurrentRequests(requestsValue) +
-       ", statsRequests=" + unpackStatRequests(requestsValue) +
-       '}';
+        "address='" + address + '\'' +
+        ", weight=" + weight +
+        ", datacenter='" + datacenter + '\'' +
+        ", meta=" + meta +
+        ", tags=" + tags +
+        ", currentRequests=" + unpackCurrentRequests(requestsValue) +
+        ", statsRequests=" + unpackStatRequests(requestsValue) +
+        '}';
   }
 
   @Override

@@ -27,9 +27,12 @@ public class KafkaUpstreamMonitoring implements Monitoring {
   private final KafkaProducer<String, String> kafkaProducer;
   private final Config monitoringConfig;
 
-  public KafkaUpstreamMonitoring(String serviceName, String localDc,
-                                 KafkaProducer<String, String> kafkaMetricsProducer,
-                                 Config monitoringConfig) {
+  public KafkaUpstreamMonitoring(
+      String serviceName,
+      String localDc,
+      KafkaProducer<String, String> kafkaMetricsProducer,
+      Config monitoringConfig
+  ) {
     this.serviceName = serviceName;
     this.localDc = localDc;
     this.kafkaProducer = kafkaMetricsProducer;
@@ -76,17 +79,17 @@ public class KafkaUpstreamMonitoring implements Monitoring {
 
   public static Optional<KafkaUpstreamMonitoring> fromProperties(String serviceName, String dc, Properties properties) {
     return ofNullable(properties)
-      .map(props -> props.getProperty(ENABLED_PROPERTY_KEY)).map(Boolean::parseBoolean)
-      .filter(Boolean.TRUE::equals)
-      .map(ignored -> {
-        Map<?, ?> propertiesForKafka = properties.entrySet().stream()
-          .filter(entry -> !PROPERTIES_FOR_MONITORING.contains(entry.getKey()))
-          .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-        var filteredProperties = new Properties();
-        filteredProperties.putAll(propertiesForKafka);
-        return new KafkaProducer<>(filteredProperties, new StringSerializer(), new StringSerializer());
-      })
-      .map(producer -> new KafkaUpstreamMonitoring(serviceName, dc, producer, Config.fromProperties(properties)));
+        .map(props -> props.getProperty(ENABLED_PROPERTY_KEY)).map(Boolean::parseBoolean)
+        .filter(Boolean.TRUE::equals)
+        .map(ignored -> {
+          Map<?, ?> propertiesForKafka = properties.entrySet().stream()
+              .filter(entry -> !PROPERTIES_FOR_MONITORING.contains(entry.getKey()))
+              .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+          var filteredProperties = new Properties();
+          filteredProperties.putAll(propertiesForKafka);
+          return new KafkaProducer<>(filteredProperties, new StringSerializer(), new StringSerializer());
+        })
+        .map(producer -> new KafkaUpstreamMonitoring(serviceName, dc, producer, Config.fromProperties(properties)));
   }
 
   static class Config {

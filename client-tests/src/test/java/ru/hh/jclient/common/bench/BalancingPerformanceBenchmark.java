@@ -45,14 +45,14 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 @BenchmarkMode(Mode.Throughput)
 public class BalancingPerformanceBenchmark {
   private static final List<Server> servers = List.of(
-    new Server("server1", 50, "test"),
-    new Server("server2", 100, "test"),
-    new Server("server3", 200, "test"),
-    new Server("server4", 50, "test"),
-    new Server("server1", 100, "test"),
-    new Server("server2", 200, "test"),
-    new Server("server3", 50, "test"),
-    new Server("server4", 200, "test")
+      new Server("server1", 50, "test"),
+      new Server("server2", 100, "test"),
+      new Server("server3", 200, "test"),
+      new Server("server4", 50, "test"),
+      new Server("server1", 100, "test"),
+      new Server("server2", 200, "test"),
+      new Server("server3", 50, "test"),
+      new Server("server4", 200, "test")
   );
   private final ServerStore serverStore = new ServerStoreImpl();
   private final ConfigStore configStore = new ConfigStoreImpl();
@@ -73,10 +73,11 @@ public class BalancingPerformanceBenchmark {
     }
   };
   private final UpstreamManager manager = new BalancingUpstreamManager(
-    configStore, serverStore,
-    Set.of(),
-    infrastructureConfig,
-    false
+      configStore,
+      serverStore,
+      Set.of(),
+      infrastructureConfig,
+      false
   );
   private final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;
@@ -95,7 +96,8 @@ public class BalancingPerformanceBenchmark {
     serverStore.updateServers("test", servers, Set.of());
     configStore.updateConfig("test", ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), UpstreamConfig.DEFAULT));
     manager.updateUpstreams(Set.of("test"));
-    factory = new HttpClientFactory(httpClient,
+    factory = new HttpClientFactory(
+        httpClient,
         new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
         Set.of(),
         Runnable::run,
@@ -144,7 +146,6 @@ public class BalancingPerformanceBenchmark {
       this.upstreamManager = upstreamManager;
       this.configAction = configAction;
     }
-
 
     @Override
     public RequestBalancerBuilder createRequestEngineBuilder(HttpClient client) {

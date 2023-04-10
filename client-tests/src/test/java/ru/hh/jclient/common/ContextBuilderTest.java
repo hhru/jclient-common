@@ -60,12 +60,12 @@ public class ContextBuilderTest {
   @Test
   public void appendHeadersInChainTest() {
     supplier.forCurrentThread()
-      .withHeaders(Map.of("a", List.of("a")))
-      .withHeaders(Map.of("b", List.of("b")))
-      .withRequestId(NEW_REQUEST_ID)
-      .execute(() -> {
-        assertEquals(Map.of("a", List.of("a"), "b", List.of("b"), X_REQUEST_ID, List.of(NEW_REQUEST_ID)), supplier.get().getHeaders());
-      });
+        .withHeaders(Map.of("a", List.of("a")))
+        .withHeaders(Map.of("b", List.of("b")))
+        .withRequestId(NEW_REQUEST_ID)
+        .execute(() -> {
+          assertEquals(Map.of("a", List.of("a"), "b", List.of("b"), X_REQUEST_ID, List.of(NEW_REQUEST_ID)), supplier.get().getHeaders());
+        });
   }
 
   public void assertRequestIdInContext(String expectedRequestId) {

@@ -19,29 +19,29 @@ public class UpstreamConfigServiceConsulConfig {
 
   public static UpstreamConfigServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
-      .filter(Predicate.not(String::isBlank))
-      .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
-      .orElseGet(List::of);
+        .filter(Predicate.not(String::isBlank))
+        .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
+        .orElseGet(List::of);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream()
-      .mapToInt(Integer::parseInt)
-      .findFirst()
-      .orElse(10);
+        .mapToInt(Integer::parseInt)
+        .findFirst()
+        .orElse(10);
     var consistencyMode = Optional.ofNullable(props.getProperty(CONSISTENCY_MODE_KEY))
-      .map(ConsistencyModeConfig::valueOf)
-      .orElse(ConsistencyModeConfig.DEFAULT);
+        .map(ConsistencyModeConfig::valueOf)
+        .orElse(ConsistencyModeConfig.DEFAULT);
     boolean syncUpdate = Optional.ofNullable(props.getProperty(SYNC_UPDATE_KEY)).map(Boolean::parseBoolean).orElse(true);
     return new UpstreamConfigServiceConsulConfig()
-      .setUpstreams(upstreams)
-      .setWatchSeconds(watchSeconds)
-      .setConsistencyMode(consistencyMode.consistencyMode)
-      .setSyncUpdate(syncUpdate);
+        .setUpstreams(upstreams)
+        .setWatchSeconds(watchSeconds)
+        .setConsistencyMode(consistencyMode.consistencyMode)
+        .setSyncUpdate(syncUpdate);
   }
 
   public static UpstreamConfigServiceConsulConfig copyOf(UpstreamConfigServiceConsulConfig config) {
     return new UpstreamConfigServiceConsulConfig().setUpstreams(config.upstreams)
-      .setWatchSeconds(config.watchSeconds)
-      .setConsistencyMode(config.getConsistencyMode())
-      .setSyncUpdate(config.isSyncUpdate());
+        .setWatchSeconds(config.watchSeconds)
+        .setConsistencyMode(config.getConsistencyMode())
+        .setSyncUpdate(config.isSyncUpdate());
   }
 
   public List<String> getUpstreams() {

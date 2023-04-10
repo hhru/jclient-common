@@ -44,7 +44,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
     Server server1 = new Server("server1", 10, null);
     Server server2 = new Server("server1", 5, null);
     Server server3 = new Server("server1", 1, null);
-    List<Server> servers = List.of(server1,
+    List<Server> servers = List.of(
+        server1,
         server2,
         server3
     );
@@ -84,7 +85,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
     Server server1 = new Server("server1", 11, currentDC);
     Server server2 = new Server("server2", 5, "DC2");
     Server server3 = new Server("server3", 1, null);
-    List<Server> servers = List.of(server1,
+    List<Server> servers = List.of(
+        server1,
         server2,
         server3
     );
@@ -228,7 +230,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
     Server server1 = new Server("server1", 10, "anotherDC");
     Server server2 = new Server("server1", 5, null);
     Server server3 = new Server("server1", 1, null);
-    List<Server> servers = List.of(server1,
+    List<Server> servers = List.of(
+        server1,
         server2,
         server3
     );
@@ -240,7 +243,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
-    int size=5;
+    int size = 5;
 
     when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
         .then(iom -> {
@@ -328,10 +331,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-            .then(iom -> {
-              request[0] = completeWith(200, iom);
-              return null;
-            });
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
     getTestClient().withPreconfiguredEngine(NotValidEngineBuilder.class, NotValidEngineBuilder::withSmth).get();
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
   }
@@ -342,10 +345,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-            .then(iom -> {
-              request[0] = completeWith(200, iom);
-              return null;
-            });
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
     getTestClient().getWrongEngineBuilderClass();
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
   }
@@ -371,7 +374,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   @Test
   public void requestAndUpdateServers() throws Exception {
     when(serverStore.getServers(TEST_UPSTREAM))
-            .thenReturn(List.of(new Server("server1", 1, null)));
+        .thenReturn(List.of(new Server("server1", 1, null)));
     createHttpClientFactory();
 
     Request[] request = new Request[1];
@@ -384,14 +387,14 @@ public class BalancingClientTest extends BalancingClientTestBase {
     getTestClient().get();
     assertHostEquals(request[0], "server1");
     when(serverStore.getServers(TEST_UPSTREAM))
-            .thenReturn(List.of(new Server("server2", 1, null)));
+        .thenReturn(List.of(new Server("server2", 1, null)));
     upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     getTestClient().get();
     assertHostEquals(request[0], "server2");
 
     when(serverStore.getServers(TEST_UPSTREAM))
-            .thenReturn(List.of(new Server("server2", 1, null), new Server("server3", 1, null)));
+        .thenReturn(List.of(new Server("server2", 1, null), new Server("server3", 1, null)));
     upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     getTestClient().get();
@@ -430,10 +433,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-      .then(iom -> {
-        request[0] = completeWith(200, iom);
-        return null;
-      });
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
 
     getTestClient().get();
     assertHostEquals(request[0], "server1");
@@ -453,17 +456,17 @@ public class BalancingClientTest extends BalancingClientTestBase {
     upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-      .then(iom -> {
-        completeWith(200, iom);
-        return null;
-      });
+        .then(iom -> {
+          completeWith(200, iom);
+          return null;
+        });
 
     http.with(new RequestBuilder("GET").setUrl("http://backend/path?query").build())
-      .expectPlainText().result().get();
+        .expectPlainText().result().get();
 
     Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-      eq("backend"), eq(datacenter), eq("server1"), eq(200), anyLong(), eq(true)
+        eq("backend"), eq(datacenter), eq("server1"), eq(200), anyLong(), eq(true)
     );
   }
 
@@ -472,19 +475,19 @@ public class BalancingClientTest extends BalancingClientTestBase {
     createHttpClientFactory();
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-      .then(iom -> {
-        completeWith(200, iom);
-        return null;
-      });
+        .then(iom -> {
+          completeWith(200, iom);
+          return null;
+        });
 
     http.with(new RequestBuilder("GET").setUrl("https://not-balanced-backend/path?query").build())
-      .expectPlainText().result().get();
+        .expectPlainText().result().get();
 
     Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-      eq("https://not-balanced-backend"), eq(ExternalUrlRequestor.DC_FOR_EXTERNAL_REQUESTS),
-      eq("https://not-balanced-backend"),
-      eq(200), anyLong(), eq(true)
+        eq("https://not-balanced-backend"), eq(ExternalUrlRequestor.DC_FOR_EXTERNAL_REQUESTS),
+        eq("https://not-balanced-backend"),
+        eq(200), anyLong(), eq(true)
     );
   }
 
@@ -492,7 +495,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
   public void failIfNoBackendAvailableInCurrentDC() throws Exception {
     createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", false);
     when(serverStore.getServers(TEST_UPSTREAM))
-            .thenReturn(List.of(new Server("server1", 1, "DC2")));
+        .thenReturn(List.of(new Server("server1", 1, "DC2")));
 
     getTestClient().get();
   }
@@ -506,10 +509,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Request[] request = new Request[1];
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-      .then(iom -> {
-        request[0] = completeWith(200, iom);
-        return null;
-      });
+        .then(iom -> {
+          request[0] = completeWith(200, iom);
+          return null;
+        });
 
     getTestClient().get();
     assertHostEquals(request[0], "server1");

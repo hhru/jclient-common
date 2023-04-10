@@ -2,40 +2,16 @@ package ru.hh.jclient.common.util.storage;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Exchanger;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
-import org.slf4j.Logger;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ThreadLocalStorage.class)
-@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*"})
 public class ThreadLocalStorageTest {
-
-  private Logger logMock;
-
-  @Before
-  public void setUp() throws Exception {
-    logMock = spy(Logger.class);
-    Whitebox.setInternalState(ThreadLocalStorage.class, "LOG", logMock);
-  }
 
   @Test
   public void testThreadLocalTransfer() throws InterruptedException {
@@ -111,24 +87,5 @@ public class ThreadLocalStorageTest {
 
     assertNull(storage1.get());
     assertNull(storage2.get());
-  }
-
-  @Test
-  public void testThreadLocalStorageNotLoggingIfInitValuePassed() throws InterruptedException {
-    var storage = new ThreadLocalStorage<>(() -> "default");
-
-    Transfer transfer = storage.prepareTransferToAnotherThread();
-    var exchanger = new Exchanger<>();
-    Thread thread = new Thread(() -> {
-      transfer.perform();
-      try {
-        exchanger.exchange(null);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    });
-    thread.start();
-    exchanger.exchange(null);
-    verify(logMock, times(0)).warn(anyString(), anyString(), anyString(), nullable(String.class));
   }
 }

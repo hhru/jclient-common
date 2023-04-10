@@ -79,13 +79,13 @@ public class UpstreamServiceImplTest {
     }
   };
   UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
-    .setUpstreams(upstreamList)
-    .setHealthPassing(true)
-    .setSelfNodeFilteringEnabled(true)
-    .setDatacenterList(datacenterList)
-    .setWatchSeconds(watchSeconds)
-    .setSyncInit(false)
-    .setConsistencyMode(ConsistencyMode.DEFAULT);
+      .setUpstreams(upstreamList)
+      .setHealthPassing(true)
+      .setSelfNodeFilteringEnabled(true)
+      .setDatacenterList(datacenterList)
+      .setWatchSeconds(watchSeconds)
+      .setSyncInit(false)
+      .setConsistencyMode(ConsistencyMode.DEFAULT);
 
   @Before
   public void init() {
@@ -98,7 +98,7 @@ public class UpstreamServiceImplTest {
 
   private void mockServiceHealth(List<ServiceHealth> health) {
     when(healthClient.getHealthyServiceInstances(anyString(), any(QueryOptions.class)))
-      .thenReturn(new ConsulResponse<>(health, 0, false, BigInteger.ONE, Optional.empty()));
+        .thenReturn(new ConsulResponse<>(health, 0, false, BigInteger.ONE, Optional.empty()));
   }
 
   @Test
@@ -188,8 +188,8 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
     List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
-      .getUpstreamStore()
-      .getServers(SERVICE_NAME);
+        .getUpstreamStore()
+        .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
   }
 
@@ -215,8 +215,8 @@ public class UpstreamServiceImplTest {
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
     List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
-      .getUpstreamStore()
-      .getServers(SERVICE_NAME);
+        .getUpstreamStore()
+        .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
   }
 
@@ -228,16 +228,23 @@ public class UpstreamServiceImplTest {
     int weight = 12;
     int port = 124;
 
-    var updatedUpstream = dcS.stream()
-        .map(dc -> addresses.stream().map(s -> buildServiceHealth(s, port, dc, NODE_NAME, weight, true))
-            .collect(Collectors.toMap(s -> buildKey(s.getService().getAddress()), Function.identity())))
-        .map(dc -> CompletableFuture.runAsync(() ->
-                upstreamService.updateUpstreams(dc, SERVICE_NAME, dc.values().stream().findFirst().get().getNode().getDatacenter().get()),
-            Executors.newFixedThreadPool(dcS.size())))
+    var updatedUpstream = dcS
+        .stream()
+        .map(
+            dc -> addresses
+                .stream()
+                .map(s -> buildServiceHealth(s, port, dc, NODE_NAME, weight, true))
+                .collect(Collectors.toMap(s -> buildKey(s.getService().getAddress()), Function.identity()))
+        )
+        .map(
+            dc -> CompletableFuture.runAsync(
+                () -> upstreamService.updateUpstreams(dc, SERVICE_NAME, dc.values().stream().findFirst().get().getNode().getDatacenter().get()),
+                Executors.newFixedThreadPool(dcS.size())
+            )
+        )
         .toArray(CompletableFuture[]::new);
 
     CompletableFuture.allOf(updatedUpstream).get();
-
 
     List<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(addresses.size() * dcS.size(), servers.size());
@@ -245,7 +252,6 @@ public class UpstreamServiceImplTest {
 
   @Test
   public void testDifferentNodesInProd() {
-
     String address1 = "a1";
     String address2 = "a2";
     int weight = 12;
@@ -265,8 +271,8 @@ public class UpstreamServiceImplTest {
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
     List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
-      .getUpstreamStore()
-      .getServers(SERVICE_NAME);
+        .getUpstreamStore()
+        .getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
   }
 
@@ -275,16 +281,17 @@ public class UpstreamServiceImplTest {
     mockServiceHealth(List.of());
 
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
-      .setUpstreams(upstreamList)
-      .setAllowCrossDC(allowCrossDC)
-      .setHealthPassing(false)
-      .setSelfNodeFilteringEnabled(false)
-      .setDatacenterList(datacenterList)
-      .setWatchSeconds(watchSeconds)
-      .setConsistencyMode(ConsistencyMode.DEFAULT)
-      .setSyncInit(true);
-    assertThrows(IllegalStateException.class,
-      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+        .setUpstreams(upstreamList)
+        .setAllowCrossDC(allowCrossDC)
+        .setHealthPassing(false)
+        .setSelfNodeFilteringEnabled(false)
+        .setDatacenterList(datacenterList)
+        .setWatchSeconds(watchSeconds)
+        .setConsistencyMode(ConsistencyMode.DEFAULT)
+        .setSyncInit(true);
+    assertThrows(
+        IllegalStateException.class,
+        () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
     );
   }
 
@@ -294,32 +301,37 @@ public class UpstreamServiceImplTest {
     mockServiceHealth(List.of(serviceHealth));
 
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
-      .setUpstreams(upstreamList)
-      .setAllowCrossDC(true)
-      .setHealthPassing(false)
-      .setSelfNodeFilteringEnabled(false)
-      .setDatacenterList(List.of(DATA_CENTER, "notCurrentDc"))
-      .setWatchSeconds(watchSeconds)
-      .setConsistencyMode(ConsistencyMode.DEFAULT)
-      .setSyncInit(true)
-      .setIgnoreNoServersInCurrentDC(false);
-    assertThrows(IllegalStateException.class,
-      () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+        .setUpstreams(upstreamList)
+        .setAllowCrossDC(true)
+        .setHealthPassing(false)
+        .setSelfNodeFilteringEnabled(false)
+        .setDatacenterList(List.of(DATA_CENTER, "notCurrentDc"))
+        .setWatchSeconds(watchSeconds)
+        .setConsistencyMode(ConsistencyMode.DEFAULT)
+        .setSyncInit(true)
+        .setIgnoreNoServersInCurrentDC(false);
+    assertThrows(
+        IllegalStateException.class,
+        () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
     );
 
     UpstreamServiceConsulConfig ignoreConfig = UpstreamServiceConsulConfig.copyOf(consulConfig).setIgnoreNoServersInCurrentDC(true);
-    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, ignoreConfig, List.of())
-      .getUpstreamStore()
-      .getServers(SERVICE_NAME)
-      .size()
+    assertEquals(
+        1,
+        new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, ignoreConfig, List.of())
+            .getUpstreamStore()
+            .getServers(SERVICE_NAME)
+            .size()
     );
 
     serviceHealth = buildServiceHealth("a2", 1, DATA_CENTER.toLowerCase(), NODE_NAME, 100, true);
     mockServiceHealth(List.of(serviceHealth));
-    assertEquals(1, new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
-      .getUpstreamStore()
-      .getServers(SERVICE_NAME)
-      .size()
+    assertEquals(
+        1,
+        new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+            .getUpstreamStore()
+            .getServers(SERVICE_NAME)
+            .size()
     );
   }
 
@@ -327,10 +339,10 @@ public class UpstreamServiceImplTest {
     Service service = buildService(address, port, buildWeight(weight));
     HealthCheck healthCheck = buildHealthCheck(passing);
     return ImmutableServiceHealth.builder()
-            .node(buildNode(datacenter, nodeName))
-            .service(service)
-            .addChecks(healthCheck)
-            .build();
+        .node(buildNode(datacenter, nodeName))
+        .service(service)
+        .addChecks(healthCheck)
+        .build();
   }
 
   private ServiceHealthKey buildKey(String address) {
@@ -343,19 +355,19 @@ public class UpstreamServiceImplTest {
 
   private Service buildService(String address, int port, ServiceWeights serviceWeights) {
     return ImmutableService.builder().address(address)
-            .id("id1")
-            .service(SERVICE_NAME)
-            .port(port)
-            .weights(serviceWeights).build();
+        .id("id1")
+        .service(SERVICE_NAME)
+        .port(port)
+        .weights(serviceWeights).build();
   }
 
   private HealthCheck buildHealthCheck(boolean passing) {
     return ImmutableHealthCheck.builder()
-            .name(SERVICE_NAME)
-            .node("node1")
-            .checkId("check1")
-            .status(passing ? "passing" : "failed")
-            .build();
+        .name(SERVICE_NAME)
+        .node("node1")
+        .checkId("check1")
+        .status(passing ? "passing" : "failed")
+        .build();
   }
 
   private Node buildNode(String datacenter, String nodeName) {

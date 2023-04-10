@@ -10,8 +10,14 @@ public class UnexpectedContentTypeException extends ClientResponseException {
   private Collection<String> expected;
 
   public UnexpectedContentTypeException(Response response, String actual, Collection<String> expected) {
-    super(response, String.format(
-      "Unexpected content type: %s, should be %s", actual.toString(), expected.stream().map(Object::toString).collect(Collectors.joining(","))));
+    super(
+        response,
+        String.format(
+            "Unexpected content type: %s, should be %s",
+            actual,
+            expected.stream().map(Object::toString).collect(Collectors.joining(","))
+        )
+    );
     this.actual = actual;
     this.expected = expected;
   }

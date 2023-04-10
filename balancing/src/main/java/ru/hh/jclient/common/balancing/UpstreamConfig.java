@@ -9,8 +9,10 @@ public final class UpstreamConfig {
   static final int DEFAULT_CONNECT_TIMEOUT_MS = 200;
 
   public static final UpstreamConfig DEFAULT_CONFIG = new UpstreamConfig(
-    DEFAULT_MAX_TRIES, DEFAULT_MAX_TIMEOUT_TRIES,
-    DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS
+      DEFAULT_MAX_TRIES,
+      DEFAULT_MAX_TIMEOUT_TRIES,
+      DEFAULT_CONNECT_TIMEOUT_MS,
+      DEFAULT_REQUEST_TIMEOUT_MS
   );
 
   private final int maxTries;
@@ -70,11 +72,11 @@ public final class UpstreamConfig {
   @Override
   public String toString() {
     return "{max_tries=" + maxTries
-      + ", max_timeout_tries=" + maxTimeoutTries
-      + ", connect_timeout_ms=" + connectTimeoutMs
-      + ", request_timeout_ms=" + requestTimeoutMs
-      + ", slow_start_interval_sec=" + slowStartIntervalSec
-      + ", is_session_required=" + isSessionRequired
-      + '}';
+        + ", max_timeout_tries=" + maxTimeoutTries
+        + ", connect_timeout_ms=" + connectTimeoutMs
+        + ", request_timeout_ms=" + requestTimeoutMs
+        + ", slow_start_interval_sec=" + slowStartIntervalSec
+        + ", is_session_required=" + isSessionRequired
+        + '}';
   }
 }

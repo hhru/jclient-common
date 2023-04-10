@@ -12,7 +12,7 @@ import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
 public final class RetryPolicy {
   private Map<Integer, Boolean> rules = new HashMap<>();
 
-   public RetryPolicy() {
+  public RetryPolicy() {
     rules.put(CONNECT_TIMEOUT_ERROR, false);
     rules.put(SERVICE_UNAVAILABLE, false);
   }
