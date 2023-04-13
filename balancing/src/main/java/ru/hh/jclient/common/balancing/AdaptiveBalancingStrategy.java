@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static ru.hh.jclient.common.balancing.RequestBalancer.WARM_UP_DEFAULT_TIME_MICROS;
+import static ru.hh.jclient.common.balancing.RequestBalancer.WARM_UP_DEFAULT_TIME_MILLIS;
 
 final class AdaptiveBalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdaptiveBalancingStrategy.class);
@@ -55,7 +55,7 @@ final class AdaptiveBalancingStrategy {
     }
 
     for (int j = 0; j < n; j++) {
-      long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MICROS : scores[j];
+      long time = isAnyWarmingUp ? WARM_UP_DEFAULT_TIME_MILLIS : scores[j];
       scores[j] = isAnyWarmingUp ? time : Math.round((float) min * max / time);
     }
 

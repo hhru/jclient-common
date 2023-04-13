@@ -31,9 +31,9 @@ public class AdaptiveBalancingState extends BalancingState {
   }
 
   @Override
-  public void releaseServer(long timeToLastByteMicros, boolean isServerError) {
+  public void releaseServer(long timeToLastByteMillis, boolean isServerError) {
     if (isServerAvailable()) {
-      upstream.releaseServer(getCurrentServer().getIndex(), !getTriedServers().isEmpty(), isServerError, timeToLastByteMicros, !adaptiveFailed);
+      upstream.releaseServer(getCurrentServer().getIndex(), !getTriedServers().isEmpty(), isServerError, timeToLastByteMillis, !adaptiveFailed);
     }
   }
 

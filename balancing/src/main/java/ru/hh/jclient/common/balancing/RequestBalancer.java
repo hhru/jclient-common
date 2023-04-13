@@ -20,7 +20,7 @@ import ru.hh.jclient.common.ResponseWrapper;
 
 public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);
-  static final int WARM_UP_DEFAULT_TIME_MICROS = 100_000;
+  static final int WARM_UP_DEFAULT_TIME_MILLIS = 100;
 
   private final RequestStrategy.RequestExecutor requestExecutor;
   private final boolean forceIdempotence;
@@ -75,18 +75,17 @@ public abstract class RequestBalancer implements RequestEngine {
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
   private void finishRequest(ResponseWrapper wrapper) {
-    long timeToLastByteMicros = wrapper.getTimeToLastByteMicros();
-    updateLeftTriesAndTime((int) timeToLastByteMicros);
+    long timeToLastByteMillis = wrapper.getTimeToLastByteMillis();
+    updateLeftTriesAndTime((int) timeToLastByteMillis);
     Response response = wrapper.getResponse();
     this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
-    onRequestReceived(wrapper, timeToLastByteMicros);
+    onRequestReceived(wrapper, timeToLastByteMillis);
   }
 
-  protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMicros);
+  protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMillis);
 
-  private void updateLeftTriesAndTime(int responseTimeMicros) {
-    var responseTimeMs = responseTimeMicros / 1000;
-    requestTimeLeftMs = requestTimeLeftMs >= responseTimeMs ? requestTimeLeftMs - responseTimeMs : 0;
+  private void updateLeftTriesAndTime(int responseTimeMillis) {
+    requestTimeLeftMs = requestTimeLeftMs >= responseTimeMillis ? requestTimeLeftMs - responseTimeMillis : 0;
     if (triesLeft > 0) {
       triesLeft--;
     }

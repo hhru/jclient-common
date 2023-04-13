@@ -83,8 +83,8 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   }
 
   @Override
-  protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMicros) {
-    state.releaseServer(timeToLastByteMicros, isServerError(wrapper));
+  protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMillis) {
+    state.releaseServer(timeToLastByteMillis, isServerError(wrapper));
   }
 
   @Override
@@ -92,7 +92,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     boolean isRequestFinal = !willFireRetry;
     for (Monitoring monitoring : monitorings) {
       int statusCode = wrapper.getResponse().getStatusCode();
-      long requestTimeMicros = wrapper.getTimeToLastByteMicros();
+      long requestTimeMillis = wrapper.getTimeToLastByteMillis();
 
       if (!state.isServerAvailable()) {
         LOGGER.warn("Monitoring won't be sent", new IllegalStateException("Got response, but server is not available"));
@@ -101,8 +101,8 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       var serverAddress = state.getCurrentServer().getAddress();
       var dcName = state.getCurrentServer().getDatacenter();
       String upstreamName = state.getUpstreamName();
-      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMicros, isRequestFinal);
-      monitoring.countRequestTime(upstreamName, dcName, requestTimeMicros);
+      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
+      monitoring.countRequestTime(upstreamName, dcName, requestTimeMillis);
 
       if (isRequestFinal && triesUsed > 1) {
         monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
