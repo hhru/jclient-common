@@ -113,11 +113,11 @@ public class Upstream {
     return acquireServer(Set.of());
   }
 
-  void releaseServer(int serverIndex, boolean isRetry, boolean isError, long responseTimeMicros) {
-    releaseServer(serverIndex, isRetry, isError, responseTimeMicros, false);
+  void releaseServer(int serverIndex, boolean isRetry, boolean isError, long responseTimeMillis) {
+    releaseServer(serverIndex, isRetry, isError, responseTimeMillis, false);
   }
 
-  void releaseServer(int serverIndex, boolean isRetry, boolean isError, long responseTimeMicros, boolean adaptive) {
+  void releaseServer(int serverIndex, boolean isRetry, boolean isError, long responseTimeMillis, boolean adaptive) {
     configReadLock.lock();
     try {
       if (serverIndex < 0 || serverIndex >= servers.size()) {
@@ -126,7 +126,7 @@ public class Upstream {
       Server server = servers.get(serverIndex);
       if (server != null) {
         if (adaptive) {
-          server.releaseAdaptive(isError, responseTimeMicros);
+          server.releaseAdaptive(isError, responseTimeMillis);
         } else {
           server.release(isRetry);
         }

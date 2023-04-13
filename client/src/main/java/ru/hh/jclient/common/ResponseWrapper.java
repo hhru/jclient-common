@@ -2,18 +2,18 @@ package ru.hh.jclient.common;
 
 public class ResponseWrapper {
   private Response response;
-  private long timeToLastByteMicros;
+  private long timeToLastByteMillis;
 
-  public ResponseWrapper(Response response, long timeToLastByteMicros) {
+  public ResponseWrapper(Response response, long timeToLastByteMillis) {
     this.response = response;
-    this.timeToLastByteMicros = timeToLastByteMicros;
+    this.timeToLastByteMillis = timeToLastByteMillis;
   }
 
   public Response getResponse() {
     return response;
   }
 
-  public long getTimeToLastByteMicros() {
-    return timeToLastByteMicros;
+  public long getTimeToLastByteMillis() {
+    return timeToLastByteMillis;
   }
 }

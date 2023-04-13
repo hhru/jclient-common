@@ -78,14 +78,14 @@ public abstract class AbstractBalancingStrategyTest {
           String serverDatacenter,
           String serverAddress,
           int statusCode,
-          long requestTimeMicros,
+          long requestTimeMillis,
           boolean isRequestFinal
       ) {
         trackingHolder.computeIfAbsent(serverAddress, addr -> new CopyOnWriteArrayList<>()).add(statusCode);
       }
 
       @Override
-      public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMicros) {}
+      public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMillis) {}
 
       @Override
       public void countRetry(

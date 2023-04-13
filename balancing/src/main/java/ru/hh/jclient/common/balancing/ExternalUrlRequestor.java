@@ -30,7 +30,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
   }
 
   @Override
-  protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMicros) {
+  protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMillis) {
   }
 
   @Override
@@ -38,14 +38,14 @@ public class ExternalUrlRequestor extends RequestBalancer {
     boolean isRequestFinal = !willFireRetry;
     for (Monitoring monitoring : monitorings) {
       int statusCode = wrapper.getResponse().getStatusCode();
-      long requestTimeMicros = wrapper.getTimeToLastByteMicros();
+      long requestTimeMillis = wrapper.getTimeToLastByteMillis();
 
       Uri originalUri = request.getUri();
       Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
       String serverAddress = baseUri.toString();
 
-      monitoring.countRequest(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMicros, isRequestFinal);
-      monitoring.countRequestTime(serverAddress, DC_FOR_EXTERNAL_REQUESTS, requestTimeMicros);
+      monitoring.countRequest(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
+      monitoring.countRequestTime(serverAddress, DC_FOR_EXTERNAL_REQUESTS, requestTimeMillis);
 
       if (isRequestFinal && triesUsed > 1) {
         monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);

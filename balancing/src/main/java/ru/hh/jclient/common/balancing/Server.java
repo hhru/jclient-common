@@ -93,12 +93,12 @@ public class Server {
     });
   }
 
-  void releaseAdaptive(boolean isError, long responseTimeMicros) {
+  void releaseAdaptive(boolean isError, long responseTimeMillis) {
     if (isError) {
       downtimeDetector.failed();
     } else {
       downtimeDetector.success();
-      responseTimeTracker.time(responseTimeMicros);
+      responseTimeTracker.time(responseTimeMillis);
     }
   }
 

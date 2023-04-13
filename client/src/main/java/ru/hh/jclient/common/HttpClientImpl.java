@@ -215,7 +215,7 @@ class HttpClientImpl extends HttpClient {
 
   private static ResponseWrapper proceedWithResponse(
       Response response,
-      long responseTimeMicros,
+      long responseTimeMillis,
       List<RequestDebug> requestDebugs,
       Transfers contextTransfers,
       CompletableFuture<ResponseWrapper> promise,
@@ -225,7 +225,7 @@ class HttpClientImpl extends HttpClient {
     for (RequestDebug debug : requestDebugs) {
       response = debug.onResponse(response);
     }
-    ResponseWrapper wrapper = new ResponseWrapper(response, responseTimeMicros);
+    ResponseWrapper wrapper = new ResponseWrapper(response, responseTimeMillis);
     // complete promise in a separate thread to avoid blocking caller thread
     callbackExecutor.execute(() -> {
       try {
@@ -272,23 +272,23 @@ class HttpClientImpl extends HttpClient {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
 
-      long timeToLastByteMicros = getTimeToLastByte();
-      mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} micros on {} {}",
-          responseStatusCode, responseStatusText, timeToLastByteMicros, request.getMethod(), request.getUri()
+      long timeToLastByteMillis = getTimeToLastByte();
+      mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} millis on {} {}",
+          responseStatusCode, responseStatusText, timeToLastByteMillis, request.getMethod(), request.getUri()
       ));
 
-      return proceedWithResponse(response, timeToLastByteMicros);
+      return proceedWithResponse(response, timeToLastByteMillis);
     }
 
     @Override
     public void onThrowable(Throwable t) {
       org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri());
-      long timeToLastByteMicros = getTimeToLastByte();
+      long timeToLastByteMillis = getTimeToLastByte();
 
       mdcCopy.doInContext(
           () -> LOGGER.warn(
-              "HTTP_CLIENT_ERROR: client error after {} micros on {} {}: {}{}",
-              timeToLastByteMicros,
+              "HTTP_CLIENT_ERROR: client error after {} millis on {} {}: {}{}",
+              timeToLastByteMillis,
               request.getMethod(),
               request.getUri(),
               t,
@@ -296,7 +296,7 @@ class HttpClientImpl extends HttpClient {
           ));
 
       if (response != null) {
-        proceedWithResponse(response, timeToLastByteMicros);
+        proceedWithResponse(response, timeToLastByteMillis);
         return;
       }
 
@@ -306,10 +306,10 @@ class HttpClientImpl extends HttpClient {
       completeExceptionally(t);
     }
 
-    private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMicros) {
+    private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMillis) {
       return HttpClientImpl.proceedWithResponse(
           new Response(response),
-          responseTimeMicros,
+          responseTimeMillis,
           requestDebugs,
           contextTransfers,
           promise,
@@ -344,7 +344,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     private long getTimeToLastByte() {
-      return requestStart.until(now(), ChronoUnit.MICROS);
+      return requestStart.until(now(), ChronoUnit.MILLIS);
     }
   }
 }
