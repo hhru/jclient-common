@@ -1,6 +1,5 @@
 package ru.hh.jclient.errors.impl.check;
 
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.HttpClient;
@@ -19,9 +18,9 @@ public class CheckedEmptyWithStatus {
 
   public <T> CheckedResultWithStatus<T> map(Function<Integer, T> mapper) {
     if (HttpClient.OK_RANGE.contains(status)) {
-      return new CheckedResultWithStatus<>(Optional.ofNullable(mapper.apply(status)), status);
+      return new CheckedResultWithStatus<>(mapper.apply(status), status);
     }
-    return new CheckedResultWithStatus<>(Optional.empty(), status);
+    return new CheckedResultWithStatus<>(null, status);
   }
 
   public int getStatus() {

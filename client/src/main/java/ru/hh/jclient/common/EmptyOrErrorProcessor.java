@@ -12,7 +12,7 @@ public class EmptyOrErrorProcessor<E> extends ResultOrErrorProcessor<Void, E> {
 
   public CompletableFuture<EmptyOrErrorWithStatus<E>> emptyWithStatus() {
     return resultWithResponse().thenApply(ResultOrErrorWithResponse::hideResponse)
-        .thenApply(rews -> new EmptyOrErrorWithStatus<>(rews.getError(), rews.getStatusCode()));
+        .thenApply(rews -> new EmptyOrErrorWithStatus<>(rews.getError().orElse(null), rews.getStatusCode()));
   }
 
   /**

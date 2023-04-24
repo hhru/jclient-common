@@ -1,39 +1,48 @@
 package ru.hh.jclient.errors.impl.check;
 
-import java.util.Optional;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.ResultWithStatus;
 
 public class CheckedResultWithStatus<T> {
-  private Optional<T> value;
+
+  @Nullable
+  private final T value;
   private final int status;
 
   public CheckedResultWithStatus(ResultWithStatus<T> result) {
-    this.value = result.get();
+    this.value = result.get().orElse(null);
     this.status = result.getStatusCode();
   }
 
-  public CheckedResultWithStatus(Optional<T> value, int status) {
+  public CheckedResultWithStatus(@Nullable T value, int status) {
     this.value = value;
     this.status = status;
   }
 
   public <R> R mapOrElse(Function<T, R> mapper, Function<Integer, R> orElseMapper) {
-    return value.map(mapper).orElseGet(() -> orElseMapper.apply(status));
+    return value != null ? mapper.apply(value) : orElseMapper.apply(status);
   }
 
   public <R> CheckedResultWithStatus<R> map(Function<T, R> mapper) {
-    return new CheckedResultWithStatus<>(value.map(mapper), status);
+    return new CheckedResultWithStatus<>(
+        value != null ? mapper.apply(value) : null,
+        status
+    );
   }
 
   public <R> CheckedResultWithStatus<R> map(BiFunction<T, Integer, R> mapper) {
-    return new CheckedResultWithStatus<>(value.map(v -> mapper.apply(v, status)), status);
+    return new CheckedResultWithStatus<>(
+        value != null ? mapper.apply(value, status) : null,
+        status
+    );
   }
 
   public CheckedResultWithStatus<T> ifPresent(Consumer<T> consumer) {
@@ -41,13 +50,15 @@ public class CheckedResultWithStatus<T> {
   }
 
   public CheckedResultWithStatus<T> ifPresent(BiConsumer<T, Integer> consumer) {
-    value.ifPresent(v -> consumer.accept(v, status));
+    if (value != null) {
+      consumer.accept(value, status);
+    }
     return this;
   }
 
   public CheckedResultWithStatus<T> onSuccessStatus(BiConsumer<T, Integer> consumer) {
     if (HttpClient.OK_RANGE.contains(status)) {
-      consumer.accept(value.orElse(null), status);
+      consumer.accept(value, status);
     }
     return this;
   }
@@ -73,25 +84,25 @@ public class CheckedResultWithStatus<T> {
 
   public CheckedResultWithStatus<T> onStatus(int status, Consumer<T> consumer) {
     if (this.status == status) {
-      consumer.accept(value.orElse(null));
+      consumer.accept(value);
     }
     return this;
   }
 
   public T orElse(Function<Integer, T> supplier) {
-    return value.orElseGet(() -> supplier.apply(status));
+    return value != null ? value : supplier.apply(status);
   }
 
   public T orElse(T t) {
-    return value.orElse(t);
+    return value != null ? value : t;
   }
 
   public T orElse(Supplier<T> supplier) {
-    return value.orElseGet(supplier);
+    return value != null ? value : supplier.get();
   }
 
   public T get() {
-    return value.get();
+    return Objects.requireNonNull(value);
   }
 
   public int getStatus() {

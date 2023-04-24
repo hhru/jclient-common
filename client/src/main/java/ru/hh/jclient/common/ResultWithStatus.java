@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Wrapper object that contains response status code and result of conversion. This wrapper can be used outside of implementing client.
@@ -9,11 +10,12 @@ import java.util.Optional;
  */
 public class ResultWithStatus<T> {
 
-  private Optional<T> value;
+  @Nullable
+  private T value;
   private int statusCode;
 
-  public ResultWithStatus(T value, int statusCode) {
-    this.value = Optional.ofNullable(value);
+  public ResultWithStatus(@Nullable T value, int statusCode) {
+    this.value = value;
     this.statusCode = statusCode;
   }
 
@@ -21,7 +23,7 @@ public class ResultWithStatus<T> {
    * @return result of response conversion. Can be {@link Optional#empty() empty} if error has happened
    */
   public Optional<T> get() {
-    return value;
+    return Optional.ofNullable(value);
   }
 
   /**

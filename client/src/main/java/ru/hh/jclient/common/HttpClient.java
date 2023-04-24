@@ -19,6 +19,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
+import javax.annotation.Nullable;
 import javax.xml.bind.JAXBContext;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
@@ -46,9 +47,10 @@ public abstract class HttpClient {
 
   private List<RequestDebug> debugs;
   private Request request;
-  private Optional<?> requestBodyEntity = Optional.empty();
-  private Optional<Collection<String>> expectedMediaTypes = Optional.empty();
-  private Optional<Collection<String>> expectedMediaTypesForErrors = Optional.empty();
+  @Nullable
+  private Object requestBodyEntity;
+  private Collection<String> expectedMediaTypes = List.of();
+  private Collection<String> expectedMediaTypesForErrors = List.of();
 
   private boolean readOnlyReplica;
   private boolean noSession;
@@ -120,7 +122,7 @@ public abstract class HttpClient {
    *          protobuf object to send in request
    */
   public HttpClient withProtobufBody(MessageLite body) {
-    requestBodyEntity = Optional.of(requireNonNull(body, "body must not be null"));
+    requestBodyEntity = requireNonNull(body, "body must not be null");
     RequestBuilder builder = new RequestBuilder(request);
     builder.setBody(body.toByteArray(), "application/x-protobuf");
     request = builder.build();
@@ -135,7 +137,7 @@ public abstract class HttpClient {
    *          java object to send in request
    */
   public HttpClient withJavaObjectBody(Object body) {
-    requestBodyEntity = Optional.of(requireNonNull(body, "body must not be null"));
+    requestBodyEntity = requireNonNull(body, "body must not be null");
     RequestBuilder builder = new RequestBuilder(request);
     try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
          ObjectOutputStream out = new ObjectOutputStream(byteOut)) {
@@ -349,18 +351,18 @@ public abstract class HttpClient {
   }
 
   Optional<?> getRequestBodyEntity() {
-    return requestBodyEntity;
+    return Optional.ofNullable(requestBodyEntity);
   }
 
-  Optional<Collection<String>> getExpectedMediaTypes() {
+  Collection<String> getExpectedMediaTypes() {
     return expectedMediaTypes;
   }
 
-  Optional<Collection<String>> getExpectedMediaTypesForErrors() {
+  Collection<String> getExpectedMediaTypesForErrors() {
     return expectedMediaTypesForErrors;
   }
 
-  void setExpectedMediaTypesForErrors(Optional<Collection<String>> mediaTypes) {
+  void setExpectedMediaTypesForErrors(Collection<String> mediaTypes) {
     expectedMediaTypesForErrors = mediaTypes;
   }
 

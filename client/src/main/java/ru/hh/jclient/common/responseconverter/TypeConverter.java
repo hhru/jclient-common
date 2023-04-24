@@ -1,7 +1,7 @@
 package ru.hh.jclient.common.responseconverter;
 
 import java.util.Collection;
-import java.util.Optional;
+import java.util.List;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResultWithResponse;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableFunction;
@@ -22,7 +22,7 @@ public interface TypeConverter<T> {
     throw new UnsupportedOperationException("Method was not implemented");
   }
 
-  default Optional<Collection<String>> getSupportedContentTypes() {
-    return Optional.empty();
+  default Collection<String> getSupportedContentTypes() {
+    return List.of();
   }
 }

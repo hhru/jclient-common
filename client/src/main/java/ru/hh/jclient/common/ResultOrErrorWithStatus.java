@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
-import static java.util.Objects.requireNonNull;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Wrapper object that contains response status code and either normal or ERROR result of conversion. This wrapper can be used outside of implementing
@@ -12,18 +12,19 @@ import java.util.Optional;
  */
 public class ResultOrErrorWithStatus<T, E> extends ResultWithStatus<T> {
 
-  private Optional<E> errorValue;
+  @Nullable
+  private final E errorValue;
 
-  public ResultOrErrorWithStatus(Optional<T> value, Optional<E> errorValue, int statusCode) {
-    super(value.orElse(null), statusCode);
-    this.errorValue = requireNonNull(errorValue, "errorValue must not be null");
+  public ResultOrErrorWithStatus(@Nullable T value, @Nullable E errorValue, int statusCode) {
+    super(value, statusCode);
+    this.errorValue = errorValue;
   }
 
   /**
    * @return result of ERROR response conversion. {@link Optional#empty() Empty} if error did not happen
    */
   public Optional<E> getError() {
-    return errorValue;
+    return Optional.ofNullable(errorValue);
   }
 
   /**
@@ -31,6 +32,6 @@ public class ResultOrErrorWithStatus<T, E> extends ResultWithStatus<T> {
    */
   @Override
   public boolean isSuccess() {
-    return super.isSuccess() && !errorValue.isPresent();
+    return super.isSuccess() && errorValue == null;
   }
 }

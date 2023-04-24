@@ -81,10 +81,10 @@ class HttpClientImpl extends HttpClient {
     }
     if (retryCount > 0) {
       LOGGER.info("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
-      getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity(), retryCount, context));
+      getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity().orElse(null), retryCount, context));
     } else {
       LOGGER.debug("HTTP_CLIENT_START: Starting {} {}", request.getMethod(), request.getUri());
-      getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity(), context));
+      getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity().orElse(null), context));
     }
 
     Transfers transfers = getStorages().prepare();
@@ -123,8 +123,8 @@ class HttpClientImpl extends HttpClient {
 
     requestBuilder.setHeaders(headers);
 
-    if (!headers.contains(ACCEPT) && getExpectedMediaTypes().isPresent()) {
-      requestBuilder.addHeader(ACCEPT, String.join(",", getExpectedMediaTypes().get()));
+    if (!headers.contains(ACCEPT) && !getExpectedMediaTypes().isEmpty()) {
+      requestBuilder.addHeader(ACCEPT, String.join(",", getExpectedMediaTypes()));
     }
 
     if (!areAllowedMediaTypesForResponseAndErrorCompatible()) {
@@ -132,15 +132,15 @@ class HttpClientImpl extends HttpClient {
           "Different MediaTypes for successful answer and for errors on {} {} s: {} e: {} ",
           request.getMethod(),
           request.getUri(),
-          getExpectedMediaTypes().get().stream().map(Object::toString).collect(Collectors.joining(",")),
-          getExpectedMediaTypesForErrors().get().stream().map(Object::toString).collect(Collectors.joining(","))
+          getExpectedMediaTypes().stream().map(Object::toString).collect(Collectors.joining(",")),
+          getExpectedMediaTypesForErrors().stream().map(Object::toString).collect(Collectors.joining(","))
       );
     }
 
-    if (!headers.contains(X_HH_ACCEPT_ERRORS) && getExpectedMediaTypesForErrors().isPresent()) {
+    if (!headers.contains(X_HH_ACCEPT_ERRORS) && !getExpectedMediaTypesForErrors().isEmpty()) {
       requestBuilder.addHeader(
           X_HH_ACCEPT_ERRORS,
-          getExpectedMediaTypesForErrors().get().stream().map(Object::toString).collect(Collectors.joining(","))
+          getExpectedMediaTypesForErrors().stream().map(Object::toString).collect(Collectors.joining(","))
       );
     }
 
@@ -175,11 +175,11 @@ class HttpClientImpl extends HttpClient {
       return true;
     }
 
-    if (getExpectedMediaTypes().get().size() == 1 && getExpectedMediaTypes().get().contains(ContentType.ANY)) {
+    if (getExpectedMediaTypes().size() == 1 && getExpectedMediaTypes().contains(ContentType.ANY)) {
       return true;
     }
 
-    return getExpectedMediaTypes().get().equals(getExpectedMediaTypesForErrors().get());
+    return getExpectedMediaTypes().equals(getExpectedMediaTypesForErrors());
   }
 
   @Override
@@ -198,7 +198,7 @@ class HttpClientImpl extends HttpClient {
       @Override
       public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
         for (RequestDebug requestDebug : getDebugs()) {
-          requestDebug.onRequest(request, getRequestBodyEntity(), requestContext);
+          requestDebug.onRequest(request, getRequestBodyEntity().orElse(null), requestContext);
         }
         Transfers transfers = getStorages().prepare();
         CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();

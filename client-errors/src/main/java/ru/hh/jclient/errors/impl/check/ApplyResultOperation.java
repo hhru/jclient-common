@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.ExceptionBuilder;
@@ -20,28 +21,46 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
 
   public ApplyResultOperation(
       ResultWithStatus<T> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      @Nullable Function<Integer, Integer> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
       Set<Integer> allowStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
-    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, allowStatuses, exceptionBuilder);
+    super(
+        wrapper,
+        errorStatusCode,
+        proxiedStatusCodes,
+        statusCodesConverter,
+        errorMessage,
+        predicates,
+        allowStatuses,
+        exceptionBuilder
+    );
   }
 
   public ApplyResultOperation(
       ResultWithStatus<T> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      @Nullable Function<Integer, Integer> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
-      Optional<T> defaultValue,
+      @Nullable T defaultValue,
       Set<Integer> allowStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
-    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage,
-        predicates, defaultValue, allowStatuses, exceptionBuilder);
+    super(
+        wrapper,
+        errorStatusCode,
+        proxiedStatusCodes,
+        statusCodesConverter,
+        errorMessage,
+        predicates,
+        defaultValue,
+        allowStatuses,
+        exceptionBuilder
+    );
   }
 
   // terminal operations
@@ -69,7 +88,7 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   public CheckedResultWithStatus<T> onAnyErrorWrapped() {
-    return new CheckedResultWithStatus<>(checkForAnyError(), wrapper.getStatusCode());
+    return new CheckedResultWithStatus<>(checkForAnyError().orElse(null), wrapper.getStatusCode());
   }
 
   /**
@@ -90,7 +109,7 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   public CheckedResultWithStatus<T> onEmptyWrapped() {
-    return new CheckedResultWithStatus<>(checkForEmpty(), wrapper.getStatusCode());
+    return new CheckedResultWithStatus<>(checkForEmpty().orElse(null), wrapper.getStatusCode());
   }
 
   /**
@@ -111,7 +130,7 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
   }
 
   public CheckedResultWithStatus<T> onStatusCodeErrorWrapped() {
-    return new CheckedResultWithStatus<>(checkForStatusCodeError(), wrapper.getStatusCode());
+    return new CheckedResultWithStatus<>(checkForStatusCodeError().orElse(null), wrapper.getStatusCode());
   }
 
   /**
@@ -128,10 +147,10 @@ public class ApplyResultOperation<T> extends AbstractOperation<T, ApplyResultOpe
    * @return result or default value (if specified) in case of error
    */
   public Optional<T> onPredicate() {
-    return checkForPredicates(wrapper.get());
+    return checkForPredicates(wrapper.get().orElse(null));
   }
 
   public CheckedResultWithStatus<T> onPredicateWrapped() {
-    return new CheckedResultWithStatus<>(checkForPredicates(wrapper.get()), wrapper.getStatusCode());
+    return new CheckedResultWithStatus<>(checkForPredicates(wrapper.get().orElse(null)).orElse(null), wrapper.getStatusCode());
   }
 }

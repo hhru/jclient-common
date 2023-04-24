@@ -3,7 +3,7 @@ package ru.hh.jclient.common;
 import java.util.ArrayList;
 import static java.util.Arrays.asList;
 import java.util.List;
-import java.util.Optional;
+import javax.annotation.Nullable;
 import static org.junit.Assert.assertEquals;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 
@@ -42,12 +42,12 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
-  public void onRequest(ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, RequestContext context) {
+  public void onRequest(Request request, @Nullable Object requestBodyEntity, RequestContext context) {
     record(Call.REQUEST);
   }
 
   @Override
-  public void onRetry(ru.hh.jclient.common.Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context) {
+  public void onRetry(Request request, @Nullable Object requestBodyEntity, int retryCount, RequestContext context) {
     record(Call.RETRY);
   }
 
@@ -63,7 +63,7 @@ public class TestRequestDebug implements RequestDebug {
   }
 
   @Override
-  public void onResponseConverted(Optional<?> result) {
+  public void onResponseConverted(@Nullable Object result) {
     record(Call.RESPONSE_CONVERTED);
   }
 

@@ -1,25 +1,26 @@
 package ru.hh.jclient.errors.impl;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import ru.hh.jclient.errors.ErrorsFactory;
 
 public abstract class OperationBase<OB extends OperationBase<OB>> {
 
-  protected Optional<Integer> errorStatusCode;
+  @Nullable
+  protected Integer errorStatusCode;
   private final Integer originalStatusCode;
   protected ExceptionBuilder<?, ?> exceptionBuilder;
   protected Supplier<BiFunction<String, Integer, Object>> errorEntityCreatorSupplier;
 
-  public OperationBase(Optional<Integer> errorStatusCode, Integer originalStatusCode, Supplier<String> errorMessage) {
+  public OperationBase(@Nullable Integer errorStatusCode, Integer originalStatusCode, Supplier<String> errorMessage) {
     this(errorStatusCode, originalStatusCode, errorMessage, new WebApplicationExceptionBuilder());
   }
 
   public OperationBase(
-      Optional<Integer> errorStatusCode,
+      @Nullable Integer errorStatusCode,
       Integer originalStatusCode,
       Supplier<String> errorMessage,
       ExceptionBuilder<?, ?> exceptionBuilder) {
@@ -32,7 +33,7 @@ public abstract class OperationBase<OB extends OperationBase<OB>> {
     if (errorEntityCreatorSupplier != null) {
       this.exceptionBuilder.setEntityCreator(errorEntityCreatorSupplier.get());
     }
-    return exceptionBuilder.setOriginalStatus(originalStatusCode).setStatus(errorStatusCode.get()).appendToMessage("- " + cause).toException();
+    return exceptionBuilder.setOriginalStatus(originalStatusCode).setStatus(errorStatusCode).appendToMessage("- " + cause).toException();
   }
 
   /**

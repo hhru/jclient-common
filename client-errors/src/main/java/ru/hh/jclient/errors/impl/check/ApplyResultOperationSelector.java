@@ -2,10 +2,6 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import static java.util.stream.Collectors.toList;
@@ -21,7 +17,7 @@ import ru.hh.jclient.common.ResultWithStatus;
 public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T, ApplyResultOperationSelector<T>> {
 
   protected ResultWithStatus<T> resultWithStatus;
-  private List<Integer> proxiedStatusCodes;
+  private List<Integer> proxiedStatusCodes = List.of();
   private Function<Integer, Integer> statusCodesConverter = Function.identity();
 
   public ApplyResultOperationSelector(ResultWithStatus<T> resultWithStatus, String errorMessage, Object... params) {
@@ -97,14 +93,16 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   }
 
   private ApplyResultOperation<T> throwWithCode(int code) {
-    return new ApplyResultOperation<>(resultWithStatus,
-        of(code),
-        ofNullable(proxiedStatusCodes),
-        of(statusCodesConverter),
+    return new ApplyResultOperation<>(
+        resultWithStatus,
+        code,
+        proxiedStatusCodes,
+        statusCodesConverter,
         errorMessage,
         predicates,
         allowedStatuses,
-        exceptionBuilder);
+        exceptionBuilder
+    );
   }
 
   /**
@@ -152,7 +150,7 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
    * </p>
    */
   public ApplyResultOperation<T> proxyStatusCode() {
-    return new ApplyResultOperation<>(resultWithStatus, empty(), empty(), empty(), errorMessage, predicates, allowedStatuses, exceptionBuilder);
+    return new ApplyResultOperation<>(resultWithStatus, null, List.of(), null, errorMessage, predicates, allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -169,12 +167,12 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   public ApplyResultOperation<T> returnDefault(T value) {
     return new ApplyResultOperation<>(
         resultWithStatus,
-        empty(),
-        empty(),
-        empty(),
+        null,
+        List.of(),
+        null,
         errorMessage,
         predicates,
-        of(value),
+        value,
         allowedStatuses,
         exceptionBuilder);
   }
@@ -191,12 +189,12 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   public ApplyResultOperation<T> returnEmpty() {
     return new ApplyResultOperation<>(
         resultWithStatus,
-        empty(),
-        empty(),
-        empty(),
+        null,
+        List.of(),
+        null,
         errorMessage,
         predicates,
-        Optional.empty(),
+        null,
         allowedStatuses,
         exceptionBuilder);
   }
@@ -215,12 +213,12 @@ public class ApplyResultOperationSelector<T> extends AbstractOperationSelector<T
   public ApplyResultOperation<T> returnDefault(Supplier<T> value) {
     return new ApplyResultOperation<>(
         resultWithStatus,
-        empty(),
-        empty(),
-        empty(),
+        null,
+        List.of(),
+        null,
         errorMessage,
         predicates,
-        of(value.get()),
+        value.get(),
         allowedStatuses,
         exceptionBuilder);
   }

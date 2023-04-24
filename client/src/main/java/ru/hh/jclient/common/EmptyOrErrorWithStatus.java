@@ -1,11 +1,10 @@
 package ru.hh.jclient.common;
 
-import java.util.Optional;
-import static java.util.Optional.empty;
+import javax.annotation.Nullable;
 
 public class EmptyOrErrorWithStatus<E> extends ResultOrErrorWithStatus<Void, E> {
 
-  public EmptyOrErrorWithStatus(Optional<E> errorValue, int statusCode) {
-    super(empty(), errorValue, statusCode);
+  public EmptyOrErrorWithStatus(@Nullable E errorValue, int statusCode) {
+    super(null, errorValue, statusCode);
   }
 }

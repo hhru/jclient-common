@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.ExceptionBuilder;
@@ -14,28 +15,46 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
 
   public ApplyEmptyResultOperation(
       ResultWithStatus<Void> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      @Nullable Function<Integer, Integer> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<Void>> predicates,
       Set<Integer> allowedStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
-    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, allowedStatuses, exceptionBuilder);
+    super(
+        wrapper,
+        errorStatusCode,
+        proxiedStatusCodes,
+        statusCodesConverter,
+        errorMessage,
+        predicates,
+        allowedStatuses,
+        exceptionBuilder
+    );
   }
 
   public ApplyEmptyResultOperation(
       ResultWithStatus<Void> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      Function<Integer, Integer> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<Void>> predicates,
-      Optional<Void> defaultValue,
+      @Nullable Void defaultValue,
       Set<Integer> allowedStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
-    super(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage,
-        predicates, defaultValue, allowedStatuses, exceptionBuilder);
+    super(
+        wrapper,
+        errorStatusCode,
+        proxiedStatusCodes,
+        statusCodesConverter,
+        errorMessage,
+        predicates,
+        defaultValue,
+        allowedStatuses,
+        exceptionBuilder
+    );
   }
 
   /**
@@ -74,11 +93,11 @@ public class ApplyEmptyResultOperation extends AbstractOperation<Void, ApplyEmpt
    * @return result or default value (if specified) in case of error
    */
   public Optional<Void> onPredicate() {
-    return checkForPredicates(wrapper.get());
+    return checkForPredicates(wrapper.get().orElse(null));
   }
 
   public CheckedEmptyWithStatus onPredicateWrapped() {
-    checkForPredicates(wrapper.get());
+    checkForPredicates(wrapper.get().orElse(null));
     return new CheckedEmptyWithStatus(wrapper);
   }
 }

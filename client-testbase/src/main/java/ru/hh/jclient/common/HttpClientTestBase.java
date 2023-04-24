@@ -8,13 +8,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -130,12 +128,12 @@ public class HttpClientTestBase {
   }
 
   public void assertProperAcceptHeader(ResultProcessor<?> resultProcessor, Request actualRequest) {
-    if (!resultProcessor.getConverter().getSupportedContentTypes().isPresent()) {
+    if (resultProcessor.getConverter().getSupportedContentTypes().isEmpty()) {
       assertFalse(actualRequest.getHeaders().contains(ACCEPT));
       return;
     }
 
-    Collection<?> mediaTypes = resultProcessor.getConverter().getSupportedContentTypes().get();
+    Collection<?> mediaTypes = resultProcessor.getConverter().getSupportedContentTypes();
     assertEquals(1, actualRequest.getHeaders().getAll(ACCEPT).size());
     List<String> acceptTypes = Arrays.asList(actualRequest.getHeaders().get(ACCEPT).split(","));
     mediaTypes.forEach(type -> assertTrue(acceptTypes.contains(type.toString())));
@@ -162,25 +160,25 @@ public class HttpClientTestBase {
     return completedFuture(new ResultWithStatus<>(null, status));
   }
 
-  public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orErrorSuccess(T value) {
-    return completedFuture(new ResultOrErrorWithStatus<>(ofNullable(value), empty(), 200));
+  public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orErrorSuccess(@Nullable T value) {
+    return completedFuture(new ResultOrErrorWithStatus<>(value, null, 200));
   }
 
   @Deprecated // use #orErrorEmpty()
   public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orErrorNoContent() {
-    return completedFuture(new ResultOrErrorWithStatus<>(empty(), empty(), 204));
+    return completedFuture(new ResultOrErrorWithStatus<>(null, null, 204));
   }
 
   public static <E> CompletableFuture<EmptyOrErrorWithStatus<E>> orErrorEmpty() {
-    return completedFuture(new EmptyOrErrorWithStatus<>(empty(), 204));
+    return completedFuture(new EmptyOrErrorWithStatus<>(null, 204));
   }
 
   public static <T, E> CompletableFuture<ResultOrErrorWithStatus<T, E>> orError(int status, E error) {
-    return completedFuture(new ResultOrErrorWithStatus<>(empty(), of(error), status));
+    return completedFuture(new ResultOrErrorWithStatus<>(null, error, status));
   }
 
   public static <E> CompletableFuture<EmptyOrErrorWithStatus<E>> orErrorEmpty(int status, E error) {
-    return completedFuture(new EmptyOrErrorWithStatus<>(of(error), status));
+    return completedFuture(new EmptyOrErrorWithStatus<>(error, status));
   }
 
   public HttpClientTestBase withNoListeners() {
