@@ -95,7 +95,7 @@ public class ResultProcessor<T> {
   private ResultWithResponse<T> wrap(Response response) {
     try {
       ResultWithResponse<T> result = converter.converterFunction().apply(response);
-      httpClient.getDebugs().forEach(d -> d.onResponseConverted(result.get()));
+      httpClient.getDebugs().forEach(d -> d.onResponseConverted(result.get().orElse(null)));
       return result;
     }
     catch (ClientResponseException e) {

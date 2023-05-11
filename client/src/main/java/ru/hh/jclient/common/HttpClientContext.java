@@ -6,9 +6,9 @@ import static java.util.Collections.emptySet;
 import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
@@ -23,7 +23,8 @@ public class HttpClientContext {
   private final Map<String, List<String>> headers;
   private final boolean debugMode;
   private final List<Supplier<RequestDebug>> debugSuppliers;
-  private final Optional<String> requestId;
+  @Nullable
+  private final String requestId;
   private final Storages storages;
 
   public HttpClientContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams, List<Supplier<RequestDebug>> debugSuppliers) {
@@ -60,7 +61,7 @@ public class HttpClientContext {
 
     this.debugMode = isInDebugMode(headers, queryParams);
     this.debugSuppliers = new ArrayList<>(debugSuppliers);
-    this.requestId = RequestUtils.getRequestId(headers);
+    this.requestId = RequestUtils.getRequestId(headers).orElse(null);
     this.storages = requireNonNull(storages, "storages must not be null");
   }
 
@@ -94,6 +95,6 @@ public class HttpClientContext {
 
   @Override
   public String toString() {
-    return "HttpClientContext for " + requestId.orElse("unknown") + " requestId (" + this.hashCode() + ')';
+    return "HttpClientContext for " + (requestId != null ? requestId : "unknown") + " requestId (" + this.hashCode() + ')';
   }
 }

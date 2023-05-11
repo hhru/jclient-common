@@ -1,7 +1,5 @@
 package ru.hh.jclient.errors.impl.check;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 import javax.ws.rs.core.Response.Status;
 import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -27,11 +25,11 @@ public class ApplyEmptyResultOrErrorOperationSelector<E> extends AbstractOperati
    * </p>
    */
   public ApplyEmptyResultOrErrorOperation<E> returnEmpty() {
-    return new ApplyEmptyResultOrErrorOperation<>(emptyOrErrorWithStatus, empty(), errorMessage, predicates, true);
+    return new ApplyEmptyResultOrErrorOperation<>(emptyOrErrorWithStatus, null, errorMessage, predicates, true);
   }
 
   private ApplyEmptyResultOrErrorOperation<E> throwWithCode(int code) {
-    return new ApplyEmptyResultOrErrorOperation<>(emptyOrErrorWithStatus, of(code), errorMessage, predicates, false);
+    return new ApplyEmptyResultOrErrorOperation<>(emptyOrErrorWithStatus, code, errorMessage, predicates, false);
   }
 
   public ApplyEmptyResultOrErrorOperation<E> throwBadGateway() {
@@ -67,6 +65,6 @@ public class ApplyEmptyResultOrErrorOperationSelector<E> extends AbstractOperati
    * {@link Status#SERVICE_UNAVAILABLE} will be replaced with {@link Status#BAD_GATEWAY}.
    */
   public ApplyEmptyResultOrErrorOperation<E> proxyStatusCode() {
-    return new ApplyEmptyResultOrErrorOperation<>(emptyOrErrorWithStatus, empty(), errorMessage, predicates, false);
+    return new ApplyEmptyResultOrErrorOperation<>(emptyOrErrorWithStatus, null, errorMessage, predicates, false);
   }
 }

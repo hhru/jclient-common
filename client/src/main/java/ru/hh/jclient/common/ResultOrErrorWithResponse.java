@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Wrapper object that contains {@link Response} object and either normal or ERROR result of conversion. It is not recommended to use this wrapper
@@ -14,11 +14,11 @@ public class ResultOrErrorWithResponse<T, E> extends ResultOrErrorWithStatus<T, 
 
   private Response response;
 
-  public ResultOrErrorWithResponse(Optional<T> value, Optional<E> errorValue, org.asynchttpclient.Response response) {
+  public ResultOrErrorWithResponse(@Nullable T value, @Nullable E errorValue, org.asynchttpclient.Response response) {
     this(value, errorValue, new Response(response));
   }
 
-  public ResultOrErrorWithResponse(Optional<T> value, Optional<E> errorValue, Response response) {
+  public ResultOrErrorWithResponse(@Nullable T value, @Nullable E errorValue, Response response) {
     super(value, errorValue, response.getStatusCode());
     this.response = requireNonNull(response, "response must not be null");
   }

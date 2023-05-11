@@ -2,10 +2,10 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.List;
 import java.util.Optional;
-import static java.util.Optional.empty;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +20,18 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
 
   protected ResultOrErrorWithStatus<T, E> wrapper;
 
-  protected Optional<List<PredicateWithStatus<E>>> predicates = empty();
-  protected Optional<T> defaultValue = empty();
+  protected List<PredicateWithStatus<E>> predicates;
+  @Nullable
+  protected T defaultValue;
   private boolean useDefault = false;
 
   public ApplyResultOrErrorOperation(
       ResultOrErrorWithStatus<T, E> wrapper,
-      Optional<Integer> errorStatusCode,
+      @Nullable Integer errorStatusCode,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<E>> predicates,
-      Optional<T> defaultValue) {
+      @Nullable T defaultValue
+  ) {
     this(wrapper, errorStatusCode, errorMessage, predicates);
     this.defaultValue = defaultValue;
     this.useDefault = true;
@@ -37,12 +39,17 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
 
   public ApplyResultOrErrorOperation(
       ResultOrErrorWithStatus<T, E> wrapper,
-      Optional<Integer> errorStatusCode,
+      @Nullable Integer errorStatusCode,
       Supplier<String> errorMessage,
-      List<PredicateWithStatus<E>> predicates) {
-    super(AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, empty(), empty()), wrapper.getStatusCode(), errorMessage);
+      List<PredicateWithStatus<E>> predicates
+  ) {
+    super(
+        AbstractOperation.getStatusCodeIfAbsent(wrapper, errorStatusCode, List.of(), null).orElse(null),
+        wrapper.getStatusCode(),
+        errorMessage
+    );
     this.wrapper = wrapper;
-    this.predicates = Optional.ofNullable(predicates);
+    this.predicates = predicates;
   }
 
   /**
@@ -72,19 +79,19 @@ public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResult
   }
 
   protected void checkForPredicates(E error) {
-    predicates.ifPresent(pp -> pp.forEach(p -> testPredicate(p, error)));
+    predicates.forEach(p -> testPredicate(p, error));
   }
 
   private void testPredicate(PredicateWithStatus<E> predicate, E error) {
     if (predicate.getPredicate().test(error)) {
-      this.errorStatusCode = predicate.getStatus().or(() -> this.errorStatusCode);
+      this.errorStatusCode = predicate.getStatus().orElse(errorStatusCode);
     }
   }
 
   protected ResultWithStatus<T> defaultOrThrow(String cause) {
     if (useDefault) {
       logger.warn("Default value is set to result because error happened: {}. Description: {}", cause, exceptionBuilder.getMessage());
-      return new ResultWithStatus<>(defaultValue.orElse(null), wrapper.getStatusCode());
+      return new ResultWithStatus<>(defaultValue, wrapper.getStatusCode());
     }
     throw toException(cause);
   }

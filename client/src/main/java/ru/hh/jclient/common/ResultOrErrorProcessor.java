@@ -86,15 +86,15 @@ public class ResultOrErrorProcessor<T, E> {
         value = responseProcessor.getConverter().converterFunction().apply(response).get();
         errorValue = Optional.empty();
 
-        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(value));
+        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(value.orElse(null)));
       }
       else {
         value = Optional.empty();
         errorValue = parseError(response);
 
-        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(errorValue));
+        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(errorValue.orElse(null)));
       }
-      return new ResultOrErrorWithResponse<>(value, errorValue, response);
+      return new ResultOrErrorWithResponse<>(value.orElse(null), errorValue.orElse(null), response);
     }
     catch (ClientResponseException e) {
       throw e;

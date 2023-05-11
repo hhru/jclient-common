@@ -1,7 +1,5 @@
 package ru.hh.jclient.errors.impl.check;
 
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.ResultWithStatus;
@@ -21,7 +19,7 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
    * Specifies that any errors (incorrect result or exception) should be ignored and empty result returned.
    */
   public HandleResultOperation<T> ignore() {
-    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, empty(), empty(), allowedStatuses, exceptionBuilder);
+    return new HandleResultOperation<>(resultWithStatus, throwable, errorMessage, predicates, null, null, allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -36,8 +34,8 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
         throwable,
         errorMessage,
         predicates,
-        of(defaultValue),
-        empty(),
+        defaultValue,
+        null,
         allowedStatuses,
         exceptionBuilder);
   }
@@ -54,8 +52,8 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
         throwable,
         errorMessage,
         predicates,
-        of(defaultValue.get()),
-        empty(),
+        defaultValue.get(),
+        null,
         allowedStatuses,
         exceptionBuilder);
   }
@@ -72,8 +70,8 @@ public class HandleResultOperationSelector<T> extends AbstractOperationSelector<
         throwable,
         errorMessage,
         predicates,
-        empty(),
-        of(consumer),
+        null,
+        consumer,
         allowedStatuses,
         exceptionBuilder);
   }

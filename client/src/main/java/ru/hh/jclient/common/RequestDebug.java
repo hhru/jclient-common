@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import java.util.Optional;
+import javax.annotation.Nullable;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 
@@ -11,11 +11,11 @@ public interface RequestDebug {
 
   RequestDebug DISABLED = new RequestDebug() {
     @Override
-    public void onRequest(Request request, Optional<?> requestBodyEntity, RequestContext context) {
+    public void onRequest(Request request, @Nullable Object requestBodyEntity, RequestContext context) {
     }
 
     @Override
-    public void onRetry(Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context) {
+    public void onRetry(Request request, @Nullable Object requestBodyEntity, int retryCount, RequestContext context) {
     }
 
     @Override
@@ -29,7 +29,7 @@ public interface RequestDebug {
     }
 
     @Override
-    public void onResponseConverted(Optional<?> result) {
+    public void onResponseConverted(@Nullable Object result) {
     }
 
     @Override
@@ -48,12 +48,12 @@ public interface RequestDebug {
   /**
    * Called before start of the request
    */
-  void onRequest(Request request, Optional<?> requestBodyEntity, RequestContext context);
+  void onRequest(Request request, @Nullable Object requestBodyEntity, RequestContext context);
 
   /**
    * Called before retrying the request
    */
-  void onRetry(Request request, Optional<?> requestBodyEntity, int retryCount, RequestContext context);
+  void onRetry(Request request, @Nullable Object requestBodyEntity, int retryCount, RequestContext context);
 
   /**
    * Called once response is fully parsed. Returned response will be used for further processing, so there is ability to replace it for debug
@@ -74,7 +74,7 @@ public interface RequestDebug {
    *
    * @param result result of response conversion
    */
-  void onResponseConverted(Optional<?> result);
+  void onResponseConverted(@Nullable Object result);
 
   /**
    * Called on the problem raised by underlying http client.

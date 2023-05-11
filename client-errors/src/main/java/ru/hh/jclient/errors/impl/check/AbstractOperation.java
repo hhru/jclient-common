@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import static javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,39 +21,42 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
 
   protected final ResultWithStatus<T> wrapper;
 
-  protected Optional<List<PredicateWithStatus<T>>> predicates;
+  protected List<PredicateWithStatus<T>> predicates;
   protected Set<Integer> allowStatuses;
-  protected Optional<T> defaultValue = Optional.empty();
+  @Nullable
+  protected T defaultValue;
   private boolean useDefault = false;
-  protected Optional<List<Integer>> proxiedStatusCodes;
+  protected List<Integer> proxiedStatusCodes;
 
   protected AbstractOperation(
       ResultWithStatus<T> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      @Nullable Function<Integer, Integer> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
       Set<Integer> allowStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
-    super(getStatusCodeIfAbsent(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter),
+    super(
+        getStatusCodeIfAbsent(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter).orElse(null),
         wrapper == null ? null : wrapper.getStatusCode(),
         errorMessage,
-        exceptionBuilder);
+        exceptionBuilder
+    );
     this.wrapper = wrapper;
     this.proxiedStatusCodes = proxiedStatusCodes;
-    this.predicates = Optional.ofNullable(predicates);
+    this.predicates = predicates;
     this.allowStatuses = allowStatuses;
   }
 
   protected AbstractOperation(
       ResultWithStatus<T> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter,
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      @Nullable Function<Integer, Integer> statusCodesConverter,
       Supplier<String> errorMessage,
       List<PredicateWithStatus<T>> predicates,
-      Optional<T> defaultValue,
+      @Nullable T defaultValue,
       Set<Integer> allowStatuses,
       ExceptionBuilder<?, ?> exceptionBuilder) {
     this(wrapper, errorStatusCode, proxiedStatusCodes, statusCodesConverter, errorMessage, predicates, allowStatuses, exceptionBuilder);
@@ -64,7 +68,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
 
   protected Optional<T> checkForAnyError() {
     Optional<T> optional = checkForStatusCodeError(); // status code check and unwrap
-    optional = checkForPredicates(optional); // predicate check
+    optional = checkForPredicates(optional.orElse(null)); // predicate check
     if (optional.isPresent() || allowStatuses.contains(wrapper.getStatusCode())) {
       return optional;
     }
@@ -76,27 +80,27 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
       return wrapper.get();
     }
     if (allowStatuses.contains(wrapper.getStatusCode())) {
-      return defaultValue.or(wrapper::get);
+      return Optional.ofNullable(defaultValue).or(wrapper::get);
     }
     return defaultOrThrow("status code " + wrapper.getStatusCode() + " is not OK");
   }
 
-  protected Optional<T> checkForPredicates(Optional<T> response) {
-    if (response.isEmpty() || predicates.isEmpty()) {
-      return response;
+  protected Optional<T> checkForPredicates(@Nullable T response) {
+    if (response == null) {
+      return Optional.empty();
     }
-    T responseUnwrapped = response.get();
-    boolean matched = predicates.get().stream().map(p -> testPredicate(p, responseUnwrapped)).anyMatch(b -> b.equals(Boolean.TRUE));
+
+    boolean matched = predicates.stream().map(p -> testPredicate(p, response)).anyMatch(b -> b.equals(Boolean.TRUE));
 
     if (!matched) {
-      return response;
+      return Optional.of(response);
     }
     return defaultOrThrow("predicate failed");
   }
 
   private boolean testPredicate(PredicateWithStatus<T> predicate, T response) {
     if (predicate.getPredicate().test(response)) {
-      errorStatusCode = predicate.getStatus().or(() -> errorStatusCode);
+      errorStatusCode = predicate.getStatus().orElse(errorStatusCode);
       return true;
     }
     return false;
@@ -109,7 +113,7 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
   protected Optional<T> defaultOrThrow(String cause) {
     if (useDefault()) {
       logger.warn("Default value is returned because error happened: {}. Description: {}", cause, exceptionBuilder.getMessage());
-      return defaultValue;
+      return Optional.ofNullable(defaultValue);
     }
     throw toException(cause);
   }
@@ -120,31 +124,34 @@ public abstract class AbstractOperation<T, O extends AbstractOperation<T, O>> ex
 
   protected static Optional<Integer> getStatusCodeIfAbsent(
       ResultWithStatus<?> wrapper,
-      Optional<Integer> errorStatusCode,
-      Optional<List<Integer>> proxiedStatusCodes,
-      Optional<Function<Integer, Integer>> statusCodesConverter) {
+      @Nullable Integer errorStatusCode,
+      List<Integer> proxiedStatusCodes,
+      @Nullable Function<Integer, Integer> statusCodesConverter
+  ) {
     if (wrapper == null) {
-      return errorStatusCode;
+      return Optional.ofNullable(errorStatusCode);
     }
-    Optional<Integer> currentStatusCode = Optional
-        .of(wrapper.getStatusCode())
-        // replace 503 with 502 to avoid retries at intbal
-        .map(s -> s == SERVICE_UNAVAILABLE.getStatusCode() ? HttpStatuses.BAD_GATEWAY : s);
 
-    if (errorStatusCode.isEmpty()) {
+    int currentStatusCode = wrapper.getStatusCode();
+    // replace 503 with 502 to avoid retries at intbal
+    if (currentStatusCode == SERVICE_UNAVAILABLE.getStatusCode()) {
+      currentStatusCode = HttpStatuses.BAD_GATEWAY;
+    }
+
+    if (errorStatusCode == null) {
       errorStatusCode = currentStatusCode;
     }
 
     // if current code can be proxied set it as error
-    if (proxiedStatusCodes.map(codes -> codes.contains(currentStatusCode.get())).orElse(false)) {
+    if (proxiedStatusCodes.contains(currentStatusCode)) {
       errorStatusCode = currentStatusCode;
     }
 
     // if converter changes current status code set result as error
-    Integer converted = statusCodesConverter.map(f -> f.apply(currentStatusCode.get())).orElseGet(currentStatusCode::get);
-    if (!converted.equals(currentStatusCode.get())) {
-      errorStatusCode = Optional.of(converted);
+    Integer converted = statusCodesConverter != null ? statusCodesConverter.apply(currentStatusCode) : currentStatusCode;
+    if (!converted.equals(currentStatusCode)) {
+      errorStatusCode = converted;
     }
-    return errorStatusCode;
+    return Optional.of(errorStatusCode);
   }
 }

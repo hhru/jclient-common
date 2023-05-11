@@ -1,7 +1,6 @@
 package ru.hh.jclient.common.responseconverter;
 
 import java.util.Collection;
-import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import java.util.Set;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
@@ -36,8 +35,8 @@ public abstract class SingleTypeConverter<T> implements TypeConverter<T> {
   public abstract FailableFunction<Response, ResultWithResponse<T>, Exception> singleTypeConverterFunction();
 
   @Override
-  public Optional<Collection<String>> getSupportedContentTypes() {
-    return Optional.of(getContentTypes());
+  public Collection<String> getSupportedContentTypes() {
+    return getContentTypes();
   }
 
   @Override

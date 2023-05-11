@@ -1,6 +1,5 @@
 package ru.hh.jclient.errors.impl.convert;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
@@ -18,7 +17,7 @@ public class HandleThrowableOperation<T> extends OperationBase<HandleThrowableOp
   private Throwable throwable;
 
   public HandleThrowableOperation(T result, Throwable exception, Integer errorStatusCode, Supplier<String> errorMessage) {
-    super(Optional.of(errorStatusCode), null, errorMessage);
+    super(errorStatusCode, null, errorMessage);
     this.result = result;
     this.throwable = exception;
   }

@@ -21,16 +21,9 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
     this.exceptionBuilder = new WebApplicationExceptionBuilder();
   }
 
-  protected List<PredicateWithStatus<T>> predicates = null;
+  protected List<PredicateWithStatus<T>> predicates = new ArrayList<>();
   protected final Set<Integer> allowedStatuses = new HashSet<>();
   protected ExceptionBuilder<?, ?> exceptionBuilder;
-
-  private List<PredicateWithStatus<T>> predicates() {
-    if (predicates == null) {
-      predicates = new ArrayList<>();
-    }
-    return predicates;
-  }
 
   /**
    * <p>
@@ -70,7 +63,7 @@ public abstract class AbstractOperationSelector<T, D extends AbstractOperationSe
    *
    */
   public D failIf(Predicate<T> predicate, Integer status) {
-    predicates().add(new PredicateWithStatus<>(predicate, status));
+    predicates.add(new PredicateWithStatus<>(predicate, status));
     return getSelf();
   }
 

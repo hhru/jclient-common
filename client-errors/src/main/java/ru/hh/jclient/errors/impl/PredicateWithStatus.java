@@ -2,11 +2,13 @@ package ru.hh.jclient.errors.impl;
 
 import java.util.Optional;
 import java.util.function.Predicate;
+import javax.annotation.Nullable;
 
 public class PredicateWithStatus<T> {
 
   private Predicate<T> predicate;
-  private Optional<Integer> status;
+  @Nullable
+  private Integer status;
 
   public PredicateWithStatus(Predicate<T> predicate) {
     this(predicate, null);
@@ -14,7 +16,7 @@ public class PredicateWithStatus<T> {
 
   public PredicateWithStatus(Predicate<T> predicate, Integer status) {
     this.predicate = predicate;
-    this.status = Optional.ofNullable(status);
+    this.status = status;
   }
 
   public Predicate<T> getPredicate() {
@@ -22,7 +24,6 @@ public class PredicateWithStatus<T> {
   }
 
   public Optional<Integer> getStatus() {
-    return status;
+    return Optional.ofNullable(status);
   }
-
 }

@@ -2,9 +2,6 @@ package ru.hh.jclient.errors.impl.check;
 
 import java.util.Arrays;
 import java.util.List;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
-import static java.util.Optional.ofNullable;
 import java.util.function.Function;
 import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
@@ -21,7 +18,7 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
 
 
   protected EmptyWithStatus emptyWithStatus;
-  private List<Integer> proxiedStatusCodes;
+  private List<Integer> proxiedStatusCodes = List.of();
   private Function<Integer, Integer> statusCodesConverter;
 
   public ApplyEmptyResultOperationSelector(EmptyWithStatus emptyWithStatus, String errorMessage, Object... params) {
@@ -103,14 +100,16 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
   }
 
   private ApplyEmptyResultOperation throwWithCode(int code) {
-    return new ApplyEmptyResultOperation(emptyWithStatus,
-        of(code),
-        ofNullable(proxiedStatusCodes),
-        ofNullable(statusCodesConverter),
+    return new ApplyEmptyResultOperation(
+        emptyWithStatus,
+        code,
+        proxiedStatusCodes,
+        statusCodesConverter,
         errorMessage,
         predicates,
         allowedStatuses,
-        exceptionBuilder);
+        exceptionBuilder
+    );
   }
 
   /**
@@ -158,7 +157,7 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
    * </p>
    */
   public ApplyEmptyResultOperation proxyStatusCode() {
-    return new ApplyEmptyResultOperation(emptyWithStatus, empty(), empty(), empty(), errorMessage, predicates, allowedStatuses, exceptionBuilder);
+    return new ApplyEmptyResultOperation(emptyWithStatus, null, List.of(), null, errorMessage, predicates, allowedStatuses, exceptionBuilder);
   }
 
   /**
@@ -172,12 +171,12 @@ public class ApplyEmptyResultOperationSelector extends AbstractOperationSelector
   public ApplyEmptyResultOperation returnEmpty() {
     return new ApplyEmptyResultOperation(
         emptyWithStatus,
-        empty(),
-        empty(),
-        empty(),
+        null,
+        List.of(),
+        null,
         errorMessage,
         predicates,
-        empty(),
+        null,
         allowedStatuses,
         exceptionBuilder);
   }
