@@ -1,3 +1,15 @@
+-   name: 3.11.0
+    date: '2023-05-11T13:18:56.369787+03:00'
+    description: "* Обновление public-pom до 1.54.0\r\n* Optional больше не используется\
+        \ в аргументах аргументах и полях класса"
+    instructions: "* в методах и конструкторах публичного API где раньше передавался\
+        \ Optional теперь нужно передавать значение без обёртки или null. Например,\
+        \ классы ResultWithStatus, ResultOrErrorWithStatus, ResultOrErrorwithResponse,\
+        \ EmptyOrErrorWithStatus, RequestDebug.\r\n* При имплементации TypeConverter.getSupportedContentTypes\
+        \ в возвращаемом типи теперь ожидается Collection вместо Optional<Collection>.\
+        \  НЕ! передавайте null! Вместо этого используйте любую пустую коллекцию."
+    compatible: false
+
 -   name: 3.10.1
     date: '2023-04-13T16:05:03.788413+03:00'
     description: изменены микро секунды на мили
