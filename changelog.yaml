@@ -6,7 +6,7 @@
         \ Optional теперь нужно передавать значение без обёртки или null. Например,\
         \ классы ResultWithStatus, ResultOrErrorWithStatus, ResultOrErrorwithResponse,\
         \ EmptyOrErrorWithStatus, RequestDebug.\r\n* При имплементации TypeConverter.getSupportedContentTypes\
-        \ в возвращаемом типи теперь ожидается Collection вместо Optional<Collection>.\
+        \ в возвращаемом типе теперь ожидается Collection вместо Optional<Collection>.\
         \  НЕ! передавайте null! Вместо этого используйте любую пустую коллекцию."
     compatible: false
 
