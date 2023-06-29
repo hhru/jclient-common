@@ -1,10 +1,10 @@
 package ru.hh.jclient.errors.impl.convert;
 
+import jakarta.ws.rs.WebApplicationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.errors.MoreErrors;
 import ru.hh.jclient.errors.impl.OperationBase;
 

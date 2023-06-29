@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.core.MediaType;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.charset.Charset;
@@ -12,7 +13,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.MediaType;
 import org.asynchttpclient.request.body.multipart.Part;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import static ru.hh.jclient.common.Param.toParamDelegate;

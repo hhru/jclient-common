@@ -1,11 +1,11 @@
 package ru.hh.jclient.errors.impl.check;
 
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
-import javax.ws.rs.WebApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.EmptyOrErrorWithStatus;

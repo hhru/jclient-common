@@ -1,8 +1,8 @@
 package ru.hh.jclient.errors.impl;
 
+import jakarta.annotation.Nullable;
 import java.util.Optional;
 import java.util.function.Predicate;
-import javax.annotation.Nullable;
 
 public class PredicateWithStatus<T> {
 
