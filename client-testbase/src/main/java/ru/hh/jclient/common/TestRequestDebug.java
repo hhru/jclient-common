@@ -1,9 +1,9 @@
 package ru.hh.jclient.common;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import static java.util.Arrays.asList;
 import java.util.List;
-import javax.annotation.Nullable;
 import static org.junit.Assert.assertEquals;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 

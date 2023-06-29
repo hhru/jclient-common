@@ -1,13 +1,13 @@
 package ru.hh.jclient.errors.impl.check;
 
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
-import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.ResultWithStatus;
 

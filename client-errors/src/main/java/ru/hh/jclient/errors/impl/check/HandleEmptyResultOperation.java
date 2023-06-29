@@ -1,11 +1,11 @@
 package ru.hh.jclient.errors.impl.check;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 import ru.hh.jclient.common.ResultWithStatus;
 import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.PredicateWithStatus;

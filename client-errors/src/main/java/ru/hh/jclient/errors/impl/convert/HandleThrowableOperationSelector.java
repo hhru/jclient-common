@@ -1,6 +1,6 @@
 package ru.hh.jclient.errors.impl.convert;
 
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.errors.impl.OperationSelectorBase;
 

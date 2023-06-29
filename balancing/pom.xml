@@ -23,6 +23,11 @@
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

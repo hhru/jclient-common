@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
+import jakarta.annotation.Nullable;
 import static java.util.Objects.requireNonNull;
-import javax.annotation.Nullable;
 
 /**
  * Wrapper object that contains {@link Response} object and either normal or ERROR result of conversion. It is not recommended to use this wrapper

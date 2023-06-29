@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import jakarta.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import static java.util.Collections.emptySet;
@@ -8,7 +9,6 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.TreeMap;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;

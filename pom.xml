@@ -2,16 +2,16 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.54.0</version>
+        <version>1.54.2-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>ru.hh.jclient-common</groupId>
     <artifactId>jclient-common-parent</artifactId>
     <packaging>pom</packaging>
+    <version>3.11.1-SNAPSHOT</version>
 
     <name>jclient-common-parent</name>
-    <version>3.11.1-SNAPSHOT</version>
 
     <modules>
         <module>client</module>

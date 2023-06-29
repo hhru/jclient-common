@@ -1,6 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;

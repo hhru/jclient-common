@@ -3,8 +3,8 @@ package ru.hh.jclient.common.util;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
 import static java.util.Optional.ofNullable;
-import javax.annotation.Nullable;
 
 public final class JsonTypeConverter {
   private static final JavaType[] EMPTY_PARAMETERS = {};
