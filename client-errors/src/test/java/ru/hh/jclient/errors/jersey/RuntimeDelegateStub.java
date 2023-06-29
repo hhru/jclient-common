@@ -1,11 +1,14 @@
 package ru.hh.jclient.errors.jersey;
 
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.Variant.VariantListBuilder;
-import javax.ws.rs.ext.RuntimeDelegate;
+import jakarta.ws.rs.SeBootstrap;
+import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.EntityPart;
+import jakarta.ws.rs.core.Link;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.Variant.VariantListBuilder;
+import jakarta.ws.rs.ext.RuntimeDelegate;
+import java.util.concurrent.CompletionStage;
 
 @SuppressWarnings("unused")
 public final class RuntimeDelegateStub extends RuntimeDelegate {
@@ -37,6 +40,26 @@ public final class RuntimeDelegateStub extends RuntimeDelegate {
 
   @Override
   public Link.Builder createLinkBuilder() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public SeBootstrap.Configuration.Builder createConfigurationBuilder() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public CompletionStage<SeBootstrap.Instance> bootstrap(Application application, SeBootstrap.Configuration configuration) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public CompletionStage<SeBootstrap.Instance> bootstrap(Class<? extends Application> aClass, SeBootstrap.Configuration configuration) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public EntityPart.Builder createEntityPartBuilder(String s) throws IllegalArgumentException {
     throw new UnsupportedOperationException();
   }
 }

@@ -1,16 +1,16 @@
 package ru.hh.jclient.errors.impl.check;
 
+import jakarta.ws.rs.core.Response.Status;
+import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
+import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
-import javax.ws.rs.core.Response.Status;
-import static javax.ws.rs.core.Response.Status.BAD_GATEWAY;
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
-import static javax.ws.rs.core.Response.Status.FORBIDDEN;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.ResultWithStatus;
 

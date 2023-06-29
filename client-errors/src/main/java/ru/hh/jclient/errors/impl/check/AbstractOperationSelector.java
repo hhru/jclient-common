@@ -1,5 +1,6 @@
 package ru.hh.jclient.errors.impl.check;
 
+import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -7,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import javax.ws.rs.core.Response.Status;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.errors.impl.ExceptionBuilder;
 import ru.hh.jclient.errors.impl.OperationSelectorBase;

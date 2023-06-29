@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>3.11.1-SNAPSHOT</version>
+        <version>3.11.1-VB-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -17,6 +17,11 @@
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-balancing</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
         </dependency>
 
         <dependency>

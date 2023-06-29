@@ -1,8 +1,8 @@
 package ru.hh.jclient.errors.impl;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 
 public class WebApplicationExceptionBuilder extends ExceptionBuilder<WebApplicationException, WebApplicationExceptionBuilder> {
 

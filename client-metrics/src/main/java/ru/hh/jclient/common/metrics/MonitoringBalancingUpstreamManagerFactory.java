@@ -1,10 +1,10 @@
 package ru.hh.jclient.common.metrics;
 
+import jakarta.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import javax.annotation.Nullable;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.ConfigStore;

@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
+import jakarta.annotation.Nullable;
 import java.util.Collection;
 import java.util.Set;
-import javax.annotation.Nullable;
 import ru.hh.jclient.common.Monitoring;
 
 public interface UpstreamManager {
