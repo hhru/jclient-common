@@ -10,43 +10,64 @@ public class ThreadLocalStorage<T> implements Storage<T> {
 
   // can't be static - need instance of storage per instance of this class
   private final ThreadLocal<T> storage;
+  private final Supplier<T> valueSupplier;
   private final boolean hasInitValue;
 
-  public ThreadLocalStorage(Supplier<T> initialValueSupplier) {
-    hasInitValue = true;
-    storage = ThreadLocal.withInitial(initialValueSupplier);
+  public ThreadLocalStorage() {
+    this(() -> null, true, false);
   }
 
-  public ThreadLocalStorage() {
-    hasInitValue = false;
-    storage = ThreadLocal.withInitial(() -> null);
+  public ThreadLocalStorage(Supplier<T> valueSupplier) {
+    this(valueSupplier, true, true);
+  }
+
+  public ThreadLocalStorage(Supplier<T> valueSupplier, boolean useThreadLocal) {
+    this(valueSupplier, useThreadLocal, true);
+  }
+
+  private ThreadLocalStorage(Supplier<T> valueSupplier, boolean useThreadLocal, boolean hasInitValue) {
+    this.hasInitValue = hasInitValue;
+    if (useThreadLocal) {
+      storage = ThreadLocal.withInitial(valueSupplier);
+      this.valueSupplier = null;
+    } else {
+      storage = null;
+      this.valueSupplier = valueSupplier;
+    }
   }
 
   @Override
   public T get() {
-    return storage.get();
+    return storage == null ? valueSupplier.get() : storage.get();
   }
 
   @Override
   public void set(T t) {
-    storage.set(t);
+    if (storage != null) {
+      storage.set(t);
+    }
   }
 
   @Override
   public void clear() {
-    storage.remove();
+    if (storage != null) {
+      storage.remove();
+    }
   }
 
   @Override
   public Transfer prepareTransferToAnotherThread() {
-    return new PreparedValueTransfer<T>(get(), this, hasInitValue);
+    if (storage == null) {
+      return null;
+    }
+    return new PreparedValueTransfer<>(get(), this, hasInitValue);
   }
 
   public static class PreparedValueTransfer<T> implements Transfer {
 
     private final boolean parentHasInitValue;
     private T valueForTransfer;
-    private Storage<T> parent;
+    private final Storage<T> parent;
 
     private PreparedValueTransfer(T value, Storage<T> parent, boolean parentHasInitValue) {
       this.parentHasInitValue = parentHasInitValue;
