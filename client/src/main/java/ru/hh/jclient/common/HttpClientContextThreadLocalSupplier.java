@@ -31,8 +31,18 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
     this.requestDebugSuppliers = new CopyOnWriteArrayList<>();
   }
 
-  public HttpClientContextThreadLocalSupplier(Supplier<HttpClientContext> initialValueSupplier) {
-    super(initialValueSupplier);
+  public HttpClientContextThreadLocalSupplier(Supplier<HttpClientContext> valueSupplier) {
+    this(valueSupplier, true);
+  }
+
+  /**
+   * Constructs HttpClientContextThreadLocalSupplier.
+   *
+   * @param valueSupplier supplier for client context value
+   * @param useThreadLocal use specified value supplier as initial for thread local storage
+   */
+  public HttpClientContextThreadLocalSupplier(Supplier<HttpClientContext> valueSupplier, boolean useThreadLocal) {
+    super(valueSupplier, useThreadLocal);
     this.storagesForTransfer = StorageUtils.build(Set.of());
     this.requestDebugSuppliers = new CopyOnWriteArrayList<>();
   }
