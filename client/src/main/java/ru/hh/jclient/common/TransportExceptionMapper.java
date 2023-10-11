@@ -1,13 +1,17 @@
 package ru.hh.jclient.common;
 
 import io.netty.channel.ConnectTimeoutException;
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
+import java.nio.channels.ClosedChannelException;
 import static java.util.Optional.ofNullable;
 import java.util.concurrent.TimeoutException;
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
+import static ru.hh.jclient.common.ResponseStatusMessages.CHANNEL_CLOSED_MESSAGE;
+import static ru.hh.jclient.common.ResponseStatusMessages.CHANNEL_OUTPUT_SHUTDOWN_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECTION_CLOSED_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECTION_RESET_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
@@ -33,6 +37,12 @@ final class TransportExceptionMapper {
     }
     if (t instanceof TimeoutException) {
       return createErrorResponse(CONNECT_TIMEOUT_ERROR, REQUEST_TIMEOUT_MESSAGE, uri);
+    }
+    if (t instanceof ClosedChannelException) {
+      return createErrorResponse(CONNECT_TIMEOUT_ERROR, CHANNEL_CLOSED_MESSAGE, uri);
+    }
+    if (t instanceof ChannelOutputShutdownException) {
+      return createErrorResponse(CONNECT_TIMEOUT_ERROR, CHANNEL_OUTPUT_SHUTDOWN_MESSAGE, uri);
     }
     return null;
   }
