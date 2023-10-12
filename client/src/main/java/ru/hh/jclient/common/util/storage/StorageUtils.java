@@ -3,6 +3,7 @@ package ru.hh.jclient.common.util.storage;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import static java.util.stream.Collectors.toList;
 
@@ -37,7 +38,7 @@ public class StorageUtils {
     }
 
     public Transfers prepare() {
-      return new Transfers(storages.stream().map(Storage::prepareTransferToAnotherThread).collect(toList()));
+      return new Transfers(storages.stream().map(Storage::prepareTransferToAnotherThread).filter(Objects::nonNull).collect(toList()));
     }
 
     public Storages copy() {

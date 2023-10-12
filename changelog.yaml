@@ -1,3 +1,16 @@
+-   name: 3.11.2
+    date: '2023-10-11T23:16:53.526130+03:00'
+    description: ClosedChannelException и ChannelOutputShutdownException маппятся
+        в 599
+    instructions: ''
+    compatible: true
+
+-   name: 3.11.1
+    date: '2023-09-18T13:26:03.470873+03:00'
+    description: support disabling thread local for HttpClientContextThreadLocalSupplier
+    instructions: ''
+    compatible: true
+
 -   name: 3.11.0
     date: '2023-05-11T13:18:56.369787+03:00'
     description: "* Обновление public-pom до 1.54.0\r\n* Optional больше не используется\
