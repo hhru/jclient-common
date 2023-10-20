@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors.impl.check;
+package ru.hh.jclient.common.errors.check;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;

@@ -1,6 +1,7 @@
 package ru.hh.jclient.common;
 
 import java.util.Optional;
+import ru.hh.jclient.common.errors.check.ApplyEmptyResultOperationSelector;
 
 public class EmptyWithStatus extends ResultWithStatus<Void> {
 
@@ -12,7 +13,12 @@ public class EmptyWithStatus extends ResultWithStatus<Void> {
    * Always returns empty Optional
    */
   @Override
-  public Optional<Void> get() {
+  public Optional<Void> uncheckedResult() {
     return Optional.empty();
   }
+
+  public ApplyEmptyResultOperationSelector checkEmptyResult(String errorMessage, Object... errorMessageParams) {
+    return new ApplyEmptyResultOperationSelector(this, errorMessage, errorMessageParams);
+  }
+
 }

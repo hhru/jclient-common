@@ -2,7 +2,6 @@ package ru.hh.jclient.common;
 
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import static ru.hh.jclient.common.HttpClient.OK_RANGE;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
@@ -56,8 +55,8 @@ public class ResultOrErrorProcessor<T, E> {
    * @return {@link ResultOrErrorWithResponse} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter
    */
-  public CompletableFuture<ResultOrErrorWithResponse<T, E>> resultWithResponse() {
-    return responseProcessor.getHttpClient().unconverted().thenApply(this::wrapResponseAndError);
+  public ResultOrErrorWithResponse<T, E> resultWithResponse() {
+    return wrapResponseAndError(responseProcessor.getHttpClient().unconverted());
   }
 
   /**
@@ -74,8 +73,8 @@ public class ResultOrErrorProcessor<T, E> {
    * @return {@link ResultOrErrorWithStatus} object with results of response processing
    * @throws ResponseConverterException if failed to process response with either normal or error converter
    */
-  public CompletableFuture<ResultOrErrorWithStatus<T, E>> resultWithStatus() {
-    return resultWithResponse().thenApply(ResultOrErrorWithResponse::hideResponse);
+  public ResultOrErrorWithStatus<T, E> resultWithStatus() {
+    return resultWithResponse().hideResponse();
   }
 
   private ResultOrErrorWithResponse<T, E> wrapResponseAndError(Response response) {
@@ -83,7 +82,7 @@ public class ResultOrErrorProcessor<T, E> {
     Optional<E> errorValue;
     try {
       if (HttpClient.OK_RESPONSE.apply(response)) {
-        value = responseProcessor.getConverter().converterFunction().apply(response).get();
+        value = responseProcessor.getConverter().converterFunction().apply(response).uncheckedResult();
         errorValue = Optional.empty();
 
         responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(value.orElse(null)));
@@ -111,7 +110,7 @@ public class ResultOrErrorProcessor<T, E> {
 
   private Optional<E> parseError(Response response) throws Exception {
     if (errorsRange.contains(response.getStatusCode()) && !(response.getDelegate() instanceof MappedTransportErrorResponse)) {
-      return errorConverter.converterFunction().apply(response).get();
+      return errorConverter.converterFunction().apply(response).uncheckedResult();
     }
     return Optional.empty();
   }

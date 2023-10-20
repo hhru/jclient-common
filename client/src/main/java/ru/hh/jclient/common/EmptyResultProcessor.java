@@ -5,7 +5,6 @@ import com.google.protobuf.GeneratedMessageV3;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import javax.xml.bind.JAXBContext;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
@@ -21,8 +20,8 @@ public class EmptyResultProcessor extends ResultProcessor<Void> {
     super(httpClient, converter);
   }
 
-  public CompletableFuture<EmptyWithStatus> emptyWithStatus() {
-    return super.resultWithStatus().thenApply(rws -> new EmptyWithStatus(rws.getStatusCode()));
+  public EmptyWithStatus emptyWithStatus() {
+    return new EmptyWithStatus(super.resultWithStatus().getStatusCode());
   }
 
   /**
@@ -30,7 +29,7 @@ public class EmptyResultProcessor extends ResultProcessor<Void> {
    */
   @Override
   @Deprecated // use #emptyWithStatus()
-  public CompletableFuture<ResultWithStatus<Void>> resultWithStatus() {
+  public ResultWithStatus<Void> resultWithStatus() {
     return super.resultWithStatus();
   }
 

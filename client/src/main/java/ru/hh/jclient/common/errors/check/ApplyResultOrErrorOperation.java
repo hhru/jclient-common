@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors.impl.check;
+package ru.hh.jclient.common.errors.check;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,8 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.OperationBase;
-import ru.hh.jclient.errors.impl.PredicateWithStatus;
+import ru.hh.jclient.common.errors.OperationBase;
+import ru.hh.jclient.common.errors.PredicateWithStatus;
 
 public class ApplyResultOrErrorOperation<T, E> extends OperationBase<ApplyResultOrErrorOperation<T, E>> {
 

@@ -50,6 +50,10 @@ public abstract class ConfigurableJClientBase<T extends ConfigurableJClientBase<
     return copy;
   }
 
+  public JClientConfigurer<T> configure() {
+    return null;
+  }
+
   /**
    * The method should return a customized copy of the current client
    * We assume you will use {@link HttpClientFactoryConfigurator#configure(ru.hh.jclient.common.HttpClientFactory)}

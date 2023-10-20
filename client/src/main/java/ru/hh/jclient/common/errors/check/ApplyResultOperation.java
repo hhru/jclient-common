@@ -1,4 +1,4 @@
-package ru.hh.jclient.errors.impl.check;
+package ru.hh.jclient.common.errors.check;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,8 +9,8 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.ws.rs.WebApplicationException;
 import ru.hh.jclient.common.ResultWithStatus;
-import ru.hh.jclient.errors.impl.ExceptionBuilder;
-import ru.hh.jclient.errors.impl.PredicateWithStatus;
+import ru.hh.jclient.common.errors.ExceptionBuilder;
+import ru.hh.jclient.common.errors.PredicateWithStatus;
 
 /**
  * Contains useful methods to handle error outcome of {@link CompletableFuture} with different jclient-common wrappers.

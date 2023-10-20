@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import java.util.Optional;
 import javax.annotation.Nullable;
+import ru.hh.jclient.common.errors.check.ApplyResultOperationSelector;
 
 /**
  * Wrapper object that contains response status code and result of conversion. This wrapper can be used outside of implementing client.
@@ -22,7 +23,7 @@ public class ResultWithStatus<T> {
   /**
    * @return result of response conversion. Can be {@link Optional#empty() empty} if error has happened
    */
-  public Optional<T> get() {
+  public Optional<T> uncheckedResult() {
     return Optional.ofNullable(value);
   }
 
@@ -39,4 +40,9 @@ public class ResultWithStatus<T> {
   public boolean isSuccess() {
     return HttpClient.OK_RANGE.contains(statusCode);
   }
+
+  public ApplyResultOperationSelector<T> checkResult(String errorMessage, Object... errorMessageParams) {
+    return new ApplyResultOperationSelector<>(this, errorMessage, errorMessageParams);
+  }
+
 }

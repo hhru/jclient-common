@@ -6,7 +6,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
-import java.util.concurrent.CompletableFuture;
 import javax.xml.bind.JAXBContext;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
@@ -44,8 +43,8 @@ public class ResultProcessor<T> {
    * @throws ClientResponseException if status code is not in {@link HttpClient#OK_RANGE}
    * @throws ResponseConverterException if converter failed to process response
    */
-  public CompletableFuture<T> result() {
-    return httpClient.unconverted().thenApply(this::wrapOrThrow).thenApply(rw -> rw.get().orElse(null));
+  public T result() {
+    return wrapOrThrow(httpClient.unconverted()).uncheckedResult().orElse(null);
   }
 
   /**
@@ -54,8 +53,8 @@ public class ResultProcessor<T> {
    * @return {@link ResultWithResponse} with expected result (possibly empty) and response object
    * @throws ResponseConverterException if converter failed to process response
    */
-  public CompletableFuture<ResultWithResponse<T>> resultWithResponse() {
-    return httpClient.unconverted().thenApply(this::wrapOrNull);
+  public ResultWithResponse<T> resultWithResponse() {
+    return wrapOrNull(httpClient.unconverted());
   }
 
   /**
@@ -64,8 +63,8 @@ public class ResultProcessor<T> {
    * @return {@link ResultWithStatus} with expected result (possibly empty) and response status code
    * @throws ResponseConverterException if converter failed to process response
    */
-  public CompletableFuture<ResultWithStatus<T>> resultWithStatus() {
-    return resultWithResponse().thenApply(ResultWithResponse::hideResponse);
+  public ResultWithStatus<T> resultWithStatus() {
+    return resultWithResponse().hideResponse();
   }
 
   private ResultWithResponse<T> wrapOrThrow(Response response) {
@@ -95,7 +94,7 @@ public class ResultProcessor<T> {
   private ResultWithResponse<T> wrap(Response response) {
     try {
       ResultWithResponse<T> result = converter.converterFunction().apply(response);
-      httpClient.getDebugs().forEach(d -> d.onResponseConverted(result.get().orElse(null)));
+      httpClient.getDebugs().forEach(d -> d.onResponseConverted(result.uncheckedResult().orElse(null)));
       return result;
     }
     catch (ClientResponseException e) {

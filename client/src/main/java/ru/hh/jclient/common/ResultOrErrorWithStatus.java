@@ -2,6 +2,7 @@ package ru.hh.jclient.common;
 
 import java.util.Optional;
 import javax.annotation.Nullable;
+import ru.hh.jclient.common.errors.check.ApplyResultOrErrorOperationSelector;
 
 /**
  * Wrapper object that contains response status code and either normal or ERROR result of conversion. This wrapper can be used outside of implementing
@@ -33,5 +34,11 @@ public class ResultOrErrorWithStatus<T, E> extends ResultWithStatus<T> {
   @Override
   public boolean isSuccess() {
     return super.isSuccess() && errorValue == null;
+  }
+
+  public ApplyResultOrErrorOperationSelector<T, E> checkErrorResult(
+      String errorMessage,
+      Object... errorMessageParams) {
+    return new ApplyResultOrErrorOperationSelector<>(this, errorMessage, errorMessageParams);
   }
 }

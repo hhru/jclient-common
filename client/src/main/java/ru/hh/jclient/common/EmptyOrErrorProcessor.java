@@ -1,6 +1,5 @@
 package ru.hh.jclient.common;
 
-import java.util.concurrent.CompletableFuture;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 import ru.hh.jclient.common.util.SimpleRange;
 
@@ -10,9 +9,9 @@ public class EmptyOrErrorProcessor<E> extends ResultOrErrorProcessor<Void, E> {
     super(responseProcessor, errorConverter);
   }
 
-  public CompletableFuture<EmptyOrErrorWithStatus<E>> emptyWithStatus() {
-    return resultWithResponse().thenApply(ResultOrErrorWithResponse::hideResponse)
-        .thenApply(rews -> new EmptyOrErrorWithStatus<>(rews.getError().orElse(null), rews.getStatusCode()));
+  public EmptyOrErrorWithStatus<E> emptyWithStatus() {
+    ResultOrErrorWithStatus<Void, E> rews = resultWithResponse().hideResponse();
+    return new EmptyOrErrorWithStatus<>(rews.getError().orElse(null), rews.getStatusCode());
   }
 
   /**
@@ -20,7 +19,7 @@ public class EmptyOrErrorProcessor<E> extends ResultOrErrorProcessor<Void, E> {
    */
   @Override
   @Deprecated // use #emptyWithStatus()
-  public CompletableFuture<ResultOrErrorWithStatus<Void, E>> resultWithStatus() {
+  public ResultOrErrorWithStatus<Void, E> resultWithStatus() {
     return super.resultWithStatus();
   }
 

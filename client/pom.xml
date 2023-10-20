@@ -24,6 +24,11 @@
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ru.hh.errors</groupId>
+            <artifactId>errors-common</artifactId>
+            <version>0.0.5</version>
+        </dependency>
 
         <!-- Async http client -->
         <dependency>

@@ -310,9 +310,9 @@ public abstract class HttpClient {
    *
    * @return response
    */
-  public CompletableFuture<Response> unconverted() {
+  public Response unconverted() {
     RequestStrategy.RequestExecutor requestExecutor = createRequestExecutor();
-    return requestEngineBuilder.build(request, requestExecutor).execute();
+    return requestEngineBuilder.build(request, requestExecutor).execute().join();
   }
 
   abstract RequestStrategy.RequestExecutor createRequestExecutor();
