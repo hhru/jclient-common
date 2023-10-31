@@ -3,6 +3,8 @@ package ru.hh.jclient.common.util;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 public class ContentType {
 
@@ -29,6 +31,7 @@ public class ContentType {
 
   private final String type;
   private final String subtype;
+  @Nullable
   private final String charset;
 
   public ContentType(String contentType) {
@@ -51,6 +54,18 @@ public class ContentType {
     else {
       charset = null;
     }
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public String getSubtype() {
+    return subtype;
+  }
+
+  public Optional<String> getCharset() {
+    return Optional.ofNullable(charset);
   }
 
   public boolean allows(ContentType contentType) {
