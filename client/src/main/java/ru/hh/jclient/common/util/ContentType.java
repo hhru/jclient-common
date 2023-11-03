@@ -3,6 +3,8 @@ package ru.hh.jclient.common.util;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 public class ContentType {
 
@@ -27,8 +29,9 @@ public class ContentType {
   public static final String APPLICATION_FORM_DATA = "application/x-www-form-urlencoded";
   public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 
-  private final String type1;
-  private final String type2;
+  private final String type;
+  private final String subtype;
+  @Nullable
   private final String charset;
 
   public ContentType(String contentType) {
@@ -39,13 +42,13 @@ public class ContentType {
       throw new IllegalArgumentException("Wrong content type format");
     }
 
-    String[] typeAndParams = contentType.trim().toLowerCase().split(";");
-    String[] type = typeAndParams[0].split("/");
-    type1 = type[0].trim();
-    type2 = type[1].trim();
+    String[] splittedContentType = contentType.trim().toLowerCase().split(";");
+    String[] typeAndSubtype = splittedContentType[0].split("/");
+    type = typeAndSubtype[0].trim();
+    subtype = typeAndSubtype[1].trim();
 
-    if (typeAndParams.length > 1) {
-      String[] params = typeAndParams[1].trim().split(",");
+    if (splittedContentType.length > 1) {
+      String[] params = splittedContentType[1].trim().split(",");
       charset = Arrays.stream(params).filter(p -> p.contains("charset")).findAny().map(p -> p.split("=")[1].trim()).orElse(null);
     }
     else {
@@ -53,11 +56,23 @@ public class ContentType {
     }
   }
 
+  public String getType() {
+    return type;
+  }
+
+  public String getSubtype() {
+    return subtype;
+  }
+
+  public Optional<String> getCharset() {
+    return Optional.ofNullable(charset);
+  }
+
   public boolean allows(ContentType contentType) {
-    if (!type1.equals(WILDCARD) && !type1.equals(contentType.type1)) {
+    if (!type.equals(WILDCARD) && !type.equals(contentType.type)) {
       return false;
     }
-    if (!type2.equals(WILDCARD) && !type2.equals(contentType.type2)) {
+    if (!subtype.equals(WILDCARD) && !subtype.equals(contentType.subtype)) {
       return false;
     }
     return charset == null || Objects.equals(charset, contentType.charset);
