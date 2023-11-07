@@ -2,45 +2,48 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>3.12.0.jakarta-rc1</version>
+        <version>3.12.0.jakarta-rc1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>jclient-common-metrics</artifactId>
+    <artifactId>jclient-common-errors</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>ru.hh.jclient-common</groupId>
             <artifactId>jclient-common</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>ru.hh.jclient-common</groupId>
-            <artifactId>jclient-balancing</artifactId>
+            <groupId>ru.hh.errors</groupId>
+            <artifactId>errors-common</artifactId>
+            <version>0.0.8.jakarta-rc1</version>
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
 
+        <!-- Logging for tests -->
         <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
         </dependency>
-
         <dependency>
-            <groupId>ru.hh.nab</groupId>
-            <artifactId>nab-metrics</artifactId>
-            <version>4.28.3</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <scope>test</scope>
         </dependency>
 
+        <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -55,4 +58,6 @@
             </plugin>
         </plugins>
     </build>
+
+
 </project>
