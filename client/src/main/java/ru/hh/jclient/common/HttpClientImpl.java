@@ -101,7 +101,8 @@ class HttpClientImpl extends HttpClient {
     HttpHeaders headers = new HttpHeaders();
     if (!isExternalRequest()) {
       headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, Integer.toString(request.getRequestTimeout()));
-      PASS_THROUGH_HEADERS.stream()
+      PASS_THROUGH_HEADERS
+          .stream()
           .filter(getContext().getHeaders()::containsKey)
           .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }

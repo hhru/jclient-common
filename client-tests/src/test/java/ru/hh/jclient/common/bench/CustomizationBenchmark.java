@@ -105,17 +105,26 @@ public class CustomizationBenchmark {
 
   @Benchmark
   public void builderCustomization(Blackhole bh) {
-    bh.consume(factory.with(buildRequest().build()).configureRequestEngine(RequestBalancerBuilder.class)
-        .makeAdaptive()
-        .backToClient()
-        .expectNoContent().result());
+    bh.consume(
+        factory
+            .with(buildRequest().build())
+            .configureRequestEngine(RequestBalancerBuilder.class)
+            .makeAdaptive()
+            .backToClient()
+            .expectNoContent()
+            .result()
+    );
   }
 
   @Benchmark
   public void copyFactoryCustomization(Blackhole bh) {
-    bh.consume(factory.createCustomizedCopy((UnaryOperator<RequestBalancerBuilder>) RequestBalancerBuilder::makeAdaptive)
-        .with(buildRequest().build())
-        .expectNoContent().result());
+    bh.consume(
+        factory
+            .createCustomizedCopy((UnaryOperator<RequestBalancerBuilder>) RequestBalancerBuilder::makeAdaptive)
+            .with(buildRequest().build())
+            .expectNoContent()
+            .result()
+    );
   }
 
   public static RequestBuilder buildRequest() {

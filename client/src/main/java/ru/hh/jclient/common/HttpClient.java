@@ -69,7 +69,8 @@ public abstract class HttpClient {
     this.eventListeners = eventListeners;
     this.customHostsWithSession = customHostsWithSession.stream().map(Uri::create).map(Uri::getHost).collect(Collectors.toSet());
 
-    context = Optional.ofNullable(contextSupplier)
+    context = Optional
+        .ofNullable(contextSupplier)
         .map(Supplier::get)
         .orElseThrow(() -> new RuntimeException(
             "Context for HttpClient is not provided. Usually this happens when a) jclient is called from a thread that has no context - " +

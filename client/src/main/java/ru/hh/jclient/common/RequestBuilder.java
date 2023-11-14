@@ -125,7 +125,9 @@ public class RequestBuilder {
 
   public RequestBuilder addQueryParamMap(Map<String, ?> params) {
     delegate.addQueryParams(
-        params.entrySet().stream()
+        params
+            .entrySet()
+            .stream()
             .map(entry -> toParamDelegate(entry.getKey(), entry.getValue()))
             .collect(toMutableList())
     );
@@ -142,7 +144,9 @@ public class RequestBuilder {
 
   public RequestBuilder addQueryParamMultiMap(Map<String, ? extends List<?>> params) {
     delegate.addQueryParams(
-        params.entrySet().stream()
+        params
+            .entrySet()
+            .stream()
             .flatMap(entry -> entry.getValue().stream().map(value -> toParamDelegate(entry.getKey(), value)))
             .collect(toMutableList())
     );

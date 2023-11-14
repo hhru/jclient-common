@@ -212,8 +212,11 @@ public class HttpClientTest extends HttpClientTestBase {
     Supplier<Request> actualRequest = withEmptyContext().okRequest(jsonBytes(testMap), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    Map<JsonTest, JsonTest> testOutput = http.with(request)
-        .expectJsonMap(objectMapper, JsonTest.class, JsonTest.class).result().get();
+    Map<JsonTest, JsonTest> testOutput = http
+        .with(request)
+        .expectJsonMap(objectMapper, JsonTest.class, JsonTest.class)
+        .result()
+        .get();
     assertEquals(testMap.size(), testOutput.size());
     assertEquals(test2, testOutput.get(test1));
     assertEquals(test4, testOutput.get(test3));

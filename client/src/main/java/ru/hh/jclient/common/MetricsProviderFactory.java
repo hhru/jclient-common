@@ -45,26 +45,34 @@ public final class MetricsProviderFactory {
 
       @Override
       public Supplier<Long> numActiveTinyAllocations() {
-        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numActiveTinyAllocations).sum()).orElse(0L);
+        return () -> getAllocatorMetrics(httpClient)
+            .map(a -> a.directArenas().stream())
+            .map(a -> a.mapToLong(PoolArenaMetric::numActiveTinyAllocations).sum())
+            .orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveSmallAllocations() {
-        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numActiveSmallAllocations).sum()).orElse(0L);
+        return () -> getAllocatorMetrics(httpClient)
+            .map(a -> a.directArenas().stream())
+            .map(a -> a.mapToLong(PoolArenaMetric::numActiveSmallAllocations).sum())
+            .orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveNormalAllocations() {
-        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numActiveNormalAllocations).sum()).orElse(0L);
+        return () -> getAllocatorMetrics(httpClient)
+            .map(a -> a.directArenas().stream())
+            .map(a -> a.mapToLong(PoolArenaMetric::numActiveNormalAllocations).sum())
+            .orElse(0L);
       }
 
       @Override
       public Supplier<Long> numActiveHugeAllocations() {
-        return () -> getAllocatorMetrics(httpClient).map(a -> a.directArenas().stream())
-          .map(a -> a.mapToLong(PoolArenaMetric::numActiveHugeAllocations).sum()).orElse(0L);
+        return () -> getAllocatorMetrics(httpClient)
+            .map(a -> a.directArenas().stream())
+            .map(a -> a.mapToLong(PoolArenaMetric::numActiveHugeAllocations).sum())
+            .orElse(0L);
       }
     };
   }

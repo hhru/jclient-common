@@ -64,9 +64,11 @@ public class UpstreamMonitoring implements Monitoring {
   }
 
   private static Tag[] toTagsArray(Map<String, String> tags) {
-    return tags.entrySet().stream()
-      .filter(p -> p.getValue() != null)
-      .map(p -> new Tag(p.getKey(), p.getValue()))
-      .toArray(Tag[]::new);
+    return tags
+        .entrySet()
+        .stream()
+        .filter(p -> p.getValue() != null)
+        .map(p -> new Tag(p.getKey(), p.getValue()))
+        .toArray(Tag[]::new);
   }
 }

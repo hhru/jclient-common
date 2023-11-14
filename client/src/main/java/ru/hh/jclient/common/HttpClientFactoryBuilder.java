@@ -69,30 +69,41 @@ public class HttpClientFactoryBuilder {
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
     var target = getCopy();
-    ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS)).map(Integer::parseInt)
+    ofNullable(properties.getProperty(ConfigKeys.MAX_CONNECTIONS))
+        .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setMaxConnections);
-    ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES)).map(Integer::parseInt)
+    ofNullable(properties.getProperty(ConfigKeys.MAX_REQUEST_RETRIES))
+        .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setMaxRequestRetry);
-    ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS)).map(Integer::parseInt)
+    ofNullable(properties.getProperty(ConfigKeys.CONNECTION_TIMEOUT_MS))
+        .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setConnectTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS)).map(Integer::parseInt)
+    ofNullable(properties.getProperty(ConfigKeys.READ_TIMEOUT_MS))
+        .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setReadTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS)).map(Integer::parseInt)
+    ofNullable(properties.getProperty(ConfigKeys.REQUEST_TIMEOUT_MS))
+        .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setRequestTimeout);
-    ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER)).map(Double::parseDouble)
+    ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER))
+        .map(Double::parseDouble)
         .ifPresent(timeoutMultiplier -> target.timeoutMultiplier = timeoutMultiplier);
     ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
         .ifPresent(target.configBuilder::setUserAgent);
 
-    ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT)).map(Boolean::parseBoolean)
+    ofNullable(properties.getProperty(ConfigKeys.FOLLOW_REDIRECT))
+        .map(Boolean::parseBoolean)
         .ifPresent(target.configBuilder::setFollowRedirect);
-    ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED)).map(Boolean::parseBoolean)
+    ofNullable(properties.getProperty(ConfigKeys.COMPRESSION_ENFORCED))
+        .map(Boolean::parseBoolean)
         .ifPresent(target.configBuilder::setCompressionEnforced);
-    ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE)).map(Boolean::parseBoolean)
+    ofNullable(properties.getProperty(ConfigKeys.ACCEPT_ANY_CERTIFICATE))
+        .map(Boolean::parseBoolean)
         .ifPresent(target.configBuilder::setUseInsecureTrustManager);
-    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE)).map(Boolean::parseBoolean)
+    ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE))
+        .map(Boolean::parseBoolean)
         .ifPresent(target.configBuilder::setKeepAlive);
-    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT)).map(Integer::parseInt)
+    ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT))
+        .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setIoThreadsCount);
 
     return target;
