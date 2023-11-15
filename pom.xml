@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.54.0</version>
+        <version>1.55.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>

@@ -79,10 +79,13 @@ public class KafkaUpstreamMonitoring implements Monitoring {
 
   public static Optional<KafkaUpstreamMonitoring> fromProperties(String serviceName, String dc, Properties properties) {
     return ofNullable(properties)
-        .map(props -> props.getProperty(ENABLED_PROPERTY_KEY)).map(Boolean::parseBoolean)
+        .map(props -> props.getProperty(ENABLED_PROPERTY_KEY))
+        .map(Boolean::parseBoolean)
         .filter(Boolean.TRUE::equals)
         .map(ignored -> {
-          Map<?, ?> propertiesForKafka = properties.entrySet().stream()
+          Map<?, ?> propertiesForKafka = properties
+              .entrySet()
+              .stream()
               .filter(entry -> !PROPERTIES_FOR_MONITORING.contains(entry.getKey()))
               .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
           var filteredProperties = new Properties();

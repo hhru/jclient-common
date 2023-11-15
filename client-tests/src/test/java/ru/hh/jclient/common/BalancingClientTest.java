@@ -461,8 +461,11 @@ public class BalancingClientTest extends BalancingClientTestBase {
           return null;
         });
 
-    http.with(new RequestBuilder("GET").setUrl("http://backend/path?query").build())
-        .expectPlainText().result().get();
+    http
+        .with(new RequestBuilder("GET").setUrl("http://backend/path?query").build())
+        .expectPlainText()
+        .result()
+        .get();
 
     Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
@@ -480,8 +483,11 @@ public class BalancingClientTest extends BalancingClientTestBase {
           return null;
         });
 
-    http.with(new RequestBuilder("GET").setUrl("https://not-balanced-backend/path?query").build())
-        .expectPlainText().result().get();
+    http
+        .with(new RequestBuilder("GET").setUrl("https://not-balanced-backend/path?query").build())
+        .expectPlainText()
+        .result()
+        .get();
 
     Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(

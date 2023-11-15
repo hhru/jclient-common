@@ -42,9 +42,14 @@ public class UpstreamConfigServiceImplTest {
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 10;
 
-  private static final ImmutableValue template = ImmutableValue.builder().key("template").value("template")
-      .createIndex(System.currentTimeMillis()).modifyIndex(System.currentTimeMillis())
-      .lockIndex(System.currentTimeMillis()).flags(System.currentTimeMillis())
+  private static final ImmutableValue template = ImmutableValue
+      .builder()
+      .key("template")
+      .value("template")
+      .createIndex(System.currentTimeMillis())
+      .modifyIndex(System.currentTimeMillis())
+      .lockIndex(System.currentTimeMillis())
+      .flags(System.currentTimeMillis())
       .build();
   public UpstreamConfigServiceConsulConfig configTemplate = new UpstreamConfigServiceConsulConfig()
       .setWatchSeconds(watchSeconds)
@@ -101,7 +106,9 @@ public class UpstreamConfigServiceImplTest {
   @Test
   public void testBadConfig() {
     String badFormatKey = "badFormat";
-    var badFormatValue = ImmutableValue.copyOf(template).withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
+    var badFormatValue = ImmutableValue
+        .copyOf(template)
+        .withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
         .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
@@ -122,12 +129,20 @@ public class UpstreamConfigServiceImplTest {
     String twoProfiles = "{\"hosts\": {\"default\": {\"profiles\": {\"default\": {\"max_tries\": \"43\"," +
         "\"retry_policy\": {\"599\": {\"idempotent\": \"false\"},\"503\": {\"idempotent\": \"true\"}}},\"" +
         "externalRequestsProfile\": {\"fail_timeout_sec\": \"5\"}}}}}";
-    values.add(ImmutableValue.copyOf(template).withKey("upstream/app-name/")
-        .withValue(new String(Base64.getEncoder().encode(twoProfiles.getBytes()))));
+    values.add(
+        ImmutableValue
+            .copyOf(template)
+            .withKey("upstream/app-name/")
+            .withValue(new String(Base64.getEncoder().encode(twoProfiles.getBytes())))
+    );
 
     String secondAppProfile = "{\"hosts\": {\"default\": {\"profiles\": {\"default\": {\"max_tries\": \"56\"}}}}}";
-    values.add(ImmutableValue.copyOf(template).withKey("upstream/app2/")
-        .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes()))));
+    values.add(
+        ImmutableValue
+            .copyOf(template)
+            .withKey("upstream/app2/")
+            .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes())))
+    );
     return values;
   }
 

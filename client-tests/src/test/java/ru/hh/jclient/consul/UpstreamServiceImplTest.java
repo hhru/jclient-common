@@ -338,7 +338,8 @@ public class UpstreamServiceImplTest {
   private ServiceHealth buildServiceHealth(String address, int port, String datacenter, String nodeName, int weight, boolean passing) {
     Service service = buildService(address, port, buildWeight(weight));
     HealthCheck healthCheck = buildHealthCheck(passing);
-    return ImmutableServiceHealth.builder()
+    return ImmutableServiceHealth
+        .builder()
         .node(buildNode(datacenter, nodeName))
         .service(service)
         .addChecks(healthCheck)
@@ -354,15 +355,19 @@ public class UpstreamServiceImplTest {
   }
 
   private Service buildService(String address, int port, ServiceWeights serviceWeights) {
-    return ImmutableService.builder().address(address)
+    return ImmutableService
+        .builder()
+        .address(address)
         .id("id1")
         .service(SERVICE_NAME)
         .port(port)
-        .weights(serviceWeights).build();
+        .weights(serviceWeights)
+        .build();
   }
 
   private HealthCheck buildHealthCheck(boolean passing) {
-    return ImmutableHealthCheck.builder()
+    return ImmutableHealthCheck
+        .builder()
         .name(SERVICE_NAME)
         .node("node1")
         .checkId("check1")

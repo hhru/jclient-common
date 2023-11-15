@@ -174,8 +174,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(4);
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setMaxTries(4);
 
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
@@ -217,8 +216,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3);
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setMaxTries(3);
 
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
@@ -306,7 +304,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
+    applicationConfig
+        .getHosts()
+        .get(DEFAULT)
+        .getProfiles()
+        .get(DEFAULT)
         .setMaxTries(3)
         .setRetryPolicy(Map.of(503, new RetryPolicyConfig().setIdempotent(true)));
 
@@ -332,8 +334,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3);
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setMaxTries(3);
 
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
@@ -358,8 +359,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
-    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT)
-        .setMaxTries(3);
+    applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).setMaxTries(3);
 
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 

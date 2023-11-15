@@ -18,15 +18,19 @@ public class UpstreamConfigServiceConsulConfig {
   private boolean syncUpdate = true;
 
   public static UpstreamConfigServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
-    var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
+    var upstreams = Optional
+        .ofNullable(props.getProperty(UPSTREAMS_KEY))
         .filter(Predicate.not(String::isBlank))
         .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
         .orElseGet(List::of);
-    var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream()
+    var watchSeconds = Optional
+        .ofNullable(props.getProperty(WATCH_SECONDS_KEY))
+        .stream()
         .mapToInt(Integer::parseInt)
         .findFirst()
         .orElse(10);
-    var consistencyMode = Optional.ofNullable(props.getProperty(CONSISTENCY_MODE_KEY))
+    var consistencyMode = Optional
+        .ofNullable(props.getProperty(CONSISTENCY_MODE_KEY))
         .map(ConsistencyModeConfig::valueOf)
         .orElse(ConsistencyModeConfig.DEFAULT);
     boolean syncUpdate = Optional.ofNullable(props.getProperty(SYNC_UPDATE_KEY)).map(Boolean::parseBoolean).orElse(true);
@@ -38,7 +42,8 @@ public class UpstreamConfigServiceConsulConfig {
   }
 
   public static UpstreamConfigServiceConsulConfig copyOf(UpstreamConfigServiceConsulConfig config) {
-    return new UpstreamConfigServiceConsulConfig().setUpstreams(config.upstreams)
+    return new UpstreamConfigServiceConsulConfig()
+        .setUpstreams(config.upstreams)
         .setWatchSeconds(config.watchSeconds)
         .setConsistencyMode(config.getConsistencyMode())
         .setSyncUpdate(config.isSyncUpdate());

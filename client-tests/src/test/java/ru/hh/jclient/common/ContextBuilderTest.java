@@ -68,7 +68,8 @@ public class ContextBuilderTest {
 
   @Test
   public void appendHeadersInChainTest() {
-    supplier.forCurrentThread()
+    supplier
+        .forCurrentThread()
         .withHeaders(Map.of("a", List.of("a")))
         .withHeaders(Map.of("b", List.of("b")))
         .withRequestId(NEW_REQUEST_ID)

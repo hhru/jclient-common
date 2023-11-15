@@ -68,7 +68,9 @@ final class BalancingStrategy {
   }
 
   private static final class Weight implements Comparable<Weight> {
-    private static final Comparator<Weight> weightComparator = Comparator.comparing(Weight::isExcluded).thenComparing(Weight::isDifferentDC)
+    private static final Comparator<Weight> weightComparator = Comparator
+        .comparing(Weight::isExcluded)
+        .thenComparing(Weight::isDifferentDC)
         .thenComparingDouble(Weight::getLoad);
     private final boolean excluded;
     private final boolean differentDC;

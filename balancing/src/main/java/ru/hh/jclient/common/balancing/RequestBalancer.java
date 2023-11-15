@@ -59,7 +59,8 @@ public abstract class RequestBalancer implements RequestEngine {
   public CompletableFuture<Response> execute() {
     var resultOrContext = getResultOrContext(request);
     if (resultOrContext.getResult() != null) {
-      return requestExecutor.handleFailFastResponse(request, resultOrContext.getRequestContext(), resultOrContext.getResult())
+      return requestExecutor
+          .handleFailFastResponse(request, resultOrContext.getRequestContext(), resultOrContext.getResult())
           .thenApply(ResponseWrapper::getResponse);
     }
     return requestExecutor
