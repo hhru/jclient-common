@@ -81,7 +81,8 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
     ImmutableQueryOptions options = ImmutableQueryOptions
         .builder()
         .caller(currentServiceName)
-        .consistencyMode(consistencyMode).build();
+        .consistencyMode(consistencyMode)
+        .build();
     ConsulResponse<List<Value>> consulResponseWithValues = kvClient.getConsulResponseWithValues(ROOT_PATH, options);
     initialIndex = consulResponseWithValues.getIndex();
     List<Value> values = consulResponseWithValues.getResponse();
@@ -111,7 +112,8 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
   }
 
   private void checkAllUpstreamConfigsExist(boolean throwIfError) {
-    var absentConfigs = upstreamList.stream()
+    var absentConfigs = upstreamList
+        .stream()
         .filter(upstream -> configStore.getUpstreamConfig(upstream) == null)
         .collect(Collectors.toSet());
     if (!absentConfigs.isEmpty()) {
@@ -123,7 +125,8 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
   }
 
   private void initConfigCache() {
-    ImmutableQueryOptions queryOptions = ImmutableQueryOptions.builder()
+    ImmutableQueryOptions queryOptions = ImmutableQueryOptions
+        .builder()
         .caller(currentServiceName)
         .consistencyMode(consistencyMode)
         .build();

@@ -419,7 +419,11 @@ public class MoreErrorsTest {
   @Test
   public void testWrappedOperations() {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
-    String value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyErrorWrapped()
+    String value = MoreErrors
+        .check(result, "error")
+        .allow(BAD_REQUEST)
+        .throwBadGateway()
+        .onAnyErrorWrapped()
         .map(v -> "success")
         .onSuccessStatus(v -> {
           throw new RuntimeException("onSuccess shouldn`t be executed");
@@ -428,7 +432,11 @@ public class MoreErrorsTest {
     assertEquals("fail", value);
 
     result = new ResultWithStatus<>("value", OK.getStatusCode());
-    value = MoreErrors.check(result, "error").allow(BAD_REQUEST).throwBadGateway().onAnyErrorWrapped()
+    value = MoreErrors
+        .check(result, "error")
+        .allow(BAD_REQUEST)
+        .throwBadGateway()
+        .onAnyErrorWrapped()
         .map(v -> "success")
         .onStatus(BAD_REQUEST, v -> {
           throw new RuntimeException("onStatus shouldn`t be executed");
@@ -437,18 +445,27 @@ public class MoreErrorsTest {
     assertEquals("success", value);
 
     result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
-    value = MoreErrors.check(result, "error").returnDefault("default").onAnyErrorWrapped()
+    value = MoreErrors
+        .check(result, "error")
+        .returnDefault("default")
+        .onAnyErrorWrapped()
         .orElse(v -> "fail");
     assertEquals("default", value);
 
     EmptyWithStatus emptyResult = new EmptyWithStatus(OK.getStatusCode());
-    value = MoreErrors.check(emptyResult, "error").returnEmpty().onStatusCodeErrorWrapped()
+    value = MoreErrors
+        .check(emptyResult, "error")
+        .returnEmpty()
+        .onStatusCodeErrorWrapped()
         .map(() -> "success")
         .orElse("fail");
     assertEquals("success", value);
 
     emptyResult = new EmptyWithStatus(BAD_REQUEST.getStatusCode());
-    value = MoreErrors.check(emptyResult, "error").returnEmpty().onStatusCodeErrorWrapped()
+    value = MoreErrors
+        .check(emptyResult, "error")
+        .returnEmpty()
+        .onStatusCodeErrorWrapped()
         .map(() -> "success")
         .orElse("fail");
     assertEquals("fail", value);

@@ -24,14 +24,17 @@ public class MonitoringBalancingUpstreamManagerFactory {
       Properties strategyProperties,
       @Nullable Properties kafkaUpstreamMonitoringProperties
   ) {
-    boolean allowCrossDCRequests = Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
+    boolean allowCrossDCRequests = Optional
+        .ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
         .or(() -> Optional.ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_PATH)))
         .map(Boolean::parseBoolean)
         .orElse(false);
     return new BalancingUpstreamManager(
-        configStore, serverStore,
+        configStore,
+        serverStore,
         buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
-        infrastructureConfig, allowCrossDCRequests
+        infrastructureConfig,
+        allowCrossDCRequests
     );
   }
 

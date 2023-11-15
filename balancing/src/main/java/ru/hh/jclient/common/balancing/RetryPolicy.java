@@ -30,7 +30,8 @@ public final class RetryPolicy {
       return true;
     }
 
-    return Optional.ofNullable(rules.get(statusCode))
+    return Optional
+        .ofNullable(rules.get(statusCode))
         .map(retryNonIdempotent -> idempotent || retryNonIdempotent)
         .orElse(false);
   }

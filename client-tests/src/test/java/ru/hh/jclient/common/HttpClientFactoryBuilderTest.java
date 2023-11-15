@@ -41,7 +41,8 @@ public class HttpClientFactoryBuilderTest {
 
   private void testBuilderMethods(HttpClientFactoryBuilder initial, Matcher<Object> matcher) {
     var methods = HttpClientFactoryBuilder.class.getDeclaredMethods();
-    Stream.of(methods)
+    Stream
+        .of(methods)
         .filter(method -> !Modifier.isStatic(method.getModifiers())
             && Modifier.isPublic(method.getModifiers())
             && HttpClientFactoryBuilder.class.equals(method.getReturnType())

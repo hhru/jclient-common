@@ -85,22 +85,29 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
     upstreamManager.getUpstream(TEST_UPSTREAM).setStatLimit(statLimit);
     ExecutorService executorService = Executors.newFixedThreadPool(threads);
     AtomicInteger counter = new AtomicInteger();
-    executorService.invokeAll(IntStream.range(0, 10_257).mapToObj(index -> (Callable<?>) () -> {
-      try {
-        Request request = new RequestBuilder(JClientBase.HTTP_GET).setUrl("http://" + TEST_UPSTREAM).build();
-        Response response = httpClientFactory.with(request).unconverted().get();
-        assertEquals(HttpStatuses.OK, response.getStatusCode());
-        LOGGER.info("Processed requests: {}", counter.incrementAndGet());
-        return null;
-      } catch (ExecutionException | InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }).collect(Collectors.toList()));
+    executorService.invokeAll(
+        IntStream
+            .range(0, 10_257)
+            .mapToObj(index -> (Callable<?>) () -> {
+              try {
+                Request request = new RequestBuilder(JClientBase.HTTP_GET).setUrl("http://" + TEST_UPSTREAM).build();
+                Response response = httpClientFactory.with(request).unconverted().get();
+                assertEquals(HttpStatuses.OK, response.getStatusCode());
+                LOGGER.info("Processed requests: {}", counter.incrementAndGet());
+                return null;
+              } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+            })
+            .collect(Collectors.toList())
+    );
     List<Server> servers = serverStore.getServers(TEST_UPSTREAM);
 
     int minWeight = servers.stream().mapToInt(Server::getWeight).min().getAsInt();
     int sumWeight = servers.stream().mapToInt(Server::getWeight).sum();
-    int totalUserRequests = requestRouteTracking.entrySet().stream()
+    int totalUserRequests = requestRouteTracking
+        .entrySet()
+        .stream()
         .mapToInt(addressToReponseCodes -> {
           int retries = this.retries.getOrDefault(addressToReponseCodes.getKey(), new LongAdder()).intValue();
           return addressToReponseCodes.getValue().size() - retries;

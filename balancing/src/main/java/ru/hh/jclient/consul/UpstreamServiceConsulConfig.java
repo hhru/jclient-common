@@ -31,28 +31,36 @@ public class UpstreamServiceConsulConfig {
   private boolean httpCompressionEnabled;
 
   public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
-    var upstreams = Optional.ofNullable(props.getProperty(UPSTREAMS_KEY))
+    var upstreams = Optional
+        .ofNullable(props.getProperty(UPSTREAMS_KEY))
         .filter(Predicate.not(String::isBlank))
         .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
         .orElseGet(List::of);
-    boolean allowCrossDC = Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY))
+    boolean allowCrossDC = Optional
+        .ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY))
         .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
         .map(Boolean::parseBoolean)
         .orElse(false);
     boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);
-    var dcList = Optional.ofNullable(props.getProperty(DC_LIST_KEY))
+    var dcList = Optional
+        .ofNullable(props.getProperty(DC_LIST_KEY))
         .filter(Predicate.not(String::isBlank))
         .map(separatedDcList -> List.of(separatedDcList.split("[,\\s]+")))
         .orElseGet(List::of);
-    var consistencyMode = Optional.ofNullable(props.getProperty(CONSISTENCY_MODE_KEY))
+    var consistencyMode = Optional
+        .ofNullable(props.getProperty(CONSISTENCY_MODE_KEY))
         .map(ConsistencyModeConfig::valueOf)
         .orElse(ConsistencyModeConfig.DEFAULT);
     boolean syncUpdate = Optional.ofNullable(props.getProperty(SYNC_UPDATE_KEY)).map(Boolean::parseBoolean).orElse(true);
-    boolean ignoreNoServersInCurrentDC = Optional.ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY)).map(Boolean::parseBoolean)
+    boolean ignoreNoServersInCurrentDC = Optional
+        .ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY))
+        .map(Boolean::parseBoolean)
         .orElse(false);
-    boolean httpCompressionEnabled = Optional.ofNullable(props.getProperty(COMPRESSION_ENABLED_KEY)).map(Boolean::parseBoolean)
+    boolean httpCompressionEnabled = Optional
+        .ofNullable(props.getProperty(COMPRESSION_ENABLED_KEY))
+        .map(Boolean::parseBoolean)
         .orElse(true);
     return new UpstreamServiceConsulConfig()
         .setUpstreams(upstreams)

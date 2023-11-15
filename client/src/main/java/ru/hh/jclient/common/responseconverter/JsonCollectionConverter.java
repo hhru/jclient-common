@@ -19,7 +19,8 @@ public class JsonCollectionConverter<T> extends SingleTypeConverter<Collection<T
 
   private JsonCollectionConverter(ObjectMapper objectMapper, JavaType elementType) {
     this.objectMapper = requireNonNull(objectMapper, "objectMapper must not be null");
-    this.elementType = objectMapper.getTypeFactory()
+    this.elementType = objectMapper
+        .getTypeFactory()
         .constructCollectionType(Collection.class, requireNonNull(elementType, "jsonClass must not be null"));
   }
 

@@ -14,8 +14,9 @@ public class MetricsConsumerFactory {
       return NOOP_METRICS_CONSUMER;
     }
 
-    return ofNullable(properties.getProperty("sendIntervalSec")).map(Integer::parseInt)
-      .<MetricsConsumer>map(sendIntervalSec -> new StatsDMetricsConsumer(name, statsDSender, sendIntervalSec))
-      .orElse(NOOP_METRICS_CONSUMER);
+    return ofNullable(properties.getProperty("sendIntervalSec"))
+        .map(Integer::parseInt)
+        .<MetricsConsumer>map(sendIntervalSec -> new StatsDMetricsConsumer(name, statsDSender, sendIntervalSec))
+        .orElse(NOOP_METRICS_CONSUMER);
   }
 }

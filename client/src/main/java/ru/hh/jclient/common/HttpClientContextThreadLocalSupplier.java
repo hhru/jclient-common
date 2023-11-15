@@ -170,10 +170,11 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
 
     private void prepareContext() {
       previousContext = get();
-      previousRequestId = Optional.ofNullable(previousContext)
-        .map(HttpClientContext::getHeaders)
-        .flatMap(RequestUtils::getRequestId)
-        .orElseGet(() -> MDC.get("rid"));
+      previousRequestId = Optional
+          .ofNullable(previousContext)
+          .map(HttpClientContext::getHeaders)
+          .flatMap(RequestUtils::getRequestId)
+          .orElseGet(() -> MDC.get("rid"));
 
       Optional<String> requestId = RequestUtils.getRequestId(headers);
       set(new HttpClientContext(headers, queryParams, debugSuppliers, storagesForTransfer));

@@ -81,9 +81,12 @@ public class BalancingWorkloadModelTest {
 
     AtomicInteger clientRequestsCounter = new AtomicInteger();
     AtomicInteger clientErrors = new AtomicInteger();
-    executorService.invokeAll(IntStream.range(0, requests)
-        .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
-        .collect(Collectors.toList()));
+    executorService.invokeAll(
+        IntStream
+            .range(0, requests)
+            .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
+            .collect(Collectors.toList())
+    );
     assertEquals(0, clientErrors.get());
     assertServerRequestDistribution(Set.of());
   }
@@ -104,17 +107,23 @@ public class BalancingWorkloadModelTest {
     );
     AtomicInteger clientRequestsCounter = new AtomicInteger();
     AtomicInteger clientErrors = new AtomicInteger();
-    executorService.invokeAll(IntStream.range(0, requests)
-        .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
-        .collect(Collectors.toList()));
+    executorService.invokeAll(
+        IntStream
+            .range(0, requests)
+            .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
+            .collect(Collectors.toList())
+    );
     assertEquals(0, clientErrors.get());
     assertServerRequestDistribution(Set.of());
 
     testServerManager.removeServer(failingServerName);
 
-    executorService.invokeAll(IntStream.range(0, requests)
-        .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
-        .collect(Collectors.toList()));
+    executorService.invokeAll(
+        IntStream
+            .range(0, requests)
+            .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
+            .collect(Collectors.toList())
+    );
     assertEquals(0, clientErrors.get());
     assertServerRequestDistribution(Set.of());
   }
@@ -135,15 +144,21 @@ public class BalancingWorkloadModelTest {
     );
     AtomicInteger clientRequestsCounter = new AtomicInteger();
     AtomicInteger clientErrors = new AtomicInteger();
-    executorService.invokeAll(IntStream.range(0, requests)
-        .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
-        .collect(Collectors.toList()));
+    executorService.invokeAll(
+        IntStream
+            .range(0, requests)
+            .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
+            .collect(Collectors.toList())
+    );
     assertEquals(0, clientErrors.get());
 
     testServerManager.serverFailRate.put(failingServerName, 1f);
-    executorService.invokeAll(IntStream.range(0, requests)
-        .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
-        .collect(Collectors.toList()));
+    executorService.invokeAll(
+        IntStream
+            .range(0, requests)
+            .mapToObj(index -> (Callable<?>) () -> executeBalancingRequest(upstreamName, client, clientRequestsCounter, clientErrors))
+            .collect(Collectors.toList())
+    );
     //TODO some fkn magic: connect timeouts on "healthy" servers if repeating all tasks. maybe macos???
     assertTrue("Client errors: " + clientErrors.get(), clientErrors.get() < requests / 1000);
 
@@ -177,16 +192,22 @@ public class BalancingWorkloadModelTest {
   }
 
   private void assertServerRequestDistribution(Set<String> excludedNames) {
-    Map<String, LongAdder> filteredRequests = testServerManager.serverRequests.entrySet().stream()
+    Map<String, LongAdder> filteredRequests = testServerManager.serverRequests
+        .entrySet()
+        .stream()
         .filter(e -> !excludedNames.contains(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    int sumWeight = testServerManager.servers.entrySet().stream()
+    int sumWeight = testServerManager.servers
+        .entrySet()
+        .stream()
         .filter(e -> !excludedNames.contains(e.getKey()))
         .map(Map.Entry::getValue)
         .mapToInt(Server::getWeight)
         .sum();
     int allRequests = filteredRequests.values().stream().mapToInt(LongAdder::intValue).sum();
-    List<Matcher<? super Map<String, LongAdder>>> matchers = testServerManager.servers.entrySet().stream()
+    List<Matcher<? super Map<String, LongAdder>>> matchers = testServerManager.servers
+        .entrySet()
+        .stream()
         .filter(e -> !excludedNames.contains(e.getKey()))
         .map(nameToServer -> {
           double weightPart = (double) nameToServer.getValue().getWeight() / sumWeight;

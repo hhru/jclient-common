@@ -87,7 +87,8 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
     ofNullable(httpClient.getContext().getHeaders())
         .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
         .flatMap(values -> values.stream().findFirst())
-        .map(Long::valueOf).map(Duration::ofMillis)
+        .map(Long::valueOf)
+        .map(Duration::ofMillis)
         .ifPresent(outerTimeout -> {
           var alreadySpentTime = Duration.between(httpClient.getContext().getRequestStart(), getNow());
           var expectedTimeout = outerTimeout.minus(alreadySpentTime);

@@ -120,7 +120,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     for (String serviceName : upstreamList) {
       if (allowCrossDC) {
         ExecutorService executorService = Executors.newFixedThreadPool(datacenterList.size());
-        var tasks = datacenterList.stream()
+        var tasks = datacenterList
+            .stream()
             .map(dc -> CompletableFuture.runAsync(() -> syncUpdateServiceInDC(serviceName, dc), executorService))
             .toArray(CompletableFuture[]::new);
         try {
@@ -143,7 +144,9 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
 
     ConsulResponse<List<ServiceHealth>> response = healthClient.getHealthyServiceInstances(serviceName, queryOptions);
     initialIndexes.put(dataCenter, response.getIndex());
-    Map<ServiceHealthKey, ServiceHealth> state = response.getResponse().stream()
+    Map<ServiceHealthKey, ServiceHealth> state = response
+        .getResponse()
+        .stream()
         .collect(toMap(ServiceHealthKey::fromServiceHealth, Function.identity()));
     LOGGER.trace("Got {} for service={} in DC={}. Updating", state, serviceName, dataCenter);
     updateUpstreams(state, serviceName, dataCenter);
@@ -231,7 +234,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     Set<Server> currentServers = serverStore
         .getServers(serviceName)
         .stream()
-        .filter(server -> datacenter.equals(server.getDatacenter())).collect(Collectors.toSet());
+        .filter(server -> datacenter.equals(server.getDatacenter()))
+        .collect(Collectors.toSet());
 
     Map<String, Server> serverToRemoveByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
 
