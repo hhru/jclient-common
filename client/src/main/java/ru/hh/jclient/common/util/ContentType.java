@@ -1,10 +1,10 @@
 package ru.hh.jclient.common.util;
 
+import jakarta.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import javax.annotation.Nullable;
 
 public class ContentType {
 
@@ -50,8 +50,7 @@ public class ContentType {
     if (splittedContentType.length > 1) {
       String[] params = splittedContentType[1].trim().split(",");
       charset = Arrays.stream(params).filter(p -> p.contains("charset")).findAny().map(p -> p.split("=")[1].trim()).orElse(null);
-    }
-    else {
+    } else {
       charset = null;
     }
   }
