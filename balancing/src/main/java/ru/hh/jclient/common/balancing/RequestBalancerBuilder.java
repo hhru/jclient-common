@@ -38,7 +38,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
               "maxTimeoutTries: {}, forceIdempotence: {}, adaptive: {}",
           request, profile, upstream, timeoutMultiplier, maxTimeoutTries, forceIdempotence, adaptive);
     }
-    if (upstream == null) {
+    if (upstream == null || !upstream.isEnabled()) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
       return new ExternalUrlRequestor(request, requestExecutor,
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_CONFIG.getMaxTries(),

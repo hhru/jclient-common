@@ -39,11 +39,24 @@ public class RequestBalancerBuilderTest {
   public void testUpstreamRequestBalancerBuilding() {
     Request request = createRequest();
     Upstream upstream = mock(Upstream.class);
+    when(upstream.isEnabled()).thenReturn(true);
     when(upstream.getConfig(any())).thenReturn(UpstreamConfig.DEFAULT_CONFIG);
     when(upstreamManager.getUpstream(UPSTREAM_NAME, null)).thenReturn(upstream);
 
     RequestBalancer requestBalancer = requestBalancerBuilder.build(request, requestExecutor);
     assertTrue(requestBalancer instanceof UpstreamRequestBalancer);
+  }
+
+  @Test
+  public void testDisabledUpstreamRequestBalancerBuilding() {
+    Request request = createRequest();
+    Upstream upstream = mock(Upstream.class);
+    when(upstream.isEnabled()).thenReturn(false);
+    when(upstream.getConfig(any())).thenReturn(UpstreamConfig.DEFAULT_CONFIG);
+    when(upstreamManager.getUpstream(UPSTREAM_NAME, null)).thenReturn(upstream);
+
+    RequestBalancer requestBalancer = requestBalancerBuilder.build(request, requestExecutor);
+    assertTrue(requestBalancer instanceof ExternalUrlRequestor);
   }
 
   private Request createRequest() {
