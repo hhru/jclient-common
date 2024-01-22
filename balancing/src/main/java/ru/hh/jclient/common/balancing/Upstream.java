@@ -24,6 +24,7 @@ public class Upstream {
   private final String datacenter;
   private int statLimit = DEFAULT_STAT_LIMIT;
   private final boolean allowCrossDCRequests;
+  private final boolean enabled; // todo: HH-203739
 
   private volatile List<Server> servers;
   private volatile UpstreamConfigs upstreamConfigs;
@@ -35,14 +36,28 @@ public class Upstream {
 
   private final StampedLock lock = new StampedLock();
 
-  Upstream(String name,
-           UpstreamConfigs upstreamConfigs,
-           List<Server> servers,
-           String datacenter,
-           boolean allowCrossDCRequests) {
+  Upstream(
+      String name,
+      UpstreamConfigs upstreamConfigs,
+      List<Server> servers,
+      String datacenter,
+      boolean allowCrossDCRequests
+  ) {
+    this(name, upstreamConfigs, servers, datacenter, allowCrossDCRequests, true);
+  }
+
+  Upstream(
+      String name,
+      UpstreamConfigs upstreamConfigs,
+      List<Server> servers,
+      String datacenter,
+      boolean allowCrossDCRequests,
+      boolean enabled
+  ) {
     this.name = name;
     this.datacenter = datacenter;
     this.allowCrossDCRequests = allowCrossDCRequests;
+    this.enabled = enabled;
     this.update(upstreamConfigs, servers);
   }
 
@@ -197,6 +212,10 @@ public class Upstream {
 
   String getName() {
     return name;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
   }
 
   public String getDatacenter() {
