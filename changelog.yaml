@@ -1,3 +1,9 @@
+-   name: 3.12.2
+    date: '2024-01-22T16:27:08.219070+03:00'
+    description: get back support for enabled/disabled upstreams
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.1
     date: '2023-11-15T10:32:05.923435+03:00'
     description: Обновление public-pom до 1.55.0
