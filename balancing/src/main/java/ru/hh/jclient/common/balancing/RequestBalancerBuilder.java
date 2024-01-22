@@ -96,4 +96,8 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     this.profile = profile;
     return this;
   }
+
+  public String getBalancingRequestsLogLevel() {
+    return this.balancingRequestsLogLevel;
+  }
 }
