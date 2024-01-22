@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -21,12 +22,19 @@ import ru.hh.jclient.common.ResponseWrapper;
 public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);
   static final int WARM_UP_DEFAULT_TIME_MILLIS = 100;
+  static final Map<String, Consumer<String>> LOG_METHOD_BY_LEVEL = Map.of(
+      "DEBUG", LOGGER::debug,
+      "INFO", LOGGER::info,
+      "WARNING", LOGGER::warn,
+      "ERROR", LOGGER::error
+  );
 
   private final RequestStrategy.RequestExecutor requestExecutor;
   private final boolean forceIdempotence;
   private int triesLeft;
   private int requestTimeLeftMs;
   private final double timeoutMultiplier;
+  private final String balancingRequestsLogLevel;
 
   protected final Request request;
   protected final int maxTries;
@@ -39,9 +47,11 @@ public abstract class RequestBalancer implements RequestEngine {
       int maxRequestTimeoutTries,
       int maxTries,
       @Nullable Double timeoutMultiplier,
+      String balancingRequestsLogLevel,
       boolean forceIdempotence
   ) {
     this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    this.balancingRequestsLogLevel = balancingRequestsLogLevel.toUpperCase();
     this.request = request;
     this.requestExecutor = requestExecutor;
     this.forceIdempotence = forceIdempotence;
@@ -143,7 +153,7 @@ public abstract class RequestBalancer implements RequestEngine {
           request.getMethod(),
           response.getUri()
       );
-      logMethod = isServerError ? LOGGER::info : LOGGER::debug;
+      logMethod = isServerError ? LOGGER::warn : LOGGER::debug;
     } else {
       String msgLabel = isServerError ? "balanced_request_final_error" : "balanced_request_final_response";
       logMessage = String.format(
@@ -156,7 +166,7 @@ public abstract class RequestBalancer implements RequestEngine {
           request.getUri(),
           getTrace()
       );
-      logMethod = isServerError ? LOGGER::warn : LOGGER::info;
+      logMethod = isServerError || retriesCount > 0 ? LOGGER::warn : LOG_METHOD_BY_LEVEL.get(balancingRequestsLogLevel);
     }
     logMethod.accept(logMessage);
   }

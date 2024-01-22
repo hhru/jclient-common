@@ -20,6 +20,7 @@ import ru.hh.jclient.common.util.storage.Storage;
 
 public class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
+  public static final String DEFAULT_BALANCING_REQUESTS_LOG_LEVEL = "DEBUG";
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy = new DefaultRequestStrategy();
@@ -27,6 +28,7 @@ public class HttpClientFactoryBuilder {
   private Storage<HttpClientContext> contextSupplier;
   private Set<String> customHostsWithSession;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
+  private String balancingRequestsLogLevel = DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
   private MetricsConsumer metricsConsumer;
   private final List<HttpClientEventListener> eventListeners;
 
@@ -42,6 +44,7 @@ public class HttpClientFactoryBuilder {
         prototype.contextSupplier,
         ofNullable(prototype.customHostsWithSession).map(Set::copyOf).orElse(null),
         prototype.timeoutMultiplier,
+        prototype.balancingRequestsLogLevel,
         prototype.metricsConsumer,
         new ArrayList<>(prototype.eventListeners)
     );
@@ -54,6 +57,7 @@ public class HttpClientFactoryBuilder {
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
       double timeoutMultiplier,
+      String balancingRequestsLogLevel,
       MetricsConsumer metricsConsumer,
       List<HttpClientEventListener> eventListeners
   ) {
@@ -63,6 +67,7 @@ public class HttpClientFactoryBuilder {
     this.contextSupplier = contextSupplier;
     this.customHostsWithSession = customHostsWithSession;
     this.timeoutMultiplier = timeoutMultiplier;
+    this.balancingRequestsLogLevel = balancingRequestsLogLevel;
     this.metricsConsumer = metricsConsumer;
     this.eventListeners = eventListeners;
   }
@@ -87,6 +92,8 @@ public class HttpClientFactoryBuilder {
     ofNullable(properties.getProperty(ConfigKeys.TIMEOUT_MULTIPLIER))
         .map(Double::parseDouble)
         .ifPresent(timeoutMultiplier -> target.timeoutMultiplier = timeoutMultiplier);
+    ofNullable(properties.getProperty(ConfigKeys.BALANCING_REQUESTS_LOG_LEVEL))
+        .ifPresent(balancingRequestsLogLevel -> target.balancingRequestsLogLevel = balancingRequestsLogLevel);
     ofNullable(properties.getProperty(ConfigKeys.USER_AGENT))
         .ifPresent(target.configBuilder::setUserAgent);
 
@@ -205,7 +212,10 @@ public class HttpClientFactoryBuilder {
   }
 
   private RequestStrategy<? extends RequestEngineBuilder<?>> initStrategy() {
-    return requestStrategy.createCustomizedCopy(requestEngineBuilder -> requestEngineBuilder.withTimeoutMultiplier(timeoutMultiplier));
+    return requestStrategy.createCustomizedCopy(requestEngineBuilder -> requestEngineBuilder
+        .withTimeoutMultiplier(timeoutMultiplier)
+        .withBalancingRequestsLogLevel(balancingRequestsLogLevel)
+    );
   }
 
   private DefaultAsyncHttpClientConfig.Builder applyTimeoutMultiplier(DefaultAsyncHttpClientConfig.Builder clientConfigBuilder) {
@@ -270,6 +280,7 @@ public class HttpClientFactoryBuilder {
     public static final String REQUEST_TIMEOUT_MS = "requestTimeoutMs";
 
     public static final String TIMEOUT_MULTIPLIER = "timeoutMultiplier";
+    public static final String BALANCING_REQUESTS_LOG_LEVEL = "balancingRequestsLogLevel";
 
     public static final String FOLLOW_REDIRECT = "followRedirect";
     public static final String COMPRESSION_ENFORCED = "compressionEnforced";
