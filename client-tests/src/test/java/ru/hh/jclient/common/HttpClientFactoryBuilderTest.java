@@ -4,7 +4,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -18,7 +20,16 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
+import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
+import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
+import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
+import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
+import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
+import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.util.storage.Storage;
+import ru.hh.jclient.consul.TestUpstreamConfigService;
+import ru.hh.jclient.consul.TestUpstreamService;
 
 public class HttpClientFactoryBuilderTest {
 
@@ -26,6 +37,32 @@ public class HttpClientFactoryBuilderTest {
   public void testImmutableByDefault() {
     var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of());
     testBuilderMethods(initial, not(equalTo(initial)));
+  }
+
+  @Test
+  public void testRequestBalancerBuilderProperties() {
+    String levelOverride = "INFO";
+    assertNotEquals(levelOverride, DEFAULT_BALANCING_REQUESTS_LOG_LEVEL);
+
+    Properties properties = new Properties();
+    properties.put("balancingRequestsLogLevel", levelOverride);
+
+    JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
+    UpstreamManager upstreamManager = new BalancingUpstreamManager(null, null, Set.of(), infrastructureConfig, false);
+    HttpClientFactoryBuilder httpClientFactoryBuilder = new HttpClientFactoryBuilder(
+        new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
+        List.of()
+    )
+        .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
+        .withCallbackExecutor(Executors.newSingleThreadExecutor());
+
+    HttpClientFactory httpClientFactory = httpClientFactoryBuilder.withProperties(properties).build();
+
+    Request request = new RequestBuilder(JClientBase.HTTP_GET).setUrl("http://nevajno").build();
+    HttpClient client = httpClientFactory.with(request);
+
+    RequestBalancerBuilder requestBalancerBuilder = client.configureRequestEngine(RequestBalancerBuilder.class);
+    assertEquals(requestBalancerBuilder.getBalancingRequestsLogLevel(), levelOverride);
   }
 
   @Test
