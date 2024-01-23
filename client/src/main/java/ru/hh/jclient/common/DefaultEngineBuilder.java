@@ -30,6 +30,11 @@ public class DefaultEngineBuilder implements RequestEngineBuilder<DefaultEngineB
   }
 
   @Override
+  public DefaultEngineBuilder withBalancingRequestsLogLevel(String balancingRequestsLogLevel) {
+    return this;
+  }
+
+  @Override
   public HttpClient backToClient() {
     return httpClient;
   }

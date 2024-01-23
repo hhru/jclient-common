@@ -32,6 +32,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       int maxTimeoutTries,
       boolean forceIdempotence,
       @Nullable Double timeoutMultiplier,
+      String balancingRequestsLogLevel,
       Set<Monitoring> monitorings
   ) {
     super(
@@ -41,6 +42,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
         maxTimeoutTries,
         state.getUpstreamConfig().getMaxTries(),
         timeoutMultiplier,
+        balancingRequestsLogLevel,
         forceIdempotence
     );
     this.state = state;

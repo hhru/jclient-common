@@ -17,10 +17,11 @@ public class ExternalUrlRequestor extends RequestBalancer {
 
   public ExternalUrlRequestor(Request request, RequestStrategy.RequestExecutor requestExecutor,
                               int requestTimeoutMs, int maxRequestTimeoutTries, int maxTries,
-                              Double timeoutMultiplier, boolean forceIdempotence,
+                              Double timeoutMultiplier, String balancingRequestsLogLevel, boolean forceIdempotence,
                               Set<Monitoring> monitorings
   ) {
-    super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier, forceIdempotence);
+    super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier,
+        balancingRequestsLogLevel, forceIdempotence);
     this.monitorings = monitorings;
   }
 
