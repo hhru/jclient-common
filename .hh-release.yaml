@@ -1,4 +1,4 @@
-version: 3.12.2
+version: 3.12.3
 build_image: registry.pyn.ru/openjdk17-building:2022.12.14
 docker_files:
   none: none
