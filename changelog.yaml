@@ -1,3 +1,9 @@
+-   name: 3.12.3
+    date: '2024-01-23T11:13:22.412075+03:00'
+    description: ''
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.2
     date: '2024-01-22T16:27:08.219070+03:00'
     description: get back support for enabled/disabled upstreams
