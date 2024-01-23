@@ -22,6 +22,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   }
 
   private Double timeoutMultiplier;
+  private String balancingRequestsLogLevel;
   private Integer maxTimeoutTries;
   private boolean forceIdempotence;
   private boolean adaptive;
@@ -42,7 +43,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
       return new ExternalUrlRequestor(request, requestExecutor,
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_CONFIG.getMaxTries(),
-        timeoutMultiplier, forceIdempotence, monitoring);
+        timeoutMultiplier, balancingRequestsLogLevel, forceIdempotence, monitoring);
     } else {
       int maxTimeoutTries = Optional
           .ofNullable(this.maxTimeoutTries)
@@ -54,7 +55,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
         state = new BalancingState(upstream, profile);
       }
       return new UpstreamRequestBalancer(state, request, requestExecutor,
-        maxTimeoutTries, forceIdempotence, timeoutMultiplier, monitoring
+        maxTimeoutTries, forceIdempotence, timeoutMultiplier, balancingRequestsLogLevel, monitoring
       );
     }
   }
@@ -62,6 +63,12 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   @Override
   public RequestBalancerBuilder withTimeoutMultiplier(Double timeoutMultiplier) {
     this.timeoutMultiplier = timeoutMultiplier;
+    return this;
+  }
+
+  @Override
+  public RequestBalancerBuilder withBalancingRequestsLogLevel(String balancingRequestsLogLevel) {
+    this.balancingRequestsLogLevel = balancingRequestsLogLevel;
     return this;
   }
 
@@ -88,5 +95,9 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   public RequestBalancerBuilder withProfile(String profile) {
     this.profile = profile;
     return this;
+  }
+
+  public String getBalancingRequestsLogLevel() {
+    return this.balancingRequestsLogLevel;
   }
 }

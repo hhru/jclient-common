@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.mockito.invocation.InvocationOnMock;
+import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
@@ -433,7 +434,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     );
     upstreamManager.updateUpstreams(upstreamList);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService())
-        .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder.withTimeoutMultiplier(multiplier));
+        .createCustomizedCopy(requestBalancerBuilder -> requestBalancerBuilder
+            .withTimeoutMultiplier(multiplier)
+            .withBalancingRequestsLogLevel(DEFAULT_BALANCING_REQUESTS_LOG_LEVEL)
+        );
     return new HttpClientFactory(httpClient, new SingletonStorage<>(() -> httpClientContext), Set.of(), Runnable::run, requestingStrategy);
   }
 
@@ -576,6 +580,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     @Override
     public NotValidEngineBuilder withTimeoutMultiplier(Double timeoutMultiplier) {
+      return this;
+    }
+
+    @Override
+    public NotValidEngineBuilder withBalancingRequestsLogLevel(String balancingRequestsLogLevel) {
       return this;
     }
 

@@ -6,6 +6,7 @@ import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestStrategy;
@@ -24,6 +25,7 @@ public class RequestBalancerBuilderTest {
     requestExecutor = mock(RequestStrategy.RequestExecutor.class);
     upstreamManager = mock(UpstreamManager.class);
     requestBalancerBuilder = new RequestBalancerBuilder(upstreamManager, null);
+    requestBalancerBuilder.withBalancingRequestsLogLevel(DEFAULT_BALANCING_REQUESTS_LOG_LEVEL);
   }
 
   @Test
