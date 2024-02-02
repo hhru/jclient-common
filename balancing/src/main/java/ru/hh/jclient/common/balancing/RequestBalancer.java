@@ -79,18 +79,19 @@ public abstract class RequestBalancer implements RequestEngine {
             maxTries - triesLeft,
             resultOrContext.getRequestContext()
         )
-        .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
+        .thenApply(this::finishRequest)
         .thenCompose(this::unwrapOrRetry);
   }
 
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
-  private void finishRequest(ResponseWrapper wrapper) {
+  private ResponseWrapper finishRequest(ResponseWrapper wrapper) {
     long timeToLastByteMillis = wrapper.getTimeToLastByteMillis();
     updateLeftTriesAndTime((int) timeToLastByteMillis);
     Response response = wrapper.getResponse();
     this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
     onRequestReceived(wrapper, timeToLastByteMillis);
+    return wrapper;
   }
 
   protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMillis);
