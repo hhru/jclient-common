@@ -1,3 +1,9 @@
+-   name: 3.12.5
+    date: '2024-02-05T11:18:38.398491+03:00'
+    description: fix npe
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.4
     date: '2024-02-02T16:02:26.946972+03:00'
     description: optimise logs
