@@ -1,3 +1,9 @@
+-   name: 3.12.6
+    date: '2024-02-05T13:06:25.316690+03:00'
+    description: make window functions public
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.5
     date: '2024-02-05T11:18:38.398491+03:00'
     description: fix npe
