@@ -1,3 +1,9 @@
+-   name: 3.12.7
+    date: '2024-02-08T16:54:57.988581+03:00'
+    description: fix adaptive balancing for retries count > servers count
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.6
     date: '2024-02-05T13:06:25.316690+03:00'
     description: make window functions public
