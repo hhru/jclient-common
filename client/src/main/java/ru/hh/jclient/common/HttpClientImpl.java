@@ -80,7 +80,7 @@ class HttpClientImpl extends HttpClient {
       LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     }
     if (retryCount > 0) {
-      LOGGER.info("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
+      LOGGER.debug("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
       getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity().orElse(null), retryCount, context));
     } else {
       LOGGER.debug("HTTP_CLIENT_START: Starting {} {}", request.getMethod(), request.getUri());
@@ -274,7 +274,7 @@ class HttpClientImpl extends HttpClient {
       String responseStatusText = response.getStatusText();
 
       long timeToLastByteMillis = getTimeToLastByte();
-      mdcCopy.doInContext(() -> LOGGER.info("HTTP_CLIENT_RESPONSE: {} {} in {} millis on {} {}",
+      mdcCopy.doInContext(() -> LOGGER.debug("HTTP_CLIENT_RESPONSE: {} {} in {} millis on {} {}",
           responseStatusCode, responseStatusText, timeToLastByteMillis, request.getMethod(), request.getUri()
       ));
 
@@ -287,7 +287,7 @@ class HttpClientImpl extends HttpClient {
       long timeToLastByteMillis = getTimeToLastByte();
 
       mdcCopy.doInContext(
-          () -> LOGGER.warn(
+          () -> LOGGER.debug(
               "HTTP_CLIENT_ERROR: client error after {} millis on {} {}: {}{}",
               timeToLastByteMillis,
               request.getMethod(),

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.RequestBalancer.WARM_UP_DEFAULT_TIME_MILLIS;
@@ -24,7 +25,7 @@ final class AdaptiveBalancingStrategy {
     }
 
     if (servers.size() == 1) {
-      return Collections.singletonList(0);
+      return Stream.generate(() -> 0).limit(retriesCount).toList();
     }
 
     long[] scores = new long[n];
@@ -88,7 +89,15 @@ final class AdaptiveBalancingStrategy {
       }
     }
 
-    return shuffled;
+    if (count >= retriesCount) {
+      return shuffled;
+    }
+
+    var moreIds = new ArrayList<Integer>(shuffled);
+    for (int j = 0; j < retriesCount - count; j++) {
+      moreIds.add(shuffled.get(j % count));
+    }
+    return moreIds;
   }
 
   private static void swap(long[] scores, int[] ids, int a, int b) {
