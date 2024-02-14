@@ -79,18 +79,19 @@ public abstract class RequestBalancer implements RequestEngine {
             maxTries - triesLeft,
             resultOrContext.getRequestContext()
         )
-        .whenComplete((wrapper, throwable) -> finishRequest(wrapper))
+        .thenApply(this::finishRequest)
         .thenCompose(this::unwrapOrRetry);
   }
 
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
-  private void finishRequest(ResponseWrapper wrapper) {
+  private ResponseWrapper finishRequest(ResponseWrapper wrapper) {
     long timeToLastByteMillis = wrapper.getTimeToLastByteMillis();
     updateLeftTriesAndTime((int) timeToLastByteMillis);
     Response response = wrapper.getResponse();
     this.trace.add(new TraceFrame(response.getUri().getHost(), response.getStatusCode(), response.getStatusText()));
     onRequestReceived(wrapper, timeToLastByteMillis);
+    return wrapper;
   }
 
   protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMillis);
@@ -109,7 +110,7 @@ public abstract class RequestBalancer implements RequestEngine {
     int triesUsed = maxTries - triesLeft;
     int retriesCount = triesUsed - 1;
 
-    logResponse(response, retriesCount, doRetry);
+    logResponse(response, wrapper.getTimeToLastByteMillis(), retriesCount, doRetry);
     onResponse(wrapper, triesUsed, doRetry);
     if (doRetry) {
       onRetry();
@@ -132,36 +133,38 @@ public abstract class RequestBalancer implements RequestEngine {
 
   protected abstract void onRetry();
 
-  private void logResponse(Response response, int retriesCount, boolean doRetry) {
+  private void logResponse(Response response, long responseTimeMillis, int retriesCount, boolean doRetry) {
     String logMessage;
     Consumer<String> logMethod;
 
     String size = Optional
         .ofNullable(response.getResponseBody())
-        .map(body -> String.format(" %d bytes", body.getBytes().length))
+        .map(body -> String.format(" got %d bytes", body.getBytes().length))
         .orElse("");
     boolean isServerError = response.getStatusCode() >= 500;
 
     if (doRetry) {
       String retry = retriesCount > 0 ? String.format(" on retry %s", retriesCount) : "";
       logMessage = String.format(
-          "balanced_request_response: %s %s got%s%s, will retry %s %s",
+          "balanced_request_response: %s %s%s%s in %s millis on %s %s, will retry",
           response.getStatusCode(),
           response.getStatusText(),
           size,
           retry,
+          responseTimeMillis,
           request.getMethod(),
-          response.getUri()
+          request.getUri()
       );
       logMethod = isServerError ? LOGGER::warn : LOGGER::debug;
     } else {
       String msgLabel = isServerError ? "balanced_request_final_error" : "balanced_request_final_response";
       logMessage = String.format(
-          "%s: %s %s got%s %s %s, trace: %s",
+          "%s: %s %s%s in %s millis on %s %s, trace: %s",
           msgLabel,
           response.getStatusCode(),
           response.getStatusText(),
           size,
+          responseTimeMillis,
           request.getMethod(),
           request.getUri(),
           getTrace()

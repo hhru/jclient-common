@@ -8,7 +8,7 @@ public class ResponseTimeTracker {
   private volatile boolean isWarmUp = true;
   private int current;
 
-  ResponseTimeTracker(int n) {
+  public ResponseTimeTracker(int n) {
     this.n = n;
     times = new long[n];
   }
