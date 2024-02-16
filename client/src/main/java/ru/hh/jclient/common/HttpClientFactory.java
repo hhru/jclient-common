@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
@@ -126,10 +127,18 @@ public class HttpClientFactory implements AutoCloseable {
     }
 
     if (this.callbackExecutor instanceof ExecutorService executorService) {
+      executorService.shutdown();
       try {
-        executorService.shutdown();
-      } catch (Exception e) {
-        LOGGER.error("Error occurred during shutting down callbackExecutor", e);
+        if (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
+          executorService.shutdownNow();
+
+          if (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
+            LOGGER.error("callbackExecutor didn't terminate");
+          }
+        }
+      } catch (InterruptedException ie) {
+        executorService.shutdownNow();
+        Thread.currentThread().interrupt();
       }
     }
   }
