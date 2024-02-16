@@ -1,17 +1,23 @@
 package ru.hh.jclient.common;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
 import org.asynchttpclient.AsyncHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.metrics.MetricsProvider;
 import ru.hh.jclient.common.util.storage.Storage;
 
-public class HttpClientFactory {
+public class HttpClientFactory implements AutoCloseable {
+  private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientFactory.class);
+
 
   private final AsyncHttpClient http;
   private final Storage<HttpClientContext> contextSupplier;
@@ -106,5 +112,25 @@ public class HttpClientFactory {
     return new HttpClientFactory(this.http, this.contextSupplier, this.customHostsWithSession, this.callbackExecutor,
                                  this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
                                  this.eventListeners);
+  }
+
+  /**
+   * Close all internal resources
+   */
+  @Override
+  public void close() {
+    try {
+      this.http.close();
+    } catch (IOException e) {
+      LOGGER.error("Error occurred during closing HttpClientFactory", e);
+    }
+
+    if (this.callbackExecutor instanceof ExecutorService executorService) {
+      try {
+        executorService.shutdown();
+      } catch (Exception e) {
+        LOGGER.error("Error occurred during shutting down callbackExecutor", e);
+      }
+    }
   }
 }

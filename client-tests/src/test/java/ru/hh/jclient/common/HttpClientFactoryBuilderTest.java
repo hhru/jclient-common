@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -17,9 +18,13 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
@@ -74,6 +79,18 @@ public class HttpClientFactoryBuilderTest {
     var client = initial.withProperties(properties).build();
     assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
     assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());
+  }
+
+  @Test
+  public void testCloseHttpClientFactory() {
+    var executorService = Mockito.mock(ExecutorService.class);
+    var httpClientFactory = new HttpClientFactoryBuilder(mock(Storage.class), List.of())
+        .withCallbackExecutor(executorService)
+        .build();
+    httpClientFactory.close();
+
+    verify(executorService, times(1)).shutdown();
+    assertTrue("AsyncHttpClient isn't close, but should has been", httpClientFactory.getHttp().isClosed());
   }
 
   private void testBuilderMethods(HttpClientFactoryBuilder initial, Matcher<Object> matcher) {
