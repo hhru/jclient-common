@@ -1,3 +1,9 @@
+-   name: 3.12.8
+    date: '2024-03-01T14:27:39.753795+03:00'
+    description: Исправление бага зависающего потока
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.7
     date: '2024-02-08T16:54:57.988581+03:00'
     description: fix adaptive balancing for retries count > servers count
