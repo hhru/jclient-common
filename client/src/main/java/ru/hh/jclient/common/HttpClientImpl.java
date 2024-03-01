@@ -301,10 +301,15 @@ class HttpClientImpl extends HttpClient {
         return;
       }
 
-      requestDebugs.forEach(debug -> debug.onClientProblem(t));
-      requestDebugs.forEach(RequestDebug::onProcessingFinished);
-
-      completeExceptionally(t);
+      try {
+        requestDebugs.forEach(debug -> debug.onClientProblem(t));
+        requestDebugs.forEach(RequestDebug::onProcessingFinished);
+      } catch (Exception e) {
+        t.addSuppressed(e);
+        throw e;
+      } finally {
+        completeExceptionally(t);
+      }
     }
 
     private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMillis) {
