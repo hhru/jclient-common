@@ -1,3 +1,9 @@
+-   name: 3.12.9
+    date: '2024-03-05T17:30:23.691989+03:00'
+    description: fix sending disabled upstreams to okmeter
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.8
     date: '2024-03-01T14:27:39.753795+03:00'
     description: Исправление бага зависающего потока
