@@ -8,10 +8,21 @@ public class DowntimeDetector {
   private int current;
 
   public DowntimeDetector(int n) {
+    this(n, false);
+  }
+
+  public DowntimeDetector(int n, boolean isInitiallyDown) {
     this.n = n;
     errors = new int[n];
     current = 0;
-    errorsCount = 0;
+    if (isInitiallyDown) {
+      errorsCount = n;
+      for (int i = 0; i < n; i++) {
+        errors[i] = 1;
+      }
+    } else {
+      errorsCount = 0;
+    }
   }
 
   public synchronized void failed() {
