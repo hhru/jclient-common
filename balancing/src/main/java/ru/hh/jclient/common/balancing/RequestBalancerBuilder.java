@@ -21,8 +21,8 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     this.httpClient = httpClient;
   }
 
+  protected String balancingRequestsLogLevel;
   private Double timeoutMultiplier;
-  private String balancingRequestsLogLevel;
   private Integer maxTimeoutTries;
   private boolean forceIdempotence;
   private boolean adaptive;

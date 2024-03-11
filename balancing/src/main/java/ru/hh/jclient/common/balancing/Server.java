@@ -50,7 +50,7 @@ public class Server {
     this.weight = weight;
     this.datacenter = datacenter;
 
-    this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW);
+    this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW, true);
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
 
     this.requests = new AtomicLong();
