@@ -1,3 +1,9 @@
+-   name: 3.12.11
+    date: '2024-03-15T16:57:57.224967+03:00'
+    description: pretty logging for adaptive balancing + unit test
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.10
     date: '2024-03-11T18:05:06.597668+03:00'
     description: more flexible adaptive balancing for new servers
