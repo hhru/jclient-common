@@ -1,10 +1,13 @@
 package ru.hh.jclient.common.balancing;
 
 import java.util.List;
+import java.util.Random;
 import static java.util.stream.Collectors.toList;
 import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
 public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest {
   @Test
@@ -41,6 +44,27 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     assertEquals(balancedServers.size(), retriesCount);
     assertEquals(balancedServers.get(0), balancedServers.get(3));
     assertEquals(balancedServers.get(1), balancedServers.get(4));
+  }
+
+  @Test
+  public void shouldWarmUp() {
+    int retriesCount = 2;
+    var servers = generateServers(2);
+    var balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
+    var responseTimeTracker1 = servers.get(balancedServers.get(0)).getResponseTimeTracker();
+    var responseTimeTracker2 = servers.get(balancedServers.get(1)).getResponseTimeTracker();
+    assertTrue(responseTimeTracker1.isWarmUp());
+    assertTrue(responseTimeTracker2.isWarmUp());
+
+    var random = new Random();
+    for (int i = 0; i < RESPONSE_TIME_TRACKER_WINDOW; i++) {
+      responseTimeTracker1.time(random.nextInt(100, 200));
+    }
+
+    balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
+    boolean warmUp1 = servers.get(balancedServers.get(0)).getResponseTimeTracker().isWarmUp();
+    boolean warmUp2 = servers.get(balancedServers.get(1)).getResponseTimeTracker().isWarmUp();
+    assertTrue(warmUp1 ^ warmUp2);
   }
 
   private static List<Server> generateServers(int n) {

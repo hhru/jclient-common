@@ -13,6 +13,7 @@ final class AdaptiveBalancingStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(AdaptiveBalancingStrategy.class);
 
   static final int DOWNTIME_DETECTOR_WINDOW = 100;
+  static final int INITIAL_LIVE_PERCENT = 10;
   static final int RESPONSE_TIME_TRACKER_WINDOW = 500;
   private static final int lowestHealthPercent = 2;
   private static final int lowestHealth = lowestHealthPercent * DOWNTIME_DETECTOR_WINDOW / 100;
@@ -43,8 +44,10 @@ final class AdaptiveBalancingStrategy {
       healths[i] = server.getDowntimeDetector().successCount();
 
       var tracker = server.getResponseTimeTracker();
-      LOGGER.debug("gathering stats {}, warmup:{}, time:{}, successCount:{}", server, tracker.isWarmUp(),
-          tracker.mean(), server.getDowntimeDetector().successCount());
+      LOGGER.debug(
+          "balancer gather warmup: {}, time: {}, successCount: {}, server: {}",
+          tracker.isWarmUp(), tracker.mean(), server.getDowntimeDetector().successCount(), server
+      );
       if (tracker.isWarmUp()) {
         if (warmup == null) {
           warmup = new boolean[n];
@@ -86,8 +89,8 @@ final class AdaptiveBalancingStrategy {
       int health = Math.max(healths[j], lowestHealth);
       long score = invertedTime * health;
       LOGGER.debug(
-          "balancer stats for {}, health:{}, warmup: {}, inverted_time_score:{}, final_score:{}",
-          servers.get(j), warmup == null ? false : warmup[j], health, invertedTime, score
+          "balancer stats health: {}, warmup: {}, inverted_time_score: {}, final_score: {}, server: {}",
+          health, warmup != null && warmup[j], invertedTime, score, servers.get(j)
       );
       total += score;
       scores[j] = score;
@@ -103,7 +106,7 @@ final class AdaptiveBalancingStrategy {
         sum += scores[k];
         if (pick < sum) {
           shuffled.add(ids[k]);
-          LOGGER.debug("balancer pick for {}, {}:{}", servers.get(ids[k]), n - 1 - j, ids[k]);
+          LOGGER.debug("balancer pick for retry: {}, idx: {}, server: {}", n - 1 - j, ids[k], servers.get(ids[k]));
           total -= scores[k];
           swap(scores, ids, k, j);
           break;

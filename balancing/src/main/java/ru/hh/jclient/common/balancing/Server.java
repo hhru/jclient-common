@@ -12,6 +12,7 @@ import java.util.concurrent.locks.StampedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.DOWNTIME_DETECTOR_WINDOW;
+import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.INITIAL_LIVE_PERCENT;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
 //TODO move to ru.hh.jclient.common.balancing.internal
@@ -50,7 +51,7 @@ public class Server {
     this.weight = weight;
     this.datacenter = datacenter;
 
-    this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW, true);
+    this.downtimeDetector = new DowntimeDetector(DOWNTIME_DETECTOR_WINDOW, INITIAL_LIVE_PERCENT);
     this.responseTimeTracker = new ResponseTimeTracker(RESPONSE_TIME_TRACKER_WINDOW);
 
     this.requests = new AtomicLong();
