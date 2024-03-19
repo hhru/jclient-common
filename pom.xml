@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.public-pom</groupId>
         <artifactId>public-pom</artifactId>
-        <version>1.57.0.jakarta-rc1</version>
+        <version>1.57.0.jakarta-rc3</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -68,13 +68,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
