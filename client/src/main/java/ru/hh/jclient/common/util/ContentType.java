@@ -1,10 +1,10 @@
 package ru.hh.jclient.common.util;
 
+import jakarta.annotation.Nullable;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import javax.annotation.Nullable;
 
 public class ContentType {
 
