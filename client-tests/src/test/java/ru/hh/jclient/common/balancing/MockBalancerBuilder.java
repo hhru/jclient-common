@@ -15,6 +15,7 @@ public final class MockBalancerBuilder extends RequestBalancerBuilder {
   public MockBalancerBuilder(UpstreamManager upstreamManager, HttpClient client, Response responseMock) {
     super(upstreamManager, client);
     this.mock = responseMock;
+    this.balancingRequestsLogLevel = "ERROR";
   }
 
   @Override

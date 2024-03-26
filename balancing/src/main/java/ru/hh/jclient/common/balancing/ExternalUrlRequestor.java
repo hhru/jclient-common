@@ -1,6 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
+import java.util.Optional;
 import java.util.Set;
+import javax.annotation.Nullable;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestContext;
@@ -13,15 +15,25 @@ public class ExternalUrlRequestor extends RequestBalancer {
   public static final String DC_FOR_EXTERNAL_REQUESTS = "externalRequest";
   private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
+  @Nullable
+  private final String upstreamName;
   private final Set<Monitoring> monitorings;
 
-  public ExternalUrlRequestor(Request request, RequestStrategy.RequestExecutor requestExecutor,
-                              int requestTimeoutMs, int maxRequestTimeoutTries, int maxTries,
-                              Double timeoutMultiplier, String balancingRequestsLogLevel, boolean forceIdempotence,
-                              Set<Monitoring> monitorings
+  public ExternalUrlRequestor(
+      @Nullable Upstream upstream,
+      Request request,
+      RequestStrategy.RequestExecutor requestExecutor,
+      int requestTimeoutMs,
+      int maxRequestTimeoutTries,
+      int maxTries,
+      Double timeoutMultiplier,
+      String balancingRequestsLogLevel,
+      boolean forceIdempotence,
+      Set<Monitoring> monitorings
   ) {
     super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier,
         balancingRequestsLogLevel, forceIdempotence);
+    this.upstreamName = Optional.ofNullable(upstream).map(Upstream::getName).orElse(null);
     this.monitorings = monitorings;
   }
 
@@ -44,9 +56,10 @@ public class ExternalUrlRequestor extends RequestBalancer {
       Uri originalUri = request.getUri();
       Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
       String serverAddress = baseUri.toString();
+      String name = upstreamName != null ? upstreamName : serverAddress;
 
-      monitoring.countRequest(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
-      monitoring.countRequestTime(serverAddress, DC_FOR_EXTERNAL_REQUESTS, requestTimeMillis);
+      monitoring.countRequest(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
+      monitoring.countRequestTime(name, DC_FOR_EXTERNAL_REQUESTS, requestTimeMillis);
 
       if (isRequestFinal && triesUsed > 1) {
         monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
