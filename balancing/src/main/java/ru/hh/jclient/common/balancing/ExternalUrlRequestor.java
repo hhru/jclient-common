@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
+import jakarta.annotation.Nullable;
 import java.util.Optional;
 import java.util.Set;
-import javax.annotation.Nullable;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestContext;
