@@ -1,6 +1,6 @@
 -   name: 3.12.12
     date: '2024-03-26T14:26:13.248371+03:00'
-    description: 'update dependencies: public-pom 1.57.0, common-erros 0.0.8, nab-metrics
+    description: 'update dependencies: public-pom 1.57.0, common-errors 0.0.8, nab-metrics
         4.49.2'
     instructions: ''
     compatible: true
