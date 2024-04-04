@@ -55,7 +55,7 @@
 
 -   name: 3.12.3
     date: '2024-01-23T11:13:22.412075+03:00'
-    description: ''
+    description: 'add setting for response log level'
     instructions: ''
     compatible: true
 
