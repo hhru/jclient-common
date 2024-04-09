@@ -1,3 +1,9 @@
+-   name: 3.12.13
+    date: '2024-04-09T15:28:52.081148+03:00'
+    description: ''
+    instructions: ''
+    compatible: true
+
 -   name: 3.12.12
     date: '2024-03-26T14:26:13.248371+03:00'
     description: 'update dependencies: public-pom 1.57.0, common-errors 0.0.8, nab-metrics
@@ -55,7 +61,7 @@
 
 -   name: 3.12.3
     date: '2024-01-23T11:13:22.412075+03:00'
-    description: 'add setting for response log level'
+    description: add setting for response log level
     instructions: ''
     compatible: true
 
