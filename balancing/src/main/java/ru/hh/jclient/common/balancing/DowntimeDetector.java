@@ -7,7 +7,7 @@ public class DowntimeDetector {
   private final float errorsThreshold;
 
   private volatile int errorsCount;
-  private int current;
+  private int current = 0;
 
   public DowntimeDetector(int n) {
     this(n, ERRORS_THRESHOLD, 100);
@@ -31,13 +31,11 @@ public class DowntimeDetector {
     int initialErrorsCount = n * (100 - initialLivePercent) / 100;
     if (initialErrorsCount > 0) {
       this.errorsCount = initialErrorsCount;
-      this.current = initialErrorsCount;
       for (int i = 0; i < initialErrorsCount; i++) {
         errors[i] = 1;
       }
     } else {
       this.errorsCount = 0;
-      this.current = 0;
     }
   }
 
