@@ -3,14 +3,14 @@
     <parent>
         <artifactId>jclient-common-parent</artifactId>
         <groupId>ru.hh.jclient-common</groupId>
-        <version>3.12.13.jakarta-rc2-SNAPSHOT</version>
+        <version>3.12.13.jakarta-rc3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>jclient-balancing</artifactId>
 
     <properties>
-        <consul.client.version>1.2.11</consul.client.version>
+        <consul.client.version>1.2.13.jakarta-rc1</consul.client.version>
     </properties>
 
     <dependencies>
