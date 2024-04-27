@@ -2,7 +2,6 @@ package ru.hh.jclient.consul;
 
 import java.math.BigInteger;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -256,14 +255,10 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       Server server = serverToRemoveByAddress.remove(address);
 
       if (server == null) {
-        server = new Server(address, serverWeight, nodeDatacenter);
+        server = new Server(address, nodeName, serverWeight, nodeDatacenter);
         currentServers.add(server);
       }
-      Map<String, String> additionalMeta = new HashMap<>();
-      additionalMeta.put("hostname", nodeName);
-
-      service.getMeta().forEach((k, v) -> additionalMeta.merge(k, v, (consulMetaValue, customValue) -> customValue));
-      server.update(serverWeight, additionalMeta, service.getTags());
+      server.update(serverWeight, service.getMeta(), service.getTags());
     }
     serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
     LOGGER.info(

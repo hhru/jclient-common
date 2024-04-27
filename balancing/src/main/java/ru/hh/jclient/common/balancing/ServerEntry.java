@@ -1,19 +1,17 @@
 package ru.hh.jclient.common.balancing;
 
-import java.util.Map;
-
 final class ServerEntry {
   private final int index;
   private final String address;
+  private final String hostName;
   private final String datacenter;
-  private final Map<String, String> meta;
 
 
-  ServerEntry(int index, String address, String datacenter, Map<String, String> meta) {
+  ServerEntry(int index, String address, String hostName, String datacenter) {
     this.index = index;
     this.address = address;
+    this.hostName = hostName;
     this.datacenter = datacenter;
-    this.meta = meta;
   }
 
   public int getIndex() {
@@ -28,7 +26,7 @@ final class ServerEntry {
     return datacenter;
   }
 
-  public Map<String, String> getMeta() {
-    return meta;
+  public String getHostName() {
+    return hostName;
   }
 }

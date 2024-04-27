@@ -66,12 +66,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
     when(serverStore.getServers(TEST_UPSTREAM))
-        .thenReturn(List.of(new Server("server1", 1, null), new Server("server2", 2, null)));
+        .thenReturn(List.of(new Server("server1", null, 1, null), new Server("server2", null, 2, null)));
   }
 
   @Test
   public void shouldMakeGetRequestForSingleServer() throws Exception {
-    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", 1, null)));
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", null, 1, null)));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -167,10 +167,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   @Test
   public void retryConnectException() throws Exception {
     List<Server> servers = List.of(
-        new Server("server1", 1, null),
-        new Server("server2", 1, null),
-        new Server("server3", 1, null),
-        new Server("server4", 1, null)
+        new Server("server1", null, 1, null),
+        new Server("server2", null, 1, null),
+        new Server("server3", null, 1, null),
+        new Server("server4", null, 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -210,9 +210,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   @Test
   public void retry503() throws Exception {
     List<Server> servers = List.of(
-        new Server("server1", 1, null),
-        new Server("server2", 1, null),
-        new Server("server3", 1, null)
+        new Server("server1", null, 1, null),
+        new Server("server2", null, 1, null),
+        new Server("server3", null, 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -299,9 +299,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   @Test
   public void retry503ForNonIdempotentRequest() throws Exception {
     List<Server> servers = List.of(
-        new Server("server1", 1, null),
-        new Server("server2", 1, null),
-        new Server("server3", 1, null)
+        new Server("server1", null, 1, null),
+        new Server("server2", null, 1, null),
+        new Server("server3", null, 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -328,9 +328,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   @Test
   public void retryConnectTimeoutException() throws Exception {
     List<Server> servers = List.of(
-        new Server("server1", 1, null),
-        new Server("server2", 1, null),
-        new Server("server3", 1, null)
+        new Server("server1", null, 1, null),
+        new Server("server2", null, 1, null),
+        new Server("server3", null, 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
@@ -353,9 +353,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   @Test
   public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
     List<Server> servers = List.of(
-        new Server("server1", 1, null),
-        new Server("server2", 1, null),
-        new Server("server3", 1, null)
+        new Server("server1", null, 1, null),
+        new Server("server2", null, 1, null),
+        new Server("server3", null, 1, null)
     );
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 

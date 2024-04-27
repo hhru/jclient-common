@@ -86,7 +86,7 @@ public class Upstream {
         Server server = servers.get(index);
         server.acquire();
         failedSelection = false;
-        return new ServerEntry(index, server.getAddress(), server.getDatacenter(), server.getMeta());
+        return new ServerEntry(index, server.getAddress(), server.getHostName(), server.getDatacenter());
       }
       if (!failedSelection) {
         failedSelection = true;
@@ -116,7 +116,7 @@ public class Upstream {
           .stream()
           .map(id -> {
             Server server = allowedServers.get(id);
-            return new ServerEntry(allowedIds.get(id), server.getAddress(), server.getDatacenter(), server.getMeta());
+            return new ServerEntry(allowedIds.get(id), server.getAddress(), server.getHostName(), server.getDatacenter());
           })
           .collect(toList());
     } finally {

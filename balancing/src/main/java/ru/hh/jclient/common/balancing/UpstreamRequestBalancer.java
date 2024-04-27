@@ -63,8 +63,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     requestBuilder.setUrl(getBalancedUrl(request, state.getCurrentServer().getAddress()));
     requestBuilder.setRequestTimeout(requestTimeout);
     String dc = Optional.ofNullable(state.getCurrentServer().getDatacenter()).map(String::toLowerCase).orElse(null);
-    String hostname = state.getCurrentServer().getMeta().get("hostname");
-    var context = new RequestContext(upstreamName, dc, hostname, state.getUpstreamConfig().isSessionRequired());
+    var context = new RequestContext(upstreamName, dc, state.getCurrentServer().getHostName(), state.getUpstreamConfig().isSessionRequired());
     return new ImmediateResultOrPreparedRequest(context, requestBuilder.build());
   }
 

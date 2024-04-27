@@ -73,8 +73,8 @@ public class BalancingUpstreamManagerTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     List<Server> initialServers = List.of(
-        new Server("server1", 100, "test"),
-        new Server("server2", 100, "test")
+        new Server("server1", null, 100, "test"),
+        new Server("server2", null, 100, "test")
     );
     serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
@@ -90,13 +90,13 @@ public class BalancingUpstreamManagerTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     List<Server> initialServers = List.of(
-        new Server("server1", 100, "test"),
-        new Server("server2", 100, "test")
+        new Server("server1", null, 100, "test"),
+        new Server("server2", null, 100, "test")
     );
     serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
     assertEquals(initialServers, manager.getUpstream(TEST_BACKEND).getServers());
-    List<Server> servers = List.of(new Server("server3", 100, "test"));
+    List<Server> servers = List.of(new Server("server3", null, 100, "test"));
     serverStore.updateServers(TEST_BACKEND, servers, initialServers);
     manager.updateUpstreams(Set.of(TEST_BACKEND));
     assertEquals(servers, manager.getUpstream(TEST_BACKEND).getServers());
@@ -105,8 +105,8 @@ public class BalancingUpstreamManagerTest {
   @Test
   public void skipUpdateIfNoConfigs() {
     List<Server> initialServers = List.of(
-        new Server("server1", 100, "test"),
-        new Server("server2", 100, "test")
+        new Server("server1", null, 100, "test"),
+        new Server("server2", null, 100, "test")
     );
     serverStore.updateServers(TEST_BACKEND, initialServers, List.of());
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
