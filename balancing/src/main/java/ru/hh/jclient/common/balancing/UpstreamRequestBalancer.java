@@ -55,7 +55,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     state.acquireServer();
     if (!state.isServerAvailable()) {
       return new ImmediateResultOrPreparedRequest(getServerNotAvailableResponse(request, upstreamName),
-          new RequestContext(upstreamName, "unavailable", "unknown"));
+          new RequestContext(upstreamName,  "unknown", "unknown"));
     }
     int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : state.getUpstreamConfig().getRequestTimeoutMs();
 
@@ -63,7 +63,8 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     requestBuilder.setUrl(getBalancedUrl(request, state.getCurrentServer().getAddress()));
     requestBuilder.setRequestTimeout(requestTimeout);
     String dc = Optional.ofNullable(state.getCurrentServer().getDatacenter()).map(String::toLowerCase).orElse(null);
-    var context = new RequestContext(upstreamName, dc, state.getCurrentServer().getAddress(), state.getUpstreamConfig().isSessionRequired());
+    String hostname = state.getCurrentServer().getMeta().get("hostname");
+    var context = new RequestContext(upstreamName, dc, hostname, state.getUpstreamConfig().isSessionRequired());
     return new ImmediateResultOrPreparedRequest(context, requestBuilder.build());
   }
 
