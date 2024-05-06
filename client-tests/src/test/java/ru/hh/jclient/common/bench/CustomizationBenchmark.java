@@ -40,8 +40,8 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 public class CustomizationBenchmark {
   private static final String UPSTREAM = "up1";
   private static final List<Server> servers = List.of(
-      new Server("server1", 1, null),
-      new Server("server2", 1, null)
+      new Server("server1", null, 1, null),
+      new Server("server2", null, 1, null)
   );
 
   public static void main(String[] args) throws RunnerException {

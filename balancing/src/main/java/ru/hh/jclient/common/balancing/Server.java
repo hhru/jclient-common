@@ -21,6 +21,7 @@ public class Server {
   private static final String DELIMITER = ":";
 
   private final String address;
+  private final String hostName;
   private final String datacenter;
 
   private final AtomicLong requests;
@@ -46,8 +47,9 @@ public class Server {
   private volatile StampedLock lock;
   private volatile int statLimit;
 
-  public Server(String address, int weight, String datacenter) {
+  public Server(String address, String hostName, int weight, String datacenter) {
     this.address = requireNonNull(address, "address should not be null");
+    this.hostName = hostName;
     this.weight = weight;
     this.datacenter = datacenter;
 
@@ -256,20 +258,6 @@ public class Server {
   }
 
   @Override
-  public String toString() {
-    long requestsValue = requests.get();
-    return "Server{" +
-        "address='" + address + '\'' +
-        ", weight=" + weight +
-        ", datacenter='" + datacenter + '\'' +
-        ", meta=" + meta +
-        ", tags=" + tags +
-        ", currentRequests=" + unpackCurrentRequests(requestsValue) +
-        ", statsRequests=" + unpackStatRequests(requestsValue) +
-        '}';
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -284,5 +272,29 @@ public class Server {
   @Override
   public int hashCode() {
     return Objects.hash(address, datacenter);
+  }
+
+  public String getHostName() {
+    return hostName;
+  }
+
+  @Override
+  public String toString() {
+    return "Server{" +
+        "address='" + address + '\'' +
+        ", hostName='" + hostName + '\'' +
+        ", datacenter='" + datacenter + '\'' +
+        ", requests=" + requests +
+        ", downtimeDetector=" + downtimeDetector +
+        ", responseTimeTracker=" + responseTimeTracker +
+        ", weight=" + weight +
+        ", meta=" + meta +
+        ", tags=" + tags +
+        ", slowStartModeEnabled=" + slowStartModeEnabled +
+        ", slowStartEndMillis=" + slowStartEndMillis +
+        ", statisticsFilledWithInitialValues=" + statisticsFilledWithInitialValues +
+        ", lock=" + lock +
+        ", statLimit=" + statLimit +
+        '}';
   }
 }

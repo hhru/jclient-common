@@ -1,5 +1,5 @@
-version: 3.12.13
-build_image: registry.pyn.ru/openjdk17-building:2022.12.14
+version: 3.12.15
+build_image: registry.pyn.ru/openjdk17-building:2024.05.01
 docker_files:
   none: none
 build_method: mvn_build
