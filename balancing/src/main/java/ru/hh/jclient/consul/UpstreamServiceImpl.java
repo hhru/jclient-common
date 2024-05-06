@@ -255,7 +255,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       Server server = serverToRemoveByAddress.remove(address);
 
       if (server == null) {
-        server = new Server(address, serverWeight, nodeDatacenter);
+        server = new Server(address, nodeName, serverWeight, nodeDatacenter);
         currentServers.add(server);
       }
       server.update(serverWeight, service.getMeta(), service.getTags());

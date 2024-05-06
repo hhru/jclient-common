@@ -8,7 +8,7 @@ public class ServerTest {
 
   @Test
   public void testUpdateServer() {
-    Server server = new Server("test", 1,  "DC1");
+    Server server = new Server("test", null, 1,  "DC1");
     for (int i = 0; i < 100; i++) {
       server.acquire();
     }
@@ -20,7 +20,7 @@ public class ServerTest {
 
   @Test
   public void testCreateServer() {
-    Server server = new Server("test", 1,  "DC1");
+    Server server = new Server("test", null, 1,  "DC1");
 
     assertEquals(0, server.getCurrentRequests());
     assertEquals(0, server.getStatsRequests());
@@ -30,7 +30,7 @@ public class ServerTest {
 
   @Test
   public void testAcquire() {
-    Server server = new Server("test", 1, null);
+    Server server = new Server("test", null, 1, null);
 
     server.acquire();
 
@@ -40,7 +40,7 @@ public class ServerTest {
 
   @Test
   public void testAcquireRelease() {
-    Server server = new Server("test", 1,  null);
+    Server server = new Server("test", null, 1,  null);
 
     server.acquire();
     server.release(false);
@@ -51,7 +51,7 @@ public class ServerTest {
 
   @Test
   public void testAcquireReleaseWithFail() {
-    Server server = new Server("test", 1,  null);
+    Server server = new Server("test", null, 1,  null);
 
     server.acquire();
     server.release(false);

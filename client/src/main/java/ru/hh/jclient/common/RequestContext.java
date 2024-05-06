@@ -1,21 +1,23 @@
 package ru.hh.jclient.common;
 
 public class RequestContext {
-  public static final RequestContext EMPTY_CONTEXT = new RequestContext(null,  null);
+  public static final RequestContext EMPTY_CONTEXT = new RequestContext(null,  null, null);
 
-  public final String upstreamName;
-  public final String datacenter;
-  public final boolean isSessionRequired;
+  private final String upstreamName;
+  private final String destinationDatacenter;
+  private final String destinationHost;
+  private final boolean isSessionRequired;
 
   private RequestDebug contextDebug;
 
-  public RequestContext(String upstreamName, String datacenter) {
-    this(upstreamName, datacenter, false);
+  public RequestContext(String upstreamName, String destinationDatacenter, String destinationHost) {
+    this(upstreamName, destinationDatacenter, destinationHost, false);
   }
 
-  public RequestContext(String upstreamName, String datacenter, boolean isSessionRequired) {
+  public RequestContext(String upstreamName, String destinationDatacenter, String destinationHost, boolean isSessionRequired) {
     this.upstreamName = upstreamName;
-    this.datacenter = datacenter;
+    this.destinationDatacenter = destinationDatacenter;
+    this.destinationHost = destinationHost;
     this.isSessionRequired = isSessionRequired;
   }
 
@@ -27,8 +29,30 @@ public class RequestContext {
     this.contextDebug = contextDebug;
   }
 
+  public String getUpstreamName() {
+    return upstreamName;
+  }
+
+  public String getDestinationDatacenter() {
+    return destinationDatacenter;
+  }
+
+  public String getDestinationHost() {
+    return destinationHost;
+  }
+
+  public boolean isSessionRequired() {
+    return isSessionRequired;
+  }
+
   @Override
   public String toString() {
-    return "upstream: " + upstreamName + ", dc: " + datacenter + ", isSessionRequired: " + isSessionRequired;
+    return "RequestContext{" +
+        "upstreamName='" + upstreamName + '\'' +
+        ", destinationDatacenter='" + destinationDatacenter + '\'' +
+        ", destinationHost='" + destinationHost + '\'' +
+        ", isSessionRequired=" + isSessionRequired +
+        ", contextDebug=" + contextDebug +
+        '}';
   }
 }
