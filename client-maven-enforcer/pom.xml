@@ -4,7 +4,7 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>3.12.15.jakarta-rc1</version>
+        <version>3.12.16.jakarta-rc1-SNAPSHOT</version>
     </parent>
 
     <artifactId>jclient-common-maven-enforcer</artifactId>

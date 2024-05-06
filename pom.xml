@@ -10,7 +10,7 @@
     <artifactId>jclient-common-parent</artifactId>
     <packaging>pom</packaging>
     <name>jclient-common-parent</name>
-    <version>3.12.15.jakarta-rc1</version>
+    <version>3.12.16.jakarta-rc1-SNAPSHOT</version>
 
     <modules>
         <module>client</module>
@@ -186,6 +186,6 @@
     <scm>
         <connection>scm:git:git@github.com:hhru/jclient-common.git</connection>
         <developerConnection>scm:git:git@github.com:hhru/jclient-common.git</developerConnection>
-        <tag>jclient-common-parent-3.12.15.jakarta-rc1</tag>
+        <tag>3.12.8.jakarta-rc2</tag>
     </scm>
 </project>
