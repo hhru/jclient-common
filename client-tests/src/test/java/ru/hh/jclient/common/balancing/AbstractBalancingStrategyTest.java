@@ -202,7 +202,7 @@ public abstract class AbstractBalancingStrategyTest {
       return adressesByWeight
           .entrySet()
           .stream()
-          .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, entry.getKey(), datacenterName)))
+          .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, null, entry.getKey(), datacenterName)))
           .collect(Collectors.toList());
     }
 

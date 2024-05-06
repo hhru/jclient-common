@@ -70,7 +70,7 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
   private static List<Server> generateServers(int n) {
     return IntStream
         .range(0, n)
-        .mapToObj(i -> new Server("test" + i, i, null))
+        .mapToObj(i -> new Server("test" + i, null, i, null))
         .toList();
   }
 }

@@ -245,7 +245,7 @@ public class BalancingWorkloadModelTest {
       if (servers.containsKey(name)) {
         throw new IllegalArgumentException("name=" + name + " already defined");
       }
-      servers.put(name, new Server(createServer(name), weight, dc));
+      servers.put(name, new Server(createServer(name), null, weight, dc));
       this.serverFailRate.put(name, serverFailRate);
     }
 

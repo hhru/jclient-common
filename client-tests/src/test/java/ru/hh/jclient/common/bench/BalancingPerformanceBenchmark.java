@@ -45,14 +45,14 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 @BenchmarkMode(Mode.Throughput)
 public class BalancingPerformanceBenchmark {
   private static final List<Server> servers = List.of(
-      new Server("server1", 50, "test"),
-      new Server("server2", 100, "test"),
-      new Server("server3", 200, "test"),
-      new Server("server4", 50, "test"),
-      new Server("server1", 100, "test"),
-      new Server("server2", 200, "test"),
-      new Server("server3", 50, "test"),
-      new Server("server4", 200, "test")
+      new Server("server1", null, 50, "test"),
+      new Server("server2", null, 100, "test"),
+      new Server("server3", null, 200, "test"),
+      new Server("server4", null, 50, "test"),
+      new Server("server1", null, 100, "test"),
+      new Server("server2", null, 200, "test"),
+      new Server("server3", null, 50, "test"),
+      new Server("server4", null, 200, "test")
   );
   private final ServerStore serverStore = new ServerStoreImpl();
   private final ConfigStore configStore = new ConfigStoreImpl();

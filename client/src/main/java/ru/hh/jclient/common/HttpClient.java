@@ -325,7 +325,7 @@ public abstract class HttpClient {
       return true;
     }
 
-    if (context.isSessionRequired) {
+    if (context.isSessionRequired()) {
       return false;
     }
 

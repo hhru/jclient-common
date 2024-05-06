@@ -66,7 +66,7 @@ public class UpstreamTest {
 
   @Test
   public void acquireReleaseWhenMaxFailsIsZero() {
-    List<Server> servers = List.of(new Server("a", 1, null));
+    List<Server> servers = List.of(new Server("a", null, 1, null));
 
     ApplicationConfig applicationConfig = buildTestConfig();
 
@@ -86,7 +86,7 @@ public class UpstreamTest {
     int numOfRequests = 100_000;
     int tests = 100;
     int weight = numOfRequests * tests * 2 + 1;
-    List<Server> servers = List.of(new Server("a", weight, null));
+    List<Server> servers = List.of(new Server("a", null, weight, null));
 
     Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers, null, false);
     upstream.setStatLimit(weight);
@@ -135,6 +135,6 @@ public class UpstreamTest {
   }
 
   private static List<Server> buildServers() {
-    return List.of(new Server("a", 1, null), new Server("b", 2, null));
+    return List.of(new Server("a", null, 1, null), new Server("b", null, 2, null));
   }
 }
