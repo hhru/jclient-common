@@ -1,8 +1,8 @@
 -   name: 3.12.15
     date: '2024-05-06T12:30:30.826346+03:00'
     description: добавлен destination Host в opentelemetry
-    instructions: ''
-    compatible: true
+    instructions: 'Изменены настройки приватности класса RequestContext'
+    compatible: false
 
 -   name: 3.12.13
     date: '2024-04-09T15:28:52.081148+03:00'
