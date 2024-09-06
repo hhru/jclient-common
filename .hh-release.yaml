@@ -1,12 +1,7 @@
 version: 3.12.15
 build_image: registry.pyn.ru/openjdk17-building:2024.05.01
-docker_files:
-  none: none
 build_method: mvn_build
 deploy_method: mvn_deploy
 update_method: mvn_update
-wiki_links:
-  - https://wiki.hh.ru/pages/viewpage.action?pageId=322903998
-  - https://github.com/hhru/jclient-common/releases
 type: library
 changelog: true

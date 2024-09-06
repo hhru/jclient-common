@@ -33,13 +33,14 @@ public class HttpClientFactoryBuilder {
   private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
-    this.configBuilder = new DefaultAsyncHttpClientConfig.Builder();
+    this.configBuilder = defaultConfigBuilder();
     this.contextSupplier = contextSupplier;
     this.eventListeners = new ArrayList<>(eventListeners);
   }
 
   private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
-    this(new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
+    this(
+        new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
         prototype.requestStrategy, prototype.callbackExecutor,
         prototype.contextSupplier,
         ofNullable(prototype.customHostsWithSession).map(Set::copyOf).orElse(null),
@@ -52,7 +53,7 @@ public class HttpClientFactoryBuilder {
 
   private HttpClientFactoryBuilder(
       DefaultAsyncHttpClientConfig.Builder configBuilder,
-      RequestStrategy<? extends RequestEngineBuilder> requestStrategy,
+      RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
       Executor callbackExecutor,
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
@@ -70,6 +71,11 @@ public class HttpClientFactoryBuilder {
     this.balancingRequestsLogLevel = balancingRequestsLogLevel;
     this.metricsConsumer = metricsConsumer;
     this.eventListeners = eventListeners;
+  }
+
+  private static DefaultAsyncHttpClientConfig.Builder defaultConfigBuilder() {
+    return new DefaultAsyncHttpClientConfig.Builder()
+        .setMaxRequestRetry(0);
   }
 
   public HttpClientFactoryBuilder withProperties(Properties properties) {
@@ -136,7 +142,7 @@ public class HttpClientFactoryBuilder {
     return target;
   }
 
-  public HttpClientFactoryBuilder withRequestStrategy(RequestStrategy<? extends RequestEngineBuilder> requestStrategy) {
+  public HttpClientFactoryBuilder withRequestStrategy(RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy) {
     var target = getCopy();
     target.requestStrategy = requestStrategy;
     return target;
@@ -268,7 +274,8 @@ public class HttpClientFactoryBuilder {
   }
 
   public static final class ConfigKeys {
-    private ConfigKeys() {}
+    private ConfigKeys() {
+    }
 
     public static final String USER_AGENT = "userAgent";
 
