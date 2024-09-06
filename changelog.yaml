@@ -1,7 +1,18 @@
+-   name: 4.0.0
+    date: '2024-09-06T18:13:51.689799+03:00'
+    description: "Внутренние ретраи netty теперь по умолчанию отключены (можно включить\
+        \ настройкой `jclient.maxRequestRetries=` или вызовом `HttpClientFactoryBuilder.withMaxRequestRetries()`,\
+        \ но не рекомендуется, т.к. эти ретраи не знают про балансировку).\r\nДля\
+        \ плагина `jclient-common-maven-enforcer` минимальная версия maven поднята\
+        \ до 3.8.6."
+    instructions: Если у вас подключен плагин `jclient-common-maven-enforcer`, то
+        надо убедиться, что для сборки проекта используется maven 3.8.6 или выше.
+    compatible: false
+
 -   name: 3.12.15
     date: '2024-05-06T12:30:30.826346+03:00'
     description: добавлен destination Host в opentelemetry
-    instructions: 'Изменены настройки приватности класса RequestContext'
+    instructions: Изменены настройки приватности класса RequestContext
     compatible: false
 
 -   name: 3.12.13
