@@ -3,7 +3,7 @@
     <parent>
         <artifactId>jclient-common-parent</artifactId>
         <groupId>ru.hh.jclient-common</groupId>
-        <version>3.12.16.jakarta-rc2-SNAPSHOT</version>
+        <version>4.0.0.jakarta-rc1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
