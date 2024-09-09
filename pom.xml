@@ -186,6 +186,6 @@
     <scm>
         <connection>scm:git:git@github.com:hhru/jclient-common.git</connection>
         <developerConnection>scm:git:git@github.com:hhru/jclient-common.git</developerConnection>
-        <tag>3.12.8.jakarta-rc2</tag>
+        <tag>HEAD</tag>
     </scm>
 </project>
