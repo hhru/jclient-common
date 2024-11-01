@@ -11,6 +11,9 @@ public final class PropertyKeys {
   public static final String SELF_NODE_FILTERING_KEY = String.join(".", JCLIENT_PREFIX, SELF_NODE_FILTERING_PATH);
   public static final String IGNORE_NO_SERVERS_IN_CURRENT_DC_PATH = "ignoreNoServersInCurrentDC";
   public static final String IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY = String.join(".", JCLIENT_PREFIX, IGNORE_NO_SERVERS_IN_CURRENT_DC_PATH);
+  // TODO remove this property after PORTFOLIO-35696
+  public static final String IGNORE_NO_SERVERS_IN_UPSTREAMS_PATH = "ignoreNoServersInUpstreams";
+  public static final String IGNORE_NO_SERVERS_IN_UPSTREAMS_KEY = String.join(".", JCLIENT_PREFIX, IGNORE_NO_SERVERS_IN_UPSTREAMS_PATH);
 
   public static final String UPSTREAM_PREFIX = "upstream";
   public static final String UPSTREAMS_PATH = "services";
