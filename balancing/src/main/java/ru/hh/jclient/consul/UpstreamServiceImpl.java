@@ -119,7 +119,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private void syncUpdateUpstreams() {
     for (String serviceName : upstreamList) {
       if (allowCrossDC) {
-        ExecutorService executorService = Executors.newFixedThreadPool(datacenterList.size());
+        ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
         var tasks = datacenterList
             .stream()
             .map(dc -> CompletableFuture.runAsync(() -> syncUpdateServiceInDC(serviceName, dc), executorService))

@@ -83,7 +83,7 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
   public void testStat() throws InterruptedException {
     int statLimit = 1_000;
     upstreamManager.getUpstream(TEST_UPSTREAM).setStatLimit(statLimit);
-    ExecutorService executorService = Executors.newFixedThreadPool(threads);
+    ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     AtomicInteger counter = new AtomicInteger();
     executorService.invokeAll(
         IntStream

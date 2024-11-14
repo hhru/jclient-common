@@ -239,7 +239,7 @@ public class UpstreamServiceImplTest {
         .map(
             dc -> CompletableFuture.runAsync(
                 () -> upstreamService.updateUpstreams(dc, SERVICE_NAME, dc.values().stream().findFirst().get().getNode().getDatacenter().get()),
-                Executors.newFixedThreadPool(dcS.size())
+                Executors.newVirtualThreadPerTaskExecutor()
             )
         )
         .toArray(CompletableFuture[]::new);
