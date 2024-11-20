@@ -1,3 +1,9 @@
+-   name: 4.1.0
+    date: '2024-11-06T14:34:42.432068+03:00'
+    description: add option to disable noServersInUpstream check for specific upstreams
+    instructions: ''
+    compatible: true
+
 -   name: 4.0.0
     date: '2024-09-06T18:13:51.689799+03:00'
     description: "Внутренние ретраи netty теперь по умолчанию отключены (можно включить\

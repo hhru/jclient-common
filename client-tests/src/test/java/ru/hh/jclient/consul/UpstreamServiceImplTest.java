@@ -288,10 +288,28 @@ public class UpstreamServiceImplTest {
         .setDatacenterList(datacenterList)
         .setWatchSeconds(watchSeconds)
         .setConsistencyMode(ConsistencyMode.DEFAULT)
-        .setSyncInit(true);
+        .setSyncInit(true)
+        .setIgnoreNoServersInCurrentDC(true);
     assertThrows(
         IllegalStateException.class,
         () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    );
+
+    var configWithNoCheck = consulConfig
+        .setIgnoreNoServersUpstreams(List.of(SERVICE_NAME));
+    assertEquals(
+        0,
+        new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, configWithNoCheck, List.of())
+            .getUpstreamStore()
+            .getServers(SERVICE_NAME)
+            .size()
+    );
+
+    var noCheckForAnotherUpstream = configWithNoCheck
+        .setIgnoreNoServersUpstreams(List.of("some_another_upstream"));
+    assertThrows(
+        IllegalStateException.class,
+        () -> new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, noCheckForAnotherUpstream, List.of())
     );
   }
 

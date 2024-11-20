@@ -12,6 +12,7 @@ import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.DC_LIST_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.HEALTHY_ONLY_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_UPSTREAMS_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.SELF_NODE_FILTERING_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.SYNC_UPDATE_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.UPSTREAMS_KEY;
@@ -28,6 +29,7 @@ public class UpstreamServiceConsulConfig {
   private boolean selfNodeFilteringEnabled;
   private boolean syncInit = true;
   private boolean ignoreNoServersInCurrentDC;
+  private List<String> ignoreNoServersUpstreams = List.of();
   private boolean httpCompressionEnabled;
 
   public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
@@ -58,6 +60,11 @@ public class UpstreamServiceConsulConfig {
         .ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY))
         .map(Boolean::parseBoolean)
         .orElse(false);
+    var ignoreNoServersInUpstreams = Optional
+        .ofNullable(props.getProperty(IGNORE_NO_SERVERS_IN_UPSTREAMS_KEY))
+        .filter(Predicate.not(String::isBlank))
+        .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
+        .orElseGet(List::of);
     boolean httpCompressionEnabled = Optional
         .ofNullable(props.getProperty(COMPRESSION_ENABLED_KEY))
         .map(Boolean::parseBoolean)
@@ -72,7 +79,8 @@ public class UpstreamServiceConsulConfig {
         .setConsistencyMode(consistencyMode.consistencyMode)
         .setSyncInit(syncUpdate)
         .setHttpCompressionEnabled(httpCompressionEnabled)
-        .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC);
+        .setIgnoreNoServersInCurrentDC(ignoreNoServersInCurrentDC)
+        .setIgnoreNoServersUpstreams(ignoreNoServersInUpstreams);
   }
 
   public static UpstreamServiceConsulConfig copyOf(UpstreamServiceConsulConfig config) {
@@ -166,6 +174,15 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setIgnoreNoServersInCurrentDC(boolean ignoreNoServersInCurrentDC) {
     this.ignoreNoServersInCurrentDC = ignoreNoServersInCurrentDC;
+    return this;
+  }
+
+  public List<String> getIgnoreNoServersUpstreams() {
+    return ignoreNoServersUpstreams;
+  }
+
+  public UpstreamServiceConsulConfig setIgnoreNoServersUpstreams(List<String> ignoreNoServersUpstreams) {
+    this.ignoreNoServersUpstreams = ignoreNoServersUpstreams;
     return this;
   }
 

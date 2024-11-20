@@ -105,7 +105,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       LOGGER.info("Sync update servers");
       this.initialIndexes = new ConcurrentHashMap<>(datacenterList.size());
       syncUpdateUpstreams();
-      checkServersForAllUpstreamsExist(true);
+      checkServersForAllUpstreamsExist(true, consulConfig.getIgnoreNoServersUpstreams());
       if (!consulConfig.isIgnoreNoServersInCurrentDC()) {
         checkServersForAllUpstreamsInCurrentDcExist(true);
       }
@@ -187,7 +187,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
 
     svHealth.addListener((Map<ServiceHealthKey, ServiceHealth> newValues) -> {
       updateUpstreams(newValues, upstreamName, datacenter);
-      checkServersForAllUpstreamsExist(false);
+      checkServersForAllUpstreamsExist(false, List.of());
       checkServersForAllUpstreamsInCurrentDcExist(false);
 
       callbacks.forEach(cb -> cb.accept(Set.of(upstreamName)));
@@ -216,9 +216,10 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     return currentDC == null || currentDC.equals(server.getDatacenter());
   }
 
-  private void checkServersForAllUpstreamsExist(boolean throwIfError) {
+  private void checkServersForAllUpstreamsExist(boolean throwIfError, List<String> ignoreNoServersUpstreams) {
     var emptyUpstreams = upstreamList
         .stream()
+        .filter(upstream -> !ignoreNoServersUpstreams.contains(upstream))
         .filter(upstream -> serverStore.getServers(upstream).isEmpty())
         .collect(Collectors.toSet());
     if (!emptyUpstreams.isEmpty()) {
