@@ -23,6 +23,8 @@ public class UpstreamRequestBalancer extends RequestBalancer {
 
   private final BalancingState state;
 
+  private final String proxyTargetUrl;
+
   private final Set<Monitoring> monitorings;
 
   public UpstreamRequestBalancer(
@@ -34,6 +36,30 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       @Nullable Double timeoutMultiplier,
       String balancingRequestsLogLevel,
       Set<Monitoring> monitorings
+  ) {
+    this(
+        state,
+        request,
+        requestExecutor,
+        maxTimeoutTries,
+        forceIdempotence,
+        timeoutMultiplier,
+        balancingRequestsLogLevel,
+        monitorings,
+        null
+    );
+  }
+
+  public UpstreamRequestBalancer(
+      BalancingState state,
+      Request request,
+      RequestStrategy.RequestExecutor requestExecutor,
+      int maxTimeoutTries,
+      boolean forceIdempotence,
+      @Nullable Double timeoutMultiplier,
+      String balancingRequestsLogLevel,
+      Set<Monitoring> monitorings,
+      @Nullable String proxyTargetUrl
   ) {
     super(
         request,
@@ -47,6 +73,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     );
     this.state = state;
     this.monitorings = monitorings;
+    this.proxyTargetUrl = proxyTargetUrl;
   }
 
   @Override
@@ -60,7 +87,13 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     int requestTimeout = request.getRequestTimeout() > 0 ? request.getRequestTimeout() : state.getUpstreamConfig().getRequestTimeoutMs();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
-    requestBuilder.setUrl(getBalancedUrl(request, state.getCurrentServer().getAddress()));
+    String balancedUrl = getBalancedUrl(request, state.getCurrentServer().getAddress());
+    if (proxyTargetUrl != null) {
+      requestBuilder.setProxyServer(balancedUrl);
+      requestBuilder.setUrl(proxyTargetUrl);
+    } else {
+      requestBuilder.setUrl(balancedUrl);
+    }
     requestBuilder.setRequestTimeout(requestTimeout);
     String dc = Optional.ofNullable(state.getCurrentServer().getDatacenter()).map(String::toLowerCase).orElse(null);
     var context = new RequestContext(upstreamName, dc, state.getCurrentServer().getHostName(), state.getUpstreamConfig().isSessionRequired());

@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import jakarta.annotation.Nullable;
 import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -21,6 +22,8 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     this.httpClient = httpClient;
   }
 
+  @Nullable
+  private String proxyTargetUrl;
   protected String balancingRequestsLogLevel;
   private Double timeoutMultiplier;
   private Integer maxTimeoutTries;
@@ -55,7 +58,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
         state = new BalancingState(upstream, profile);
       }
       return new UpstreamRequestBalancer(state, request, requestExecutor,
-        maxTimeoutTries, forceIdempotence, timeoutMultiplier, balancingRequestsLogLevel, monitoring
+        maxTimeoutTries, forceIdempotence, timeoutMultiplier, balancingRequestsLogLevel, monitoring, proxyTargetUrl
       );
     }
   }
@@ -94,6 +97,11 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
 
   public RequestBalancerBuilder withProfile(String profile) {
     this.profile = profile;
+    return this;
+  }
+
+  public RequestBalancerBuilder useUpstreamAsProxyTo(String proxyTargetUrl) {
+    this.proxyTargetUrl = proxyTargetUrl;
     return this;
   }
 

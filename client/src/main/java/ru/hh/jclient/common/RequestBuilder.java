@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import org.asynchttpclient.proxy.ProxyServer;
 import org.asynchttpclient.request.body.multipart.Part;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import static ru.hh.jclient.common.Param.toParamDelegate;
@@ -249,10 +250,7 @@ public class RequestBuilder {
   }
 
   public RequestBuilder setUrl(String url) {
-    if (!url.startsWith("http")) {
-      url = "http://" + url;
-    }
-    delegate.setUrl(url);
+    delegate.setUrl(addSchemeIfNecessary(url));
     return this;
   }
 
@@ -268,6 +266,12 @@ public class RequestBuilder {
 
   public RequestBuilder setLocalAddress(InetAddress address) {
     delegate.setLocalAddress(address);
+    return this;
+  }
+
+  public RequestBuilder setProxyServer(String url) {
+    Uri uri = Uri.create(addSchemeIfNecessary(url));
+    delegate.setProxyServer(new ProxyServer.Builder(uri.getHost(), uri.getPort()));
     return this;
   }
 
@@ -303,6 +307,10 @@ public class RequestBuilder {
 
   org.asynchttpclient.RequestBuilder getDelegate() {
     return delegate;
+  }
+
+  private String addSchemeIfNecessary(String url) {
+    return url.startsWith("http") ? url : "http://" + url;
   }
 
   private static <T> Collector<T, ?, List<T>> toMutableList() {
