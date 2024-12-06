@@ -8,7 +8,6 @@ import java.util.List;
 import static java.util.Optional.ofNullable;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
@@ -24,7 +23,6 @@ public class HttpClientFactoryBuilder {
 
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy = new DefaultRequestStrategy();
-  private Executor callbackExecutor;
   private Storage<HttpClientContext> contextSupplier;
   private Set<String> customHostsWithSession;
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
@@ -41,7 +39,7 @@ public class HttpClientFactoryBuilder {
   private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
     this(
         new DefaultAsyncHttpClientConfig.Builder(prototype.configBuilder.build()),
-        prototype.requestStrategy, prototype.callbackExecutor,
+        prototype.requestStrategy,
         prototype.contextSupplier,
         ofNullable(prototype.customHostsWithSession).map(Set::copyOf).orElse(null),
         prototype.timeoutMultiplier,
@@ -54,7 +52,6 @@ public class HttpClientFactoryBuilder {
   private HttpClientFactoryBuilder(
       DefaultAsyncHttpClientConfig.Builder configBuilder,
       RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
-      Executor callbackExecutor,
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
       double timeoutMultiplier,
@@ -64,7 +61,6 @@ public class HttpClientFactoryBuilder {
   ) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
-    this.callbackExecutor = callbackExecutor;
     this.contextSupplier = contextSupplier;
     this.customHostsWithSession = customHostsWithSession;
     this.timeoutMultiplier = timeoutMultiplier;
@@ -154,12 +150,6 @@ public class HttpClientFactoryBuilder {
     return target;
   }
 
-  public HttpClientFactoryBuilder withCallbackExecutor(Executor callbackExecutor) {
-    var target = getCopy();
-    target.callbackExecutor = callbackExecutor;
-    return target;
-  }
-
   public HttpClientFactoryBuilder withCustomHostsWithSession(Collection<String> hostsWithSession) {
     var target = getCopy();
     target.customHostsWithSession = new HashSet<>(hostsWithSession);
@@ -201,7 +191,6 @@ public class HttpClientFactoryBuilder {
         buildClient(),
         contextSupplier,
         ofNullable(customHostsWithSession).map(Set::copyOf).orElseGet(Set::of),
-        callbackExecutor,
         initStrategy(),
         List.copyOf(eventListeners)
     );

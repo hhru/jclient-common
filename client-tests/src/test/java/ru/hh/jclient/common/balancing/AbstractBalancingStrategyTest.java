@@ -120,7 +120,6 @@ public abstract class AbstractBalancingStrategyTest {
         new HttpClientFactoryBuilder(contextSupplier, List.of())
             .withConnectTimeoutMs(100)
             .withRequestStrategy(strategy)
-            .withCallbackExecutor(Runnable::run)
             .build(),
         upstreamManager
     );

@@ -438,7 +438,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
             .withTimeoutMultiplier(multiplier)
             .withBalancingRequestsLogLevel(DEFAULT_BALANCING_REQUESTS_LOG_LEVEL)
         );
-    return new HttpClientFactory(httpClient, new SingletonStorage<>(() -> httpClientContext), Set.of(), Runnable::run, requestingStrategy);
+    return new HttpClientFactory(httpClient, new SingletonStorage<>(() -> httpClientContext), Set.of(), requestingStrategy);
   }
 
   Request failWith(Throwable t, InvocationOnMock iom) {

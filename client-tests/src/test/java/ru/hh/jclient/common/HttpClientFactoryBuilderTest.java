@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -53,8 +52,7 @@ public class HttpClientFactoryBuilderTest {
         new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
         List.of()
     )
-        .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
-        .withCallbackExecutor(Executors.newSingleThreadExecutor());
+        .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()));
 
     HttpClientFactory httpClientFactory = httpClientFactoryBuilder.withProperties(properties).build();
 
@@ -70,7 +68,7 @@ public class HttpClientFactoryBuilderTest {
     Properties properties = new Properties();
     properties.put("requestTimeoutMs", "1000");
     properties.put("timeoutMultiplier", "5.0");
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).withCallbackExecutor(Executors.newSingleThreadExecutor());
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of());
     var client = initial.withProperties(properties).build();
     assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
     assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());

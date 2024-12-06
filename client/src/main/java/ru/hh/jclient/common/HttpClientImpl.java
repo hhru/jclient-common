@@ -9,6 +9,7 @@ import java.util.Set;
 import static java.util.Set.of;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -52,7 +53,7 @@ class HttpClientImpl extends HttpClient {
       X_HH_PROFESSIONAL_ROLES_MODE
   );
 
-  private final Executor callbackExecutor;
+  private final Executor callbackExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
   HttpClientImpl(
       AsyncHttpClient http,
@@ -60,11 +61,9 @@ class HttpClientImpl extends HttpClient {
       RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
-      Executor callbackExecutor,
       List<HttpClientEventListener> eventListeners
   ) {
     super(http, request, requestStrategy, contextSupplier, customHostsWithSession, eventListeners);
-    this.callbackExecutor = callbackExecutor;
   }
 
   @Override

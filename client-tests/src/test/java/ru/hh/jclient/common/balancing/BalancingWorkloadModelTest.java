@@ -272,7 +272,6 @@ public class BalancingWorkloadModelTest {
         this.client = new HttpClientFactoryBuilder(new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())), List.of())
             .withConnectTimeoutMs(100)
             .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
-            .withCallbackExecutor(Runnable::run)
             .build();
       }
       return client;
