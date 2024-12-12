@@ -12,7 +12,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <asynchttpclient.version>2.12.3</asynchttpclient.version>
+        <asynchttpclient.version>3.0.1</asynchttpclient.version>
     </properties>
 
     <dependencies>
