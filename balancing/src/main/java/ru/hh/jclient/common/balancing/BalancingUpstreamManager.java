@@ -1,7 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.Set;
@@ -45,7 +44,7 @@ public class BalancingUpstreamManager implements UpstreamManager {
   }
 
   private void updateUpstream(@Nonnull String upstreamName) {
-    List<Server> servers = serverStore.getServers(upstreamName);
+    Set<Server> servers = serverStore.getServers(upstreamName);
 
     if (servers.isEmpty() && serverStore.getInitialSize(upstreamName).filter(val -> val > 0).isPresent()) {
       monitoring.forEach(m -> m.countUpdateIgnore(upstreamName, datacenter));
@@ -62,14 +61,16 @@ public class BalancingUpstreamManager implements UpstreamManager {
       if (upstream == null) {
         upstream = createUpstream(upstreamName, newConfig, servers);
       } else {
-        upstream.update(newConfig, servers);
+        // TODO REPLACE servers.stream().toList() WITH SET
+        upstream.update(newConfig, servers.stream().toList());
       }
       return upstream;
     });
   }
 
-  private Upstream createUpstream(String upstreamName, UpstreamConfigs upstreamConfigs, List<Server> servers) {
-    return new Upstream(upstreamName, upstreamConfigs, servers, datacenter, allowCrossDCRequests);
+  private Upstream createUpstream(String upstreamName, UpstreamConfigs upstreamConfigs, Set<Server> servers) {
+    // TODO REPLACE servers.stream().toList() WITH SET
+    return new Upstream(upstreamName, upstreamConfigs, servers.stream().toList(), datacenter, allowCrossDCRequests);
   }
 
   @Override

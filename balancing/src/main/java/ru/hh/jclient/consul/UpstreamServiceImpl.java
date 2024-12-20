@@ -1,7 +1,9 @@
 package ru.hh.jclient.consul;
 
+import io.netty.util.NetUtil;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -231,12 +233,13 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     }
   }
 
-  void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<Server> currentServers = serverStore
-        .getServers(serviceName)
+  void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String upstreamName, String datacenter) {
+    // ServerStore is backed by a SET which MUST have ordering guarantees
+    LinkedHashSet<Server> currentServers = serverStore
+        .getServers(upstreamName)
         .stream()
         .filter(server -> datacenter.equals(server.getDatacenter()))
-        .collect(Collectors.toSet());
+        .collect(Collectors.toCollection(LinkedHashSet::new));
 
     Map<String, Server> serverToRemoveByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
 
@@ -249,7 +252,14 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
 
       Service service = serviceHealth.getService();
 
-      String address = Server.addressFromHostPort(getAddress(serviceHealth), service.getPort());
+      // A known constraint. We do not allow upstream names because it floods DNS server with resolve requests.
+      String ipAddress = serviceHealth.getService().getAddress();
+      if (!isValidIpAddress(ipAddress)) {
+        LOGGER.warn("Invalid ip address supplied {}", ipAddress);
+        continue;
+      }
+
+      String address = Server.addressFromHostPort(ipAddress, service.getPort());
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
       int serverWeight = service.getWeights().orElse(defaultWeight).getPassing();
 
@@ -261,14 +271,18 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       }
       server.update(serverWeight, service.getMeta(), service.getTags());
     }
-    serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
+    serverStore.updateServers(upstreamName, currentServers, serverToRemoveByAddress.values());
     LOGGER.info(
         "upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}",
-        serviceName,
+        upstreamName,
         datacenter,
         LOGGER.isDebugEnabled() ? currentServers : currentServers.size(),
         LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()
     );
+  }
+
+  private static boolean isValidIpAddress(String address) {
+    return NetUtil.isValidIpV4Address(address) || NetUtil.isValidIpV6Address(address);
   }
 
   private boolean notSameNode(String nodeName) {
@@ -282,15 +296,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       return lowerCasedDcName;
     }
     return restoredDc;
-  }
-
-  private static String getAddress(ServiceHealth serviceHealth) {
-    String address = serviceHealth.getService().getAddress();
-    if (!StringUtils.isBlank(address)) {
-      return address;
-    }
-
-    return serviceHealth.getNode().getAddress();
   }
 
   ServerStore getUpstreamStore() {

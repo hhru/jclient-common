@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -104,8 +105,8 @@ public class UpstreamServiceImplTest {
   @Test
   public void testParseServer() {
 
-    String address1 = "a1";
-    String address2 = "a2";
+    String address1 = "192.168.1.1";
+    String address2 = "192.168.1.2";
     int weight = 12;
     int port1 = 124;
     int port2 = 126;
@@ -119,7 +120,7 @@ public class UpstreamServiceImplTest {
 
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
-    List<Server> servers = serverStore.getServers(SERVICE_NAME);
+    Set<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
     Map<String, Server> serverMap = servers.stream().collect(Collectors.toMap(Server::getAddress, Function.identity()));
@@ -136,44 +137,50 @@ public class UpstreamServiceImplTest {
 
   @Test
   public void testUpdateReplacedServers() {
-
-    String address1 = "a1";
-    String address2 = "a2";
-    String address3 = "a3";
+    String address1 = "192.168.1.1";
+    String address2 = "192.168.1.2";
+    String address3 = "192.168.1.3";
     int weight = 12;
     int port1 = 124;
     int port2 = 126;
     int port3 = 127;
 
-    ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
+    ServiceHealth serviceHealth1 = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, NODE_NAME, weight, true);
     ServiceHealth serviceHealth3 = buildServiceHealth(address3, port3, DATA_CENTER, NODE_NAME, weight, true);
 
-    Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
-    upstreams.put(buildKey(address1), serviceHealth);
-    upstreams.put(buildKey(address2), serviceHealth2);
+    List<String> serverAddresses = List.of(address1, address2);
+    Map<ServiceHealthKey, ServiceHealth> upstreams = Map.of(
+        buildKey(address1), serviceHealth1,
+        buildKey(address2), serviceHealth2
+    );
 
+    // Initialize current upstreams with first and second servers
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
-    List<Server> servers = serverStore.getServers(SERVICE_NAME);
-    assertEquals(2, servers.size());
+    List<String> servers = serverStore.getServers(SERVICE_NAME).stream().map(Server::getAddress).toList();
+    assertEquals(serverAddresses.size(), servers.size());
+    assertTrue(servers.contains(Server.addressFromHostPort(address1, port1)));
+    assertTrue(servers.contains(Server.addressFromHostPort(address2, port2)));
 
-    upstreamService.updateUpstreams(Map.of(buildKey(address3), serviceHealth3), SERVICE_NAME, DATA_CENTER);
-    List<Server> updatedServers = serverStore.getServers(SERVICE_NAME);
+    List<String> updatedServerAddresses = List.of(address3);
+    Map<ServiceHealthKey, ServiceHealth> updatedUpstreams = Map.of(buildKey(address3), serviceHealth3);
 
-    assertEquals(1, updatedServers.size());
-    Server server = updatedServers.get(0);
-    assertEquals(Server.addressFromHostPort(address3, port3), server.getAddress());
-    assertEquals(weight, server.getWeight());
-    assertEquals(DATA_CENTER, server.getDatacenter());
+    // Replace upstreams with third and the only server
+    upstreamService.updateUpstreams(updatedUpstreams, SERVICE_NAME, DATA_CENTER);
 
-    Server server2 = servers.get(1);
-    assertEquals(Server.addressFromHostPort(address2, port2), server2.getAddress());
+    List<String> updatedServers = serverStore.getServers(SERVICE_NAME).stream().map(Server::getAddress).toList();
+    assertEquals(updatedServerAddresses.size(), updatedServers.size());
+    assertTrue(updatedServers.contains(Server.addressFromHostPort(address3, port3)));
+
+    Server server3 = serverStore.getServers(SERVICE_NAME).stream().findFirst().orElseThrow();
+    assertEquals(weight, server3.getWeight());
+    assertEquals(DATA_CENTER, server3.getDatacenter());
   }
 
   @Test
   public void testSameNode() {
-    String address1 = "a1";
+    String address1 = "192.168.1.1";
     int weight = 12;
     int port1 = 124;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
@@ -187,7 +194,7 @@ public class UpstreamServiceImplTest {
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    Set<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
         .getUpstreamStore()
         .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -196,8 +203,8 @@ public class UpstreamServiceImplTest {
   @Test
   public void testDifferentNodesInTest() {
 
-    String address1 = "a1";
-    String address2 = "a2";
+    String address1 = "192.168.1.1";
+    String address2 = "192.168.1.2";
     int weight = 12;
     int port1 = 124;
     int port2 = 126;
@@ -214,7 +221,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    Set<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
         .getUpstreamStore()
         .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -222,7 +229,7 @@ public class UpstreamServiceImplTest {
 
   @Test
   public void testConcurrentUpdateServers() throws ExecutionException, InterruptedException {
-    List<String> addresses = List.of("a1", "a2", "a3");
+    List<String> addresses = List.of("192.168.1.1", "192.168.1.2", "192.168.1.3");
     List<String> dcS = IntStream.range(0, 1000).boxed().map(String::valueOf).collect(Collectors.toList());
 
     int weight = 12;
@@ -246,14 +253,14 @@ public class UpstreamServiceImplTest {
 
     CompletableFuture.allOf(updatedUpstream).get();
 
-    List<Server> servers = serverStore.getServers(SERVICE_NAME);
+    Set<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(addresses.size() * dcS.size(), servers.size());
   }
 
   @Test
   public void testDifferentNodesInProd() {
-    String address1 = "a1";
-    String address2 = "a2";
+    String address1 = "192.168.1.1";
+    String address2 = "192.168.1.2";
     int weight = 12;
     int port1 = 124;
     int port2 = 126;
@@ -270,7 +277,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    Set<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
         .getUpstreamStore()
         .getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
@@ -315,7 +322,7 @@ public class UpstreamServiceImplTest {
 
   @Test
   public void testNoServersInCurrentDc() {
-    ServiceHealth serviceHealth = buildServiceHealth("a1", 1, "notCurrentDc", NODE_NAME, 100, true);
+    ServiceHealth serviceHealth = buildServiceHealth("192.168.1.1", 1, "notCurrentDc", NODE_NAME, 100, true);
     mockServiceHealth(List.of(serviceHealth));
 
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
@@ -342,7 +349,7 @@ public class UpstreamServiceImplTest {
             .size()
     );
 
-    serviceHealth = buildServiceHealth("a2", 1, DATA_CENTER.toLowerCase(), NODE_NAME, 100, true);
+    serviceHealth = buildServiceHealth("192.168.1.2", 1, DATA_CENTER.toLowerCase(), NODE_NAME, 100, true);
     mockServiceHealth(List.of(serviceHealth));
     assertEquals(
         1,

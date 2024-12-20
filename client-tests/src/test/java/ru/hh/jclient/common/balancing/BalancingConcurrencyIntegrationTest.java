@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -101,7 +102,7 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
             })
             .collect(Collectors.toList())
     );
-    List<Server> servers = serverStore.getServers(TEST_UPSTREAM);
+    Set<Server> servers = serverStore.getServers(TEST_UPSTREAM);
 
     int minWeight = servers.stream().mapToInt(Server::getWeight).min().getAsInt();
     int sumWeight = servers.stream().mapToInt(Server::getWeight).sum();

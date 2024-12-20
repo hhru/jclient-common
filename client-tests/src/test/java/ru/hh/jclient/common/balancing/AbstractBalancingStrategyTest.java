@@ -198,12 +198,12 @@ public abstract class AbstractBalancingStrategyTest {
     }
 
     @Override
-    public List<Server> getServers(String serviceName) {
+    public Set<Server> getServers(String upstreamName) {
       return adressesByWeight
           .entrySet()
           .stream()
           .flatMap(entry -> entry.getValue().stream().map(address -> new Server(address, null, entry.getKey(), datacenterName)))
-          .collect(Collectors.toList());
+          .collect(Collectors.toSet());
     }
 
     @Override
