@@ -3,6 +3,7 @@ package ru.hh.jclient.consul;
 import io.netty.util.NetUtil;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -232,12 +233,13 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     }
   }
 
-  void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<Server> currentServers = serverStore
-        .getServers(serviceName)
+  void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String upstreamName, String datacenter) {
+    // ServerStore is backed by a SET which MUST have ordering guarantees
+    LinkedHashSet<Server> currentServers = serverStore
+        .getServers(upstreamName)
         .stream()
         .filter(server -> datacenter.equals(server.getDatacenter()))
-        .collect(Collectors.toSet());
+        .collect(Collectors.toCollection(LinkedHashSet::new));
 
     Map<String, Server> serverToRemoveByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
 
@@ -269,10 +271,10 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       }
       server.update(serverWeight, service.getMeta(), service.getTags());
     }
-    serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
+    serverStore.updateServers(upstreamName, currentServers, serverToRemoveByAddress.values());
     LOGGER.info(
         "upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}",
-        serviceName,
+        upstreamName,
         datacenter,
         LOGGER.isDebugEnabled() ? currentServers : currentServers.size(),
         LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()

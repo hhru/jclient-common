@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -119,7 +120,7 @@ public class UpstreamServiceImplTest {
 
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
-    List<Server> servers = serverStore.getServers(SERVICE_NAME);
+    Set<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
     Map<String, Server> serverMap = servers.stream().collect(Collectors.toMap(Server::getAddress, Function.identity()));
@@ -172,7 +173,7 @@ public class UpstreamServiceImplTest {
     assertEquals(updatedServerAddresses.size(), updatedServers.size());
     assertTrue(updatedServers.contains(Server.addressFromHostPort(address3, port3)));
 
-    Server server3 = serverStore.getServers(SERVICE_NAME).get(0);
+    Server server3 = serverStore.getServers(SERVICE_NAME).stream().findFirst().orElseThrow();
     assertEquals(weight, server3.getWeight());
     assertEquals(DATA_CENTER, server3.getDatacenter());
   }
@@ -193,7 +194,7 @@ public class UpstreamServiceImplTest {
 
     ServiceHealth serviceHealth = buildServiceHealth(address1, port1, DATA_CENTER, NODE_NAME, weight, true);
     mockServiceHealth(List.of(serviceHealth));
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    Set<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
         .getUpstreamStore()
         .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -220,7 +221,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    Set<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
         .getUpstreamStore()
         .getServers(SERVICE_NAME);
     assertEquals(1, servers.size());
@@ -252,7 +253,7 @@ public class UpstreamServiceImplTest {
 
     CompletableFuture.allOf(updatedUpstream).get();
 
-    List<Server> servers = serverStore.getServers(SERVICE_NAME);
+    Set<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(addresses.size() * dcS.size(), servers.size());
   }
 
@@ -276,7 +277,7 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, "differentNode", weight, true);
     mockServiceHealth(List.of(serviceHealth, serviceHealth2));
 
-    List<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
+    Set<Server> servers = new UpstreamServiceImpl(infrastructureConfig, consulClient, serverStore, upstreamManager, consulConfig, List.of())
         .getUpstreamStore()
         .getServers(SERVICE_NAME);
     assertEquals(2, servers.size());

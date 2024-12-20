@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,13 +66,17 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
-    when(serverStore.getServers(TEST_UPSTREAM))
-        .thenReturn(List.of(new Server("server1", null, 1, null), new Server("server2", null, 2, null)));
+
+    LinkedHashSet<Server> servers = new LinkedHashSet<>() {{
+      add(new Server("server1", null, 1, null));
+      add(new Server("server2", null, 2, null));
+    }};
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
   }
 
   @Test
   public void shouldMakeGetRequestForSingleServer() throws Exception {
-    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", null, 1, null)));
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(Set.of(new Server("server1", null, 1, null)));
 
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
@@ -113,7 +118,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     Request[] request = mockRetryIOException("Remotely closed");
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -125,7 +134,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     Request[] request = mockRetryIOException("Connection reset by peer");
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -166,12 +179,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryConnectException() throws Exception {
-    List<Server> servers = List.of(
-        new Server("server1", null, 1, null),
-        new Server("server2", null, 1, null),
-        new Server("server3", null, 1, null),
-        new Server("server4", null, 1, null)
-    );
+    Set<Server> servers = new LinkedHashSet<>() {{
+      add(new Server("server1", null, 1, null));
+      add(new Server("server2", null, 1, null));
+      add(new Server("server3", null, 1, null));
+      add(new Server("server4", null, 1, null));
+    }};
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -202,18 +215,24 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2", "server3", "server4");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+      add("server3");
+      add("server4");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void retry503() throws Exception {
-    List<Server> servers = List.of(
-        new Server("server1", null, 1, null),
-        new Server("server2", null, 1, null),
-        new Server("server3", null, 1, null)
-    );
+    Set<Server> servers = new LinkedHashSet<>() {{
+      add(new Server("server1", null, 1, null));
+      add(new Server("server2", null, 1, null));
+      add(new Server("server3", null, 1, null));
+    }};
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -227,7 +246,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2", "server3");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+      add("server3");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -249,7 +273,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -298,11 +326,11 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retry503ForNonIdempotentRequest() throws Exception {
-    List<Server> servers = List.of(
-        new Server("server1", null, 1, null),
-        new Server("server2", null, 1, null),
-        new Server("server3", null, 1, null)
-    );
+    Set<Server> servers = new LinkedHashSet<>() {{
+      add(new Server("server1", null, 1, null));
+      add(new Server("server2", null, 1, null));
+      add(new Server("server3", null, 1, null));
+    }};
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
     ApplicationConfig applicationConfig = buildTestConfig();
     applicationConfig
@@ -320,18 +348,23 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().post();
 
-    assertRequestEquals(request, "server1", "server2", "server3");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+      add("server3");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void retryConnectTimeoutException() throws Exception {
-    List<Server> servers = List.of(
-        new Server("server1", null, 1, null),
-        new Server("server2", null, 1, null),
-        new Server("server3", null, 1, null)
-    );
+    Set<Server> servers = new LinkedHashSet<>() {{
+      add(new Server("server1", null, 1, null));
+      add(new Server("server2", null, 1, null));
+      add(new Server("server3", null, 1, null));
+    }};
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -345,18 +378,23 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().get();
 
-    assertRequestEquals(request, "server1", "server2", "server3");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+      add("server3");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void retryConnectTimeoutExceptionForNonIdempotentRequest() throws Exception {
-    List<Server> servers = List.of(
-        new Server("server1", null, 1, null),
-        new Server("server2", null, 1, null),
-        new Server("server3", null, 1, null)
-    );
+    Set<Server> servers = new LinkedHashSet<>() {{
+      add(new Server("server1", null, 1, null));
+      add(new Server("server2", null, 1, null));
+      add(new Server("server3", null, 1, null));
+    }};
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
 
     ApplicationConfig applicationConfig = buildTestConfig();
@@ -369,7 +407,12 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     getTestClient().post();
 
-    assertRequestEquals(request, "server1", "server2", "server3");
+    LinkedHashSet<String> hosts = new LinkedHashSet<>() {{
+      add("server1");
+      add("server2");
+      add("server3");
+    }};
+    assertRequestEquals(request, hosts);
 
     debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
@@ -450,14 +493,15 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   protected abstract boolean isAdaptive();
 
-  void assertRequestEquals(Request[] request, String... actual) {
+  void assertRequestEquals(Request[] request, Set<String> actual) {
     if (isAdaptive()) {
-      assertTrue(toSet(request).containsAll(toSet(actual)));
-      assertTrue(toSet(actual).containsAll(toSet(request)));
+      assertTrue(toSet(request).containsAll(actual));
+      assertTrue(actual.containsAll(toSet(request)));
     } else {
-      assertEquals(request.length, actual.length);
-      for (int i = 0; i < request.length; i++) {
-        assertHostEquals(request[i], actual[i]);
+      assertEquals(request.length, actual.size());
+      int i = 0;
+      for (String host : actual) {
+        assertHostEquals(request[i++], host);
       }
     }
   }

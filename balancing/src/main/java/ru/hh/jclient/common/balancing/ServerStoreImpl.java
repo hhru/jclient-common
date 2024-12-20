@@ -1,8 +1,8 @@
 package ru.hh.jclient.common.balancing;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -14,11 +14,11 @@ public class ServerStoreImpl implements ServerStore {
   private final Map<String, Integer> initialCapacities = new HashMap<>();
 
   @Override
-  public List<Server> getServers(String serviceName) {
+  public Set<Server> getServers(String upstreamName) {
     return Optional
-        .ofNullable(serverList.get(serviceName))
-        .map(List::copyOf)
-        .orElseGet(List::of);
+        .ofNullable(serverList.get(upstreamName))
+        .map(Set::copyOf)
+        .orElseGet(Collections::emptySet);
   }
 
   @Override
