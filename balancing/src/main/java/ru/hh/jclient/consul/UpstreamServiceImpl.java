@@ -232,13 +232,9 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   }
 
   void updateUpstreams(Map<ServiceHealthKey, ServiceHealth> upstreams, String serviceName, String datacenter) {
-    Set<Server> currentServers = serverStore
-        .getServers(serviceName)
-        .stream()
-        .filter(server -> datacenter.equals(server.getDatacenter()))
-        .collect(Collectors.toSet());
+    Set<Server> storedAndNewServers = getServers(serviceName, datacenter);
 
-    Map<String, Server> serverToRemoveByAddress = currentServers.stream().collect(toMap(Server::getAddress, Function.identity()));
+    Map<String, Server> serverToRemoveByAddress = storedAndNewServers.stream().collect(toMap(Server::getAddress, Function.identity()));
 
     for (ServiceHealth serviceHealth : upstreams.values()) {
       String nodeName = serviceHealth.getNode().getNode();
@@ -257,16 +253,17 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
 
       if (server == null) {
         server = new Server(address, nodeName, serverWeight, nodeDatacenter);
-        currentServers.add(server);
+        storedAndNewServers.add(server);
       }
       server.update(serverWeight, service.getMeta(), service.getTags());
     }
-    serverStore.updateServers(serviceName, currentServers, serverToRemoveByAddress.values());
+    serverStore.updateServers(serviceName, storedAndNewServers, serverToRemoveByAddress.values());
+    var updatedServers = getServers(serviceName, datacenter);
     LOGGER.info(
         "upstreams for {} were updated in DC {}; alive servers: {}, dead servers: {}",
         serviceName,
         datacenter,
-        LOGGER.isDebugEnabled() ? currentServers : currentServers.size(),
+        LOGGER.isDebugEnabled() ? updatedServers : updatedServers.size(),
         LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()
     );
   }
@@ -282,6 +279,14 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
       return lowerCasedDcName;
     }
     return restoredDc;
+  }
+
+  private Set<Server> getServers(String serviceName, String datacenter) {
+    return serverStore
+        .getServers(serviceName)
+        .stream()
+        .filter(server -> datacenter.equals(server.getDatacenter()))
+        .collect(Collectors.toSet());
   }
 
   private static String getAddress(ServiceHealth serviceHealth) {
