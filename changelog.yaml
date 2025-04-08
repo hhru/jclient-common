@@ -1,3 +1,9 @@
+-   name: 4.1.1
+    date: '2025-04-02T16:43:55.593162+03:00'
+    description: make clear logging of active/dead upstream instances
+    instructions: ''
+    compatible: true
+
 -   name: 4.1.0
     date: '2024-11-06T14:34:42.432068+03:00'
     description: add option to disable noServersInUpstream check for specific upstreams
