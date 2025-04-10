@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.metrics;
 
-import jakarta.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
@@ -22,7 +21,7 @@ public class MonitoringBalancingUpstreamManagerFactory {
       ConfigStore configStore,
       ServerStore serverStore,
       Properties strategyProperties,
-      @Nullable Properties kafkaUpstreamMonitoringProperties
+      Set<Monitoring> additionalMonitoring
   ) {
     boolean allowCrossDCRequests = Optional
         .ofNullable(strategyProperties.getProperty(ALLOW_CROSS_DC_KEY))
@@ -32,22 +31,16 @@ public class MonitoringBalancingUpstreamManagerFactory {
     return new BalancingUpstreamManager(
         configStore,
         serverStore,
-        buildMonitoring(infrastructureConfig.getServiceName(), infrastructureConfig.getCurrentDC(), statsDSender, kafkaUpstreamMonitoringProperties),
+        buildMonitoring(infrastructureConfig.getServiceName(), statsDSender, additionalMonitoring),
         infrastructureConfig,
         allowCrossDCRequests
     );
   }
 
-  private static Set<Monitoring> buildMonitoring(
-      String serviceName,
-      String dc,
-      StatsDSender statsDSender,
-      Properties kafkaUpstreamMonitoringProperties
-  ) {
+  private static Set<Monitoring> buildMonitoring(String serviceName, StatsDSender statsDSender, Set<Monitoring> additionalMonitoring) {
     Set<Monitoring> monitoring = new HashSet<>();
-    KafkaUpstreamMonitoring.fromProperties(serviceName, dc, kafkaUpstreamMonitoringProperties).ifPresent(monitoring::add);
     monitoring.add(new UpstreamMonitoring(statsDSender, serviceName));
-
+    monitoring.addAll(additionalMonitoring);
     return monitoring;
   }
 }
