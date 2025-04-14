@@ -48,7 +48,7 @@ public class ApplicationConfig {
         profile.isSessionRequired(),
         Optional
             .ofNullable(profile.getRetryPolicy())
-            .map(policy -> policy.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> e.getValue().isIdempotent())))
+            .map(policy -> policy.entrySet().stream().collect(toMap(Map.Entry::getKey, e -> e.getValue().isRetryNonIdempotent())))
             .orElseGet(Map::of)
     );
   }

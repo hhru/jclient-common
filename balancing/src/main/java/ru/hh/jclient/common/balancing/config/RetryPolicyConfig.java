@@ -1,21 +1,24 @@
 package ru.hh.jclient.common.balancing.config;
 
-public class RetryPolicyConfig {
-  private boolean idempotent;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-  public boolean isIdempotent() {
-    return idempotent;
+public class RetryPolicyConfig {
+  @JsonProperty("retry_non_idempotent")
+  private boolean retryNonIdempotent;
+
+  public boolean isRetryNonIdempotent() {
+    return retryNonIdempotent;
   }
 
-  public RetryPolicyConfig setIdempotent(boolean idempotent) {
-    this.idempotent = idempotent;
+  public RetryPolicyConfig setRetryNonIdempotent(boolean retryNonIdempotent) {
+    this.retryNonIdempotent = retryNonIdempotent;
     return this;
   }
 
   @Override
   public String toString() {
     return "RetryPolicyConfig{" +
-        "idempotent=" + idempotent +
+        "retryNonIdempotent=" + retryNonIdempotent +
         '}';
   }
 }

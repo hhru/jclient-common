@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -82,7 +83,15 @@ public class UpstreamConfigServiceImplTest {
     assertNotNull(profile);
 
     assertEquals(43, profile.getMaxTries());
-    assertTrue(profile.getRetryPolicy().getRules().get(503));
+    assertEquals(
+        Map.of(
+            503, true,
+            599, false,
+            502, false,
+            504, true
+        ),
+        profile.getRetryPolicy().getRules()
+    );
 
     //second app
     assertEquals(56, configStore.getUpstreamConfig("app2").get("default").get().getMaxTries());
@@ -126,9 +135,37 @@ public class UpstreamConfigServiceImplTest {
 
   private Collection<Value> prepareValues() {
     Collection<Value> values = new ArrayList<>();
-    String twoProfiles = "{\"hosts\": {\"default\": {\"profiles\": {\"default\": {\"max_tries\": \"43\"," +
-        "\"retry_policy\": {\"599\": {\"idempotent\": \"false\"},\"503\": {\"idempotent\": \"true\"}}},\"" +
-        "externalRequestsProfile\": {\"fail_timeout_sec\": \"5\"}}}}}";
+    String twoProfiles = """
+        {
+            "hosts": {
+                "default": {
+                    "profiles": {
+                        "default": {
+                            "max_tries": "43",
+                            "retry_policy": {
+                                "599": {
+                                    "retry_non_idempotent": "false"
+                                },
+                                "503": {
+                                    "retry_non_idempotent": "true"
+                                },
+                                "502": {
+                                    "idempotent": "true"
+                                },
+                                "504": {
+                                    "idempotent": "false",
+                                    "retry_non_idempotent": "true"
+                                }
+                            }
+                        },
+                        "externalRequestsProfile": {
+                            "fail_timeout_sec": "5"
+                        }
+                    }
+                }
+            }
+        }
+        """;
     values.add(
         ImmutableValue
             .copyOf(template)

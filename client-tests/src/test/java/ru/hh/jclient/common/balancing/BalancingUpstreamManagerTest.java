@@ -47,7 +47,7 @@ public class BalancingUpstreamManagerTest {
     ApplicationConfig applicationConfig = buildTestConfig();
     Profile profile = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT);
 
-    profile.setRetryPolicy(Map.of(599, new RetryPolicyConfig().setIdempotent(false)));
+    profile.setRetryPolicy(Map.of(599, new RetryPolicyConfig().setRetryNonIdempotent(false)));
 
     configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     BalancingUpstreamManager manager = createUpstreamManager(List.of(TEST_BACKEND));
@@ -55,8 +55,8 @@ public class BalancingUpstreamManagerTest {
     manager.updateUpstreams(Set.of(TEST_BACKEND));
 
     profile.setRetryPolicy(Map.of(
-        500, new RetryPolicyConfig().setIdempotent(false),
-        503, new RetryPolicyConfig().setIdempotent(true)
+        500, new RetryPolicyConfig().setRetryNonIdempotent(false),
+        503, new RetryPolicyConfig().setRetryNonIdempotent(true)
     ));
     configStore.updateConfig(TEST_BACKEND, ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     manager.updateUpstreams(Set.of(TEST_BACKEND));

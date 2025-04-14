@@ -60,8 +60,8 @@ public class ApplicationConfigTest {
   public void parseRetryPolicy() {
     ApplicationConfig applicationConfig = buildTestConfig();
     Map<Integer, RetryPolicyConfig> retryPolicy = applicationConfig.getHosts().get(DEFAULT).getProfiles().get(DEFAULT).getRetryPolicy();
-    retryPolicy.put(503, new RetryPolicyConfig().setIdempotent(true));
-    retryPolicy.put(599, new RetryPolicyConfig().setIdempotent(false));
+    retryPolicy.put(503, new RetryPolicyConfig().setRetryNonIdempotent(true));
+    retryPolicy.put(599, new RetryPolicyConfig().setRetryNonIdempotent(false));
 
     UpstreamConfigs configMap = ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT);
     UpstreamConfig config = configMap.get(DEFAULT).get();
