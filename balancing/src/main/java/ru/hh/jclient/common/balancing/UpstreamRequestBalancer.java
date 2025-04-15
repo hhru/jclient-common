@@ -92,23 +92,27 @@ public class UpstreamRequestBalancer extends RequestBalancer {
 
   @Override
   protected void onResponse(ResponseWrapper wrapper, int triesUsed, boolean willFireRetry) {
+    if (!state.isServerAvailable()) {
+      LOGGER.warn("Monitoring won't be sent", new IllegalStateException("Got response, but server is not available"));
+      return;
+    }
     boolean isRequestFinal = !willFireRetry;
+    int statusCode = wrapper.getResponse().getStatusCode();
+    long requestTimeMillis = wrapper.getTimeToLastByteMillis();
+    var serverAddress = state.getCurrentServer().getAddress();
+    var dcName = state.getCurrentServer().getDatacenter();
+    String upstreamName = state.getUpstreamName();
+
     for (Monitoring monitoring : monitorings) {
-      int statusCode = wrapper.getResponse().getStatusCode();
-      long requestTimeMillis = wrapper.getTimeToLastByteMillis();
+      try {
+        monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
+        monitoring.countRequestTime(upstreamName, dcName, requestTimeMillis);
 
-      if (!state.isServerAvailable()) {
-        LOGGER.warn("Monitoring won't be sent", new IllegalStateException("Got response, but server is not available"));
-        return;
-      }
-      var serverAddress = state.getCurrentServer().getAddress();
-      var dcName = state.getCurrentServer().getDatacenter();
-      String upstreamName = state.getUpstreamName();
-      monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
-      monitoring.countRequestTime(upstreamName, dcName, requestTimeMillis);
-
-      if (isRequestFinal && triesUsed > 1) {
-        monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
+        if (isRequestFinal && triesUsed > 1) {
+          monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
+        }
+      } catch (Exception e) {
+        LOGGER.error("Error occurred while sending metrics", e);
       }
     }
   }
