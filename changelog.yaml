@@ -1,3 +1,9 @@
+-   name: 5.0.1
+    date: '2025-04-15T10:46:38.894991+03:00'
+    description: Добавлена обработка ошибок, возникающих при отправке метрик
+    instructions: ''
+    compatible: true
+
 -   name: 5.0.0
     date: '2025-04-10T15:41:04.689783+03:00'
     description: Из jclient-common-metrics удален класс KafkaUpstreamMonitoring и
