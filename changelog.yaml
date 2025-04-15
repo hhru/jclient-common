@@ -1,3 +1,12 @@
+-   name: 6.0.0
+    date: '2025-04-15T16:58:35.235800+03:00'
+    description: Удален модуль jclient-common-metrics
+    instructions: Из помника удалить зависимость jclient-common-metrics. Самостоятельно
+        реализовать классы StatsDMetricsConsumer, MetricsConsumerFactory, UpstreamMonitoring,
+        MonitoringBalancingUpstreamManagerFactory или скопировать удаленные реализации,
+        если в них есть необходимость
+    compatible: false
+
 -   name: 5.0.1
     date: '2025-04-15T10:46:38.894991+03:00'
     description: Добавлена обработка ошибок, возникающих при отправке метрик

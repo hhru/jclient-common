@@ -10,7 +10,7 @@
     <artifactId>jclient-common-parent</artifactId>
     <packaging>pom</packaging>
     <name>jclient-common-parent</name>
-    <version>5.0.1.jakarta-rc2-SNAPSHOT</version>
+    <version>6.0.0.jakarta-rc1-SNAPSHOT</version>
 
     <modules>
         <module>client</module>
@@ -19,7 +19,6 @@
         <module>client-tests</module>
         <module>client-utils</module>
         <module>client-maven-enforcer</module>
-        <module>client-metrics</module>
         <module>jclient-common-api</module>
         <module>balancing</module>
     </modules>
@@ -59,11 +58,6 @@
             <dependency>
                 <groupId>ru.hh.jclient-common</groupId>
                 <artifactId>jclient-common-utils</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.hh.jclient-common</groupId>
-                <artifactId>jclient-common-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
