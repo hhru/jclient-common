@@ -1,3 +1,11 @@
+-   name: 7.0.0
+    date: '2025-04-16T17:10:08.314525+03:00'
+    description: Migration to Jakarta
+    instructions: In case of marshalling via JAXB - use Jakarta JAXB instead of Javax;
+        JCLient API dependant on javax.ws.rs now use jakarta.ws.rs - adapt your code
+        for work with akarta.ws.rs instead of javax.ws.rs
+    compatible: false
+
 -   name: 6.0.0
     date: '2025-04-15T16:58:35.235800+03:00'
     description: Удален модуль jclient-common-metrics
