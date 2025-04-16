@@ -2,7 +2,7 @@
     <parent>
         <groupId>ru.hh.jclient-common</groupId>
         <artifactId>jclient-common-parent</artifactId>
-        <version>6.0.1-SNAPSHOT</version>
+        <version>6.0.0.jakarta-rc2-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -18,13 +18,12 @@
         <dependency>
             <groupId>ru.hh.errors</groupId>
             <artifactId>errors-common</artifactId>
-            <version>0.0.8</version>
+            <version>1.0.0</version>
         </dependency>
+
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.1.1</version>
-            <scope>provided</scope>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
 
         <!-- Logging for tests -->

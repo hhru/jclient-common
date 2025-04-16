@@ -2,11 +2,11 @@ package ru.hh.jclient.common;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.GeneratedMessageV3;
+import jakarta.xml.bind.JAXBContext;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import javax.xml.bind.JAXBContext;
 import ru.hh.jclient.common.responseconverter.JsonCollectionConverter;
 import ru.hh.jclient.common.responseconverter.JsonConverter;
 import ru.hh.jclient.common.responseconverter.JsonMapConverter;

@@ -14,8 +14,7 @@ Java 11 is a requirement to build and use this library.
 
 Additionally, if you want to use method `JClientBase.jerseyUrl()`, you have to provide one of the following libraries: 
 
-* `javax.ws.rs:jsr311-api` _(jersey v.1)_
-* `javax.ws.rs:javax.ws.rs-api` _(jersey v.2)_
+* `jakarta.ws.rs:jakarta.ws.rs-api` _(jersey v.2)_
 
 depending on what version of Jersey you use in your application.     
 

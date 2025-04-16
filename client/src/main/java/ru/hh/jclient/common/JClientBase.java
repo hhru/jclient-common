@@ -29,17 +29,17 @@ public abstract class JClientBase {
   }
 
   /**
-   * This method requires jsr311-api (jersey v1) or javax.ws.rs-api (jersey v2) to present in your dependencies.
+   * This method requires jsr311-api (jersey v1) or jakarta.ws.rs-api (jersey v2) to present in your dependencies.
    * Otherwise the method throws {@link UnsupportedOperationException}.
    *
-   * @throws UnsupportedOperationException if javax.ws.rs.core.UriBuilder is not in the classpath.
+   * @throws UnsupportedOperationException if jakarta.ws.rs.core.UriBuilder is not in the classpath.
    */
   protected String jerseyUrl(String resourceMethodPath, Object... pathParams) {
     try {
-      Class.forName("javax.ws.rs.core.UriBuilder");
-      return javax.ws.rs.core.UriBuilder.fromPath(url(resourceMethodPath)).build(pathParams).toString();
+      Class.forName("jakarta.ws.rs.core.UriBuilder");
+      return jakarta.ws.rs.core.UriBuilder.fromPath(url(resourceMethodPath)).build(pathParams).toString();
     } catch (ClassNotFoundException e) {
-      throw new UnsupportedOperationException("Unable to find javax.ws.rs.core.UriBuilder in classpath");
+      throw new UnsupportedOperationException("Unable to find jakarta.ws.rs.core.UriBuilder in classpath");
     }
   }
 

@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.responseconverter.TypeConverter;
 

@@ -1,10 +1,10 @@
 package ru.hh.jclient.errors.impl;
 
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import ru.hh.jclient.errors.ErrorsFactory;
 
 public abstract class OperationBase<OB extends OperationBase<OB>> {

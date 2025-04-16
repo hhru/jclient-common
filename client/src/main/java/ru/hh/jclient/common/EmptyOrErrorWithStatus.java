@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 public class EmptyOrErrorWithStatus<E> extends ResultOrErrorWithStatus<Void, E> {
 

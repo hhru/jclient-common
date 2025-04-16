@@ -1,7 +1,7 @@
 package ru.hh.jclient.common;
 
+import jakarta.annotation.Nullable;
 import java.util.Optional;
-import javax.annotation.Nullable;
 
 /**
  * Wrapper object that contains response status code and result of conversion. This wrapper can be used outside of implementing client.
