@@ -24,7 +24,7 @@
 -   name: 5.0.0
     date: '2025-04-10T15:41:04.689783+03:00'
     description: Из jclient-common-metrics удален класс KafkaUpstreamMonitoring и
-        завимость kafka-clients. Также изменена сигнатура метода MonitoringBalancingUpstreamManagerFactory.createWithDefaults
+        зависимость kafka-clients. Также изменена сигнатура метода MonitoringBalancingUpstreamManagerFactory.createWithDefaults
         - данный метод вместо объекта Properties, который использовался для создания
         объекта KafkaUpstreamMonitoring, теперь принимает "Set<Monitoring> additionalMonitoring"
     instructions: Самостоятельно реализовать KafkaUpstreamMonitoring, если есть необходимость
