@@ -3,7 +3,7 @@
     description: Migration to Jakarta
     instructions: In case of marshalling via JAXB - use Jakarta JAXB instead of Javax;
         JCLient API dependant on javax.ws.rs now use jakarta.ws.rs - adapt your code
-        for work with akarta.ws.rs instead of javax.ws.rs
+        for work with jakarta.ws.rs instead of javax.ws.rs
     compatible: false
 
 -   name: 6.0.0
