@@ -311,7 +311,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
         .getProfiles()
         .get(DEFAULT)
         .setMaxTries(3)
-        .setRetryPolicy(Map.of(503, new RetryPolicyConfig().setIdempotent(true)));
+        .setRetryPolicy(Map.of(503, new RetryPolicyConfig().setRetryNonIdempotent(true)));
 
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 

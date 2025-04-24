@@ -1,6 +1,5 @@
 package ru.hh.jclient.common.balancing;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
@@ -8,18 +7,22 @@ import static ru.hh.jclient.common.HttpStatuses.SERVICE_UNAVAILABLE;
 import ru.hh.jclient.common.Response;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
 
-
 public final class RetryPolicy {
-  private Map<Integer, Boolean> rules = new HashMap<>();
+  /**
+   * map: status -> retryNonIdempotent
+   */
+  private Map<Integer, Boolean> rules;
 
   public RetryPolicy() {
-    rules.put(CONNECT_TIMEOUT_ERROR, false);
-    rules.put(SERVICE_UNAVAILABLE, false);
+    rules = Map.of(
+        CONNECT_TIMEOUT_ERROR, false,
+        SERVICE_UNAVAILABLE, false
+    );
   }
 
   void update(Map<Integer, Boolean> config) {
     if (config != null && !config.isEmpty()) {
-      rules = config;
+      rules = Map.copyOf(config);
     }
   }
 
@@ -47,7 +50,7 @@ public final class RetryPolicy {
   }
 
   public Map<Integer, Boolean> getRules() {
-    return Map.copyOf(this.rules);
+    return rules;
   }
 
   @Override
