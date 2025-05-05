@@ -114,7 +114,7 @@ public class HttpClientTestBase {
       return null;
     });
     http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
-    return () -> new Request(request[0], false);
+    return () -> new Request(request[0], false, null);
   }
 
   public void assertEqualRequests(Request request1, Request request2) {

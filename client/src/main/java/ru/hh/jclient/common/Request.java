@@ -14,10 +14,12 @@ public class Request {
 
   private final org.asynchttpclient.Request delegate;
   private final boolean externalRequest;
+  private final Integer maxTries;
 
-  Request(org.asynchttpclient.Request request, boolean isExternal) {
+  Request(org.asynchttpclient.Request request, boolean isExternal, Integer maxRetries) {
     this.delegate = request;
     this.externalRequest = isExternal;
+    this.maxTries = maxRetries;
   }
 
   /**
@@ -164,6 +166,13 @@ public class Request {
     return externalRequest;
   }
 
+  /**
+   * @return maximum number of retries for this request.
+   */
+  public Integer getMaxTries() {
+    return maxTries;
+  }
+
   @Override
   public String toString() {
     return delegate.toString();
@@ -175,6 +184,8 @@ public class Request {
     sb.append(getRequestTimeout());
     sb.append("; readTimeout:");
     sb.append(getReadTimeout());
+    sb.append("; maxTries:");
+    sb.append(getMaxTries());
     sb.append("; queryParams:");
     sb.append(getQueryParams());
     return sb.toString();
