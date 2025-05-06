@@ -92,9 +92,6 @@ public class ThreadLocalStorage<T> implements Storage<T> {
       if (currentValue != valueForTransfer) {
         LOG.warn("[{}] Unexpected object when removing {} - was {}", parent.getClass().getName(), valueForTransfer, currentValue);
       }
-      else if (currentValue == null) {
-        LOG.warn("[{}] Unexpected object when removing {} - null", parent.getClass().getName(), valueForTransfer);
-      }
       parent.clear();
       valueForTransfer = null;
     }
