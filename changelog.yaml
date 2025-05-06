@@ -1,3 +1,10 @@
+-   name: 8.0.1
+    date: '2025-05-06T18:26:42.278870+03:00'
+    description: Из логов убрано предупреждение "Unexpected object when removing null
+        - null".
+    instructions: ''
+    compatible: true
+
 -   name: 8.0.0
     date: '2025-04-24T14:26:18.360356+03:00'
     description: В конфигурации апстримов изменено название ключа, который отвечает
