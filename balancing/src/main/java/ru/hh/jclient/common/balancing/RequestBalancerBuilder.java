@@ -24,6 +24,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   protected String balancingRequestsLogLevel;
   private Double timeoutMultiplier;
   private Integer maxTimeoutTries;
+  private Integer maxTries;
   private boolean forceIdempotence;
   private boolean adaptive;
   private String profile;
@@ -36,13 +37,13 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
 
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("builderParams::: request: {}, profile: {}, upstream: {}, timeoutMultiplier: {}, " +
-              "maxTimeoutTries: {}, forceIdempotence: {}, adaptive: {}",
-          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, forceIdempotence, adaptive);
+              "maxTimeoutTries: {}, maxTries: {}, forceIdempotence: {}, adaptive: {}",
+          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, maxTries, forceIdempotence, adaptive);
     }
     if (upstream == null || !upstream.isEnabled()) {
       //todo тоже конфигурять надо
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
-      int maxTries = Optional.ofNullable(request.getMaxTries()).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
+      int maxTries = Optional.ofNullable(this.maxTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
 
       return new ExternalUrlRequestor(upstream, request, requestExecutor,
         requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
@@ -82,6 +83,11 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
 
   public RequestBalancerBuilder withMaxTimeoutTries(int maxTimeoutTries) {
     this.maxTimeoutTries = maxTimeoutTries;
+    return this;
+  }
+
+  public RequestBalancerBuilder withMaxTries(int maxTries) {
+    this.maxTries = maxTries;
     return this;
   }
 

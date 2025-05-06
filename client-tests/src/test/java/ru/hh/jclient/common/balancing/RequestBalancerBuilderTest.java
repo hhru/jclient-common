@@ -7,7 +7,6 @@ import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import ru.hh.jclient.common.ExternalRequestBuilder;
 import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
@@ -41,10 +40,10 @@ public class RequestBalancerBuilderTest {
 
   @Test
   public void testExternalMaxTriesBuilding() {
-    Request request = new ExternalRequestBuilder().setMaxTries(13).setUrl(URL).build();
+    Request request = createRequest();
     when(upstreamManager.getUpstream(URL)).thenReturn(null);
 
-    RequestBalancer requestBalancer = requestBalancerBuilder.build(request, requestExecutor);
+    RequestBalancer requestBalancer = requestBalancerBuilder.withMaxTries(13).build(request, requestExecutor);
     assertTrue(requestBalancer instanceof ExternalUrlRequestor);
     assertEquals(13, requestBalancer.maxTries);
   }

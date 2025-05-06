@@ -159,7 +159,7 @@ public class RequestBuilder {
   }
 
   public Request build() {
-    return new Request(delegate.build(), externalRequest, null);
+    return new Request(delegate.build(), externalRequest);
   }
 
   @Deprecated
