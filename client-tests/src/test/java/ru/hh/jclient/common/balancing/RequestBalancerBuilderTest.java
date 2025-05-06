@@ -39,7 +39,7 @@ public class RequestBalancerBuilderTest {
   }
 
   @Test
-  public void testExternalMaxTriesBuilding() {
+  public void testMaxTriesBuilding() {
     Request request = createRequest();
     when(upstreamManager.getUpstream(URL)).thenReturn(null);
 
