@@ -43,7 +43,7 @@ public class RequestBalancerBuilderTest {
     Request request = createRequest();
     when(upstreamManager.getUpstream(URL)).thenReturn(null);
 
-    RequestBalancer requestBalancer = requestBalancerBuilder.withMaxTries(13).build(request, requestExecutor);
+    RequestBalancer requestBalancer = requestBalancerBuilder.withExternalMaxTries(13).build(request, requestExecutor);
     assertTrue(requestBalancer instanceof ExternalUrlRequestor);
     assertEquals(13, requestBalancer.maxTries);
   }

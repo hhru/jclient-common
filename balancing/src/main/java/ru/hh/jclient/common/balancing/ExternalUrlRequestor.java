@@ -21,6 +21,8 @@ public class ExternalUrlRequestor extends RequestBalancer {
   @Nullable
   private final String upstreamName;
   private final Set<Monitoring> monitorings;
+  private final RetryPolicy retryPolicy;
+
 
   public ExternalUrlRequestor(
       @Nullable Upstream upstream,
@@ -32,13 +34,15 @@ public class ExternalUrlRequestor extends RequestBalancer {
       Double timeoutMultiplier,
       String balancingRequestsLogLevel,
       boolean forceIdempotence,
-      Set<Monitoring> monitorings
+      Set<Monitoring> monitorings,
+      RetryPolicy retryPolicy
   ) {
     super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier,
         balancingRequestsLogLevel, forceIdempotence
     );
     this.upstreamName = Optional.ofNullable(upstream).map(Upstream::getName).orElse(null);
     this.monitorings = monitorings;
+    this.retryPolicy = retryPolicy;
   }
 
   @Override
@@ -76,7 +80,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
 
   @Override
   protected boolean checkRetry(Response response, boolean isIdempotent) {
-    return DEFAULT_RETRY_POLICY.isRetriable(response, isIdempotent);
+    return Optional.ofNullable(retryPolicy).orElse(DEFAULT_RETRY_POLICY).isRetriable(response, isIdempotent);
   }
 
   @Override

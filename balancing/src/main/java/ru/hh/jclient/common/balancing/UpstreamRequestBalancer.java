@@ -30,7 +30,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       Request request,
       RequestStrategy.RequestExecutor requestExecutor,
       int maxTimeoutTries,
-      int maxTries,
       boolean forceIdempotence,
       @Nullable Double timeoutMultiplier,
       String balancingRequestsLogLevel,
@@ -41,7 +40,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
         requestExecutor,
         state.getUpstreamConfig().getRequestTimeoutMs(),
         maxTimeoutTries,
-        maxTries,
+        state.getUpstreamConfig().getMaxTries(),
         timeoutMultiplier,
         balancingRequestsLogLevel,
         forceIdempotence
