@@ -62,7 +62,6 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
           state,
           request,
           requestExecutor,
-          upstream.getConfig(profile).getRetryPolicy(),
           forceIdempotence,
           timeoutMultiplier,
           balancingRequestsLogLevel,
