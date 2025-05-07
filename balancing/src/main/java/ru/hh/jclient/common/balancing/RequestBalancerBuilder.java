@@ -12,7 +12,6 @@ import ru.hh.jclient.common.RequestStrategy;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
-  private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
@@ -46,7 +45,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     if (upstream == null || !upstream.isEnabled()) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
       int maxTries = Optional.ofNullable(this.maxTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
-      RetryPolicy externalRetryPolicy = Optional.ofNullable(retryPolicy).orElse(DEFAULT_RETRY_POLICY);
+      RetryPolicy externalRetryPolicy = Optional.ofNullable(retryPolicy).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getRetryPolicy);
 
       return new ExternalUrlRequestor(upstream, request, requestExecutor, externalRetryPolicy,
           requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
