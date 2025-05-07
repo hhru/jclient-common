@@ -12,6 +12,7 @@ import ru.hh.jclient.common.RequestStrategy;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
+  private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
@@ -38,28 +39,35 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
 
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("builderParams::: request: {}, profile: {}, upstream: {}, timeoutMultiplier: {}, " +
-              "maxTimeoutTries: {}, maxTries: {}, forceIdempotence: {}, adaptive: {}",
-          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, maxTries, forceIdempotence, adaptive);
+                   "maxTimeoutTries: {}, maxTries: {}, forceIdempotence: {}, adaptive: {}, retryPolicy: {}",
+          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, maxTries, forceIdempotence, adaptive, retryPolicy
+      );
     }
     if (upstream == null || !upstream.isEnabled()) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
       int maxTries = Optional.ofNullable(this.maxTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
+      RetryPolicy externalRetryPolicy = Optional.ofNullable(retryPolicy).orElse(DEFAULT_RETRY_POLICY);
 
-      return new ExternalUrlRequestor(upstream, request, requestExecutor,
-        requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
-        timeoutMultiplier, balancingRequestsLogLevel, forceIdempotence, monitoring, retryPolicy);
+      return new ExternalUrlRequestor(upstream, request, requestExecutor, externalRetryPolicy,
+          requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
+          timeoutMultiplier, balancingRequestsLogLevel, forceIdempotence, monitoring
+      );
     } else {
-      int maxTimeoutTries = Optional
-          .ofNullable(this.maxTimeoutTries)
-          .orElseGet(() -> upstream.getConfig(profile).getMaxTimeoutTries());
       BalancingState state;
       if (adaptive) {
         state = new AdaptiveBalancingState(upstream, profile);
       } else {
         state = new BalancingState(upstream, profile);
       }
-      return new UpstreamRequestBalancer(state, request, requestExecutor,
-        maxTimeoutTries, forceIdempotence, timeoutMultiplier, balancingRequestsLogLevel, monitoring
+      return new UpstreamRequestBalancer(
+          state,
+          request,
+          requestExecutor,
+          upstream.getConfig(profile).getRetryPolicy(),
+          forceIdempotence,
+          timeoutMultiplier,
+          balancingRequestsLogLevel,
+          monitoring
       );
     }
   }
