@@ -1,3 +1,16 @@
+-   name: 9.0.0
+    date: '2025-05-16T11:27:26.664010+03:00'
+    description: "Добавлены методы RequestBalancerBuilder#withExternalRetryPolicy,\
+        \ RequestBalancerBuilder#withExternalMaxTries\r\nПереименован метод RequestBalancerBuilder#withMaxTimeoutTries->RequestBalancerBuilder#withExternalMaxTimeoutTries;\r\
+        \nМетод RequestBalancerBuilder#withExternalMaxTries теперь работает только\
+        \ для external запросов\r\nВ RequestBalancer, UpstreamRequestBalancer и ExternalUrlRequestor\
+        \ поменялась сигнатура конструктора\r\nВ RetryPolicy добавился новый конструктор"
+    instructions: "Исправить вызов конструкторов RequestBalancer, UpstreamRequestBalancer,\
+        \ ExternalUrlRequestor.\r\nПереименовать метод RequestBalancerBuilder#withMaxTimeoutTries->RequestBalancerBuilder#withExternalMaxTimeoutTries.\
+        \ Если было использование для внутренних апстримов, то нужно добавить конфигурацию\
+        \ в upstrem-config.yaml"
+    compatible: false
+
 -   name: 8.0.1
     date: '2025-05-06T18:26:42.278870+03:00'
     description: Из логов убрано предупреждение "Unexpected object when removing null
