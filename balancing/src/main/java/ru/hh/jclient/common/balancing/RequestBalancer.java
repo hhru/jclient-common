@@ -30,6 +30,7 @@ public abstract class RequestBalancer implements RequestEngine {
   );
 
   private final RequestStrategy.RequestExecutor requestExecutor;
+  private final RetryPolicy retryPolicy;
   private final boolean forceIdempotence;
   private int triesLeft;
   private int requestTimeLeftMs;
@@ -43,6 +44,7 @@ public abstract class RequestBalancer implements RequestEngine {
   RequestBalancer(
       Request request,
       RequestStrategy.RequestExecutor requestExecutor,
+      RetryPolicy retryPolicy,
       int requestTimeoutMs,
       int maxRequestTimeoutTries,
       int maxTries,
@@ -50,6 +52,7 @@ public abstract class RequestBalancer implements RequestEngine {
       String balancingRequestsLogLevel,
       boolean forceIdempotence
   ) {
+    this.retryPolicy = retryPolicy;
     this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
     this.balancingRequestsLogLevel = balancingRequestsLogLevel.toUpperCase();
     this.request = request;
@@ -129,7 +132,9 @@ public abstract class RequestBalancer implements RequestEngine {
     return checkRetry(response, isIdempotent);
   }
 
-  protected abstract boolean checkRetry(Response response, boolean isIdempotent);
+  protected boolean checkRetry(Response response, boolean isIdempotent){
+    return retryPolicy.isRetriable(response, isIdempotent);
+  }
 
   protected abstract void onRetry();
 

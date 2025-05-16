@@ -9,14 +9,12 @@ import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestContext;
 import ru.hh.jclient.common.RequestStrategy;
-import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
 
 public class ExternalUrlRequestor extends RequestBalancer {
   public static final String DC_FOR_EXTERNAL_REQUESTS = "externalRequest";
   private static final Logger LOGGER = LoggerFactory.getLogger(ExternalUrlRequestor.class);
-  private static final RetryPolicy DEFAULT_RETRY_POLICY = new RetryPolicy();
 
   @Nullable
   private final String upstreamName;
@@ -26,6 +24,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
       @Nullable Upstream upstream,
       Request request,
       RequestStrategy.RequestExecutor requestExecutor,
+      RetryPolicy retryPolicy,
       int requestTimeoutMs,
       int maxRequestTimeoutTries,
       int maxTries,
@@ -34,7 +33,7 @@ public class ExternalUrlRequestor extends RequestBalancer {
       boolean forceIdempotence,
       Set<Monitoring> monitorings
   ) {
-    super(request, requestExecutor, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier,
+    super(request, requestExecutor, retryPolicy, requestTimeoutMs, maxRequestTimeoutTries, maxTries, timeoutMultiplier,
         balancingRequestsLogLevel, forceIdempotence
     );
     this.upstreamName = Optional.ofNullable(upstream).map(Upstream::getName).orElse(null);
@@ -72,11 +71,6 @@ public class ExternalUrlRequestor extends RequestBalancer {
         LOGGER.error("Error occurred while sending metrics", e);
       }
     }
-  }
-
-  @Override
-  protected boolean checkRetry(Response response, boolean isIdempotent) {
-    return DEFAULT_RETRY_POLICY.isRetriable(response, isIdempotent);
   }
 
   @Override

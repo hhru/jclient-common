@@ -24,9 +24,11 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   protected String balancingRequestsLogLevel;
   private Double timeoutMultiplier;
   private Integer maxTimeoutTries;
+  private Integer maxTries;
   private boolean forceIdempotence;
   private boolean adaptive;
   private String profile;
+  private RetryPolicy retryPolicy;
 
   @Override
   public RequestBalancer build(Request request, RequestStrategy.RequestExecutor requestExecutor) {
@@ -36,26 +38,34 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
 
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("builderParams::: request: {}, profile: {}, upstream: {}, timeoutMultiplier: {}, " +
-              "maxTimeoutTries: {}, forceIdempotence: {}, adaptive: {}",
-          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, forceIdempotence, adaptive);
+                   "maxTimeoutTries: {}, maxTries: {}, forceIdempotence: {}, adaptive: {}, retryPolicy: {}",
+          request, profile, upstream, timeoutMultiplier, maxTimeoutTries, maxTries, forceIdempotence, adaptive, retryPolicy
+      );
     }
     if (upstream == null || !upstream.isEnabled()) {
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
-      return new ExternalUrlRequestor(upstream, request, requestExecutor,
-        requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, UpstreamConfig.DEFAULT_CONFIG.getMaxTries(),
-        timeoutMultiplier, balancingRequestsLogLevel, forceIdempotence, monitoring);
+      int maxTries = Optional.ofNullable(this.maxTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
+      RetryPolicy externalRetryPolicy = Optional.ofNullable(retryPolicy).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getRetryPolicy);
+
+      return new ExternalUrlRequestor(upstream, request, requestExecutor, externalRetryPolicy,
+          requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
+          timeoutMultiplier, balancingRequestsLogLevel, forceIdempotence, monitoring
+      );
     } else {
-      int maxTimeoutTries = Optional
-          .ofNullable(this.maxTimeoutTries)
-          .orElseGet(() -> upstream.getConfig(profile).getMaxTimeoutTries());
       BalancingState state;
       if (adaptive) {
         state = new AdaptiveBalancingState(upstream, profile);
       } else {
         state = new BalancingState(upstream, profile);
       }
-      return new UpstreamRequestBalancer(state, request, requestExecutor,
-        maxTimeoutTries, forceIdempotence, timeoutMultiplier, balancingRequestsLogLevel, monitoring
+      return new UpstreamRequestBalancer(
+          state,
+          request,
+          requestExecutor,
+          forceIdempotence,
+          timeoutMultiplier,
+          balancingRequestsLogLevel,
+          monitoring
       );
     }
   }
@@ -77,8 +87,13 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
     return httpClient;
   }
 
-  public RequestBalancerBuilder withMaxTimeoutTries(int maxTimeoutTries) {
+  public RequestBalancerBuilder withExternalMaxTimeoutTries(int maxTimeoutTries) {
     this.maxTimeoutTries = maxTimeoutTries;
+    return this;
+  }
+
+  public RequestBalancerBuilder withExternalMaxTries(int maxTries) {
+    this.maxTries = maxTries;
     return this;
   }
 
@@ -99,5 +114,10 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
 
   public String getBalancingRequestsLogLevel() {
     return this.balancingRequestsLogLevel;
+  }
+
+  public RequestBalancerBuilder withExternalRetryPolicy(RetryPolicy retryPolicy) {
+    this.retryPolicy = retryPolicy;
+    return this;
   }
 }

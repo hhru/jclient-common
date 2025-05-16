@@ -29,7 +29,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
       BalancingState state,
       Request request,
       RequestStrategy.RequestExecutor requestExecutor,
-      int maxTimeoutTries,
       boolean forceIdempotence,
       @Nullable Double timeoutMultiplier,
       String balancingRequestsLogLevel,
@@ -38,8 +37,9 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     super(
         request,
         requestExecutor,
+        state.getUpstreamConfig().getRetryPolicy(),
         state.getUpstreamConfig().getRequestTimeoutMs(),
-        maxTimeoutTries,
+        state.getUpstreamConfig().getMaxTimeoutTries(),
         state.getUpstreamConfig().getMaxTries(),
         timeoutMultiplier,
         balancingRequestsLogLevel,
@@ -115,11 +115,6 @@ public class UpstreamRequestBalancer extends RequestBalancer {
         LOGGER.error("Error occurred while sending metrics", e);
       }
     }
-  }
-
-  @Override
-  protected boolean checkRetry(Response response, boolean isIdempotent) {
-    return state.getUpstreamConfig().getRetryPolicy().isRetriable(response, isIdempotent);
   }
 
   @Override

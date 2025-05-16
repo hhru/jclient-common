@@ -1,5 +1,6 @@
 package ru.hh.jclient.common.balancing;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +36,16 @@ public class RequestBalancerBuilderTest {
 
     RequestBalancer requestBalancer = requestBalancerBuilder.build(request, requestExecutor);
     assertTrue(requestBalancer instanceof ExternalUrlRequestor);
+  }
+
+  @Test
+  public void testMaxTriesBuilding() {
+    Request request = createRequest();
+    when(upstreamManager.getUpstream(URL)).thenReturn(null);
+
+    RequestBalancer requestBalancer = requestBalancerBuilder.withExternalMaxTries(13).build(request, requestExecutor);
+    assertTrue(requestBalancer instanceof ExternalUrlRequestor);
+    assertEquals(13, requestBalancer.maxTries);
   }
 
   @Test

@@ -13,6 +13,11 @@ public final class RetryPolicy {
    */
   private Map<Integer, Boolean> rules;
 
+
+  public RetryPolicy(Map<Integer, Boolean> rules) {
+    this.rules = rules;
+  }
+
   public RetryPolicy() {
     rules = Map.of(
         CONNECT_TIMEOUT_ERROR, false,
