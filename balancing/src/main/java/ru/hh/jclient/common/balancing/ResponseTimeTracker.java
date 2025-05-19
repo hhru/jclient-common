@@ -16,7 +16,7 @@ public class ResponseTimeTracker {
   public synchronized void time(long time) {
     total += time - times[current];
     times[current] = time;
-    if (current == n - 1) {
+    if (current == n - 1 && isWarmUp) {
       isWarmUp = false;
     }
     current = (current + 1) % n;

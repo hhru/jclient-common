@@ -42,6 +42,6 @@ public class AdaptiveBalancingState extends BalancingState {
       List<ServerEntry> entries = upstream.acquireAdaptiveServers(profile);
       serverEntryIterator = entries.iterator();
     }
-    return serverEntryIterator.next();
+    return serverEntryIterator.hasNext() ? serverEntryIterator.next() : null;
   }
 }

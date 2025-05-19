@@ -219,15 +219,14 @@ public class Server {
   }
 
   /**
-   * pack two metrics in one int to be consistent on read
-   * Attention: each value is effectively constraint by {@link java.lang.Short} with max value ~32k
-   * so be careful with rescaling
+   * pack two metrics in one long to be consistent on read.
+   * Attention: each value is effectively constraint by {@link java.lang.Integer}, so be careful with rescaling.
    * @param statRequests stat requests
    * @param currentRequests current requests
-   * @return int value containing two metrics
+   * @return long value containing two metrics
    */
   private static long packRequests(int statRequests, int currentRequests) {
-    long packedValue = (((long) statRequests) << 32) + currentRequests;
+    long packedValue = (((long) statRequests) << 32) | currentRequests;
     if (packedValue < 0) {
       LOGGER.warn("Packed stats value overflow: stat={}, current={}. Setting MAX value", statRequests, currentRequests);
       packedValue = Long.MAX_VALUE;

@@ -5,6 +5,7 @@ import java.util.Random;
 import static java.util.stream.Collectors.toList;
 import java.util.stream.IntStream;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
@@ -30,10 +31,7 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     int retriesCount = 3;
     var servers = generateServers(1);
     var balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
-    assertEquals(balancedServers.size(), retriesCount);
-    assertEquals(balancedServers.get(0).intValue(), 0);
-    assertEquals(balancedServers.get(1).intValue(), 0);
-    assertEquals(balancedServers.get(2).intValue(), 0);
+    assertEquals(List.of(0, 0, 0), balancedServers);
   }
 
   @Test
@@ -41,9 +39,15 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     int retriesCount = 5;
     var servers = generateServers(3);
     var balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
-    assertEquals(balancedServers.size(), retriesCount);
-    assertEquals(balancedServers.get(0), balancedServers.get(3));
-    assertEquals(balancedServers.get(1), balancedServers.get(4));
+
+    assertEquals(retriesCount, balancedServers.size());
+    assertEquals("Extra servers should be repeated in the same order", balancedServers.subList(0, 2), balancedServers.subList(3, 5));
+  }
+
+  @Test
+  public void shouldReturnEmpty() {
+    assertEquals(List.of(), AdaptiveBalancingStrategy.getServers(generateServers(3), 0));
+    assertEquals(List.of(), AdaptiveBalancingStrategy.getServers(List.of(), 2));
   }
 
   @Test
@@ -51,6 +55,7 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     int retriesCount = 2;
     var servers = generateServers(2);
     var balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
+
     var responseTimeTracker1 = servers.get(balancedServers.get(0)).getResponseTimeTracker();
     var responseTimeTracker2 = servers.get(balancedServers.get(1)).getResponseTimeTracker();
     assertTrue(responseTimeTracker1.isWarmUp());
@@ -64,7 +69,7 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
     boolean warmUp1 = servers.get(balancedServers.get(0)).getResponseTimeTracker().isWarmUp();
     boolean warmUp2 = servers.get(balancedServers.get(1)).getResponseTimeTracker().isWarmUp();
-    assertTrue(warmUp1 ^ warmUp2);
+    assertNotEquals("Only one server should be warmed up", warmUp1, warmUp2);
   }
 
   private static List<Server> generateServers(int n) {

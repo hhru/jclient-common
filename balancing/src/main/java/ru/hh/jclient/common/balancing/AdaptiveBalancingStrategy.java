@@ -18,15 +18,19 @@ final class AdaptiveBalancingStrategy {
   private static final int lowestHealthPercent = 2;
   private static final int lowestHealth = lowestHealthPercent * DOWNTIME_DETECTOR_WINDOW / 100;
 
-  static List<Integer> getServers(List<Server> servers, int retriesCount) {
+  static List<Integer> getServers(List<Server> servers, int triesCount) {
+    if (triesCount < 0) {
+      throw new IllegalArgumentException("triesCount should not be negative");
+    }
+
     int n = servers.size();
-    int count = Math.min(n, retriesCount);
-    if (servers.isEmpty()) {
+    int count = Math.min(n, triesCount);
+    if (count == 0) {
       return Collections.emptyList();
     }
 
     if (servers.size() == 1) {
-      return Stream.generate(() -> 0).limit(retriesCount).toList();
+      return Stream.generate(() -> 0).limit(triesCount).toList();
     }
 
     boolean[] warmup = null;
@@ -98,7 +102,7 @@ final class AdaptiveBalancingStrategy {
     }
 
     // weighted-randomly pick count elements
-    List<Integer> shuffled = new ArrayList<>(count);
+    List<Integer> shuffled = new ArrayList<>(triesCount);
     for (int j = n - 1, r = count - 1; j >= 0 && r >= 0; j--, r--) { // index to put new random element
       long pick = ThreadLocalRandom.current().nextLong(total);
       long sum = 0L;
@@ -114,15 +118,14 @@ final class AdaptiveBalancingStrategy {
       }
     }
 
-    if (count >= retriesCount) {
+    if (triesCount == count) {
       return shuffled;
     }
 
-    var moreIds = new ArrayList<>(shuffled);
-    for (int j = 0; j < retriesCount - count; j++) {
-      moreIds.add(shuffled.get(j % count));
+    for (int j = 0; j < triesCount - count; j++) {
+      shuffled.add(shuffled.get(j % count));
     }
-    return moreIds;
+    return shuffled;
   }
 
   private static void swap(long[] scores, int[] ids, int a, int b) {
