@@ -101,7 +101,7 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
   }
 
   public ContextBuilder forCurrentThread() {
-    return new ContextBuilder();
+    return new ContextBuilder().withDebugSuppliers(requestDebugSuppliers);
   }
 
   public class ContextBuilder {
