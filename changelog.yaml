@@ -1,3 +1,10 @@
+-   name: 9.0.1
+    date: '2025-06-05T12:48:16.504455+03:00'
+    description: Исправлен баг - при использовании метода HttpClientContextThreadLocalSupplier.forCurrentThread
+        не отрабатывали зарегистрированные RequestDebug'и
+    instructions: ''
+    compatible: true
+
 -   name: 9.0.0
     date: '2025-05-16T11:27:26.664010+03:00'
     description: "Добавлены методы RequestBalancerBuilder#withExternalRetryPolicy,\
