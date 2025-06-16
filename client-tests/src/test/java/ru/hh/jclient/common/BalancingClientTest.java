@@ -33,7 +33,7 @@ import ru.hh.jclient.common.balancing.Server;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 import ru.hh.jclient.common.balancing.config.Host;
 import ru.hh.jclient.common.balancing.config.Profile;
 
@@ -632,8 +632,12 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Override
-  public boolean isAdaptive() {
+  protected boolean isAdaptiveClient() {
     return false;
   }
 
+  @Override
+  protected BalancingStrategyType getBalancingStrategyTypeForUpstream() {
+    return BalancingStrategyType.WEIGHTED;
+  }
 }

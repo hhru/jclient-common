@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.BalancingStrategy.getLeastLoadedServer;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 
 public class Upstream {
   private static final Logger LOGGER = LoggerFactory.getLogger(Upstream.class);
@@ -230,6 +231,10 @@ public class Upstream {
     } finally {
       configReadLock.unlock();
     }
+  }
+
+  boolean isAdaptive() {
+    return upstreamConfigs.getBalancingStrategyType() == BalancingStrategyType.ADAPTIVE;
   }
 
   //visible for testing

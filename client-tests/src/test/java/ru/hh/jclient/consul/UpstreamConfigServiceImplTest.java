@@ -6,6 +6,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -32,8 +33,10 @@ import ru.hh.jclient.common.balancing.JClientInfrastructureConfig;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamConfigs;
 import ru.hh.jclient.common.balancing.UpstreamManager;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 import static ru.hh.jclient.consul.UpstreamConfigServiceConsulConfig.copyOf;
 
+@SuppressWarnings("resource")
 public class UpstreamConfigServiceImplTest {
   private static KeyValueClient keyValueClient = mock(KeyValueClient.class);
   private static String currentServiceName = "CALLER_NAME";
@@ -69,7 +72,7 @@ public class UpstreamConfigServiceImplTest {
     Collection<Value> values = prepareValues();
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(List.copyOf(values)));
 
-    var service = new UpstreamConfigServiceImpl(
+    new UpstreamConfigServiceImpl(
         infrastructureConfig,
         consulClient,
         configStore, upstreamManager,
@@ -77,9 +80,10 @@ public class UpstreamConfigServiceImplTest {
         List.of()
     );
 
-    UpstreamConfigs profiles = configStore.getUpstreamConfig("app-name");
-    assertNotNull(profiles);
-    UpstreamConfig profile = profiles.get("default").get();
+    UpstreamConfigs upstream = configStore.getUpstreamConfig("app-name");
+    assertNotNull(upstream);
+    assertEquals(BalancingStrategyType.ADAPTIVE, upstream.getBalancingStrategyType());
+    UpstreamConfig profile = upstream.get("default").get();
     assertNotNull(profile);
 
     assertEquals(43, profile.getMaxTries());
@@ -118,7 +122,7 @@ public class UpstreamConfigServiceImplTest {
     var badFormatValue = ImmutableValue
         .copyOf(template)
         .withKey(UpstreamConfigServiceImpl.ROOT_PATH + badFormatKey)
-        .withValue(new String(Base64.getEncoder().encode("{\"a\":[1,2,3".getBytes())));
+        .withValue(encodeBase64("{\"a\":[1,2,3"));
     List<Value> values = new ArrayList<>(prepareValues());
     values.add(badFormatValue);
     when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(values));
@@ -132,6 +136,78 @@ public class UpstreamConfigServiceImplTest {
     assertTrue(ex.getMessage().contains(badFormatKey));
   }
 
+  @Test
+  public void testBalancingStrategyParsing() {
+    testBalancingStrategyParsing("weighted", BalancingStrategyType.WEIGHTED);
+    testBalancingStrategyParsing("adaptive", BalancingStrategyType.ADAPTIVE);
+
+    testBalancingStrategyParsing("ADAPTIVE", BalancingStrategyType.WEIGHTED); // we accept only lower case -> fallback to default
+    testBalancingStrategyParsing("foo_asd", BalancingStrategyType.WEIGHTED); // unknown value -> fallback to default
+    testBalancingStrategyParsing("", BalancingStrategyType.WEIGHTED); // empty value is also unknown -> fallback to default
+  }
+
+  private void testBalancingStrategyParsing(String balancingStrategy, BalancingStrategyType expectedBalancingStrategyType) {
+    String upstreamConfig = String.format(
+        """
+            {
+                "balancing_strategy": "%s",
+                "hosts": {
+                    "default": {
+                        "profiles": {
+                            "default": {
+                            }
+                        }
+                    }
+                }
+            }
+            """,
+        balancingStrategy
+    );
+
+    UpstreamConfigs upstream = parseUpstreamConfig(upstreamConfig);
+    assertEquals(expectedBalancingStrategyType, upstream.getBalancingStrategyType());
+  }
+
+  @Test
+  public void testMissingBalancingStrategyParsing() {
+    String upstreamConfig = """
+        {
+            "hosts": {
+                "default": {
+                    "profiles": {
+                        "default": {
+                        }
+                    }
+                }
+            }
+        }
+        """;
+
+    UpstreamConfigs upstream = parseUpstreamConfig(upstreamConfig);
+    assertEquals(BalancingStrategyType.WEIGHTED, upstream.getBalancingStrategyType()); // balancing strategy not specified -> use default
+  }
+
+  private UpstreamConfigs parseUpstreamConfig(String upstreamConfig) {
+    String upstreamName = "app-name" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
+
+    Value consulValue = ImmutableValue
+        .copyOf(template)
+        .withKey("upstream/%s/".formatted(upstreamName))
+        .withValue(encodeBase64(upstreamConfig));
+
+    when(keyValueClient.getConsulResponseWithValues(anyString(), any(QueryOptions.class))).thenReturn(wrapWithResponse(List.of(consulValue)));
+
+    new UpstreamConfigServiceImpl(
+        infrastructureConfig,
+        consulClient,
+        configStore,
+        upstreamManager,
+        copyOf(configTemplate).setUpstreams(List.of(upstreamName)),
+        List.of()
+    );
+
+    return configStore.getUpstreamConfig(upstreamName);
+  }
 
   private Collection<Value> prepareValues() {
     Collection<Value> values = new ArrayList<>();
@@ -163,14 +239,15 @@ public class UpstreamConfigServiceImplTest {
                         }
                     }
                 }
-            }
+            },
+            "balancing_strategy": "adaptive"
         }
         """;
     values.add(
         ImmutableValue
             .copyOf(template)
             .withKey("upstream/app-name/")
-            .withValue(new String(Base64.getEncoder().encode(twoProfiles.getBytes())))
+            .withValue(encodeBase64(twoProfiles))
     );
 
     String secondAppProfile = "{\"hosts\": {\"default\": {\"profiles\": {\"default\": {\"max_tries\": \"56\"}}}}}";
@@ -178,9 +255,13 @@ public class UpstreamConfigServiceImplTest {
         ImmutableValue
             .copyOf(template)
             .withKey("upstream/app2/")
-            .withValue(new String(Base64.getEncoder().encode(secondAppProfile.getBytes())))
+            .withValue(encodeBase64(secondAppProfile))
     );
     return values;
+  }
+
+  private static String encodeBase64(String str) {
+    return Base64.getEncoder().encodeToString(str.getBytes());
   }
 
   private <T> ConsulResponse<T> wrapWithResponse(T value) {

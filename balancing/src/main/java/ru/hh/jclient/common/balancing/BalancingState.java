@@ -23,7 +23,7 @@ public class BalancingState {
     return upstream.getName();
   }
 
-  public ServerEntry getCurrentServer() {
+  ServerEntry getCurrentServer() {
     return currentServer;
   }
 
@@ -52,7 +52,7 @@ public class BalancingState {
     return triedServers;
   }
 
-  protected void setCurrentServer(ServerEntry currentServer) {
+  void setCurrentServer(ServerEntry currentServer) {
     this.currentServer = currentServer;
   }
 }
