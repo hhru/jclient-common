@@ -18,7 +18,7 @@ import ru.hh.jclient.common.Response;
 public class BalancingStrategyNotExistingServerTest extends AbstractBalancingStrategyTest {
 
   private String workingServerAddress;
-  private static final String notExistingServerAddress = "http://localhost:12345";
+  private static final String notExistingServerAddress = "http://localhost:255"; // port 255 is reserved
   private ConcurrentMap<String, List<Integer>> requestRouteTracking;
   private HttpClientFactory httpClientFactory;
 

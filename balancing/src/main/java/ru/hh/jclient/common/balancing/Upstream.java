@@ -24,7 +24,7 @@ public class Upstream {
   private final String datacenter;
   private int statLimit = DEFAULT_STAT_LIMIT;
   private final boolean allowCrossDCRequests;
-  private final boolean enabled; // todo: HH-203739
+  private final boolean enabled; // todo: https://jira.hh.ru/browse/HH-203739
 
   private volatile List<Server> servers;
   private volatile UpstreamConfigs upstreamConfigs;

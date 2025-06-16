@@ -23,7 +23,7 @@ public class DowntimeDetector {
 
   public DowntimeDetector(int n, float errorsThreshold, int initialLivePercent) {
     if (initialLivePercent < 0 || initialLivePercent > 100) {
-      throw new IllegalArgumentException("invalid initial live percent value: " + initialLivePercent);
+      throw new IllegalArgumentException("Invalid initialLivePercent value: " + initialLivePercent);
     }
     this.n = n;
     this.errors = new int[n];
