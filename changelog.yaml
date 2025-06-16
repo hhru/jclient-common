@@ -1,3 +1,9 @@
+-   name: 9.0.2
+    date: '2025-06-16T11:39:14.607156+03:00'
+    description: Рефакторинг адаптивной балансировки.
+    instructions: ''
+    compatible: true
+
 -   name: 9.0.1
     date: '2025-06-05T12:48:16.504455+03:00'
     description: Исправлен баг - при использовании метода HttpClientContextThreadLocalSupplier.forCurrentThread
