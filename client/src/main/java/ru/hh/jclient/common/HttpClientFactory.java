@@ -18,7 +18,6 @@ public class HttpClientFactory {
   private final Set<String> customHostsWithSession;
   private final Executor callbackExecutor;
   private final RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy;
-  private final List<HttpClientEventListener> eventListeners;
 
   public HttpClientFactory(AsyncHttpClient http, Storage<HttpClientContext> contextSupplier) {
     this(http, contextSupplier, Set.of());
@@ -39,22 +38,13 @@ public class HttpClientFactory {
                            Storage<HttpClientContext> contextSupplier,
                            Set<String> customHostsWithSession,
                            Executor callbackExecutor,
-                           RequestStrategy<?> requestStrategy) {
-    this(http, contextSupplier, customHostsWithSession, callbackExecutor, requestStrategy, List.of());
-  }
-
-  public HttpClientFactory(AsyncHttpClient http,
-                           Storage<HttpClientContext> contextSupplier,
-                           Set<String> customHostsWithSession,
-                           Executor callbackExecutor,
-                           RequestStrategy<?> requestStrategy,
-                           List<HttpClientEventListener> eventListeners) {
+                           RequestStrategy<?> requestStrategy
+  ) {
     this.http = requireNonNull(http, "http must not be null");
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
     this.customHostsWithSession = requireNonNull(customHostsWithSession, "hostsWithSession must not be null");
     this.callbackExecutor = requireNonNull(callbackExecutor, "callbackExecutor must not be null");
     this.requestStrategy = requireNonNull(requestStrategy, "upstreamManager must not be null");
-    this.eventListeners = eventListeners;
   }
 
   /**
@@ -70,8 +60,8 @@ public class HttpClientFactory {
         requestStrategy,
         contextSupplier,
         customHostsWithSession,
-        callbackExecutor,
-      eventListeners);
+        callbackExecutor
+    );
   }
 
   /**
@@ -103,8 +93,9 @@ public class HttpClientFactory {
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
-    return new HttpClientFactory(this.http, this.contextSupplier, this.customHostsWithSession, this.callbackExecutor,
-                                 this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
-                                 this.eventListeners);
+    return new HttpClientFactory(
+        this.http, this.contextSupplier, this.customHostsWithSession, this.callbackExecutor,
+        this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper)
+    );
   }
 }

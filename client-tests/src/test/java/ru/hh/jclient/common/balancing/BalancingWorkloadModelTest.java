@@ -269,7 +269,7 @@ public class BalancingWorkloadModelTest {
         upstreamManager = buildBalancingUpstreamManager(currentDc, configStore);
         upstreamManager.updateUpstreams(Set.of(upstreamName));
 
-        this.client = new HttpClientFactoryBuilder(new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())), List.of())
+        this.client = new HttpClientFactoryBuilder(new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())))
             .withConnectTimeoutMs(100)
             .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
             .withCallbackExecutor(Runnable::run)

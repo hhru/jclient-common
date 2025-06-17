@@ -23,12 +23,12 @@ import ru.hh.jclient.common.util.storage.ThreadLocalStorage;
  */
 public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<HttpClientContext> {
 
-  private final List<Supplier<RequestDebug>> requestDebugSuppliers;
+  private final List<Supplier<HttpClientEventListener>> eventListenerSuppliers;
   private final Storages storagesForTransfer;
 
   public HttpClientContextThreadLocalSupplier() {
     this.storagesForTransfer = StorageUtils.build(Set.of());
-    this.requestDebugSuppliers = new CopyOnWriteArrayList<>();
+    this.eventListenerSuppliers = new CopyOnWriteArrayList<>();
   }
 
   public HttpClientContextThreadLocalSupplier(Supplier<HttpClientContext> valueSupplier) {
@@ -44,7 +44,7 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
   public HttpClientContextThreadLocalSupplier(Supplier<HttpClientContext> valueSupplier, boolean useThreadLocal) {
     super(valueSupplier, useThreadLocal);
     this.storagesForTransfer = StorageUtils.build(Set.of());
-    this.requestDebugSuppliers = new CopyOnWriteArrayList<>();
+    this.eventListenerSuppliers = new CopyOnWriteArrayList<>();
   }
 
   /**
@@ -59,36 +59,38 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
   }
 
   /**
-   * Add request debug supplier to be used in all contexts.
+   * Add event listener supplier to be used in all contexts.
    *
-   * @param requestDebugSupplier supplier to add
+   * @param eventListenerSupplier supplier to add
    * @return this instance
    */
-  public HttpClientContextThreadLocalSupplier registerRequestDebugSupplier(Supplier<RequestDebug> requestDebugSupplier) {
-    this.requestDebugSuppliers.add(requestDebugSupplier);
+  public HttpClientContextThreadLocalSupplier registerEventListenerSupplier(Supplier<HttpClientEventListener> eventListenerSupplier) {
+    this.eventListenerSuppliers.add(eventListenerSupplier);
     return this;
   }
 
   /**
-   * Add request debug supplier to client context of current thread. Won't do anything if context is not set yet.
+   * Add event listener supplier to client context of current thread. Won't do anything if context is not set yet.
    *
-   * @param requestDebugSupplier supplier to add
+   * @param eventListenerSupplier supplier to add
    * @return this instance
    */
-  public HttpClientContextThreadLocalSupplier registerRequestDebugSupplierForCurrentContext(Supplier<RequestDebug> requestDebugSupplier) {
-    ofNullable(get()).ifPresent(context -> context.addDebugSupplier(requestDebugSupplier));
+  public HttpClientContextThreadLocalSupplier registerEventListenerSupplierForCurrentContext(
+      Supplier<HttpClientEventListener> eventListenerSupplier) {
+    ofNullable(get()).ifPresent(context -> context.withEventListenerSupplier(eventListenerSupplier));
     return this;
   }
 
   /**
-   * Remove request debug supplier from client context of current thread. Won't do anything if context is not set yet or
+   * Remove event listener supplier from client context of current thread. Won't do anything if context is not set yet or
    * if supplier wasn't added previously.
    *
-   * @param requestDebugSupplier supplier to remove
+   * @param eventListenerSupplier supplier to remove
    * @return this instance
    */
-  public HttpClientContextThreadLocalSupplier removeRequestDebugSupplierFromCurrentContext(Supplier<RequestDebug> requestDebugSupplier) {
-    ofNullable(get()).ifPresent(context -> context.removeDebugSupplier(requestDebugSupplier));
+  public HttpClientContextThreadLocalSupplier removeEventListenerSupplierFromCurrentContext(
+      Supplier<HttpClientEventListener> eventListenerSupplier) {
+    ofNullable(get()).ifPresent(context -> context.removeEventListenerSupplier(eventListenerSupplier));
     return this;
   }
 
@@ -97,17 +99,17 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
    * current thread.
    */
   public void addContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
-    set(new HttpClientContext(headers, queryParams, requestDebugSuppliers, storagesForTransfer));
+    set(new HttpClientContext(headers, queryParams, eventListenerSuppliers, storagesForTransfer));
   }
 
   public ContextBuilder forCurrentThread() {
-    return new ContextBuilder().withDebugSuppliers(requestDebugSuppliers);
+    return new ContextBuilder().withEventListenerSuppliers(eventListenerSuppliers);
   }
 
   public class ContextBuilder {
     private final Map<String, List<String>> headers = new HashMap<>();
     private final Map<String, List<String>> queryParams = new HashMap<>();
-    private final List<Supplier<RequestDebug>> debugSuppliers = new ArrayList<>();
+    private final List<Supplier<HttpClientEventListener>> eventListenerSuppliers = new ArrayList<>();
 
     private HttpClientContext previousContext;
     private String previousRequestId;
@@ -136,8 +138,8 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
       return this;
     }
 
-    public ContextBuilder withDebugSuppliers(List<Supplier<RequestDebug>> debugSuppliers) {
-      this.debugSuppliers.addAll(debugSuppliers);
+    public ContextBuilder withEventListenerSuppliers(List<Supplier<HttpClientEventListener>> eventListenerSuppliers) {
+      this.eventListenerSuppliers.addAll(eventListenerSuppliers);
       return this;
     }
 
@@ -177,7 +179,7 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
           .orElseGet(() -> MDC.get("rid"));
 
       Optional<String> requestId = RequestUtils.getRequestId(headers);
-      set(new HttpClientContext(headers, queryParams, debugSuppliers, storagesForTransfer));
+      set(new HttpClientContext(headers, queryParams, eventListenerSuppliers, storagesForTransfer));
       requestId.ifPresent(s -> MDC.put("rid", s));
     }
 
