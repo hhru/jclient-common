@@ -44,6 +44,32 @@ public class RequestUtils {
   }
 
   /**
+   * Get a long value from the specified header.
+   * 
+   * @param headers ideally, case-insensitive map, otherwise keys must be lower-case, or header name must be equal to the key in map
+   * @param headerName name of the header to extract the long value from
+   * @return Optional containing the parsed long value, or empty if the header is not present or cannot be parsed as a long
+   */
+  public static Optional<Long> getLongHeaderValue(Map<String, List<String>> headers, String headerName) {
+    return getSingleHeader(headers, headerName).map(l -> RequestUtils.parseLongValue(l, headerName));
+  }
+
+  /**
+   * Parse a string value as a long number.
+   * 
+   * @param value the string value to parse
+   * @param headerName the name of the header (used for logging purposes)
+   * @return the parsed long value, or null if the value cannot be parsed as a long
+   */
+  private static Long parseLongValue(String value, String headerName) {
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      LOGGER.debug("Failed to parse long from header {} with value '{}'", headerName, value);
+      return null;
+    }
+  }
+  /**
    * Get value (first, if multiple) for specified header.
    *
    * @param headers

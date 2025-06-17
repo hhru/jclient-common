@@ -14,8 +14,15 @@ import ru.hh.jclient.common.responseconverter.TypeConverter;
 public interface HttpClientEventListener {
   HttpClientEventListener DISABLED_EVENT_LISTENER = new HttpClientEventListener(){};
 
-  /** Called before the request is executed by the underlying HTTP client. */
+  /**
+   * @deprecated Use {@link #beforeExecute(HttpClient, RequestBuilder, Request)} instead.
+   */
+  @Deprecated
   default void beforeExecute(HttpClient httpClient, Request request) {
+  }
+
+  /** Called before the request is executed by the underlying HTTP client. */
+  default void beforeExecute(HttpClient httpClient, RequestBuilder requestBuilder, Request request) {
   }
 
   /** Called before starting the request. */
@@ -32,8 +39,8 @@ public interface HttpClientEventListener {
   }
 
   /** Indicates if {@link #onResponse(Response)} can unwrap debug envelope. */
-  default boolean canUnwrapDebugResponse() { 
-    return false; 
+  default boolean canUnwrapDebugResponse() {
+    return false;
   }
 
   /** Called when response successfully converted to result. */

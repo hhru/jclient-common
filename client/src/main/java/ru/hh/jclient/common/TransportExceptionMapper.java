@@ -6,19 +6,24 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import java.util.concurrent.TimeoutException;
+import ru.hh.deadline.context.DeadlineContext;
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import static ru.hh.jclient.common.HttpStatuses.CONNECT_TIMEOUT_ERROR;
+import static ru.hh.jclient.common.HttpStatuses.INSUFFICIENT_TIMEOUT;
+import static ru.hh.jclient.common.HttpStatuses.SERVER_TIMEOUT;
 import static ru.hh.jclient.common.ResponseStatusMessages.CHANNEL_CLOSED_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CHANNEL_OUTPUT_SHUTDOWN_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECTION_CLOSED_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECTION_RESET_MESSAGE;
 import static ru.hh.jclient.common.ResponseStatusMessages.CONNECT_ERROR_MESSAGE;
-import static ru.hh.jclient.common.ResponseStatusMessages.REQUEST_TIMEOUT_MESSAGE;
+import static ru.hh.jclient.common.ResponseStatusMessages.INSUFFICIENT_TIMEOUT_MESSAGE;
+import static ru.hh.jclient.common.ResponseStatusMessages.SERVER_TIMEOUT_MESSAGE;
 
 final class TransportExceptionMapper {
-  static MappedTransportErrorResponse map(Throwable t, Uri uri) {
+  static MappedTransportErrorResponse map(Throwable t, Uri uri, DeadlineContext deadlineContext) {
     final String lowerCasedErrorMessage = ofNullable(t.getMessage()).map(String::toLowerCase).orElse("");
     if (t instanceof ConnectException) {
       if (isConnectTimeoutError(t, lowerCasedErrorMessage) || isConnectError(lowerCasedErrorMessage)) {
@@ -36,7 +41,11 @@ final class TransportExceptionMapper {
       return createErrorResponse(CONNECT_TIMEOUT_ERROR, CONNECTION_RESET_MESSAGE, uri);
     }
     if (t instanceof TimeoutException) {
-      return createErrorResponse(CONNECT_TIMEOUT_ERROR, REQUEST_TIMEOUT_MESSAGE, uri);
+      if (isNull(deadlineContext) || deadlineContext.isDeadlineCorrect()) {
+        return createErrorResponse(SERVER_TIMEOUT, SERVER_TIMEOUT_MESSAGE, uri);
+      } else {
+        return createErrorResponse(INSUFFICIENT_TIMEOUT, INSUFFICIENT_TIMEOUT_MESSAGE, uri);
+      }
     }
     if (t instanceof ClosedChannelException) {
       return createErrorResponse(CONNECT_TIMEOUT_ERROR, CHANNEL_CLOSED_MESSAGE, uri);

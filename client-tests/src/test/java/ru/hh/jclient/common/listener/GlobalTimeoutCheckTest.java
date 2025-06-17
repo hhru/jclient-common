@@ -1,7 +1,7 @@
 package ru.hh.jclient.common.listener;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -24,7 +24,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
   @Test
   public void testShouldNotTriggerIfTimeoutsOk() throws ExecutionException, InterruptedException {
-    LocalDateTime now = LocalDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
     withContext(
         Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")),
         new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
@@ -40,7 +40,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
           }
 
           @Override
-          protected LocalDateTime getNow() {
+          protected OffsetDateTime getNow() {
             return now;
           }
         }
@@ -51,7 +51,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
   @Test
   public void testShouldTriggerIfTimeoutsNotOk() throws ExecutionException, InterruptedException {
-    LocalDateTime now = LocalDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
     AtomicBoolean triggered = new AtomicBoolean(false);
     withContext(
         Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")),
@@ -68,7 +68,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
           }
 
           @Override
-          protected LocalDateTime getNow() {
+          protected OffsetDateTime getNow() {
             return now;
           }
         }
@@ -80,7 +80,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
   @Test
   public void testShouldTriggerIfTimeoutsOkButTooLongSinceStart() throws ExecutionException, InterruptedException {
-    LocalDateTime now = LocalDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
     AtomicBoolean triggered = new AtomicBoolean(false);
     withContext(
         Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")),
@@ -97,7 +97,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
           }
 
           @Override
-          protected LocalDateTime getNow() {
+          protected OffsetDateTime getNow() {
             return now.plusSeconds(1);
           }
         }
@@ -109,7 +109,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
 
   @Test
   public void testShouldNotTriggerIfInThreshold() throws ExecutionException, InterruptedException {
-    LocalDateTime now = LocalDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
     withContext(
         Map.of(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of("100")),
         new GlobalTimeoutCheck(Duration.ofMillis(30), mock(ScheduledExecutorService.class), 0) {
@@ -125,7 +125,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
           }
 
           @Override
-          protected LocalDateTime getNow() {
+          protected OffsetDateTime getNow() {
             return now.plusNanos(TimeUnit.MILLISECONDS.toNanos(15));
           }
         }

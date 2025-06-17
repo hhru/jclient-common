@@ -241,6 +241,16 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
   @Test
   public void retryTimeoutException() throws Exception {
+    ApplicationConfig applicationConfig = buildTestConfig();
+    applicationConfig
+        .getHosts()
+        .get(DEFAULT)
+        .getProfiles()
+        .get(DEFAULT)
+        .setRetryPolicy(Map.of(577, new RetryPolicyConfig().setRetryNonIdempotent(false)));
+
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
+
     createHttpClientFactory();
 
     Request[] request = new Request[2];

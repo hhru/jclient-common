@@ -17,6 +17,7 @@ import org.asynchttpclient.AsyncCompletionHandler;
 import org.asynchttpclient.AsyncHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.deadline.context.DeadlineContext;
 import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.FRONTIK_DEBUG_AUTH;
@@ -68,14 +69,12 @@ class HttpClientImpl extends HttpClient {
 
   @Override
   CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext requestContext) {
-    getEventListeners().forEach(eventListener -> eventListener.beforeExecute(this, originalRequest));
+    RequestBuilder requestBuilder = new RequestBuilder(originalRequest);
+    getEventListeners().forEach(eventListener -> eventListener.beforeExecute(this, requestBuilder, originalRequest));
 
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
+    Request request = addHeadersAndParams(requestBuilder, originalRequest, requestContext);
 
-    Request request = addHeadersAndParams(originalRequest, requestContext);
-    if (LOGGER.isTraceEnabled()) {
-      LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
-    }
     try {
       if (retryCount > 0) {
         LOGGER.debug("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
@@ -88,16 +87,24 @@ class HttpClientImpl extends HttpClient {
       LOGGER.error("Request debug failed during event processing, request: {} {}", request.getMethod(), request.getUri(), e);
     }
 
+    LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
+
     Transfers transfers = getStorages().prepare();
-    CompletionHandler handler = new CompletionHandler(promise, request, now(), getEventListeners(), transfers, callbackExecutor);
+    CompletionHandler handler = new CompletionHandler(
+        promise,
+        request,
+        now(),
+        getEventListeners(),
+        transfers,
+        callbackExecutor,
+        getContext().getDeadlineContext()
+    );
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
   }
 
-  private Request addHeadersAndParams(Request request, RequestContext context) {
-    RequestBuilder requestBuilder = new RequestBuilder(request);
-
+  private Request addHeadersAndParams(RequestBuilder requestBuilder, Request request, RequestContext context) {
     // compute headers. Headers from context are used as base, with headers from request overriding any existing values
     HttpHeaders headers = new HttpHeaders();
     if (!isExternalRequest()) {
@@ -251,6 +258,7 @@ class HttpClientImpl extends HttpClient {
     private final List<HttpClientEventListener> eventListeners;
     private final Transfers contextTransfers;
     private final Executor callbackExecutor;
+    private final DeadlineContext deadlineContext;
 
     CompletionHandler(
         CompletableFuture<ResponseWrapper> promise,
@@ -258,9 +266,11 @@ class HttpClientImpl extends HttpClient {
         Instant requestStart,
         List<HttpClientEventListener> eventListeners,
         Transfers contextTransfers,
-        Executor callbackExecutor
+        Executor callbackExecutor,
+        DeadlineContext deadlineContext
     ) {
       this.requestStart = requestStart;
+      this.deadlineContext = deadlineContext;
       mdcCopy = MDCCopy.capture();
       this.promise = promise;
       this.request = request;
@@ -284,7 +294,7 @@ class HttpClientImpl extends HttpClient {
 
     @Override
     public void onThrowable(Throwable t) {
-      org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri());
+      org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri(), deadlineContext);
       long timeToLastByteMillis = getTimeToLastByte();
 
       mdcCopy.doInContext(

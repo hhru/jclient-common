@@ -21,7 +21,9 @@ public class HttpHeaderNames {
   public static final String X_HH_PROFESSIONAL_ROLES_MODE = "X-HH-ProfessionalRolesMode";
   public static final String X_LOAD_TESTING = "X-Load-Testing";
   public static final String X_OUTER_TIMEOUT_MS = "X-Outer-Timeout-Ms";
+  public static final String X_DEADLINE_TIMEOUT_MS = "X-Deadline-timeout-ms";
   public static final String X_REAL_IP = "X-Real-IP";
   public static final String X_REQUEST_ID = "X-Request-Id";
   public static final String X_SOURCE = "X-Source";
 }
+

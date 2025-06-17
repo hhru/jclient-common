@@ -1,7 +1,7 @@
 package ru.hh.jclient.common.listener;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
 import static java.util.Optional.ofNullable;
@@ -18,6 +18,7 @@ import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.HttpClientEventListener;
 import ru.hh.jclient.common.HttpHeaderNames;
 import ru.hh.jclient.common.Request;
+import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.Uri;
 
 public class GlobalTimeoutCheck implements HttpClientEventListener {
@@ -83,7 +84,7 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
   }
 
   @Override
-  public void beforeExecute(HttpClient httpClient, Request request) {
+  public void beforeExecute(HttpClient httpClient, RequestBuilder requestBuilder, Request request) {
     ofNullable(httpClient.getContext().getHeaders())
         .map(headers -> headers.get(HttpHeaderNames.X_OUTER_TIMEOUT_MS))
         .flatMap(values -> values.stream().findFirst())
@@ -104,8 +105,8 @@ public class GlobalTimeoutCheck implements HttpClientEventListener {
         });
   }
 
-  protected LocalDateTime getNow() {
-    return LocalDateTime.now();
+  protected OffsetDateTime getNow() {
+    return OffsetDateTime.now();
   }
 
   protected void handleTimeoutExceeded(

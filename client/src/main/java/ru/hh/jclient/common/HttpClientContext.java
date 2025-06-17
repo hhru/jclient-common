@@ -1,6 +1,6 @@
 package ru.hh.jclient.common;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import static java.util.Collections.emptySet;
 import java.util.List;
@@ -8,6 +8,7 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import ru.hh.deadline.context.DeadlineContext;
 import static ru.hh.jclient.common.RequestUtils.isInDebugMode;
 import ru.hh.jclient.common.util.storage.StorageUtils;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
@@ -18,11 +19,12 @@ import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
  */
 public class HttpClientContext {
 
-  private final LocalDateTime requestStart;
+  private final OffsetDateTime requestStart;
   private final Map<String, List<String>> headers;
   private final boolean debugMode;
   private final List<Supplier<HttpClientEventListener>> eventListenerSuppliers;
   private final Storages storages;
+  private final DeadlineContext deadlineContext;
 
   public HttpClientContext(
       Map<String, List<String>> headers,
@@ -37,7 +39,7 @@ public class HttpClientContext {
       Map<String, List<String>> queryParams,
       List<Supplier<HttpClientEventListener>> eventListenerSuppliers,
       Storages storages) {
-    this(LocalDateTime.now(), headers, queryParams, eventListenerSuppliers, storages);
+    this(OffsetDateTime.now(), headers, queryParams, eventListenerSuppliers, storages);
   }
 
   /**
@@ -50,7 +52,7 @@ public class HttpClientContext {
    * @param storages object storages that needs to be transferred to ning threads executing requests and completable future chains
    */
   public HttpClientContext(
-      LocalDateTime requestStart,
+      OffsetDateTime requestStart,
       Map<String, List<String>> headers,
       Map<String, List<String>> queryParams,
       List<Supplier<HttpClientEventListener>> eventListenerSuppliers,
@@ -63,9 +65,13 @@ public class HttpClientContext {
     this.debugMode = isInDebugMode(headers, queryParams);
     this.eventListenerSuppliers = new ArrayList<>(eventListenerSuppliers);
     this.storages = requireNonNull(storages, "storages must not be null");
+    this.deadlineContext = DeadlineContext.createDeadlineContext(
+        requestStart,
+        RequestUtils.getLongHeaderValue(headers, HttpHeaderNames.X_DEADLINE_TIMEOUT_MS).orElse(null),
+        RequestUtils.getLongHeaderValue(headers, HttpHeaderNames.X_OUTER_TIMEOUT_MS).orElse(null));
   }
 
-  public LocalDateTime getRequestStart() {
+  public OffsetDateTime getRequestStart() {
     return requestStart;
   }
 
@@ -91,5 +97,14 @@ public class HttpClientContext {
 
   Storages getStorages() {
     return storages;
+  }
+
+  public DeadlineContext getDeadlineContext() {
+    return deadlineContext;
+  }
+
+  @Override
+  public String toString() {
+    return "HttpClientContext for " + (requestId != null ? requestId : "unknown") + " requestId (" + this.hashCode() + ')';
   }
 }
