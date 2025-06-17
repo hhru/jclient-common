@@ -8,8 +8,6 @@ public class RequestContext {
   private final String destinationHost;
   private final boolean isSessionRequired;
 
-  private RequestDebug contextDebug;
-
   public RequestContext(String upstreamName, String destinationDatacenter, String destinationHost) {
     this(upstreamName, destinationDatacenter, destinationHost, false);
   }
@@ -19,14 +17,6 @@ public class RequestContext {
     this.destinationDatacenter = destinationDatacenter;
     this.destinationHost = destinationHost;
     this.isSessionRequired = isSessionRequired;
-  }
-
-  public RequestDebug getContextDebug() {
-    return contextDebug;
-  }
-
-  public void setContextDebug(RequestDebug contextDebug) {
-    this.contextDebug = contextDebug;
   }
 
   public String getUpstreamName() {
@@ -48,11 +38,10 @@ public class RequestContext {
   @Override
   public String toString() {
     return "RequestContext{" +
-        "upstreamName='" + upstreamName + '\'' +
-        ", destinationDatacenter='" + destinationDatacenter + '\'' +
-        ", destinationHost='" + destinationHost + '\'' +
-        ", isSessionRequired=" + isSessionRequired +
-        ", contextDebug=" + contextDebug +
-        '}';
+           "upstreamName='" + upstreamName + '\'' +
+           ", destinationDatacenter='" + destinationDatacenter + '\'' +
+           ", destinationHost='" + destinationHost + '\'' +
+           ", isSessionRequired=" + isSessionRequired +
+           '}';
   }
 }

@@ -1,4 +1,4 @@
-package ru.hh.jclient.common.check;
+package ru.hh.jclient.common.listener;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

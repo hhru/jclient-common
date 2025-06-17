@@ -37,22 +37,26 @@ public class HttpClientTestBase {
   protected AsyncHttpClientConfig httpClientConfig = defaultHttpClientConfig;
   protected HttpClientFactory http;
   protected HttpClientContext httpClientContext;
-  protected TestRequestDebug debug = new TestRequestDebug(true);
-  protected List<Supplier<RequestDebug>> debugs = List.of(() -> debug);
-  protected List<HttpClientEventListener> eventListeners = new ArrayList<>();
+  protected TestEventListener testEventListener = new TestEventListener(true);
+  protected List<Supplier<HttpClientEventListener>> eventListenerSupplierList = new ArrayList<>(List.of(() -> testEventListener));
 
   public HttpClientTestBase withEmptyContext() {
-    httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), debugs);
+    httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), eventListenerSupplierList);
     return this;
   }
 
   public HttpClientTestBase withContext(Map<String, List<String>> headers) {
-    httpClientContext = new HttpClientContext(headers, Collections.emptyMap(), debugs);
+    httpClientContext = new HttpClientContext(headers, Collections.emptyMap(), eventListenerSupplierList);
     return this;
   }
 
   public HttpClientTestBase withContext(Map<String, List<String>> headers, Map<String, List<String>> queryParams) {
-    httpClientContext = new HttpClientContext(headers, queryParams, debugs);
+    httpClientContext = new HttpClientContext(headers, queryParams, eventListenerSupplierList);
+    return this;
+  }
+
+  public HttpClientTestBase withContext(Map<String, List<String>> headers, HttpClientEventListener listener) {
+    httpClientContext = new HttpClientContext(headers, Collections.emptyMap(), List.of(() -> listener));
     return this;
   }
 
@@ -181,23 +185,12 @@ public class HttpClientTestBase {
     return completedFuture(new EmptyOrErrorWithStatus<>(error, status));
   }
 
-  public HttpClientTestBase withNoListeners() {
-    eventListeners = List.of();
-    return this;
-  }
-
-  public HttpClientTestBase withEventListener(HttpClientEventListener listener) {
-    eventListeners = List.of(listener);
-    return this;
-  }
-
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
     return new HttpClientFactory(httpClient,
         new SingletonStorage<>(() -> httpClientContext),
         Set.of("http://localhost"),
         Runnable::run,
-        new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier)),
-        eventListeners
+        new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier))
     );
   }
 }

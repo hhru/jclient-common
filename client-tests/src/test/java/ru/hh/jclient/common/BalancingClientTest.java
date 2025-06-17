@@ -24,9 +24,9 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
-import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
-import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
+import static ru.hh.jclient.common.TestEventListener.Call.FINISHED;
+import static ru.hh.jclient.common.TestEventListener.Call.REQUEST;
+import static ru.hh.jclient.common.TestEventListener.Call.RESPONSE;
 import ru.hh.jclient.common.balancing.ExternalUrlRequestor;
 import ru.hh.jclient.common.balancing.RequestBalancerBuilder;
 import ru.hh.jclient.common.balancing.Server;
@@ -420,7 +420,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
       getTestClient().post();
     } catch (Exception e) {
       assertRequestEquals(request, "server1");
-      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
     }
   }
 

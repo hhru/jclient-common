@@ -60,39 +60,36 @@ class HttpClientImpl extends HttpClient {
       RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
-      Executor callbackExecutor,
-      List<HttpClientEventListener> eventListeners
+      Executor callbackExecutor
   ) {
-    super(http, request, requestStrategy, contextSupplier, customHostsWithSession, eventListeners);
+    super(http, request, requestStrategy, contextSupplier, customHostsWithSession);
     this.callbackExecutor = callbackExecutor;
   }
 
   @Override
-  CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext context) {
-    for (HttpClientEventListener check : getEventListeners()) {
-      check.beforeExecute(this, originalRequest);
-    }
+  CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext requestContext) {
+    getEventListeners().forEach(eventListener -> eventListener.beforeExecute(this, originalRequest));
 
     CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
 
-    Request request = addHeadersAndParams(originalRequest, context);
+    Request request = addHeadersAndParams(originalRequest, requestContext);
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     }
     try {
       if (retryCount > 0) {
         LOGGER.debug("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
-        getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity().orElse(null), retryCount, context));
+        getEventListeners().forEach(eventListener -> eventListener.onRetry(request, getRequestBodyEntity().orElse(null), retryCount, requestContext));
       } else {
         LOGGER.debug("HTTP_CLIENT_START: Starting {} {}", request.getMethod(), request.getUri());
-        getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity().orElse(null), context));
+        getEventListeners().forEach(eventListener -> eventListener.onRequest(request, getRequestBodyEntity().orElse(null), requestContext));
       }
     } catch (RuntimeException e) {
       LOGGER.error("Request debug failed during event processing, request: {} {}", request.getMethod(), request.getUri(), e);
     }
 
     Transfers transfers = getStorages().prepare();
-    CompletionHandler handler = new CompletionHandler(promise, request, now(), getDebugs(), transfers, callbackExecutor);
+    CompletionHandler handler = new CompletionHandler(promise, request, now(), getEventListeners(), transfers, callbackExecutor);
     getHttp().executeRequest(request.getDelegate(), handler);
 
     return promise;
@@ -111,7 +108,7 @@ class HttpClientImpl extends HttpClient {
           .forEach(h -> headers.add(h, getContext().getHeaders().get(h)));
     }
 
-    boolean canUnwrapDebugResponse = getDebugs().stream().anyMatch(RequestDebug::canUnwrapDebugResponse);
+    boolean canUnwrapDebugResponse = getEventListeners().stream().anyMatch(HttpClientEventListener::canUnwrapDebugResponse);
     boolean enableDebug = !isNoDebug() && !isExternalRequest() && getContext().isDebugMode() && canUnwrapDebugResponse;
 
     // debug header is passed through by default, but should be removed if debug is not enabled
@@ -195,19 +192,19 @@ class HttpClientImpl extends HttpClient {
         if (retryCount > 0) {
           // due to retry possibly performed in another thread
           // TODO do not re-get suppliers here
-          setDebugs(getContext().getDebugSuppliers().stream().map(Supplier::get).collect(toList()));
+          setEventListeners(getContext().getEventListenerSuppliers().stream().map(Supplier::get).collect(toList()));
         }
         return HttpClientImpl.this.executeRequest(request, retryCount, requestContext);
       }
 
       @Override
       public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
-        for (RequestDebug requestDebug : getDebugs()) {
-          requestDebug.onRequest(request, getRequestBodyEntity().orElse(null), requestContext);
+        for (HttpClientEventListener eventListener : getEventListeners()) {
+          eventListener.onRequest(request, getRequestBodyEntity().orElse(null), requestContext);
         }
         Transfers transfers = getStorages().prepare();
         CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
-        HttpClientImpl.proceedWithResponse(response, 0, getDebugs(), transfers, promise, callbackExecutor);
+        HttpClientImpl.proceedWithResponse(response, 0, getEventListeners(), transfers, promise, callbackExecutor);
         return promise;
       }
 
@@ -221,14 +218,14 @@ class HttpClientImpl extends HttpClient {
   private static ResponseWrapper proceedWithResponse(
       Response response,
       long responseTimeMillis,
-      List<RequestDebug> requestDebugs,
+      List<HttpClientEventListener> eventListeners,
       Transfers contextTransfers,
       CompletableFuture<ResponseWrapper> promise,
       Executor callbackExecutor
   ) {
 
-    for (RequestDebug debug : requestDebugs) {
-      response = debug.onResponse(response);
+    for (HttpClientEventListener eventListener : eventListeners) {
+      response = eventListener.onResponse(response);
     }
     ResponseWrapper wrapper = new ResponseWrapper(response, responseTimeMillis);
     // complete promise in a separate thread to avoid blocking caller thread
@@ -251,7 +248,7 @@ class HttpClientImpl extends HttpClient {
     private final CompletableFuture<ResponseWrapper> promise;
     private final Request request;
     private final Instant requestStart;
-    private final List<RequestDebug> requestDebugs;
+    private final List<HttpClientEventListener> eventListeners;
     private final Transfers contextTransfers;
     private final Executor callbackExecutor;
 
@@ -259,7 +256,7 @@ class HttpClientImpl extends HttpClient {
         CompletableFuture<ResponseWrapper> promise,
         Request request,
         Instant requestStart,
-        List<RequestDebug> requestDebugs,
+        List<HttpClientEventListener> eventListeners,
         Transfers contextTransfers,
         Executor callbackExecutor
     ) {
@@ -267,7 +264,7 @@ class HttpClientImpl extends HttpClient {
       mdcCopy = MDCCopy.capture();
       this.promise = promise;
       this.request = request;
-      this.requestDebugs = List.copyOf(requestDebugs);
+      this.eventListeners = List.copyOf(eventListeners);
       this.contextTransfers = contextTransfers;
       this.callbackExecutor = callbackExecutor;
     }
@@ -306,8 +303,8 @@ class HttpClientImpl extends HttpClient {
       }
 
       try {
-        requestDebugs.forEach(debug -> debug.onClientProblem(t));
-        requestDebugs.forEach(RequestDebug::onProcessingFinished);
+        eventListeners.forEach(eventListener -> eventListener.onClientProblem(t));
+        eventListeners.forEach(HttpClientEventListener::onProcessingFinished);
       } catch (Exception e) {
         t.addSuppressed(e);
         throw e;
@@ -320,7 +317,7 @@ class HttpClientImpl extends HttpClient {
       return HttpClientImpl.proceedWithResponse(
           new Response(response),
           responseTimeMillis,
-          requestDebugs,
+          eventListeners,
           contextTransfers,
           promise,
           callbackExecutor

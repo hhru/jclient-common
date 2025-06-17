@@ -1,10 +1,8 @@
 package ru.hh.jclient.common;
 
 import io.netty.handler.ssl.SslContext;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import static java.util.Optional.ofNullable;
 import java.util.Properties;
 import java.util.Set;
@@ -30,12 +28,10 @@ public class HttpClientFactoryBuilder {
   private double timeoutMultiplier = DEFAULT_TIMEOUT_MULTIPLIER;
   private String balancingRequestsLogLevel = DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
   private MetricsConsumer metricsConsumer;
-  private final List<HttpClientEventListener> eventListeners;
 
-  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, List<HttpClientEventListener> eventListeners) {
+  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier) {
     this.configBuilder = defaultConfigBuilder();
     this.contextSupplier = contextSupplier;
-    this.eventListeners = new ArrayList<>(eventListeners);
   }
 
   private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
@@ -46,8 +42,7 @@ public class HttpClientFactoryBuilder {
         ofNullable(prototype.customHostsWithSession).map(Set::copyOf).orElse(null),
         prototype.timeoutMultiplier,
         prototype.balancingRequestsLogLevel,
-        prototype.metricsConsumer,
-        new ArrayList<>(prototype.eventListeners)
+        prototype.metricsConsumer
     );
   }
 
@@ -59,8 +54,7 @@ public class HttpClientFactoryBuilder {
       Set<String> customHostsWithSession,
       double timeoutMultiplier,
       String balancingRequestsLogLevel,
-      MetricsConsumer metricsConsumer,
-      List<HttpClientEventListener> eventListeners
+      MetricsConsumer metricsConsumer
   ) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
@@ -70,7 +64,6 @@ public class HttpClientFactoryBuilder {
     this.timeoutMultiplier = timeoutMultiplier;
     this.balancingRequestsLogLevel = balancingRequestsLogLevel;
     this.metricsConsumer = metricsConsumer;
-    this.eventListeners = eventListeners;
   }
 
   private static DefaultAsyncHttpClientConfig.Builder defaultConfigBuilder() {
@@ -136,12 +129,6 @@ public class HttpClientFactoryBuilder {
     return target;
   }
 
-  public HttpClientFactoryBuilder addEventListener(HttpClientEventListener eventListener) {
-    var target = getCopy();
-    target.eventListeners.add(eventListener);
-    return target;
-  }
-
   public HttpClientFactoryBuilder withRequestStrategy(RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy) {
     var target = getCopy();
     target.requestStrategy = requestStrategy;
@@ -202,8 +189,7 @@ public class HttpClientFactoryBuilder {
         contextSupplier,
         ofNullable(customHostsWithSession).map(Set::copyOf).orElseGet(Set::of),
         callbackExecutor,
-        initStrategy(),
-        List.copyOf(eventListeners)
+        initStrategy()
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
     return httpClientFactory;

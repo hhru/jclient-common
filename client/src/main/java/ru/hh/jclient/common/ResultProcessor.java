@@ -26,7 +26,7 @@ public class ResultProcessor<T> {
   ResultProcessor(HttpClient httpClient, TypeConverter<T> converter) {
     this.httpClient = requireNonNull(httpClient, "http client must not be null");
     this.converter = requireNonNull(converter, "converter must not be null");
-    this.httpClient.getDebugs().forEach(d -> d.onCreateResultProcessor(httpClient, converter));
+    this.httpClient.getEventListeners().forEach(eventListener -> eventListener.onCreateResultProcessor(httpClient, converter));
   }
 
   HttpClient getHttpClient() {
@@ -76,7 +76,7 @@ public class ResultProcessor<T> {
       throw new ClientResponseException(response);
     }
     finally {
-      httpClient.getDebugs().forEach(RequestDebug::onProcessingFinished);
+      httpClient.getEventListeners().forEach(HttpClientEventListener::onProcessingFinished);
     }
   }
 
@@ -88,14 +88,14 @@ public class ResultProcessor<T> {
       return new ResultWithResponse<>(null, response);
     }
     finally {
-      httpClient.getDebugs().forEach(RequestDebug::onProcessingFinished);
+      httpClient.getEventListeners().forEach(HttpClientEventListener::onProcessingFinished);
     }
   }
 
   private ResultWithResponse<T> wrap(Response response) {
     try {
       ResultWithResponse<T> result = converter.converterFunction().apply(response);
-      httpClient.getDebugs().forEach(d -> d.onResponseConverted(result.get().orElse(null)));
+      httpClient.getEventListeners().forEach(eventListener -> eventListener.onResponseConverted(result.get().orElse(null)));
       return result;
     }
     catch (ClientResponseException e) {
@@ -103,7 +103,7 @@ public class ResultProcessor<T> {
     }
     catch (Exception e) {
       ResponseConverterException rce = new ResponseConverterException("Failed to convert response", e);
-      httpClient.getDebugs().forEach(d -> d.onConverterProblem(rce));
+      httpClient.getEventListeners().forEach(eventListener -> eventListener.onConverterProblem(rce));
       throw rce;
     }
   }

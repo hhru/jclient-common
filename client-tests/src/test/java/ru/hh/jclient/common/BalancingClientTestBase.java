@@ -27,11 +27,11 @@ import org.mockito.invocation.InvocationOnMock;
 import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
-import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
-import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RETRY;
+import static ru.hh.jclient.common.TestEventListener.Call.FINISHED;
+import static ru.hh.jclient.common.TestEventListener.Call.REQUEST;
+import static ru.hh.jclient.common.TestEventListener.Call.RESPONSE;
+import static ru.hh.jclient.common.TestEventListener.Call.RESPONSE_CONVERTED;
+import static ru.hh.jclient.common.TestEventListener.Call.RETRY;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
 import ru.hh.jclient.common.balancing.BalancingUpstreamManager;
 import ru.hh.jclient.common.balancing.ConfigStore;
@@ -89,7 +89,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertHostEquals(request[0], "server1");
 
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ExecutionException.class)
@@ -118,7 +118,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -130,7 +130,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -149,7 +149,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       assertTrue(e.getCause() instanceof ClientResponseException);
       assertEquals(599, ((ClientResponseException) e.getCause()).getStatusCode());
 
-      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
     }
   }
 
@@ -211,7 +211,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3", "server4");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -236,7 +236,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -258,7 +258,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
 
@@ -329,7 +329,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -354,7 +354,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -378,7 +378,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
 
     assertRequestEquals(request, "server1", "server2", "server3");
 
-    debug.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RETRY, RESPONSE, RETRY, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
 
