@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.Iterator;
 import java.util.List;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 
 public class AdaptiveBalancingState extends BalancingState {
   private Iterator<ServerEntry> serverEntryIterator;
@@ -28,5 +29,10 @@ public class AdaptiveBalancingState extends BalancingState {
       serverEntryIterator = entries.iterator();
     }
     return serverEntryIterator.hasNext() ? serverEntryIterator.next() : null;
+  }
+
+  @Override
+  BalancingStrategyType getBalancingStrategyType() {
+    return BalancingStrategyType.ADAPTIVE;
   }
 }

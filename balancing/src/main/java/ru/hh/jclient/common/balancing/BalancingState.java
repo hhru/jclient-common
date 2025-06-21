@@ -2,6 +2,7 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.HashSet;
 import java.util.Set;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 
 public class BalancingState {
   protected final Upstream upstream;
@@ -54,5 +55,9 @@ public class BalancingState {
 
   void setCurrentServer(ServerEntry currentServer) {
     this.currentServer = currentServer;
+  }
+
+  BalancingStrategyType getBalancingStrategyType() {
+    return BalancingStrategyType.WEIGHTED;
   }
 }

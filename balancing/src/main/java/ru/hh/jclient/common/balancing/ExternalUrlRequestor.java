@@ -61,11 +61,11 @@ public class ExternalUrlRequestor extends RequestBalancer {
 
     for (Monitoring monitoring : monitorings) {
       try {
-        monitoring.countRequest(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
+        monitoring.countRequest(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMillis, isRequestFinal, "externalRequest");
         monitoring.countRequestTime(name, DC_FOR_EXTERNAL_REQUESTS, requestTimeMillis);
 
         if (isRequestFinal && triesUsed > 1) {
-          monitoring.countRetry(serverAddress, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
+          monitoring.countRetry(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
         }
       } catch (Exception e) {
         LOGGER.error("Error occurred while sending metrics", e);
