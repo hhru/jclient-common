@@ -53,7 +53,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       );
     } else {
       BalancingState state;
-      if (adaptive) {
+      if (adaptive || upstream.isAdaptive()) {
         state = new AdaptiveBalancingState(upstream, profile);
       } else {
         state = new BalancingState(upstream, profile);

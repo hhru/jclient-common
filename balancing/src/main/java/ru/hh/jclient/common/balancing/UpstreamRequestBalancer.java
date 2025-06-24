@@ -102,10 +102,11 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     var serverAddress = state.getCurrentServer().getAddress();
     var dcName = state.getCurrentServer().getDatacenter();
     String upstreamName = state.getUpstreamName();
+    String balancingStrategyType = state.getBalancingStrategyType().getPublicName();
 
     for (Monitoring monitoring : monitorings) {
       try {
-        monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMillis, isRequestFinal);
+        monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMillis, isRequestFinal, balancingStrategyType);
         monitoring.countRequestTime(upstreamName, dcName, requestTimeMillis);
 
         if (isRequestFinal && triesUsed > 1) {

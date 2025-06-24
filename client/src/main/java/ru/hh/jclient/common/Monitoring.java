@@ -3,7 +3,13 @@ package ru.hh.jclient.common;
 public interface Monitoring {
 
   void countRequest(
-      String upstreamName, String serverDatacenter, String serverAddress, int statusCode, long requestTimeMillis, boolean isRequestFinal
+      String upstreamName,
+      String serverDatacenter,
+      String serverAddress,
+      int statusCode,
+      long requestTimeMillis,
+      boolean isRequestFinal,
+      String balancingStrategyType
   );
 
   void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMillis);

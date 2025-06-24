@@ -2,15 +2,10 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.Iterator;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 
 public class AdaptiveBalancingState extends BalancingState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(AdaptiveBalancingState.class);
-
   private Iterator<ServerEntry> serverEntryIterator;
-  private boolean adaptiveFailed;
-
 
   public AdaptiveBalancingState(Upstream upstream, String profile) {
     super(upstream, profile);
@@ -18,22 +13,13 @@ public class AdaptiveBalancingState extends BalancingState {
 
   @Override
   public void acquireServer() {
-    if (!adaptiveFailed) {
-      try {
-        setCurrentServer(acquireAdaptiveServer());
-        return;
-      } catch (RuntimeException e) {
-        LOGGER.error("failed to acquire adaptive servers, falling back to nonadaptive", e);
-        adaptiveFailed = true;
-      }
-    }
-    super.acquireServer();
+    setCurrentServer(acquireAdaptiveServer());
   }
 
   @Override
   public void releaseServer(long timeToLastByteMillis, boolean isServerError) {
     if (isServerAvailable()) {
-      upstream.releaseServer(getCurrentServer().getIndex(), !getTriedServers().isEmpty(), isServerError, timeToLastByteMillis, !adaptiveFailed);
+      upstream.releaseServer(getCurrentServer().getIndex(), !getTriedServers().isEmpty(), isServerError, timeToLastByteMillis, true);
     }
   }
 
@@ -43,5 +29,10 @@ public class AdaptiveBalancingState extends BalancingState {
       serverEntryIterator = entries.iterator();
     }
     return serverEntryIterator.hasNext() ? serverEntryIterator.next() : null;
+  }
+
+  @Override
+  BalancingStrategyType getBalancingStrategyType() {
+    return BalancingStrategyType.ADAPTIVE;
   }
 }

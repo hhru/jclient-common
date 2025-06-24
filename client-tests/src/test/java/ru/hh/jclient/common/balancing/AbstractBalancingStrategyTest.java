@@ -79,7 +79,8 @@ public abstract class AbstractBalancingStrategyTest {
           String serverAddress,
           int statusCode,
           long requestTimeMillis,
-          boolean isRequestFinal
+          boolean isRequestFinal,
+          String balancingStrategyType
       ) {
         trackingHolder.computeIfAbsent(serverAddress, addr -> new CopyOnWriteArrayList<>()).add(statusCode);
       }

@@ -2,15 +2,14 @@ package ru.hh.jclient.common;
 
 import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 
-public class AdaptiveBalancingClientTest extends BalancingClientTestBase {
-
+public class BalancingClientAdaptiveUpstreamTest extends BalancingClientTestBase {
   @Override
   protected boolean isAdaptiveClient() {
-    return true;
+    return false;
   }
 
   @Override
   protected BalancingStrategyType getBalancingStrategyTypeForUpstream() {
-    return BalancingStrategyType.WEIGHTED;
+    return BalancingStrategyType.ADAPTIVE;
   }
 }

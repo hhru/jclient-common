@@ -42,7 +42,8 @@ import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.UpstreamConfig;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
-import static ru.hh.jclient.common.balancing.config.ApplicationConfigTest.buildTestConfig;
+import ru.hh.jclient.common.balancing.config.ApplicationConfigTest;
+import ru.hh.jclient.common.balancing.config.BalancingStrategyType;
 import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import static ru.hh.jclient.common.util.ContentType.TEXT_PLAIN_UTF_8;
@@ -64,7 +65,9 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     withEmptyContext();
     httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
-    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), DEFAULT));
+
+    ApplicationConfig applicationConfig = new ApplicationConfig().setBalancingStrategyType(getBalancingStrategyTypeForUpstream().getPublicName());
+    when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
     when(serverStore.getServers(TEST_UPSTREAM))
         .thenReturn(List.of(new Server("server1", null, 1, null), new Server("server2", null, 2, null)));
   }
@@ -162,6 +165,10 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
           return null;
         });
     return request;
+  }
+
+  protected ApplicationConfig buildTestConfig() {
+    return ApplicationConfigTest.buildTestConfig().setBalancingStrategyType(getBalancingStrategyTypeForUpstream().getPublicName());
   }
 
   @Test
@@ -448,14 +455,15 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     return request;
   }
 
-  protected abstract boolean isAdaptive();
+  protected abstract boolean isAdaptiveClient();
+
+  protected abstract BalancingStrategyType getBalancingStrategyTypeForUpstream();
 
   void assertRequestEquals(Request[] request, String... actual) {
-    if (isAdaptive()) {
-      assertTrue(toSet(request).containsAll(toSet(actual)));
-      assertTrue(toSet(actual).containsAll(toSet(request)));
+    assertEquals(request.length, actual.length);
+    if (isAdaptiveClient() || getBalancingStrategyTypeForUpstream() == BalancingStrategyType.ADAPTIVE) {
+      assertEquals(toSet(request), toSet(actual));
     } else {
-      assertEquals(request.length, actual.length);
       for (int i = 0; i < request.length; i++) {
         assertHostEquals(request[i], actual[i]);
       }
@@ -511,7 +519,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
   TestClient getTestClient(String upstream) {
-    return new TestClient(http, isAdaptive(), upstream);
+    return new TestClient(http, isAdaptiveClient(), upstream);
   }
 
   static class TestClient extends ConfigurableJClientBase<TestClient> {
