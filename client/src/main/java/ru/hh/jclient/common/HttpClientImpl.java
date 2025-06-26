@@ -79,12 +79,16 @@ class HttpClientImpl extends HttpClient {
     if (LOGGER.isTraceEnabled()) {
       LOGGER.trace("HTTP_CLIENT_REQUEST: {} ", request.toStringExtended());
     }
-    if (retryCount > 0) {
-      LOGGER.debug("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
-      getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity().orElse(null), retryCount, context));
-    } else {
-      LOGGER.debug("HTTP_CLIENT_START: Starting {} {}", request.getMethod(), request.getUri());
-      getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity().orElse(null), context));
+    try {
+      if (retryCount > 0) {
+        LOGGER.debug("HTTP_CLIENT_RETRY {}: {} {}", retryCount, request.getMethod(), request.getUri());
+        getDebugs().forEach(debug -> debug.onRetry(request, getRequestBodyEntity().orElse(null), retryCount, context));
+      } else {
+        LOGGER.debug("HTTP_CLIENT_START: Starting {} {}", request.getMethod(), request.getUri());
+        getDebugs().forEach(debug -> debug.onRequest(request, getRequestBodyEntity().orElse(null), context));
+      }
+    } catch (RuntimeException e) {
+      LOGGER.error("Request debug failed during event processing, request: {} {}", request.getMethod(), request.getUri(), e);
     }
 
     Transfers transfers = getStorages().prepare();
