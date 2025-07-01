@@ -8,6 +8,7 @@ import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableRunnable;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableSupplier;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -115,6 +116,13 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
 
     public ContextBuilder withQueryParams(Map<String, List<String>> queryParams) {
       this.queryParams.putAll(queryParams);
+      return this;
+    }
+
+    public ContextBuilder withRequestId(String requestId) {
+      if (requestId != null) {
+        this.headers.put(X_REQUEST_ID, List.of(requestId));
+      }
       return this;
     }
 
