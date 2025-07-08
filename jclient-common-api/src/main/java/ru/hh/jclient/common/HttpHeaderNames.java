@@ -26,4 +26,3 @@ public class HttpHeaderNames {
   public static final String X_REQUEST_ID = "X-Request-Id";
   public static final String X_SOURCE = "X-Source";
 }
-

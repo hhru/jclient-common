@@ -1,5 +1,6 @@
 package ru.hh.jclient.common;
 
+import jakarta.annotation.Nullable;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import static java.util.Collections.emptySet;
@@ -23,6 +24,8 @@ public class HttpClientContext {
   private final Map<String, List<String>> headers;
   private final boolean debugMode;
   private final List<Supplier<HttpClientEventListener>> eventListenerSuppliers;
+  @Nullable
+  private final String requestId;
   private final Storages storages;
   private final DeadlineContext deadlineContext;
 
@@ -64,6 +67,7 @@ public class HttpClientContext {
 
     this.debugMode = isInDebugMode(headers, queryParams);
     this.eventListenerSuppliers = new ArrayList<>(eventListenerSuppliers);
+    this.requestId = RequestUtils.getRequestId(headers).orElse(null);
     this.storages = requireNonNull(storages, "storages must not be null");
     this.deadlineContext = DeadlineContext.createDeadlineContext(
         requestStart,

@@ -92,4 +92,3 @@ public class TestEventListener implements HttpClientEventListener {
     REQUEST, RESPONSE, RETRY, RESPONSE_CONVERTED, CLIENT_PROBLEM, CONVERTER_PROBLEM, FINISHED
   }
 }
-

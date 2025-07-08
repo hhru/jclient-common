@@ -54,7 +54,6 @@ public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBa
 
   @Test
   public void testForceShutdownNonIdempotentNoRetry() throws ExecutionException, InterruptedException {
-
     Request request = new RequestBuilder(JClientBase.HTTP_POST).setUrl("http://" + TEST_UPSTREAM).build();
     Response response = httpClientFactory.with(request).unconverted().get();
     assertEquals(HttpStatuses.SERVER_TIMEOUT, response.getStatusCode());
