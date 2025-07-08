@@ -39,13 +39,12 @@ public abstract class HttpClient {
   public static final Function<Response, Boolean> OK_RESPONSE = r -> OK_RANGE.contains(r.getStatusCode());
 
   private final AsyncHttpClient http;
-  private final HttpClientContext context;
+  private final HttpClientContext httpClientContext;
   private final Set<String> customHostsWithSession;
   private final Storages storages;
   private final RequestEngineBuilder<?> requestEngineBuilder;
-  private final List<HttpClientEventListener> eventListeners;
+  private List<HttpClientEventListener> eventListeners;
 
-  private List<RequestDebug> debugs;
   private Request request;
   @Nullable
   private Object requestBodyEntity;
@@ -57,30 +56,30 @@ public abstract class HttpClient {
   private boolean noDebug;
   private boolean externalRequest;
 
-  HttpClient(AsyncHttpClient http,
-             Request request,
-             RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
-             Storage<HttpClientContext> contextSupplier,
-             Set<String> customHostsWithSession,
-             List<HttpClientEventListener> eventListeners) {
+  HttpClient(
+      AsyncHttpClient http,
+      Request request,
+      RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy,
+      Storage<HttpClientContext> contextSupplier,
+      Set<String> customHostsWithSession
+  ) {
     this.http = http;
     this.request = request;
     this.requestEngineBuilder = requestStrategy.createRequestEngineBuilder(this);
-    this.eventListeners = eventListeners;
     this.customHostsWithSession = customHostsWithSession.stream().map(Uri::create).map(Uri::getHost).collect(Collectors.toSet());
 
-    context = Optional
+    httpClientContext = Optional
         .ofNullable(contextSupplier)
         .map(Supplier::get)
         .orElseThrow(() -> new RuntimeException(
             "Context for HttpClient is not provided. Usually this happens when a) jclient is called from a thread that has no context - " +
-                "provide context, i.e. using HttpClientContextThreadLocalSupplier.addContext(...) / .clear() methods; " +
-                " b) HttpClientFactoryBuilder was not created properly - ensure HttpClientContextThreadLocalSupplier is provided at creation time;" +
-                " c) HttpClientContextThreadLocalSupplier.addContext(...) is not being called from corresponding (servlet) filter during " +
-                " request handling - ensure proper filter is set up correctly."));
+            "provide context, i.e. using HttpClientContextThreadLocalSupplier.addContext(...) / .clear() methods; " +
+            " b) HttpClientFactoryBuilder was not created properly - ensure HttpClientContextThreadLocalSupplier is provided at creation time;" +
+            " c) HttpClientContextThreadLocalSupplier.addContext(...) is not being called from corresponding (servlet) filter during " +
+            " request handling - ensure proper filter is set up correctly."));
 
-    storages = context.getStorages().copy().add(contextSupplier);
-    debugs = context.getDebugSuppliers().stream().map(Supplier::get).collect(toList());
+    storages = httpClientContext.getStorages().copy().add(contextSupplier);
+    this.eventListeners = httpClientContext.getEventListenerSuppliers().stream().map(Supplier::get).collect(toList());
   }
 
   /**
@@ -340,7 +339,7 @@ public abstract class HttpClient {
 
   // set within ru.hh.nab.jclient.JClientContextProviderFilter
   public HttpClientContext getContext() {
-    return context;
+    return httpClientContext;
   }
 
   Storages getStorages() {
@@ -367,12 +366,8 @@ public abstract class HttpClient {
     expectedMediaTypesForErrors = mediaTypes;
   }
 
-  List<RequestDebug> getDebugs() {
-    return debugs;
-  }
-
-  void setDebugs(List<RequestDebug> debugs) {
-    this.debugs = debugs;
+  void setEventListeners(List<HttpClientEventListener> eventListeners) {
+    this.eventListeners = eventListeners;
   }
 
   boolean useReadOnlyReplica() {

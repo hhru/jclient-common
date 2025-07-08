@@ -118,7 +118,7 @@ public abstract class AbstractBalancingStrategyTest {
     var strategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService());
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return Map.entry(
-        new HttpClientFactoryBuilder(contextSupplier, List.of())
+        new HttpClientFactoryBuilder(contextSupplier)
             .withConnectTimeoutMs(100)
             .withRequestStrategy(strategy)
             .withCallbackExecutor(Runnable::run)

@@ -86,13 +86,13 @@ public class ResultOrErrorProcessor<T, E> {
         value = responseProcessor.getConverter().converterFunction().apply(response).get();
         errorValue = Optional.empty();
 
-        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(value.orElse(null)));
+        responseProcessor.getHttpClient().getEventListeners().forEach(eventListener -> eventListener.onResponseConverted(value.orElse(null)));
       }
       else {
         value = Optional.empty();
         errorValue = parseError(response);
 
-        responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onResponseConverted(errorValue.orElse(null)));
+        responseProcessor.getHttpClient().getEventListeners().forEach(eventListener -> eventListener.onResponseConverted(errorValue.orElse(null)));
       }
       return new ResultOrErrorWithResponse<>(value.orElse(null), errorValue.orElse(null), response);
     }
@@ -101,11 +101,11 @@ public class ResultOrErrorProcessor<T, E> {
     }
     catch (Exception e) {
       ResponseConverterException rce = new ResponseConverterException("Failed to convert response", e);
-      responseProcessor.getHttpClient().getDebugs().forEach(d -> d.onConverterProblem(rce));
+      responseProcessor.getHttpClient().getEventListeners().forEach(eventListener -> eventListener.onConverterProblem(rce));
       throw rce;
     }
     finally {
-      responseProcessor.getHttpClient().getDebugs().forEach(RequestDebug::onProcessingFinished);
+      responseProcessor.getHttpClient().getEventListeners().forEach(HttpClientEventListener::onProcessingFinished);
     }
   }
 

@@ -12,6 +12,7 @@ import jakarta.ws.rs.ext.RuntimeDelegate;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Predicate;
 import static org.junit.Assert.assertEquals;
@@ -60,8 +61,7 @@ public class MoreErrorsTest {
     ResultWithStatus<String> result = new ResultWithStatus<>("zxc", OK.getStatusCode());
     try {
       MoreErrors.check(result, "error").failIf(s -> s.equals("zxc"), NOT_FOUND).throwForbidden().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), NOT_FOUND.getStatusCode());
     }
   }
@@ -192,16 +192,14 @@ public class MoreErrorsTest {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, SERVICE_UNAVAILABLE.getStatusCode());
     try {
       MoreErrors.check(result, "error").proxyStatusCode().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), HttpStatuses.BAD_GATEWAY);
     }
 
     result = new ResultWithStatus<>(null, OK.getStatusCode());
     try {
       MoreErrors.check(result, "error").proxyStatusCode().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), HttpStatuses.OK);
     }
   }
@@ -220,24 +218,21 @@ public class MoreErrorsTest {
     // throw WAE with HTTP GATEWAY TIMEOUT for expected (one of) error exact class
     try {
       MoreErrors.convertException(result, exception, "error").throwGatewayTimeout().on(FileNotFoundException.class, IllegalArgumentException.class);
-    }
-    catch (Throwable t) {
+    } catch (Throwable t) {
       ensureExceptionConverted(t);
     }
 
     // throw WAE with HTTP GATEWAY TIMEOUT for expected error superclass
     try {
       MoreErrors.convertException(result, exception, "error").throwGatewayTimeout().on(IOException.class);
-    }
-    catch (Throwable t) {
+    } catch (Throwable t) {
       ensureExceptionConverted(t);
     }
 
     // throw WAE with HTTP GATEWAY TIMEOUT for expected error superclass even if it is wrapped in CompletionException
     try {
       MoreErrors.convertException(result, new CompletionException(exception), "error").throwGatewayTimeout().on(IOException.class);
-    }
-    catch (Throwable t) {
+    } catch (Throwable t) {
       ensureExceptionConverted(t);
     }
 
@@ -245,8 +240,7 @@ public class MoreErrorsTest {
     try {
       Throwable otherException = new NullPointerException();
       MoreErrors.convertException(result, otherException, "error").throwGatewayTimeout().on(IOException.class, IllegalArgumentException.class);
-    }
-    catch (Throwable t) {
+    } catch (Throwable t) {
       assertEquals(t.getClass(), NullPointerException.class);
     }
 
@@ -254,8 +248,7 @@ public class MoreErrorsTest {
     try {
       WebApplicationException wae = new WebApplicationException(777);
       MoreErrors.convertException(result, new CompletionException(wae), "error").throwGatewayTimeout().on(WebApplicationException.class);
-    }
-    catch (Throwable t) {
+    } catch (Throwable t) {
       assertEquals(t.getClass(), WebApplicationException.class);
       WebApplicationException wae = (WebApplicationException) t;
       assertEquals(wae.getResponse().getStatus(), 777);
@@ -335,8 +328,7 @@ public class MoreErrorsTest {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
     try {
       MoreErrors.check(result, "error").proxyOnly(BAD_REQUEST, NOT_FOUND).throwForbidden().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), BAD_REQUEST.getStatusCode());
     }
   }
@@ -346,8 +338,7 @@ public class MoreErrorsTest {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
     try {
       MoreErrors.check(result, "error").convertAndProxy(BAD_REQUEST, CONFLICT).throwForbidden().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals(e.getResponse().getStatus(), CONFLICT.getStatusCode());
     }
   }
@@ -359,14 +350,12 @@ public class MoreErrorsTest {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, BAD_REQUEST.getStatusCode());
     try {
       MoreErrors.check(result, "error %s", "custom").throwForbidden().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals("error custom - status code 400 is not OK", e.getMessage());
     }
     try {
       MoreErrors.check(result, "error %s").throwForbidden().onAnyError();
-    }
-    catch (WebApplicationException e) {
+    } catch (WebApplicationException e) {
       assertEquals("error %s - status code 400 is not OK", e.getMessage());
     }
   }
@@ -438,9 +427,11 @@ public class MoreErrorsTest {
         .throwBadGateway()
         .onAnyErrorWrapped()
         .map(v -> "success")
-        .onStatus(BAD_REQUEST, v -> {
-          throw new RuntimeException("onStatus shouldn`t be executed");
-        })
+        .onStatus(
+            BAD_REQUEST, v -> {
+              throw new RuntimeException("onStatus shouldn`t be executed");
+            }
+        )
         .orElse(v -> "fail");
     assertEquals("success", value);
 
@@ -469,5 +460,44 @@ public class MoreErrorsTest {
         .map(() -> "success")
         .orElse("fail");
     assertEquals("fail", value);
+  }
+
+  // getOrThrow tests
+
+  @Test
+  public void testGetOrThrowSuccessfulCompletion() {
+    CompletableFuture<String> future = CompletableFuture.completedFuture("success");
+    String result = MoreErrors.getOrThrow(future);
+    assertEquals("success", result);
+  }
+
+  @Test
+  public void testGetOrThrowInterruptedException() {
+    CompletableFuture<String> future = new CompletableFuture<>();
+    Thread.currentThread().interrupt();
+
+    RuntimeException thrown = assertThrows(RuntimeException.class, () -> MoreErrors.getOrThrow(future));
+    assertEquals("Interrupted while waiting for completable future to complete", thrown.getMessage());
+    assertTrue(thrown.getCause() instanceof InterruptedException);
+    Thread.interrupted(); // Clear interrupted status
+  }
+
+  @Test
+  public void testGetOrThrowRuntimeException() {
+    RuntimeException originalException = new RuntimeException("test exception");
+    CompletableFuture<String> future = CompletableFuture.failedFuture(originalException);
+
+    RuntimeException thrown = assertThrows(RuntimeException.class, () -> MoreErrors.getOrThrow(future));
+    assertEquals(originalException, thrown);
+  }
+
+  @Test
+  public void testGetOrThrowCheckedException() {
+    Exception checkedException = new Exception("test checked exception");
+    CompletableFuture<String> future = CompletableFuture.failedFuture(checkedException);
+
+    RuntimeException thrown = assertThrows(RuntimeException.class, () -> MoreErrors.getOrThrow(future));
+    assertEquals("Completable future completed exceptionally", thrown.getMessage());
+    assertEquals(checkedException, thrown.getCause());
   }
 }

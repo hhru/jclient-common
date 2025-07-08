@@ -8,21 +8,21 @@ import static org.junit.Assert.assertEquals;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 
 @SuppressWarnings("unused")
-public class TestRequestDebug implements RequestDebug {
+public class TestEventListener implements HttpClientEventListener {
 
   private final List<Call> calls = new ArrayList<>();
   private final boolean recordCalls;
   private final boolean canUnwrapDebugResponse;
 
-  public TestRequestDebug() {
+  public TestEventListener() {
     this(false);
   }
 
-  public TestRequestDebug(boolean recordCalls) {
+  public TestEventListener(boolean recordCalls) {
     this(recordCalls, false);
   }
 
-  public TestRequestDebug(boolean recordCalls, boolean canUnwrapDebugResponse) {
+  public TestEventListener(boolean recordCalls, boolean canUnwrapDebugResponse) {
     this.recordCalls = recordCalls;
     this.canUnwrapDebugResponse = canUnwrapDebugResponse;
   }
@@ -31,7 +31,7 @@ public class TestRequestDebug implements RequestDebug {
     return calls;
   }
 
-  public TestRequestDebug assertCalled(Call... expectedCalls) {
+  public TestEventListener assertCalled(Call... expectedCalls) {
     assertEquals(asList(expectedCalls), this.calls);
     reset();
     return this;

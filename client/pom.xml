@@ -23,6 +23,12 @@
             <artifactId>jclient-common-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>ru.hh.deadline</groupId>
+            <artifactId>deadline-context</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Async http client -->
         <dependency>
             <groupId>org.asynchttpclient</groupId>

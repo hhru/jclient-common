@@ -35,7 +35,7 @@ public class HttpClientFactoryBuilderTest {
 
   @Test
   public void testImmutableByDefault() {
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of());
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class));
     testBuilderMethods(initial, not(equalTo(initial)));
   }
 
@@ -50,8 +50,7 @@ public class HttpClientFactoryBuilderTest {
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
     UpstreamManager upstreamManager = new BalancingUpstreamManager(null, null, Set.of(), infrastructureConfig, false);
     HttpClientFactoryBuilder httpClientFactoryBuilder = new HttpClientFactoryBuilder(
-        new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
-        List.of()
+        new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()))
     )
         .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
         .withCallbackExecutor(Executors.newSingleThreadExecutor());
@@ -70,7 +69,7 @@ public class HttpClientFactoryBuilderTest {
     Properties properties = new Properties();
     properties.put("requestTimeoutMs", "1000");
     properties.put("timeoutMultiplier", "5.0");
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class), List.of()).withCallbackExecutor(Executors.newSingleThreadExecutor());
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class)).withCallbackExecutor(Executors.newSingleThreadExecutor());
     var client = initial.withProperties(properties).build();
     assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
     assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());

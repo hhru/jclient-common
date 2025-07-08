@@ -21,6 +21,7 @@ import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.balancing.config.Profile;
+import ru.hh.jclient.common.balancing.config.RetryPolicyConfig;
 
 public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBalancingStrategyTest {
 
@@ -36,7 +37,7 @@ public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBa
     exceptionallyClosingServerAddress = createExceptionallyStoppingServer();
     httpClientFactory = buildBalancingFactory(
       TEST_UPSTREAM,
-      new Profile().setMaxTimeoutTries(2),
+      new Profile().setMaxTimeoutTries(2).setRetryPolicy(Map.of(577, new RetryPolicyConfig().setRetryNonIdempotent(false))),
       new TestStoreFromAddress(DATACENTER, Map.of(1, List.of(exceptionallyClosingServerAddress, workingServerAddress))),
       requestRouteTracking, null
     ).getKey();
@@ -48,14 +49,14 @@ public class BalancingStrategyExceptionallyShutdownServerTest extends AbstractBa
     Response response = httpClientFactory.with(request).unconverted().get();
     assertEquals(HttpStatuses.OK, response.getStatusCode());
     assertEquals(1, requestRouteTracking.get(exceptionallyClosingServerAddress).size());
-    assertEquals(HttpStatuses.CONNECT_TIMEOUT_ERROR, requestRouteTracking.get(exceptionallyClosingServerAddress).get(0).intValue());
+    assertEquals(HttpStatuses.SERVER_TIMEOUT, requestRouteTracking.get(exceptionallyClosingServerAddress).get(0).intValue());
   }
 
   @Test
   public void testForceShutdownNonIdempotentNoRetry() throws ExecutionException, InterruptedException {
     Request request = new RequestBuilder(JClientBase.HTTP_POST).setUrl("http://" + TEST_UPSTREAM).build();
     Response response = httpClientFactory.with(request).unconverted().get();
-    assertEquals(HttpStatuses.CONNECT_TIMEOUT_ERROR, response.getStatusCode());
+    assertEquals(HttpStatuses.SERVER_TIMEOUT, response.getStatusCode());
     assertNull(requestRouteTracking.get(workingServerAddress));
   }
 

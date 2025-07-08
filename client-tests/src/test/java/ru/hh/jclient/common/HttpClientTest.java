@@ -18,34 +18,42 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
 import org.junit.Test;
 import static org.mockito.ArgumentMatchers.isA;
+import org.mockito.Mock;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.mockito.MockitoAnnotations;
+import ru.hh.deadline.context.InsufficientTimeoutException;
+import ru.hh.deadline.context.ServerTimeoutException;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.DEBUG;
-import static ru.hh.jclient.common.TestRequestDebug.Call.CLIENT_PROBLEM;
-import static ru.hh.jclient.common.TestRequestDebug.Call.CONVERTER_PROBLEM;
-import static ru.hh.jclient.common.TestRequestDebug.Call.FINISHED;
-import static ru.hh.jclient.common.TestRequestDebug.Call.REQUEST;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE;
-import static ru.hh.jclient.common.TestRequestDebug.Call.RESPONSE_CONVERTED;
+import static ru.hh.jclient.common.TestEventListener.Call.CLIENT_PROBLEM;
+import static ru.hh.jclient.common.TestEventListener.Call.CONVERTER_PROBLEM;
+import static ru.hh.jclient.common.TestEventListener.Call.FINISHED;
+import static ru.hh.jclient.common.TestEventListener.Call.REQUEST;
+import static ru.hh.jclient.common.TestEventListener.Call.RESPONSE;
+import static ru.hh.jclient.common.TestEventListener.Call.RESPONSE_CONVERTED;
 import ru.hh.jclient.common.exception.ClientResponseException;
 import ru.hh.jclient.common.exception.NoContentTypeException;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 import ru.hh.jclient.common.exception.UnexpectedContentTypeException;
+import ru.hh.jclient.common.listener.DeadlineCheckerAndPropagator;
 import ru.hh.jclient.common.model.JsonTest;
 import ru.hh.jclient.common.model.ProtobufTest;
 import ru.hh.jclient.common.model.ProtobufTest.ProtobufTestMessage;
@@ -64,7 +72,12 @@ public class HttpClientTest extends HttpClientTestBase {
   private ObjectMapper objectMapper = new ObjectMapper();
   private JAXBContext jaxbContext;
 
-  public HttpClientTest() throws JAXBException {
+  @Mock
+  private AsyncHttpClientConfig httpClientConfig;
+
+  @Before
+  public void setUp() throws JAXBException {
+    MockitoAnnotations.openMocks(this);
     jaxbContext = JAXBContext.newInstance(XmlTest.class, XmlError.class);
   }
 
@@ -76,7 +89,7 @@ public class HttpClientTest extends HttpClientTestBase {
     String text = http.with(request).expectPlainText().result().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -88,7 +101,7 @@ public class HttpClientTest extends HttpClientTestBase {
     String text = http.with(request).expectPlainText(charset).result().get();
     assertEquals("test тест", text);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -102,7 +115,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(test.name, testOutput.get().name);
     assertNotNull(testOutputWrapper.unconverted());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = NoContentTypeException.class)
@@ -113,7 +126,7 @@ public class HttpClientTest extends HttpClientTestBase {
     try {
       http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     } catch (ExecutionException e) {
-      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
       throw e.getCause();
     }
   }
@@ -126,7 +139,7 @@ public class HttpClientTest extends HttpClientTestBase {
     try {
       http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     } catch (ExecutionException e) {
-      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
       throw e.getCause();
     }
   }
@@ -140,7 +153,7 @@ public class HttpClientTest extends HttpClientTestBase {
     XmlTest testOutput = http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     assertEquals(test.name, testOutput.name);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ResponseConverterException.class)
@@ -151,7 +164,7 @@ public class HttpClientTest extends HttpClientTestBase {
     try {
       http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
     } catch (ExecutionException e) {
-      debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
       throw e.getCause();
     }
   }
@@ -231,7 +244,7 @@ public class HttpClientTest extends HttpClientTestBase {
     try {
       http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
     } catch (ExecutionException e) {
-      debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
       throw e.getCause();
     }
   }
@@ -248,7 +261,7 @@ public class HttpClientTest extends HttpClientTestBase {
     ProtobufTestMessage testOutput = http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     assertEquals(test.getIdsList(), testOutput.getIdsList());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ResponseConverterException.class)
@@ -259,7 +272,7 @@ public class HttpClientTest extends HttpClientTestBase {
     try {
       http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     } catch (ExecutionException e) {
-      debug.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
       throw e.getCause();
     }
   }
@@ -271,7 +284,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Object testOutput = http.with(request).expectNoContent().result().get();
     assertNull(testOutput);
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -281,7 +294,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Object testOutput = http.with(request).readOnly().expectNoContent().result().get();
     assertNull(testOutput);
     assertTrue(actualRequest.get().getUrl().contains(HttpParams.READ_ONLY_REPLICA));
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -301,12 +314,12 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals("111", actualRequest.get().getHeaders().get(X_REQUEST_ID));
     // this header is accepted since it comes from local mockRequest
     assertEquals("somevalue", actualRequest.get().getHeaders().get("someheader"));
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = IllegalStateException.class)
   public void testDebugManualHeaderWithNoDebug() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, true);
+    testEventListener = new TestEventListener(true, true);
 
     // situation when manually building mockRequest with debug header, it should be removed
     Request request = new RequestBuilder("GET")
@@ -322,7 +335,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test(expected = IllegalStateException.class)
   public void testDebugManualParamWithNoDebug() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, true);
+    testEventListener = new TestEventListener(true, true);
 
     // situation when manually building mockRequest with debug param
     Request request = new RequestBuilder("GET")
@@ -338,7 +351,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
   @Test
   public void testDebugViaHeader() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, true);
+    testEventListener = new TestEventListener(true, true);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
@@ -357,12 +370,12 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void testDebugViaParam() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, true);
+    testEventListener = new TestEventListener(true, true);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
@@ -381,12 +394,12 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals("true", actualRequest.get().getHeaders().get(X_HH_DEBUG));
     assertEquals("someauth", actualRequest.get().getHeaders().get(AUTHORIZATION));
     assertEquals(DEBUG, actualRequest.get().getQueryParams().get(0).getName());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void testExternalRequestWithDebugOn() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, true);
+    testEventListener = new TestEventListener(true, true);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
@@ -406,12 +419,12 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
     assertFalse(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // not passed through but can be added manually to mockRequest if needed
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void testNoDebugRequestWithDebugOn() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, true);
+    testEventListener = new TestEventListener(true, true);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
@@ -431,12 +444,12 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
     assertTrue(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // passed through because it might be auth not related to debug
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
   public void testDebugIfCantUnwrap() throws InterruptedException, ExecutionException {
-    debug = new TestRequestDebug(true, false);
+    testEventListener = new TestEventListener(true, false);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
 
@@ -456,7 +469,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertFalse(actualRequest.get().getHeaders().contains(X_HH_DEBUG));
     assertTrue(actualRequest.get().getHeaders().contains(AUTHORIZATION)); // passed through because it might be auth not related to debug
     assertTrue(actualRequest.get().getQueryParams().isEmpty());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -468,12 +481,12 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
     http.with(request).expectNoContent().result().get();
     assertEquals("somesession", actualRequest.get().getHeaders().get(HttpHeaderNames.HH_PROTO_SESSION));
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     request = new RequestBuilder("GET").setUrl("http://localhost2/empty").build();
     http.with(request).expectNoContent().result().get();
     assertFalse(actualRequest.get().getHeaders().contains(HttpHeaderNames.HH_PROTO_SESSION));
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test(expected = ClientResponseException.class)
@@ -484,7 +497,7 @@ public class HttpClientTest extends HttpClientTestBase {
       http.with(request).expectNoContent().result().get();
     } catch (ExecutionException e) {
       // exception about bad response status, not reported to debug, so no CLIENT_PROBLEM here
-      debug.assertCalled(REQUEST, RESPONSE, FINISHED);
+      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
       throw e.getCause();
     }
   }
@@ -505,7 +518,7 @@ public class HttpClientTest extends HttpClientTestBase {
     try {
       http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
     } catch (ExecutionException e) {
-      debug.assertCalled(REQUEST, CLIENT_PROBLEM, FINISHED);
+      testEventListener.assertCalled(REQUEST, CLIENT_PROBLEM, FINISHED);
       throw e.getCause();
     }
   }
@@ -531,7 +544,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(error.message, response.getError().get().message);
     assertNotNull(response.getResponse());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and specific range
     actualRequest = withEmptyContext().request(bytes, TEXT_XML_UTF_8, 800);
@@ -550,7 +563,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertNotNull(response.getResponse());
     assertEquals(800, response.getResponse().getStatusCode());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
 
     // and when range is missed
     response = http
@@ -566,7 +579,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertNotNull(response.getResponse());
     assertEquals(800, response.getResponse().getStatusCode());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -574,7 +587,7 @@ public class HttpClientTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
 
     MappedTransportErrorResponse errorResponse = TransportExceptionMapper.map(
-        new ConnectException("test connect exception"), request.getUri());
+        new ConnectException("test connect exception"), request.getUri(), null);
 
     Supplier<Request> actualRequest = withEmptyContext().request(new Response(errorResponse));
     ResultOrErrorWithResponse<XmlTest, XmlError> response = http
@@ -590,7 +603,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertNotNull(response.getResponse());
     assertEquals(errorResponse, response.getResponse().getDelegate());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -610,7 +623,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(test.name, response.get().get().name);
     assertNotNull(response.getResponse());
     assertEqualRequests(request, actualRequest.get());
-    debug.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
+    testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
   @Test
@@ -666,6 +679,163 @@ public class HttpClientTest extends HttpClientTestBase {
     var valueType = new TypeReference<Set<String>>() {};
     Map<String, Set<String>> result = http.with(request).expectJsonMap(objectMapper, String.class, valueType).result().get();
     assertEquals(testValue, result);
+  }
+
+  @Test
+  public void testDeadlineWithCorrectTimeout() throws Throwable {
+    AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
+    when(httpClient.getConfig()).thenReturn(httpClientConfig);
+    when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
+      CompletionHandler handler = iom.getArgument(1);
+      handler.onThrowable(new TimeoutException());
+      return null;
+    });
+    http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("5"));
+    withContext(headers);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
+    ResultWithStatus<ProtobufTestMessage> resultWithStatus = http
+        .with(request)
+        .expectProtobuf(ProtobufTestMessage.class)
+        .resultWithStatus()
+        .get();
+    assertEquals(577, resultWithStatus.getStatusCode());
+  }
+
+  @Test
+  public void testWithBigDeadline() throws Throwable {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("10"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("5"));
+    DeadlineCheckerAndPropagator deadlineCheck = new DeadlineCheckerAndPropagator(() -> httpClientContext);
+    HttpClientTestBase testBase = withContext(headers, deadlineCheck);
+
+    testBase.okRequest("test", TEXT_PLAIN_UTF_8);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
+    ResultWithResponse<String> response = http.with(request).expectPlainText().resultWithResponse().get();
+    assertEquals(200, response.getStatusCode());
+  }
+
+  @Test
+  public void testWithSmallDeadline() throws Throwable {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("10"));
+    DeadlineCheckerAndPropagator deadlineCheck = new DeadlineCheckerAndPropagator(() -> httpClientContext);
+    HttpClientTestBase testBase = withContext(headers, deadlineCheck);
+
+    testBase.okRequest("test", TEXT_PLAIN_UTF_8);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
+    ResultWithResponse<String> response = http.with(request).expectPlainText().resultWithResponse().get();
+    assertEquals(200, response.getStatusCode());
+  }
+
+  @Test
+  public void testOnlyOuterTimeout() throws Throwable {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("10"));
+    DeadlineCheckerAndPropagator deadlineCheck = new DeadlineCheckerAndPropagator(() -> httpClientContext);
+    HttpClientTestBase testBase = withContext(headers, deadlineCheck);
+
+    testBase.okRequest("test", TEXT_PLAIN_UTF_8);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
+    ResultWithResponse<String> response = http.with(request).expectPlainText().resultWithResponse().get();
+    assertEquals(200, response.getStatusCode());
+  }
+
+  @Test(expected = ServerTimeoutException.class)
+  public void testDeadlineContextCheckOnRequest() throws Throwable {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("50"));
+
+    DeadlineCheckerAndPropagator deadlineCheck = new DeadlineCheckerAndPropagator(() -> httpClientContext);
+    HttpClientTestBase testBase = withContext(headers, deadlineCheck);
+
+    testBase.okRequest("test", TEXT_PLAIN_UTF_8);
+    Thread.sleep(100);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
+    http.with(request).expectPlainText().result().get();
+  }
+
+  @Test(expected = InsufficientTimeoutException.class)
+  public void testInsufficientTimeoutExceptionOnRequest() throws Throwable {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("100"));
+
+    DeadlineCheckerAndPropagator deadlineCheck = new DeadlineCheckerAndPropagator(() -> httpClientContext);
+    HttpClientTestBase testBase = withContext(headers, deadlineCheck);
+
+    testBase.okRequest("test", TEXT_PLAIN_UTF_8);
+    Thread.sleep(100);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
+    http.with(request).expectPlainText().result().get();
+  }
+
+  @Test
+  public void testInsufficientTimeoutOk() throws Throwable {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("100"));
+
+    DeadlineCheckerAndPropagator deadlineCheck = new DeadlineCheckerAndPropagator(() -> httpClientContext);
+    HttpClientTestBase testBase = withContext(headers, deadlineCheck);
+
+    testBase.okRequest("test", TEXT_PLAIN_UTF_8);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
+    ResultWithResponse<String> response = http.with(request).expectPlainText().resultWithResponse().get();
+    assertEquals(200, response.getStatusCode());
+  }
+
+  @Test
+  public void testInsufficientTimeoutError() throws Throwable {
+    AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
+    when(httpClient.getConfig()).thenReturn(httpClientConfig);
+    when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
+      CompletionHandler handler = iom.getArgument(1);
+      handler.onThrowable(new TimeoutException());
+      return null;
+    });
+    http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("100"));
+    withContext(headers);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
+    ResultWithStatus<ProtobufTestMessage> resultWithStatus = http
+        .with(request)
+        .expectProtobuf(ProtobufTestMessage.class)
+        .resultWithStatus()
+        .get();
+    assertEquals(477, resultWithStatus.getStatusCode());
+  }
+
+  @Test
+  public void testCorrectDeadlineTimeoutError() throws Throwable {
+    AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
+    when(httpClient.getConfig()).thenReturn(httpClientConfig);
+    when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
+      CompletionHandler handler = iom.getArgument(1);
+      handler.onThrowable(new TimeoutException());
+      return null;
+    });
+    http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, singletonList("5"));
+    withContext(headers);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
+    ResultWithStatus<ProtobufTestMessage> resultWithStatus = http
+        .with(request)
+        .expectProtobuf(ProtobufTestMessage.class)
+        .resultWithStatus()
+        .get();
+    assertEquals(577, resultWithStatus.getStatusCode());
   }
 
   private byte[] xmlBytes(Object object) throws JAXBException {
