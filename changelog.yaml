@@ -1,3 +1,19 @@
+-   name: 11.0.0
+    date: '2025-07-08T18:44:39.543009+03:00'
+    description: "Cмержены интерфейсы RequestDebug и HttpClientEventListener\r\nУдален\
+        \ RequestDebug.DISABLED\r\nДобавлена проверка дедлайн таймаутов. Изменен конструктор\
+        \ HttpClientContext, интерфейс HttpClientEventListener"
+    instructions: "Заменить использование RequestDebug на HttpClientEventListener\r\
+        \nУбрать из конструкторов и методов добавление реализаций HttpClientEventListener\
+        \ в классах: HttpClientFactory, HttpClientFactoryBuilder.\r\nПереименовать\
+        \ TestRequestDebug-> TestEventListener\r\nУдалить использование RequestDebug.DISABLED\r\
+        \nВключить DeadlineContextCheck в конфигах\r\nЗаменить использование метода\
+        \ HttpClientEventListener.beforeExecute(HttpClient httpClient, Request request)\
+        \ на HttpClientEventListener.beforeExecute(HttpClient httpClient, RequestBuilder\
+        \ requestBuilder, Request request)\r\nHttpClientContext заменить вызов конструтора\
+        \ с LocalDateTime на OffsetDateTime"
+    compatible: false
+
 -   name: 10.0.1
     date: '2025-06-30T11:38:24.535187+03:00'
     description: Добавлен try-catch, чтобы не падать во время проблем с request debug
