@@ -4,7 +4,7 @@ import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import static java.util.Optional.ofNullable;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import java.util.function.Consumer;
@@ -15,9 +15,9 @@ import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngine;
+import ru.hh.jclient.common.RequestResponseWrapper;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
-import ru.hh.jclient.common.ResponseWrapper;
 
 public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);
@@ -53,7 +53,7 @@ public abstract class RequestBalancer implements RequestEngine {
       boolean forceIdempotence
   ) {
     this.retryPolicy = retryPolicy;
-    this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    this.timeoutMultiplier = ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
     this.balancingRequestsLogLevel = balancingRequestsLogLevel.toUpperCase();
     this.request = request;
     this.requestExecutor = requestExecutor;
@@ -74,7 +74,7 @@ public abstract class RequestBalancer implements RequestEngine {
     if (resultOrContext.getResult() != null) {
       return requestExecutor
           .handleFailFastResponse(request, resultOrContext.getRequestContext(), resultOrContext.getResult())
-          .thenApply(ResponseWrapper::getResponse);
+          .thenApply(RequestResponseWrapper::getResponse);
     }
     return requestExecutor
         .executeRequest(
@@ -88,7 +88,7 @@ public abstract class RequestBalancer implements RequestEngine {
 
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
-  private ResponseWrapper finishRequest(ResponseWrapper wrapper) {
+  private RequestResponseWrapper finishRequest(RequestResponseWrapper wrapper) {
     long timeToLastByteMillis = wrapper.getTimeToLastByteMillis();
     updateLeftTriesAndTime((int) timeToLastByteMillis);
     Response response = wrapper.getResponse();
@@ -97,7 +97,7 @@ public abstract class RequestBalancer implements RequestEngine {
     return wrapper;
   }
 
-  protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMillis);
+  protected abstract void onRequestReceived(@Nullable RequestResponseWrapper wrapper, long timeToLastByteMillis);
 
   private void updateLeftTriesAndTime(int responseTimeMillis) {
     requestTimeLeftMs = requestTimeLeftMs >= responseTimeMillis ? requestTimeLeftMs - responseTimeMillis : 0;
@@ -106,7 +106,7 @@ public abstract class RequestBalancer implements RequestEngine {
     }
   }
 
-  protected CompletableFuture<Response> unwrapOrRetry(ResponseWrapper wrapper) {
+  protected CompletableFuture<Response> unwrapOrRetry(RequestResponseWrapper wrapper) {
     Response response = wrapper.getResponse();
     boolean doRetry = checkRetry(response);
 
@@ -122,7 +122,7 @@ public abstract class RequestBalancer implements RequestEngine {
     return completedFuture(response);
   }
 
-  protected abstract void onResponse(ResponseWrapper wrapper, int triesUsed, boolean willFireRetry);
+  protected abstract void onResponse(RequestResponseWrapper wrapper, int triesUsed, boolean willFireRetry);
 
   private boolean checkRetry(Response response) {
     if (triesLeft == 0 || requestTimeLeftMs == 0) {
@@ -132,7 +132,7 @@ public abstract class RequestBalancer implements RequestEngine {
     return checkRetry(response, isIdempotent);
   }
 
-  protected boolean checkRetry(Response response, boolean isIdempotent){
+  protected boolean checkRetry(Response response, boolean isIdempotent) {
     return retryPolicy.isRetriable(response, isIdempotent);
   }
 
@@ -142,8 +142,7 @@ public abstract class RequestBalancer implements RequestEngine {
     String logMessage;
     Consumer<String> logMethod;
 
-    String size = Optional
-        .ofNullable(response.getResponseBody())
+    String size = ofNullable(response.getResponseBody())
         .map(body -> String.format(" got %d bytes", body.getBytes().length))
         .orElse("");
     boolean isServerError = response.getStatusCode() >= 500;

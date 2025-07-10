@@ -6,15 +6,24 @@ public interface Monitoring {
       String upstreamName,
       String serverDatacenter,
       String serverAddress,
+      HttpHeaders requestHeaders,
       int statusCode,
       long requestTimeMillis,
       boolean isRequestFinal,
       String balancingStrategyType
   );
 
-  void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMillis);
+  void countRequestTime(String upstreamName, String serverDatacenter, HttpHeaders requestHeaders, long requestTimeMillis);
 
-  void countRetry(String upstreamName, String serverDatacenter, String serverAddress, int statusCode, int firstStatusCode, int triesUsed);
+  void countRetry(
+      String upstreamName,
+      String serverDatacenter,
+      String serverAddress,
+      HttpHeaders requestHeaders,
+      int statusCode,
+      int firstStatusCode,
+      int triesUsed
+  );
 
   void countUpdateIgnore(String upstreamName, String serverDatacenter);
 }

@@ -68,11 +68,11 @@ class HttpClientImpl extends HttpClient {
   }
 
   @Override
-  CompletableFuture<ResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext requestContext) {
+  CompletableFuture<RequestResponseWrapper> executeRequest(Request originalRequest, int retryCount, RequestContext requestContext) {
     RequestBuilder requestBuilder = new RequestBuilder(originalRequest);
     getEventListeners().forEach(eventListener -> eventListener.beforeExecute(this, requestBuilder, originalRequest));
 
-    CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
+    CompletableFuture<RequestResponseWrapper> promise = new CompletableFuture<>();
     Request request = addHeadersAndParams(requestBuilder, originalRequest, requestContext);
 
     try {
@@ -194,7 +194,7 @@ class HttpClientImpl extends HttpClient {
   RequestExecutor createRequestExecutor() {
     return new RequestStrategy.RequestExecutor() {
       @Override
-      public CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext requestContext) {
+      public CompletableFuture<RequestResponseWrapper> executeRequest(Request request, int retryCount, RequestContext requestContext) {
         if (retryCount > 0) {
           // due to retry possibly performed in another thread
           // TODO do not re-get suppliers here
@@ -204,13 +204,13 @@ class HttpClientImpl extends HttpClient {
       }
 
       @Override
-      public CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
+      public CompletableFuture<RequestResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response) {
         for (HttpClientEventListener eventListener : getEventListeners()) {
           eventListener.onRequest(request, getRequestBodyEntity().orElse(null), requestContext);
         }
         Transfers transfers = getStorages().prepare();
-        CompletableFuture<ResponseWrapper> promise = new CompletableFuture<>();
-        HttpClientImpl.proceedWithResponse(response, 0, getEventListeners(), transfers, promise, callbackExecutor);
+        CompletableFuture<RequestResponseWrapper> promise = new CompletableFuture<>();
+        HttpClientImpl.proceedWithResponse(request, response, 0, getEventListeners(), transfers, promise, callbackExecutor);
         return promise;
       }
 
@@ -221,19 +221,20 @@ class HttpClientImpl extends HttpClient {
     };
   }
 
-  private static ResponseWrapper proceedWithResponse(
+  private static RequestResponseWrapper proceedWithResponse(
+      Request request,
       Response response,
       long responseTimeMillis,
       List<HttpClientEventListener> eventListeners,
       Transfers contextTransfers,
-      CompletableFuture<ResponseWrapper> promise,
+      CompletableFuture<RequestResponseWrapper> promise,
       Executor callbackExecutor
   ) {
 
     for (HttpClientEventListener eventListener : eventListeners) {
       response = eventListener.onResponse(response);
     }
-    ResponseWrapper wrapper = new ResponseWrapper(response, responseTimeMillis);
+    RequestResponseWrapper wrapper = new RequestResponseWrapper(request, response, responseTimeMillis);
     // complete promise in a separate thread to avoid blocking caller thread
     callbackExecutor.execute(() -> {
       try {
@@ -249,9 +250,9 @@ class HttpClientImpl extends HttpClient {
   }
 
 
-  static class CompletionHandler extends AsyncCompletionHandler<ResponseWrapper> {
+  static class CompletionHandler extends AsyncCompletionHandler<RequestResponseWrapper> {
     private final MDCCopy mdcCopy;
-    private final CompletableFuture<ResponseWrapper> promise;
+    private final CompletableFuture<RequestResponseWrapper> promise;
     private final Request request;
     private final Instant requestStart;
     private final List<HttpClientEventListener> eventListeners;
@@ -260,7 +261,7 @@ class HttpClientImpl extends HttpClient {
     private final DeadlineContext deadlineContext;
 
     CompletionHandler(
-        CompletableFuture<ResponseWrapper> promise,
+        CompletableFuture<RequestResponseWrapper> promise,
         Request request,
         Instant requestStart,
         List<HttpClientEventListener> eventListeners,
@@ -279,7 +280,7 @@ class HttpClientImpl extends HttpClient {
     }
 
     @Override
-    public ResponseWrapper onCompleted(org.asynchttpclient.Response response) {
+    public RequestResponseWrapper onCompleted(org.asynchttpclient.Response response) {
       int responseStatusCode = response.getStatusCode();
       String responseStatusText = response.getStatusText();
 
@@ -322,8 +323,9 @@ class HttpClientImpl extends HttpClient {
       }
     }
 
-    private ResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMillis) {
+    private RequestResponseWrapper proceedWithResponse(org.asynchttpclient.Response response, long responseTimeMillis) {
       return HttpClientImpl.proceedWithResponse(
+          request,
           new Response(response),
           responseTimeMillis,
           eventListeners,

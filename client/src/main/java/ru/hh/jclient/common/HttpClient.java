@@ -317,7 +317,7 @@ public abstract class HttpClient {
 
   abstract RequestStrategy.RequestExecutor createRequestExecutor();
 
-  abstract CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
+  abstract CompletableFuture<RequestResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
 
   boolean isNoSessionRequired(RequestContext context) {
     if (noSession) {

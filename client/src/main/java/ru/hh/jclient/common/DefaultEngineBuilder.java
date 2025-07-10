@@ -19,7 +19,7 @@ public class DefaultEngineBuilder implements RequestEngineBuilder<DefaultEngineB
           .build();
       return executor
           .executeRequest(requestWithTimeout, 0, RequestContext.EMPTY_CONTEXT)
-          .thenApply(ResponseWrapper::getResponse);
+          .thenApply(RequestResponseWrapper::getResponse);
     };
   }
 

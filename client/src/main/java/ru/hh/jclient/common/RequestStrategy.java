@@ -9,8 +9,8 @@ public interface RequestStrategy<REB extends RequestEngineBuilder<REB>> {
   RequestStrategy<REB> createCustomizedCopy(UnaryOperator<REB> configAction);
 
   interface RequestExecutor {
-    CompletableFuture<ResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
-    CompletableFuture<ResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response);
+    CompletableFuture<RequestResponseWrapper> executeRequest(Request request, int retryCount, RequestContext context);
+    CompletableFuture<RequestResponseWrapper> handleFailFastResponse(Request request, RequestContext requestContext, Response response);
     int getDefaultRequestTimeoutMs();
   }
 }

@@ -5,11 +5,12 @@ import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.HttpHeaders;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestContext;
+import ru.hh.jclient.common.RequestResponseWrapper;
 import ru.hh.jclient.common.RequestStrategy;
-import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
 
 public class ExternalUrlRequestor extends RequestBalancer {
@@ -46,11 +47,11 @@ public class ExternalUrlRequestor extends RequestBalancer {
   }
 
   @Override
-  protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMillis) {
+  protected void onRequestReceived(RequestResponseWrapper wrapper, long timeToLastByteMillis) {
   }
 
   @Override
-  protected void onResponse(ResponseWrapper wrapper, int triesUsed, boolean willFireRetry) {
+  protected void onResponse(RequestResponseWrapper wrapper, int triesUsed, boolean willFireRetry) {
     boolean isRequestFinal = !willFireRetry;
     int statusCode = wrapper.getResponse().getStatusCode();
     long requestTimeMillis = wrapper.getTimeToLastByteMillis();
@@ -58,14 +59,24 @@ public class ExternalUrlRequestor extends RequestBalancer {
     Uri baseUri = new Uri(originalUri.getScheme(), null, originalUri.getHost(), originalUri.getPort(), null, null);
     String serverAddress = baseUri.toString();
     String name = upstreamName != null ? upstreamName : serverAddress;
+    HttpHeaders requestHeaders = wrapper.getRequest().getHeaders();
 
     for (Monitoring monitoring : monitorings) {
       try {
-        monitoring.countRequest(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, requestTimeMillis, isRequestFinal, "externalRequest");
-        monitoring.countRequestTime(name, DC_FOR_EXTERNAL_REQUESTS, requestTimeMillis);
+        monitoring.countRequest(
+            name,
+            DC_FOR_EXTERNAL_REQUESTS,
+            serverAddress,
+            requestHeaders,
+            statusCode,
+            requestTimeMillis,
+            isRequestFinal,
+            "externalRequest"
+        );
+        monitoring.countRequestTime(name, DC_FOR_EXTERNAL_REQUESTS, requestHeaders, requestTimeMillis);
 
         if (isRequestFinal && triesUsed > 1) {
-          monitoring.countRetry(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
+          monitoring.countRetry(name, DC_FOR_EXTERNAL_REQUESTS, serverAddress, requestHeaders, statusCode, trace.get(0).getResponseCode(), triesUsed);
         }
       } catch (Exception e) {
         LOGGER.error("Error occurred while sending metrics", e);
