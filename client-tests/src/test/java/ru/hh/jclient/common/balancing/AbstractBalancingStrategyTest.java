@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpClientFactoryBuilder;
+import ru.hh.jclient.common.HttpHeaders;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.balancing.config.Host;
@@ -77,6 +78,7 @@ public abstract class AbstractBalancingStrategyTest {
           String upstreamName,
           String serverDatacenter,
           String serverAddress,
+          HttpHeaders requestHeaders,
           int statusCode,
           long requestTimeMillis,
           boolean isRequestFinal,
@@ -86,13 +88,15 @@ public abstract class AbstractBalancingStrategyTest {
       }
 
       @Override
-      public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMillis) {}
+      public void countRequestTime(String upstreamName, String serverDatacenter, HttpHeaders requestHeaders, long requestTimeMillis) {
+      }
 
       @Override
       public void countRetry(
           String upstreamName,
           String serverDatacenter,
           String serverAddress,
+          HttpHeaders requestHeaders,
           int statusCode,
           int firstStatusCode,
           int triesUsed
@@ -101,7 +105,8 @@ public abstract class AbstractBalancingStrategyTest {
       }
 
       @Override
-      public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
+      public void countUpdateIgnore(String upstreamName, String serverDatacenter) {
+      }
     };
     var configStore = new ConfigStoreImpl();
     ApplicationConfig applicationConfig = new ApplicationConfig()

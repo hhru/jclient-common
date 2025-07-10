@@ -474,7 +474,14 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-        eq("backend"), eq(datacenter), eq("server1"), eq(200), anyLong(), eq(true), eq(getBalancingStrategyTypeForUpstream().getPublicName())
+        eq("backend"),
+        eq(datacenter),
+        eq("server1"),
+        any(),
+        eq(200),
+        anyLong(),
+        eq(true),
+        eq(getBalancingStrategyTypeForUpstream().getPublicName())
     );
   }
 
@@ -496,9 +503,13 @@ public class BalancingClientTest extends BalancingClientTestBase {
 
     Monitoring monitoring = upstreamManager.getMonitoring().stream().findFirst().get();
     verify(monitoring).countRequest(
-        eq("https://not-balanced-backend"), eq(ExternalUrlRequestor.DC_FOR_EXTERNAL_REQUESTS),
         eq("https://not-balanced-backend"),
-        eq(200), anyLong(), eq(true),
+        eq(ExternalUrlRequestor.DC_FOR_EXTERNAL_REQUESTS),
+        eq("https://not-balanced-backend"),
+        any(),
+        eq(200),
+        anyLong(),
+        eq(true),
         eq("externalRequest")
     );
   }

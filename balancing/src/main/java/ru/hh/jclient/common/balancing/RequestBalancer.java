@@ -3,6 +3,7 @@ package ru.hh.jclient.common.balancing;
 import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -15,9 +16,9 @@ import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestEngine;
+import ru.hh.jclient.common.RequestResponseWrapper;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
-import ru.hh.jclient.common.ResponseWrapper;
 
 public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);
@@ -68,7 +69,7 @@ public abstract class RequestBalancer implements RequestEngine {
     if (resultOrContext.getResult() != null) {
       return requestExecutor
           .handleFailFastResponse(request, resultOrContext.getRequestContext(), resultOrContext.getResult())
-          .thenApply(ResponseWrapper::getResponse);
+          .thenApply(RequestResponseWrapper::getResponse);
     }
     return requestExecutor
         .executeRequest(
@@ -82,7 +83,7 @@ public abstract class RequestBalancer implements RequestEngine {
 
   protected abstract ImmediateResultOrPreparedRequest getResultOrContext(Request request);
 
-  private ResponseWrapper finishRequest(ResponseWrapper wrapper) {
+  private RequestResponseWrapper finishRequest(RequestResponseWrapper wrapper) {
     long timeToLastByteMillis = wrapper.getTimeToLastByteMillis();
     updateLeftTriesAndTime((int) timeToLastByteMillis);
     Response response = wrapper.getResponse();
@@ -91,7 +92,7 @@ public abstract class RequestBalancer implements RequestEngine {
     return wrapper;
   }
 
-  protected abstract void onRequestReceived(@Nullable ResponseWrapper wrapper, long timeToLastByteMillis);
+  protected abstract void onRequestReceived(@Nullable RequestResponseWrapper wrapper, long timeToLastByteMillis);
 
   private void updateLeftTriesAndTime(int responseTimeMillis) {
     requestTimeLeftMs = requestTimeLeftMs >= responseTimeMillis ? requestTimeLeftMs - responseTimeMillis : 0;
@@ -100,7 +101,7 @@ public abstract class RequestBalancer implements RequestEngine {
     }
   }
 
-  protected CompletableFuture<Response> unwrapOrRetry(ResponseWrapper wrapper) {
+  protected CompletableFuture<Response> unwrapOrRetry(RequestResponseWrapper wrapper) {
     Response response = wrapper.getResponse();
     boolean doRetry = checkRetry(response);
 
@@ -116,7 +117,7 @@ public abstract class RequestBalancer implements RequestEngine {
     return completedFuture(response);
   }
 
-  protected abstract void onResponse(ResponseWrapper wrapper, int triesUsed, boolean willFireRetry);
+  protected abstract void onResponse(RequestResponseWrapper wrapper, int triesUsed, boolean willFireRetry);
 
   private boolean checkRetry(Response response) {
     if (triesLeft == 0 || requestTimeLeftMs == 0) {
@@ -126,7 +127,7 @@ public abstract class RequestBalancer implements RequestEngine {
     return checkRetry(response, isIdempotent);
   }
 
-  protected boolean checkRetry(Response response, boolean isIdempotent){
+  protected boolean checkRetry(Response response, boolean isIdempotent) {
     return retryPolicy.isRetriable(response, isIdempotent);
   }
 
