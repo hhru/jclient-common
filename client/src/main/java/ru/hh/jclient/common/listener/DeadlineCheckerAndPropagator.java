@@ -35,9 +35,6 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
 
   @Override
   public void beforeExecute(HttpClient httpClient, RequestBuilder requestBuilder, Request request) {
-    if(request.isExternalRequest()){
-      return;
-    }
     Optional.ofNullable(contextSupplier.get())
         .map(HttpClientContext::getDeadlineContext)
         .ifPresent(deadlineContext -> {
@@ -46,15 +43,15 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
           // Use the minimum of request timeout and deadline timeLeft
           timeLeft = Math.min(request.getRequestTimeout(), timeLeft);
           requestBuilder.setRequestTimeout((int) timeLeft);
-          updateContextHeaders(String.valueOf(timeLeft));
+          if (request.isExternalRequest() || requestBuilder.isDeadlineEnabled()) {
+            setHeaders(String.valueOf(timeLeft), String.valueOf(request.getRequestTimeout()), contextSupplier.get());
+          }
         });
   }
 
-  private void updateContextHeaders(String estimateValue) {
-    HttpClientContext context = contextSupplier.get();
-    if (context != null) {
-      Map<String, List<String>> headers = context.getHeaders();
-      headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, List.of(estimateValue));
-    }
+  private void setHeaders(String estimateValue, String requestTimeout, HttpClientContext context) {
+    Map<String, List<String>> headers = context.getHeaders();
+    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, List.of(estimateValue));
+    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(requestTimeout));
   }
 } 
