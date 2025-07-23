@@ -314,7 +314,7 @@ public class DeadlineCheckerAndPropagatorTest {
         .execute(() -> {
           injector.beforeExecute(null, requestBuilder, request);
 
-          assertNull("1000", contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertNull(contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertNull(contextSupplier.get().getHeaders().get(X_OUTER_TIMEOUT_MS));
         });
   }
