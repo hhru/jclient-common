@@ -298,6 +298,30 @@ public class DeadlineCheckerAndPropagatorTest {
         });
   }
 
+  @Test
+  public void testExternalRequest() {
+    // Create external request with timeout
+    Request request = new RequestBuilder()
+        .setUrl("http://localhost/test")
+        .setRequestTimeout(500)
+        .setExternalRequest(true)
+        .build();
+
+    RequestBuilder requestBuilder = new RequestBuilder(request);
+
+    // Execute with context
+    contextSupplier.forCurrentThread()
+        .execute(() -> {
+          injector.beforeExecute(null, requestBuilder, request);
+
+          // Verify headers were NOT updated when request is external
+          // The original headers should remain unchanged
+          assertNull("1000", contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          // X_OUTER_TIMEOUT_MS should not be present since it's only set for non-external requests
+          assertNull(contextSupplier.get().getHeaders().get(X_OUTER_TIMEOUT_MS));
+        });
+  }
+
   // Simple test classes to avoid mocking
   private static class TestRequest extends Request {
     public TestRequest() {
