@@ -43,7 +43,7 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
           // Use the minimum of request timeout and deadline timeLeft
           timeLeft = Math.min(request.getRequestTimeout(), timeLeft);
           requestBuilder.setRequestTimeout((int) timeLeft);
-          if (!request.isExternalRequest() || requestBuilder.isDeadlineEnabled()) {
+          if (!request.isExternalRequest() && requestBuilder.isDeadlineEnabled()) {
             setHeaders(String.valueOf(timeLeft), String.valueOf(request.getRequestTimeout()), contextSupplier.get());
           }
         });
