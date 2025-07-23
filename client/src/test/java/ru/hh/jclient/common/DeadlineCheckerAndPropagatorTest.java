@@ -314,10 +314,7 @@ public class DeadlineCheckerAndPropagatorTest {
         .execute(() -> {
           injector.beforeExecute(null, requestBuilder, request);
 
-          // Verify headers were NOT updated when request is external
-          // The original headers should remain unchanged
           assertNull("1000", contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-          // X_OUTER_TIMEOUT_MS should not be present since it's only set for non-external requests
           assertNull(contextSupplier.get().getHeaders().get(X_OUTER_TIMEOUT_MS));
         });
   }
