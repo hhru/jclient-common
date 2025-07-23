@@ -133,4 +133,32 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(100).build();
     http.with(request).expectNoContent().result().get();
   }
+
+  @Test
+  public void testShouldNotTriggerIfNoOuterTimeoutHeader() throws ExecutionException, InterruptedException {
+    OffsetDateTime now = OffsetDateTime.now();
+    withContext(
+        Map.of(), // Empty headers - no X_OUTER_TIMEOUT_MS
+        new GlobalTimeoutCheck(DEFAULT_DURATION, mock(ScheduledExecutorService.class), 0) {
+          @Override
+          protected void handleTimeoutExceeded(
+              String userAgent,
+              Request request,
+              Duration outerTimeout,
+              Duration alreadySpentTime,
+              Duration requestTimeout
+          ) {
+            fail(GlobalTimeoutCheck.class + " should not be triggered when X_OUTER_TIMEOUT_MS header is missing");
+          }
+
+          @Override
+          protected OffsetDateTime getNow() {
+            return now;
+          }
+        }
+    ).okRequest(new byte[0], ANY);
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(250).build();
+    http.with(request).expectNoContent().result().get();
+    // Test passes if handleTimeoutExceeded is not called (no exception thrown)
+  }
 }
