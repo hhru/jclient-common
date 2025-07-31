@@ -22,6 +22,7 @@ public class RequestBuilder {
 
   private final org.asynchttpclient.RequestBuilder delegate;
   private boolean externalRequest;
+  private boolean deadlineEnabled = true;
 
   public RequestBuilder() {
     delegate = new org.asynchttpclient.RequestBuilder();
@@ -307,5 +308,14 @@ public class RequestBuilder {
 
   private static <T> Collector<T, ?, List<T>> toMutableList() {
     return Collectors.toCollection(ArrayList::new);
+  }
+
+  public boolean isDeadlineEnabled() {
+    return deadlineEnabled;
+  }
+
+  public RequestBuilder setDeadlineEnabled(boolean deadlineEnabled) {
+    this.deadlineEnabled = deadlineEnabled;
+    return this;
   }
 }

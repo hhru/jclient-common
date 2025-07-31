@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -274,6 +275,48 @@ public class DeadlineCheckerAndPropagatorTest {
 
     // Should not throw exception when no deadline is set
     check.beforeExecute(null, new RequestBuilder(), new TestRequest());
+  }
+
+  @Test
+  public void testDeadlineDisabled() {
+    // Create request with timeout and disabled deadline
+    Request request = new RequestBuilder()
+        .setUrl("http://localhost/test")
+        .setRequestTimeout(500)
+        .build();
+
+    RequestBuilder requestBuilder = new RequestBuilder(request)
+        .setDeadlineEnabled(false);
+
+    // Execute with context
+    contextSupplier.forCurrentThread()
+        .execute(() -> {
+          injector.beforeExecute(null, requestBuilder, request);
+
+          assertNull(contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertNull(contextSupplier.get().getHeaders().get(X_OUTER_TIMEOUT_MS));
+        });
+  }
+
+  @Test
+  public void testExternalRequest() {
+    // Create external request with timeout
+    Request request = new RequestBuilder()
+        .setUrl("http://localhost/test")
+        .setRequestTimeout(500)
+        .setExternalRequest(true)
+        .build();
+
+    RequestBuilder requestBuilder = new RequestBuilder(request);
+
+    // Execute with context
+    contextSupplier.forCurrentThread()
+        .execute(() -> {
+          injector.beforeExecute(null, requestBuilder, request);
+
+          assertNull("1000", contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertNull(contextSupplier.get().getHeaders().get(X_OUTER_TIMEOUT_MS));
+        });
   }
 
   // Simple test classes to avoid mocking
