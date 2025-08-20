@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import static ru.hh.jclient.common.HttpHeaderNames.HH_PROTO_SESSION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
@@ -26,7 +26,7 @@ public class ContextBuilderTest {
 
   private HttpClientContextThreadLocalSupplier supplier;
 
-  @Before
+  @BeforeEach
   public void before() {
     MDC.remove("rid");
     supplier = new HttpClientContextThreadLocalSupplier();

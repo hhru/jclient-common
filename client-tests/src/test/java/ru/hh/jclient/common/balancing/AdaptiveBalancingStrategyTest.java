@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Random;
 import static java.util.stream.Collectors.toList;
 import java.util.stream.IntStream;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 import static ru.hh.jclient.common.balancing.AdaptiveBalancingStrategy.RESPONSE_TIME_TRACKER_WINDOW;
 
 public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest {
@@ -41,7 +41,7 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     var balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
 
     assertEquals(retriesCount, balancedServers.size());
-    assertEquals("Extra servers should be repeated in the same order", balancedServers.subList(0, 2), balancedServers.subList(3, 5));
+    assertEquals(balancedServers.subList(0, 2), balancedServers.subList(3, 5), "Extra servers should be repeated in the same order");
   }
 
   @Test
@@ -69,7 +69,7 @@ public class AdaptiveBalancingStrategyTest extends AbstractBalancingStrategyTest
     balancedServers = AdaptiveBalancingStrategy.getServers(servers, retriesCount);
     boolean warmUp1 = servers.get(balancedServers.get(0)).getResponseTimeTracker().isWarmUp();
     boolean warmUp2 = servers.get(balancedServers.get(1)).getResponseTimeTracker().isWarmUp();
-    assertNotEquals("Only one server should be warmed up", warmUp1, warmUp2);
+    assertNotEquals(warmUp1, warmUp2, "Only one server should be warmed up");
   }
 
   private static List<Server> generateServers(int n) {

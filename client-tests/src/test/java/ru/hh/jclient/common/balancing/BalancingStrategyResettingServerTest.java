@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.RequestBuilder;
@@ -23,7 +23,7 @@ public class BalancingStrategyResettingServerTest extends AbstractBalancingStrat
   private ConcurrentMap<String, List<Integer>> requestRouteTracking;
   private HttpClientFactory httpClientFactory;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     requestRouteTracking = new ConcurrentHashMap<>();
     workingServerAddress = createNormallyWorkingServer();

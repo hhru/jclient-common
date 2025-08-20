@@ -15,10 +15,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.JClientBase;
@@ -34,7 +34,7 @@ public class BalancingStrategyLowBacklogServerTest extends AbstractBalancingStra
   private HttpClientFactory httpClientFactory;
   private CountDownLatch latch = new CountDownLatch(1);
 
-  @Before
+  @BeforeEach
   public void setUp() throws InterruptedException {
     requestRouteTracking = new ConcurrentHashMap<>();
     workingServerAddress = createNormallyWorkingServer();
@@ -58,7 +58,7 @@ public class BalancingStrategyLowBacklogServerTest extends AbstractBalancingStra
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     latch.countDown();
   }

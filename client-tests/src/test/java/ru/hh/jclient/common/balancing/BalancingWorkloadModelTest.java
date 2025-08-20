@@ -27,12 +27,12 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.collection.IsMapContaining;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpClientFactoryBuilder;
@@ -49,19 +49,19 @@ import ru.hh.jclient.consul.TestUpstreamConfigService;
 import ru.hh.jclient.consul.TestUpstreamService;
 
 // the test uses local but real and big http load hence is not so reliable. So, for manual use at the moment
-@Ignore
+@Disabled
 public class BalancingWorkloadModelTest {
 
   private TestServerManager testServerManager;
   private ExecutorService executorService;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     executorService = Executors.newFixedThreadPool(64);
     testServerManager = new TestServerManager(new ServerStoreImpl(), "test", 64 * 1000);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     executorService.shutdownNow();
   }
@@ -160,14 +160,14 @@ public class BalancingWorkloadModelTest {
             .collect(Collectors.toList())
     );
     //TODO some fkn magic: connect timeouts on "healthy" servers if repeating all tasks. maybe macos???
-    assertTrue("Client errors: " + clientErrors.get(), clientErrors.get() < requests / 1000);
+    assertTrue(clientErrors.get() < requests / 1000, () -> "Client errors: " + clientErrors.get());
 
     int sumWeight = testServerManager.servers.values().stream().mapToInt(Server::getWeight).sum();
     int allRequests = testServerManager.serverRequests.values().stream().mapToInt(LongAdder::intValue).sum();
 
     double handledRequestsPart = (double) testServerManager.serverRequests.get(failingServerName).intValue() / allRequests;
     double weightPart = (double) testServerManager.servers.get(failingServerName).getWeight() / sumWeight;
-    assertTrue("Actual percent for failing server: " + handledRequestsPart * 100, handledRequestsPart <= weightPart);
+    assertTrue(handledRequestsPart <= weightPart, () -> "Actual percent for failing server: " + handledRequestsPart * 100);
     assertServerRequestDistribution(Set.of(failingServerName));
   }
 

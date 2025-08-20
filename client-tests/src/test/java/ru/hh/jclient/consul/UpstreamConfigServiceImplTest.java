@@ -7,12 +7,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -59,7 +59,7 @@ public class UpstreamConfigServiceImplTest {
       .setWatchSeconds(watchSeconds)
       .setConsistencyMode(DEFAULT);
 
-  @BeforeClass
+  @BeforeAll
   public static void init() {
     when(keyValueClient.getConfig()).thenReturn(new ClientConfig());
     when(keyValueClient.getEventHandler()).thenReturn(new ClientEventHandler("", mock(ClientEventCallback.class)));

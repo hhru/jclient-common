@@ -13,10 +13,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 import org.asynchttpclient.Request;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -297,8 +298,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(11));
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void requestWithProfileMissing() throws Exception {
+  @Test
+  public void requestWithProfileMissing() {
     createHttpClientFactory();
 
     Request[] request = new Request[1];
@@ -307,7 +308,10 @@ public class BalancingClientTest extends BalancingClientTestBase {
           request[0] = completeWith(200, iom);
           return null;
         });
-    getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("not existing profile")).get();
+    assertThrows(
+        IllegalStateException.class,
+        () -> getTestClient().withPreconfiguredEngine(RequestBalancerBuilder.class, builder -> builder.withProfile("not existing profile")).get()
+    );
   }
 
   @Test()
@@ -324,8 +328,8 @@ public class BalancingClientTest extends BalancingClientTestBase {
     assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
   }
 
-  @Test(expected = ClassCastException.class)
-  public void preconfiguredWithWrongClass() throws Exception {
+  @Test
+  public void preconfiguredWithWrongClass() {
 
     createHttpClientFactory();
 
@@ -335,12 +339,14 @@ public class BalancingClientTest extends BalancingClientTestBase {
           request[0] = completeWith(200, iom);
           return null;
         });
-    getTestClient().withPreconfiguredEngine(NotValidEngineBuilder.class, NotValidEngineBuilder::withSmth).get();
-    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
+    assertThrows(
+        ClassCastException.class,
+        () -> getTestClient().withPreconfiguredEngine(NotValidEngineBuilder.class, NotValidEngineBuilder::withSmth).get()
+    );
   }
 
-  @Test(expected = ClassCastException.class)
-  public void configuredWithWrongClass() throws Exception {
+  @Test
+  public void configuredWithWrongClass() {
     createHttpClientFactory();
 
     Request[] request = new Request[1];
@@ -349,8 +355,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
           request[0] = completeWith(200, iom);
           return null;
         });
-    getTestClient().getWrongEngineBuilderClass();
-    assertRequestTimeoutEquals(request[0], TimeUnit.SECONDS.toMillis(2));
+    assertThrows(ClassCastException.class, () -> getTestClient().getWrongEngineBuilderClass());
   }
 
   @Test
@@ -498,13 +503,13 @@ public class BalancingClientTest extends BalancingClientTestBase {
     );
   }
 
-  @Test(expected = ExecutionException.class)
-  public void failIfNoBackendAvailableInCurrentDC() throws Exception {
+  @Test
+  public void failIfNoBackendAvailableInCurrentDC() {
     createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", false);
     when(serverStore.getServers(TEST_UPSTREAM))
         .thenReturn(List.of(new Server("server1", null, 1, "DC2")));
 
-    getTestClient().get();
+    assertThrows(ExecutionException.class, () -> getTestClient().get());
   }
 
   @Test

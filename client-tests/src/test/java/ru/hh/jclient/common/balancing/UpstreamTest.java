@@ -3,8 +3,8 @@ package ru.hh.jclient.common.balancing;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singleton;
 import java.util.List;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static ru.hh.jclient.common.balancing.UpstreamConfig.DEFAULT;
@@ -103,18 +103,18 @@ public class UpstreamTest {
 
       thread.join();
 
-      assertEquals("current requests", 0, server.getCurrentRequests());
+      assertEquals(0, server.getCurrentRequests(), "current requests");
 
       LOGGER.info("finished iteration {} out of {} in {} ms", t, tests, (currentTimeMillis() - start));
     }
 
-    assertEquals("stats requests", weight - 1, server.getStatsRequests());
+    assertEquals(weight - 1, server.getStatsRequests(), "stats requests");
   }
 
   private static void assertServerCounters(List<Server> servers, int serverIndex, int requests, int statsRequests) {
 
-    assertEquals("currentRequests", requests, servers.get(serverIndex).getCurrentRequests());
-    assertEquals("statsRequests", statsRequests, servers.get(serverIndex).getStatsRequests());
+    assertEquals(requests, servers.get(serverIndex).getCurrentRequests(), "currentRequests");
+    assertEquals(statsRequests, servers.get(serverIndex).getStatsRequests(), "statsRequests");
   }
 
   private static void acquireReleaseUpstream(Upstream upstream, int times) {
