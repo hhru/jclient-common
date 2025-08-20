@@ -50,7 +50,7 @@ public class DeadlineCheckerAndPropagatorTest {
           injector.beforeExecute(null, requestBuilder, request);
 
           // Verify header was injected with correct value
-          assertEquals("500", contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS).get(0));
+          assertEquals("500", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
         });
   }
 
@@ -101,7 +101,7 @@ public class DeadlineCheckerAndPropagatorTest {
           injector.beforeExecute(null, requestBuilder, request);
 
           // Verify header was injected with correct value (min of deadline and request timeout)
-          int header = Integer.parseInt(contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS).get(0));
+          int header = Integer.parseInt(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertTrue(header > 10 && header <= 100);
         });
   }
@@ -127,7 +127,7 @@ public class DeadlineCheckerAndPropagatorTest {
           injector.beforeExecute(null, requestBuilder, request);
 
           // Verify header was injected with correct value
-          assertEquals("500", contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS).get(0));
+          assertEquals("500", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
         });
   }
 

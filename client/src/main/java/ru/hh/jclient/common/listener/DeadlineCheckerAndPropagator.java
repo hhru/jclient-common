@@ -1,7 +1,5 @@
 package ru.hh.jclient.common.listener;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import ru.hh.jclient.common.HttpClient;
@@ -9,6 +7,7 @@ import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientContextThreadLocalSupplier;
 import ru.hh.jclient.common.HttpClientEventListener;
 import ru.hh.jclient.common.HttpHeaderNames;
+import ru.hh.jclient.common.HttpHeaders;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 
@@ -44,14 +43,14 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
           timeLeft = Math.min(request.getRequestTimeout(), timeLeft);
           requestBuilder.setRequestTimeout((int) timeLeft);
           if (!request.isExternalRequest() && requestBuilder.isDeadlineEnabled()) {
-            setHeaders(String.valueOf(timeLeft), String.valueOf(request.getRequestTimeout()), contextSupplier.get());
+            setHeaders(String.valueOf(timeLeft), String.valueOf(request.getRequestTimeout()), request);
           }
         });
   }
 
-  private void setHeaders(String estimateValue, String requestTimeout, HttpClientContext context) {
-    Map<String, List<String>> headers = context.getHeaders();
-    headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, List.of(estimateValue));
-    headers.put(HttpHeaderNames.X_OUTER_TIMEOUT_MS, List.of(requestTimeout));
+  private void setHeaders(String estimateValue, String requestTimeout, Request request) {
+    HttpHeaders headers = request.getHeaders();
+    headers.add(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, estimateValue);
+    headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, requestTimeout);
   }
 } 
