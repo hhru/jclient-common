@@ -3,7 +3,6 @@ package ru.hh.jclient.common.balancing;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -16,13 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientFactory;
@@ -34,39 +31,20 @@ import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.balancing.config.Profile;
 
 // the test uses local but real and big http load hence is not so reliable. So, for manual use at the moment
-@Ignore
-@RunWith(Parameterized.class)
+@Disabled
 public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrategyTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(BalancingConcurrencyIntegrationTest.class);
 
-  private String server50Address;
-  private String server200Address;
-  private ConcurrentMap<String, List<Integer>> requestRouteTracking;
-  private ConcurrentMap<String, LongAdder> retries;
-  private HttpClientFactory httpClientFactory;
-  private UpstreamManager upstreamManager;
-  private ServerStore serverStore;
-
-  private Server server50;
-  private Server server200;
-
-  @Parameterized.Parameters(name = "threadpool size: {0}")
-  public static Collection<Object[]> parameters() {
-    return List.of(new Object[]{1}, new Object[]{16}, new Object[]{32}, new Object[]{96});
-  }
-
-  @Parameterized.Parameter(0)
-  public int threads;
-
-  @Before
-  public void setUp() {
-    requestRouteTracking = new ConcurrentHashMap<>();
-    retries = new ConcurrentHashMap<>();
-    server50Address = createServer();
-    server200Address = createServer();
-    serverStore = new ServerStoreImpl();
-    server50 = new Server(server50Address, null, 50, DATACENTER);
-    server200 = new Server(server200Address, null, 200, DATACENTER);
+  @ParameterizedTest(name = "threadpool size: {0}")
+  @ValueSource(ints = {1, 16, 32, 96})
+  public void testStat(int threads) throws InterruptedException {
+    ConcurrentMap<String, List<Integer>> requestRouteTracking = new ConcurrentHashMap<>();
+    ConcurrentMap<String, LongAdder> retries = new ConcurrentHashMap<>();
+    String server50Address = createServer(threads);
+    String server200Address = createServer(threads);
+    ServerStore serverStore = new ServerStoreImpl();
+    Server server50 = new Server(server50Address, null, 50, DATACENTER);
+    Server server200 = new Server(server200Address, null, 200, DATACENTER);
     serverStore.updateServers(TEST_UPSTREAM, List.of(server50, server200), List.of());
     Map.Entry<HttpClientFactory, UpstreamManager> factoryAndManager = buildBalancingFactory(
         TEST_UPSTREAM,
@@ -75,12 +53,9 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
         requestRouteTracking,
         retries
     );
-    httpClientFactory = factoryAndManager.getKey();
-    upstreamManager = factoryAndManager.getValue();
-  }
+    HttpClientFactory httpClientFactory = factoryAndManager.getKey();
+    UpstreamManager upstreamManager = factoryAndManager.getValue();
 
-  @Test
-  public void testStat() throws InterruptedException {
     int statLimit = 1_000;
     upstreamManager.getUpstream(TEST_UPSTREAM).setStatLimit(statLimit);
     ExecutorService executorService = Executors.newFixedThreadPool(threads);
@@ -108,10 +83,9 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
     int totalUserRequests = requestRouteTracking
         .entrySet()
         .stream()
-        .mapToInt(addressToReponseCodes -> {
-          int retries = this.retries.getOrDefault(addressToReponseCodes.getKey(), new LongAdder()).intValue();
-          return addressToReponseCodes.getValue().size() - retries;
-        })
+        .mapToInt(addressToResponseCodes ->
+            addressToResponseCodes.getValue().size() - retries.getOrDefault(addressToResponseCodes.getKey(), new LongAdder()).intValue()
+        )
         .sum();
     for (Server server : servers) {
       double weightPart = (double) server.getWeight() / sumWeight;
@@ -120,11 +94,11 @@ public class BalancingConcurrencyIntegrationTest extends AbstractBalancingStrate
       double requestsHandledPart = userRequestsHandled / totalUserRequests;
       LOGGER.info("Server {}: weightPart={}, requestsHandledPart={}", server, weightPart, requestsHandledPart);
       assertEquals(weightPart, requestsHandledPart, 0.01);
-      assertTrue("Weight: " + server.getWeight(), server.getStatsRequests() <= ((double) server.getWeight() / minWeight) * statLimit);
+      assertTrue(server.getStatsRequests() <= ((double) server.getWeight() / minWeight) * statLimit, () -> "Weight: " + server.getWeight());
     }
   }
 
-  private String createServer() {
+  private String createServer(int threads) {
     return createServer(socket -> {
       try (socket;
            var inputStream = socket.getInputStream();

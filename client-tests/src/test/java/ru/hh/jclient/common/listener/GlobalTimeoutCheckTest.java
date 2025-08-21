@@ -8,9 +8,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 import ru.hh.jclient.common.HttpClientTestBase;
 import ru.hh.jclient.common.HttpHeaderNames;
@@ -75,7 +75,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     ).okRequest(new byte[0], ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(250).build();
     http.with(request).expectNoContent().result().get();
-    assertTrue(GlobalTimeoutCheck.class + " not triggered", triggered.get());
+    assertTrue(triggered.get(), () -> GlobalTimeoutCheck.class + " not triggered");
   }
 
   @Test
@@ -104,7 +104,7 @@ public class GlobalTimeoutCheckTest extends HttpClientTestBase {
     ).okRequest(new byte[0], ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").setRequestTimeout(50).build();
     http.with(request).expectNoContent().result().get();
-    assertTrue(GlobalTimeoutCheck.class + " not triggered", triggered.get());
+    assertTrue(triggered.get(), () -> GlobalTimeoutCheck.class + " not triggered");
   }
 
   @Test

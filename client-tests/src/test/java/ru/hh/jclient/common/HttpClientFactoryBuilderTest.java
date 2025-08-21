@@ -12,13 +12,13 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import org.hamcrest.Matcher;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.balancing.BalancingRequestStrategy;
@@ -61,7 +61,7 @@ public class HttpClientFactoryBuilderTest {
     HttpClient client = httpClientFactory.with(request);
 
     RequestBalancerBuilder requestBalancerBuilder = client.configureRequestEngine(RequestBalancerBuilder.class);
-    assertEquals(requestBalancerBuilder.getBalancingRequestsLogLevel(), levelOverride);
+    assertEquals(levelOverride, requestBalancerBuilder.getBalancingRequestsLogLevel());
   }
 
   @Test

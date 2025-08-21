@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static ru.hh.jclient.common.HttpHeaderNames.X_DEADLINE_TIMEOUT_MS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_OUTER_TIMEOUT_MS;
 import ru.hh.jclient.common.listener.DeadlineCheckerAndPropagator;
@@ -23,7 +23,7 @@ public class DeadlineCheckerAndPropagatorTest {
   private DeadlineCheckerAndPropagator injector;
   private HttpClientContextThreadLocalSupplier contextSupplier;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     contextSupplier = new HttpClientContextThreadLocalSupplier();
     injector = new DeadlineCheckerAndPropagator(contextSupplier);
@@ -314,7 +314,7 @@ public class DeadlineCheckerAndPropagatorTest {
         .execute(() -> {
           injector.beforeExecute(null, requestBuilder, request);
 
-          assertNull("1000", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
         });
   }

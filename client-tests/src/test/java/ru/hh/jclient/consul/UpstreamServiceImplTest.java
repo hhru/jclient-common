@@ -11,12 +11,12 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -87,7 +87,7 @@ public class UpstreamServiceImplTest {
       .setSyncInit(false)
       .setConsistencyMode(ConsistencyMode.DEFAULT);
 
-  @Before
+  @BeforeEach
   public void init() {
     when(healthClient.getConfig()).thenReturn(new ClientConfig());
     when(healthClient.getEventHandler()).thenReturn(new ClientEventHandler("", mock(ClientEventCallback.class)));

@@ -24,13 +24,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.AsyncHttpClientConfig;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.isA;
 import org.mockito.Mock;
 import static org.mockito.Mockito.mock;
@@ -75,7 +76,7 @@ public class HttpClientTest extends HttpClientTestBase {
   @Mock
   private AsyncHttpClientConfig httpClientConfig;
 
-  @Before
+  @BeforeEach
   public void setUp() throws JAXBException {
     MockitoAnnotations.openMocks(this);
     jaxbContext = JAXBContext.newInstance(XmlTest.class, XmlError.class);
@@ -118,30 +119,34 @@ public class HttpClientTest extends HttpClientTestBase {
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = NoContentTypeException.class)
-  public void testNoContentType() throws Throwable {
+  @Test
+  public void testNoContentType() {
     withEmptyContext().okRequest("test тест".getBytes(), null);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    try {
-      http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
-    } catch (ExecutionException e) {
-      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(NoContentTypeException.class, () -> {
+      try {
+        http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
+      } catch (ExecutionException e) {
+        testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
-  @Test(expected = UnexpectedContentTypeException.class)
-  public void testIncorrectContentType() throws Throwable {
+  @Test
+  public void testIncorrectContentType() {
     withEmptyContext().okRequest("test тест".getBytes(), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    try {
-      http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
-    } catch (ExecutionException e) {
-      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(UnexpectedContentTypeException.class, () -> {
+      try {
+        http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
+      } catch (ExecutionException e) {
+        testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
   @Test
@@ -156,21 +161,23 @@ public class HttpClientTest extends HttpClientTestBase {
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = ResponseConverterException.class)
-  public void testIncorrectXml() throws Throwable {
+  @Test
+  public void testIncorrectXml() {
     withEmptyContext().okRequest("test тест".getBytes(), TEXT_XML_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    try {
-      http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
-    } catch (ExecutionException e) {
-      testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(ResponseConverterException.class, () -> {
+      try {
+        http.with(request).expectXml(jaxbContext, XmlTest.class).result().get();
+      } catch (ExecutionException e) {
+        testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
   @Test
-  public void testJson() throws IOException, InterruptedException, ExecutionException {
+  public void testJson() throws InterruptedException, ExecutionException {
     String responseBody = "{\"name\":\"test тест\"}";
     Supplier<Request> actualRequest = withEmptyContext().okRequest(responseBody, APPLICATION_JSON_UTF_8);
 
@@ -236,17 +243,19 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEqualRequests(request, actualRequest.get());
   }
 
-  @Test(expected = ResponseConverterException.class)
-  public void testIncorrectJson() throws Throwable {
+  @Test
+  public void testIncorrectJson() {
     withEmptyContext().okRequest("test тест".getBytes(), APPLICATION_JSON_UTF_8);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/json").build();
-    try {
-      http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
-    } catch (ExecutionException e) {
-      testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(ResponseConverterException.class, () -> {
+      try {
+        http.with(request).expectJson(objectMapper, XmlTest.class).result().get();
+      } catch (ExecutionException e) {
+        testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
   @Test
@@ -264,17 +273,19 @@ public class HttpClientTest extends HttpClientTestBase {
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = ResponseConverterException.class)
-  public void testIncorrectProtobuf() throws Throwable {
+  @Test
+  public void testIncorrectProtobuf() {
     withEmptyContext().okRequest("test тест".getBytes(), APPLICATION_PROTOBUF);
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/protobuf").build();
-    try {
-      http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
-    } catch (ExecutionException e) {
-      testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(ResponseConverterException.class, () -> {
+      try {
+        http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
+      } catch (ExecutionException e) {
+        testEventListener.assertCalled(REQUEST, RESPONSE, CONVERTER_PROBLEM, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
   @Test
@@ -317,8 +328,8 @@ public class HttpClientTest extends HttpClientTestBase {
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testDebugManualHeaderWithNoDebug() throws InterruptedException, ExecutionException {
+  @Test
+  public void testDebugManualHeaderWithNoDebug() {
     testEventListener = new TestEventListener(true, true);
 
     // situation when manually building mockRequest with debug header, it should be removed
@@ -330,11 +341,11 @@ public class HttpClientTest extends HttpClientTestBase {
 
     withEmptyContext().okRequest(new byte[0], VIDEO_ANY);
     assertFalse(httpClientContext.isDebugMode());
-    http.with(request).expectNoContent().result().get();
+    assertThrows(IllegalStateException.class, () -> http.with(request).expectNoContent().result().get());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testDebugManualParamWithNoDebug() throws InterruptedException, ExecutionException {
+  @Test
+  public void testDebugManualParamWithNoDebug() {
     testEventListener = new TestEventListener(true, true);
 
     // situation when manually building mockRequest with debug param
@@ -346,7 +357,7 @@ public class HttpClientTest extends HttpClientTestBase {
 
     withEmptyContext().okRequest(new byte[0], VIDEO_ANY);
     assertFalse(httpClientContext.isDebugMode());
-    http.with(request).expectNoContent().result().get();
+    assertThrows(IllegalStateException.class, () -> http.with(request).expectNoContent().result().get());
   }
 
   @Test
@@ -489,21 +500,23 @@ public class HttpClientTest extends HttpClientTestBase {
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = ClientResponseException.class)
-  public void testResponseError() throws Throwable {
+  @Test
+  public void testResponseError() {
     withEmptyContext().request(VIDEO_ANY, 403);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
-    try {
-      http.with(request).expectNoContent().result().get();
-    } catch (ExecutionException e) {
-      // exception about bad response status, not reported to debug, so no CLIENT_PROBLEM here
-      testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(ClientResponseException.class, () -> {
+      try {
+        http.with(request).expectNoContent().result().get();
+      } catch (ExecutionException e) {
+        // exception about bad response status, not reported to debug, so no CLIENT_PROBLEM here
+        testEventListener.assertCalled(REQUEST, RESPONSE, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
-  @Test(expected = TestException.class)
-  public void testHttpClientError() throws Throwable {
+  @Test
+  public void testHttpClientError() {
     AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
     when(httpClient.getConfig()).thenReturn(httpClientConfig);
     when(httpClient.executeRequest(isA(org.asynchttpclient.Request.class), isA(CompletionHandler.class))).then(iom -> {
@@ -515,12 +528,14 @@ public class HttpClientTest extends HttpClientTestBase {
     withEmptyContext();
 
     Request request = new RequestBuilder("GET").setUrl("http://localhost/xml").build();
-    try {
-      http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
-    } catch (ExecutionException e) {
-      testEventListener.assertCalled(REQUEST, CLIENT_PROBLEM, FINISHED);
-      throw e.getCause();
-    }
+    assertThrows(TestException.class, () -> {
+      try {
+        http.with(request).expectProtobuf(ProtobufTestMessage.class).result().get();
+      } catch (ExecutionException e) {
+        testEventListener.assertCalled(REQUEST, CLIENT_PROBLEM, FINISHED);
+        throw e.getCause();
+      }
+    });
   }
 
   @Test
@@ -746,7 +761,7 @@ public class HttpClientTest extends HttpClientTestBase {
     assertEquals(200, response.getStatusCode());
   }
 
-  @Test(expected = ServerTimeoutException.class)
+  @Test
   public void testDeadlineContextCheckOnRequest() throws Throwable {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("50"));
@@ -757,10 +772,10 @@ public class HttpClientTest extends HttpClientTestBase {
     testBase.okRequest("test", TEXT_PLAIN_UTF_8);
     Thread.sleep(100);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
-    http.with(request).expectPlainText().result().get();
+    assertThrows(ServerTimeoutException.class, () -> http.with(request).expectPlainText().result().get());
   }
 
-  @Test(expected = InsufficientTimeoutException.class)
+  @Test
   public void testInsufficientTimeoutExceptionOnRequest() throws Throwable {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, singletonList("5"));
@@ -772,7 +787,7 @@ public class HttpClientTest extends HttpClientTestBase {
     testBase.okRequest("test", TEXT_PLAIN_UTF_8);
     Thread.sleep(100);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/plain").build();
-    http.with(request).expectPlainText().result().get();
+    assertThrows(InsufficientTimeoutException.class, () -> http.with(request).expectPlainText().result().get());
   }
 
   @Test

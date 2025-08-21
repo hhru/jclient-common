@@ -4,10 +4,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 import ru.hh.jclient.common.util.storage.StorageUtils.Storages;
 import ru.hh.jclient.common.util.storage.StorageUtils.Transfers;
 

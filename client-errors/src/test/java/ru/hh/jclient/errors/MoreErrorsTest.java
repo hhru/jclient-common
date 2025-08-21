@@ -15,13 +15,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Predicate;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.HttpStatuses;
 import ru.hh.jclient.common.ResultWithStatus;
@@ -29,7 +29,7 @@ import ru.hh.jclient.errors.jersey.RuntimeDelegateStub;
 
 public class MoreErrorsTest {
 
-  @BeforeClass
+  @BeforeAll
   public static void setupStubs() {
     RuntimeDelegate.setInstance(new RuntimeDelegateStub());
   }
@@ -40,20 +40,20 @@ public class MoreErrorsTest {
   public void testAnyErrorsWithOkStatus() {
     ResultWithStatus<String> result = new ResultWithStatus<>("zxc", OK.getStatusCode());
     String value = MoreErrors.check(result, "error").throwBadGateway().onAnyError();
-    assertEquals(value, "zxc");
+    assertEquals("zxc", value);
   }
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void testAnyErrorsWithNonOkStatus() {
     ResultWithStatus<String> result = new ResultWithStatus<>("zxc", INTERNAL_SERVER_ERROR.getStatusCode());
-    MoreErrors.check(result, "error").throwBadGateway().onAnyError();
+    assertThrows(WebApplicationException.class, () -> MoreErrors.check(result, "error").throwBadGateway().onAnyError());
   }
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void testAnyErrorsWithPredicate() {
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
     ResultWithStatus<String> result = new ResultWithStatus<>("zxc", OK.getStatusCode());
-    MoreErrors.check(result, "error").failIf(predicate).throwBadGateway().onAnyError();
+    assertThrows(WebApplicationException.class, () -> MoreErrors.check(result, "error").failIf(predicate).throwBadGateway().onAnyError());
   }
 
   @Test
@@ -66,18 +66,18 @@ public class MoreErrorsTest {
     }
   }
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void testAnyErrorsWithEmpty() {
     ResultWithStatus<String> result = new ResultWithStatus<>(null, OK.getStatusCode());
-    MoreErrors.check(result, "error").throwBadGateway().onAnyError();
+    assertThrows(WebApplicationException.class, () -> MoreErrors.check(result, "error").throwBadGateway().onAnyError());
   }
 
   // status code error
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void testStatusCodeErrorWithNonOkStatus() {
     ResultWithStatus<String> result = new ResultWithStatus<>("zxc", INTERNAL_SERVER_ERROR.getStatusCode());
-    MoreErrors.check(result, "error").throwBadGateway().onStatusCodeError();
+    assertThrows(WebApplicationException.class, () -> MoreErrors.check(result, "error").throwBadGateway().onStatusCodeError());
   }
 
   @Test
@@ -99,11 +99,11 @@ public class MoreErrorsTest {
 
   // predicate error
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void testPredicateWithIncorrectValue() {
     Predicate<String> predicate = s -> s.equals("zxc"); // zxc value means failure
     ResultWithStatus<String> result = new ResultWithStatus<>("zxc", OK.getStatusCode());
-    MoreErrors.check(result, "error").failIf(predicate).throwBadGateway().onPredicate();
+    assertThrows(WebApplicationException.class, () -> MoreErrors.check(result, "error").failIf(predicate).throwBadGateway().onPredicate());
   }
 
   @Test

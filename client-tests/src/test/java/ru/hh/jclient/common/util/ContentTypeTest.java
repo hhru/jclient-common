@@ -1,9 +1,10 @@
 package ru.hh.jclient.common.util;
 
 import java.nio.charset.StandardCharsets;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 import static ru.hh.jclient.common.util.ContentType.ANY;
 import static ru.hh.jclient.common.util.ContentType.APPLICATION_JSON;
 import static ru.hh.jclient.common.util.ContentType.TEXT_ANY;
@@ -38,13 +39,13 @@ public class ContentTypeTest {
     assertFalse(new ContentType(withCharset(TEXT_PLAIN, "utf-8")).allows(new ContentType(TEXT_ANY)));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNull() {
-    new ContentType(null);
+    assertThrows(IllegalArgumentException.class, () -> new ContentType(null));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testIncorrect() {
-    new ContentType("zxcsad");
+    assertThrows(IllegalArgumentException.class, () -> new ContentType("zxcsad"));
   }
 }

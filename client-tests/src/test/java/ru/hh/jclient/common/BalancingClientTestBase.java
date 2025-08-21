@@ -14,10 +14,11 @@ import java.util.stream.Collectors;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Request;
 import org.asynchttpclient.Response;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
@@ -60,7 +61,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   ConfigStore configStore = mock(ConfigStore.class);
   ServerStore serverStore = mock(ServerStore.class);
 
-  @Before
+  @BeforeEach
   public void setUpTest() {
     withEmptyContext();
     httpClient = mock(AsyncHttpClient.class);
@@ -92,8 +93,8 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);
   }
 
-  @Test(expected = ExecutionException.class)
-  public void retryShouldFailIfNoServersAvailable() throws Exception {
+  @Test
+  public void retryShouldFailIfNoServersAvailable() {
     createHttpClientFactory(List.of(TEST_UPSTREAM));
 
     when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
@@ -106,7 +107,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
           return null;
         });
 
-    getTestClient().get();
+    assertThrows(ExecutionException.class, () -> getTestClient().get());
   }
 
   @Test

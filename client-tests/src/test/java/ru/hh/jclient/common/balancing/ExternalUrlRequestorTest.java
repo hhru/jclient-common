@@ -2,10 +2,10 @@ package ru.hh.jclient.common.balancing;
 
 import java.util.Map;
 import java.util.Set;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import ru.hh.jclient.common.Request;
@@ -17,7 +17,7 @@ public class ExternalUrlRequestorTest {
   private ExternalUrlRequestor externalUrlRequestor;
   private RequestStrategy.RequestExecutor requestExecutor = mock(RequestStrategy.RequestExecutor.class);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     RetryPolicy retryPolicy = new RetryPolicy();
     retryPolicy.update(Map.of(500, true)); // Configure rules for testing

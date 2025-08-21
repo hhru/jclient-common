@@ -4,7 +4,7 @@ import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import static java.util.Arrays.asList;
 import java.util.List;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import ru.hh.jclient.common.exception.ResponseConverterException;
 
 @SuppressWarnings("unused")
