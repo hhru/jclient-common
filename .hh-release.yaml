@@ -1,4 +1,4 @@
-version: 11.0.1
+version: 11.0.2
 build_image: registry.pyn.ru/openjdk17-building:2024.05.01
 build_method: mvn_build
 deploy_method: mvn_deploy
