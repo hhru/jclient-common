@@ -1,3 +1,9 @@
+-   name: 11.0.2
+    date: '2025-08-21T14:51:22.461501+03:00'
+    description: Правильно проставляются заголовки X_DEADLINE_TIMEOUT_MS и X_OUTER_TIMEOUT_MS
+    instructions: ''
+    compatible: true
+
 -   name: 11.0.1
     date: '2025-07-31T16:48:16.750623+03:00'
     description: "Добавлена опция отключения дедлайна.\r\nДля запроса можно выставить\
