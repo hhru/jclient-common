@@ -10,6 +10,7 @@ import java.util.function.UnaryOperator;
 import org.asynchttpclient.AsyncHttpClient;
 import ru.hh.jclient.common.metrics.MetricsProvider;
 import ru.hh.jclient.common.util.storage.Storage;
+import ru.hh.trace.TraceContext;
 
 public class HttpClientFactory {
 
@@ -18,22 +19,19 @@ public class HttpClientFactory {
   private final Set<String> customHostsWithSession;
   private final Executor callbackExecutor;
   private final RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy;
+  private final TraceContext traceContext;
 
-  public HttpClientFactory(AsyncHttpClient http, Storage<HttpClientContext> contextSupplier) {
-    this(http, contextSupplier, Set.of());
-  }
-
-  public HttpClientFactory(AsyncHttpClient http, Storage<HttpClientContext> contextSupplier, Set<String> customHostsWithSession) {
-    this(http, contextSupplier, customHostsWithSession, Runnable::run);
+  public HttpClientFactory(AsyncHttpClient http, Storage<HttpClientContext> contextSupplier, TraceContext traceContext) {
+    this(http, contextSupplier, Set.of(), traceContext);
   }
 
   public HttpClientFactory(
       AsyncHttpClient http,
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
-      Executor callbackExecutor
+      TraceContext traceContext
   ) {
-    this(http, contextSupplier, customHostsWithSession, callbackExecutor, new DefaultRequestStrategy());
+    this(http, contextSupplier, customHostsWithSession, Runnable::run, traceContext);
   }
 
   public HttpClientFactory(
@@ -41,13 +39,25 @@ public class HttpClientFactory {
       Storage<HttpClientContext> contextSupplier,
       Set<String> customHostsWithSession,
       Executor callbackExecutor,
-      RequestStrategy<?> requestStrategy
+      TraceContext traceContext
+  ) {
+    this(http, contextSupplier, customHostsWithSession, callbackExecutor, new DefaultRequestStrategy(), traceContext);
+  }
+
+  public HttpClientFactory(
+      AsyncHttpClient http,
+      Storage<HttpClientContext> contextSupplier,
+      Set<String> customHostsWithSession,
+      Executor callbackExecutor,
+      RequestStrategy<?> requestStrategy,
+      TraceContext traceContext
   ) {
     this.http = requireNonNull(http, "http must not be null");
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
     this.customHostsWithSession = requireNonNull(customHostsWithSession, "hostsWithSession must not be null");
     this.callbackExecutor = requireNonNull(callbackExecutor, "callbackExecutor must not be null");
     this.requestStrategy = requireNonNull(requestStrategy, "upstreamManager must not be null");
+    this.traceContext = requireNonNull(traceContext, "traceContext must not be null");
   }
 
   /**
@@ -62,7 +72,8 @@ public class HttpClientFactory {
         requestStrategy,
         contextSupplier,
         customHostsWithSession,
-        callbackExecutor
+        callbackExecutor,
+        traceContext
     );
   }
 
@@ -101,7 +112,8 @@ public class HttpClientFactory {
         this.contextSupplier,
         this.customHostsWithSession,
         this.callbackExecutor,
-        this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper)
+        this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper),
+        this.traceContext
     );
   }
 }

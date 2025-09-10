@@ -30,12 +30,15 @@ import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.common.util.storage.Storage;
 import ru.hh.jclient.consul.TestUpstreamConfigService;
 import ru.hh.jclient.consul.TestUpstreamService;
+import ru.hh.trace.TraceContext;
 
 public class HttpClientFactoryBuilderTest {
 
+  private static final TraceContext traceContext = mock(TraceContext.class);
+
   @Test
   public void testImmutableByDefault() {
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class));
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class), traceContext);
     testBuilderMethods(initial, not(equalTo(initial)));
   }
 
@@ -50,7 +53,8 @@ public class HttpClientFactoryBuilderTest {
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
     UpstreamManager upstreamManager = new BalancingUpstreamManager(null, null, Set.of(), infrastructureConfig, false);
     HttpClientFactoryBuilder httpClientFactoryBuilder = new HttpClientFactoryBuilder(
-        new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()))
+        new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
+        traceContext
     )
         .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
         .withCallbackExecutor(Executors.newSingleThreadExecutor());
@@ -69,7 +73,8 @@ public class HttpClientFactoryBuilderTest {
     Properties properties = new Properties();
     properties.put("requestTimeoutMs", "1000");
     properties.put("timeoutMultiplier", "5.0");
-    var initial = new HttpClientFactoryBuilder(mock(Storage.class)).withCallbackExecutor(Executors.newSingleThreadExecutor());
+    var initial = new HttpClientFactoryBuilder(mock(Storage.class), traceContext)
+        .withCallbackExecutor(Executors.newSingleThreadExecutor());
     var client = initial.withProperties(properties).build();
     assertEquals(5000, client.getHttp().getConfig().getRequestTimeout());
     assertNotEquals(new DefaultAsyncHttpClientConfig.Builder().build().getRequestTimeout(), client.getHttp().getConfig().getRequestTimeout());

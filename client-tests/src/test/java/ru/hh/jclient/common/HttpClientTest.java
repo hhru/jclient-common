@@ -42,7 +42,6 @@ import ru.hh.deadline.context.ServerTimeoutException;
 import ru.hh.jclient.common.HttpClientImpl.CompletionHandler;
 import static ru.hh.jclient.common.HttpHeaderNames.AUTHORIZATION;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_DEBUG;
-import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import static ru.hh.jclient.common.HttpParams.DEBUG;
 import static ru.hh.jclient.common.TestEventListener.Call.CLIENT_PROBLEM;
 import static ru.hh.jclient.common.TestEventListener.Call.CONVERTER_PROBLEM;
@@ -313,7 +312,6 @@ public class HttpClientTest extends HttpClientTestBase {
     Map<String, List<String>> headers = new HashMap<>();
     headers.put("myheader1", Arrays.asList("myvalue1", "myvalue2"));
     headers.put("myheader2", singletonList("myvalue1"));
-    headers.put(X_REQUEST_ID, singletonList("111"));
 
     Supplier<Request> actualRequest = withContext(headers).okRequest(new byte[0], VIDEO_ANY);
     Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").addHeader("someheader", "somevalue").build();
@@ -321,8 +319,6 @@ public class HttpClientTest extends HttpClientTestBase {
     // all those headers won't be accepted, as they come from global mockRequest and are not in allowed list
     assertFalse(actualRequest.get().getHeaders().contains("myheader1"));
     assertFalse(actualRequest.get().getHeaders().contains("myheader2"));
-    // this header is accepted because it consists in allowed list
-    assertEquals("111", actualRequest.get().getHeaders().get(X_REQUEST_ID));
     // this header is accepted since it comes from local mockRequest
     assertEquals("somevalue", actualRequest.get().getHeaders().get("someheader"));
     testEventListener.assertCalled(REQUEST, RESPONSE, RESPONSE_CONVERTED, FINISHED);

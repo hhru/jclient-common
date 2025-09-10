@@ -28,7 +28,9 @@ import static ru.hh.jclient.common.HttpHeaderNames.ACCEPT;
 import static ru.hh.jclient.common.HttpHeaderNames.CONTENT_TYPE;
 import static ru.hh.jclient.common.HttpHeaderNames.X_HH_ACCEPT_ERRORS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_OUTER_TIMEOUT_MS;
+import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
+import ru.hh.trace.TraceContext;
 
 public class HttpClientTestBase {
 
@@ -39,6 +41,7 @@ public class HttpClientTestBase {
   protected HttpClientContext httpClientContext;
   protected TestEventListener testEventListener = new TestEventListener(true);
   protected List<Supplier<HttpClientEventListener>> eventListenerSupplierList = new ArrayList<>(List.of(() -> testEventListener));
+  protected TraceContext traceContext = mock(TraceContext.class);
 
   public HttpClientTestBase withEmptyContext() {
     httpClientContext = new HttpClientContext(Collections.emptyMap(), Collections.emptyMap(), eventListenerSupplierList);
@@ -128,6 +131,7 @@ public class HttpClientTestBase {
     headers2.remove(ACCEPT);
     headers2.remove(X_HH_ACCEPT_ERRORS);
     headers2.remove(X_OUTER_TIMEOUT_MS);
+    headers2.remove(X_REQUEST_ID);
     assertEquals(request1.getHeaders(), headers2);
   }
 
@@ -186,11 +190,13 @@ public class HttpClientTestBase {
   }
 
   HttpClientFactory createHttpClientBuilder(AsyncHttpClient httpClient, Double timeoutMultiplier) {
-    return new HttpClientFactory(httpClient,
+    return new HttpClientFactory(
+        httpClient,
         new SingletonStorage<>(() -> httpClientContext),
         Set.of("http://localhost"),
         Runnable::run,
-        new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier))
+        new DefaultRequestStrategy().createCustomizedCopy(engineBuilder -> engineBuilder.withTimeoutMultiplier(timeoutMultiplier)),
+        traceContext
     );
   }
 }
