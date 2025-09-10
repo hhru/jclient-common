@@ -27,18 +27,21 @@ public class HttpClientFactory {
     this(http, contextSupplier, customHostsWithSession, Runnable::run);
   }
 
-  public HttpClientFactory(AsyncHttpClient http,
-                           Storage<HttpClientContext> contextSupplier,
-                           Set<String> customHostsWithSession,
-                           Executor callbackExecutor) {
+  public HttpClientFactory(
+      AsyncHttpClient http,
+      Storage<HttpClientContext> contextSupplier,
+      Set<String> customHostsWithSession,
+      Executor callbackExecutor
+  ) {
     this(http, contextSupplier, customHostsWithSession, callbackExecutor, new DefaultRequestStrategy());
   }
 
-  public HttpClientFactory(AsyncHttpClient http,
-                           Storage<HttpClientContext> contextSupplier,
-                           Set<String> customHostsWithSession,
-                           Executor callbackExecutor,
-                           RequestStrategy<?> requestStrategy
+  public HttpClientFactory(
+      AsyncHttpClient http,
+      Storage<HttpClientContext> contextSupplier,
+      Set<String> customHostsWithSession,
+      Executor callbackExecutor,
+      RequestStrategy<?> requestStrategy
   ) {
     this.http = requireNonNull(http, "http must not be null");
     this.contextSupplier = requireNonNull(contextSupplier, "contextSupplier must not be null");
@@ -50,8 +53,7 @@ public class HttpClientFactory {
   /**
    * Specifies request to be executed. This is a starting point of request execution chain.
    *
-   * @param request
-   *          to execute
+   * @param request to execute
    */
   public HttpClient with(Request request) {
     return new HttpClientImpl(
@@ -87,6 +89,7 @@ public class HttpClientFactory {
 
   /**
    * create customized copy of the factory
+   *
    * @param mapper action to customize {@link RequestStrategy}
    * @return new instance of httpClientFactory
    * @throws ClassCastException if strategy type differs from required customization
@@ -94,7 +97,10 @@ public class HttpClientFactory {
   @SuppressWarnings({"unchecked", "rawtypes"})
   public HttpClientFactory createCustomizedCopy(UnaryOperator<? extends RequestEngineBuilder> mapper) {
     return new HttpClientFactory(
-        this.http, this.contextSupplier, this.customHostsWithSession, this.callbackExecutor,
+        this.http,
+        this.contextSupplier,
+        this.customHostsWithSession,
+        this.callbackExecutor,
         this.requestStrategy.createCustomizedCopy((UnaryOperator) mapper)
     );
   }
