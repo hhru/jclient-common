@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.UnaryOperator;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
+import static org.mockito.Mockito.mock;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
@@ -40,10 +41,12 @@ import ru.hh.jclient.common.balancing.UpstreamConfig;
 import ru.hh.jclient.common.balancing.UpstreamManager;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
+import ru.hh.trace.TraceContext;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 public class BalancingPerformanceBenchmark {
+  private static final TraceContext traceContext = mock(TraceContext.class);
   private static final List<Server> servers = List.of(
       new Server("server1", null, 50, "test"),
       new Server("server2", null, 100, "test"),
@@ -101,7 +104,8 @@ public class BalancingPerformanceBenchmark {
         new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
         Set.of(),
         Runnable::run,
-        new CustomStrategy(manager, UnaryOperator.identity())
+        new CustomStrategy(manager, UnaryOperator.identity()),
+        traceContext
     );
   }
 

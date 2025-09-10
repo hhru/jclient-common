@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpClientFactoryBuilder;
@@ -47,10 +48,13 @@ import ru.hh.jclient.common.balancing.config.Profile;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.TestUpstreamConfigService;
 import ru.hh.jclient.consul.TestUpstreamService;
+import ru.hh.trace.TraceContext;
 
 // the test uses local but real and big http load hence is not so reliable. So, for manual use at the moment
 @Disabled
 public class BalancingWorkloadModelTest {
+
+  private static final TraceContext traceContext = mock(TraceContext.class);
 
   private TestServerManager testServerManager;
   private ExecutorService executorService;
@@ -269,7 +273,7 @@ public class BalancingWorkloadModelTest {
         upstreamManager = buildBalancingUpstreamManager(currentDc, configStore);
         upstreamManager.updateUpstreams(Set.of(upstreamName));
 
-        this.client = new HttpClientFactoryBuilder(new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())))
+        this.client = new HttpClientFactoryBuilder(new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())), traceContext)
             .withConnectTimeoutMs(100)
             .withRequestStrategy(new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService()))
             .withCallbackExecutor(Runnable::run)
