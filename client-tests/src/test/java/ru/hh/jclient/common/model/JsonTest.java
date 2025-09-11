@@ -13,8 +13,8 @@ public class JsonTest {
   /**
    * Use such constructor in case you want to use Json serialization for keys of Map&lt;Object, Object&gt; type,
    * because by default java objects in keys of a Map is serialized to String using toString() method.
-   * See {@link com.fasterxml.jackson.databind.ser.std.StdKeySerializer}
-   * You can also override StdKeySerializer for more complex logic if you need to.
+   * See {@link com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default}
+   * You can also override StdKeySerializers.Default for more complex logic if you need to.
    */
   public JsonTest(String stringRepresentation) {
     String[] split = stringRepresentation.split("@");

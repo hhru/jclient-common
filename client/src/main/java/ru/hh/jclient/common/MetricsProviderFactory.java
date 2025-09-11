@@ -44,14 +44,6 @@ public final class MetricsProviderFactory {
       }
 
       @Override
-      public Supplier<Long> numActiveTinyAllocations() {
-        return () -> getAllocatorMetrics(httpClient)
-            .map(a -> a.directArenas().stream())
-            .map(a -> a.mapToLong(PoolArenaMetric::numActiveTinyAllocations).sum())
-            .orElse(0L);
-      }
-
-      @Override
       public Supplier<Long> numActiveSmallAllocations() {
         return () -> getAllocatorMetrics(httpClient)
             .map(a -> a.directArenas().stream())

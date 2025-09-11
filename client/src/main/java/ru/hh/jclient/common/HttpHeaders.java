@@ -120,7 +120,7 @@ public class HttpHeaders implements Iterable<Map.Entry<String, String>> {
 
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return delegate.iterator();
+    return delegate.iteratorAsString();
   }
 
   @Override
