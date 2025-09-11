@@ -41,7 +41,7 @@ import ru.hh.trace.TraceContextTransfer;
 
 class HttpClientImpl extends HttpClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientImpl.class);
-  private static final Logger TRACE_CONTEXT_LOGGER = LoggerFactory.getLogger("HttpClientTraceContext");
+  private static final Logger TRACE_CONTEXT_LOGGER = LoggerFactory.getLogger(HttpClientImpl.class.getName() + ".TraceContext");
   private static final String NULL_TRACE_ID_ERROR_MESSAGE = "Trace context doesn't contain trace id so new trace id will be generated";
 
   static final Set<String> PASS_THROUGH_HEADERS = of(
