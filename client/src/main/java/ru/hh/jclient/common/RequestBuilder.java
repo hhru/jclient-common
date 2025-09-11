@@ -41,7 +41,7 @@ public class RequestBuilder {
   }
 
   public RequestBuilder(Request prototype) {
-    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), false, false);
+    delegate = prototype.getDelegate().toBuilder();
   }
 
   public RequestBuilder(Request prototype, boolean disableUrlEncoding) {
