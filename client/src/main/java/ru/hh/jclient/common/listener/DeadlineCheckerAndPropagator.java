@@ -2,6 +2,7 @@ package ru.hh.jclient.common.listener;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+import ru.hh.deadline.context.DeadlineContext;
 import ru.hh.jclient.common.HttpClient;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientContextThreadLocalSupplier;
@@ -13,8 +14,8 @@ import ru.hh.jclient.common.RequestBuilder;
 
 /**
  * Injects deadline timeout estimates into request headers.
- * 
- * <p>Updates the X-Deadline-timeout-ms header with remaining time from {@link DeadlineContext} 
+ *
+ * <p>Updates the X-Deadline-timeout-ms header with remaining time from {@link DeadlineContext}
  * and adjusts request timeout to the minimum of original timeout and deadline estimate.
  */
 public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
@@ -37,13 +38,14 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
     Optional.ofNullable(contextSupplier.get())
         .map(HttpClientContext::getDeadlineContext)
         .ifPresent(deadlineContext -> {
-          long timeLeft = deadlineContext.getTimeLeft();
+          //нужно брать значение таймаута до checkAndThrowDeadline, чтобы не получить нулевой таймаут после проверки
+          long deadlineContextTimeLeft = deadlineContext.getTimeLeft();
           deadlineContext.checkAndThrowDeadline();
-          // Use the minimum of request timeout and deadline timeLeft
-          timeLeft = Math.min(request.getRequestTimeout(), timeLeft);
-          requestBuilder.setRequestTimeout((int) timeLeft);
           if (!request.isExternalRequest() && requestBuilder.isDeadlineEnabled()) {
-            setHeaders(String.valueOf(timeLeft), String.valueOf(request.getRequestTimeout()), request);
+            // Use the minimum of request timeout and deadline timeLeft
+            long timeLeft = getTimeLeft(deadlineContextTimeLeft, request);
+            requestBuilder.setRequestTimeout((int) timeLeft);
+            setHeaders(String.valueOf(timeLeft), String.valueOf(timeLeft), request);
           }
         });
   }
@@ -52,5 +54,13 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
     HttpHeaders headers = request.getHeaders();
     headers.add(HttpHeaderNames.X_DEADLINE_TIMEOUT_MS, estimateValue);
     headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, requestTimeout);
+  }
+
+  private long getTimeLeft(long deadlineContextTimeLeft, Request request) {
+    if (deadlineContextTimeLeft < 0) {
+      return request.getRequestTimeout();
+    } else {
+      return Math.min(request.getRequestTimeout(), deadlineContextTimeLeft);
+    }
   }
 } 
