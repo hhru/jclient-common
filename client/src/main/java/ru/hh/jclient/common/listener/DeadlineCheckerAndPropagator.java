@@ -38,10 +38,11 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
     Optional.ofNullable(contextSupplier.get())
         .map(HttpClientContext::getDeadlineContext)
         .ifPresent(deadlineContext -> {
+          long deadlineContextTimeLeft = deadlineContext.getTimeLeft();
           deadlineContext.checkAndThrowDeadline();
           if (!request.isExternalRequest() && requestBuilder.isDeadlineEnabled()) {
             // Use the minimum of request timeout and deadline timeLeft
-            long timeLeft = getTimeLeft(deadlineContext, request);
+            long timeLeft = getTimeLeft(deadlineContextTimeLeft, request);
             requestBuilder.setRequestTimeout((int) timeLeft);
             setHeaders(String.valueOf(timeLeft), String.valueOf(timeLeft), request);
           }
@@ -54,12 +55,11 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
     headers.add(HttpHeaderNames.X_OUTER_TIMEOUT_MS, requestTimeout);
   }
 
-  private long getTimeLeft(DeadlineContext deadlineContext, Request request) {
-    long timeLeft = deadlineContext.getTimeLeft();
-    if (timeLeft > -1) {
-      return Math.min(request.getRequestTimeout(), timeLeft);
-    } else {
+  private long getTimeLeft(long deadlineContextTimeLeft, Request request) {
+    if (deadlineContextTimeLeft < 0) {
       return request.getRequestTimeout();
+    } else {
+      return Math.min(request.getRequestTimeout(), deadlineContextTimeLeft);
     }
   }
 } 
