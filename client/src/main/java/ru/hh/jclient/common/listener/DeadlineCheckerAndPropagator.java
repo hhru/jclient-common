@@ -38,6 +38,7 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
     Optional.ofNullable(contextSupplier.get())
         .map(HttpClientContext::getDeadlineContext)
         .ifPresent(deadlineContext -> {
+          //нужно брать значение таймаута до checkAndThrowDeadline, чтобы не получить нулевой таймаут после проверки
           long deadlineContextTimeLeft = deadlineContext.getTimeLeft();
           deadlineContext.checkAndThrowDeadline();
           if (!request.isExternalRequest() && requestBuilder.isDeadlineEnabled()) {
