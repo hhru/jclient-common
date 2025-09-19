@@ -260,7 +260,7 @@ class HttpClientImpl extends HttpClient {
       response = eventListener.onResponse(response);
     }
     RequestResponseWrapper wrapper = new RequestResponseWrapper(request, response, responseTimeMillis);
-    // complete promise in a separate thread to avoid blocking caller thread
+    // complete promise in a separate thread to avoid blocking caller (AsyncHttpClient) thread
     callbackExecutor.execute(() -> {
       try (Scope ignored = traceContext.propagate(traceContextTransfer)) {
         // install context(s) in current (callback) thread so chained tasks have context to run with
@@ -376,14 +376,14 @@ class HttpClientImpl extends HttpClient {
         }
       };
       try {
-        // complete promise in a separate thread not to block ning thread
+        // complete promise in a separate thread to avoid blocking caller (AsyncHttpClient) thread
         callbackExecutor.execute(completeExceptionallyTask);
       } catch (RuntimeException e) {
         mdcCopy.doInContext(() -> {
           if (e instanceof RejectedExecutionException) {
-            LOGGER.warn("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e.toString());
+            LOGGER.warn("Failed to complete promise exceptionally in a separate thread: {}, using AsyncHttpClient thread", e.toString());
           } else {
-            LOGGER.error("Failed to complete promise exceptionally in a separate thread: {}, using ning thread", e, e);
+            LOGGER.error("Failed to complete promise exceptionally in a separate thread: {}, using AsyncHttpClient thread", e, e);
           }
         });
         completeExceptionallyTask.run();

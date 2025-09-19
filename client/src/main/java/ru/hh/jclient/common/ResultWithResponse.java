@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Wrapper object that contains {@link Response} object and the result of conversion. It is not recommended to use this wrapper outside the client
- * code to ensure ning encapsulation.
+ * code to ensure AsyncHttpClient encapsulation.
  *
  * @param <T> type of conversion result
  */
