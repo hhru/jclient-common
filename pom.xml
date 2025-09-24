@@ -10,7 +10,7 @@
     <artifactId>jclient-common-parent</artifactId>
     <packaging>pom</packaging>
     <name>jclient-common-parent</name>
-    <version>11.0.5</version>
+    <version>11.0.6-SNAPSHOT</version>
 
     <modules>
         <module>client</module>
