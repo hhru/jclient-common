@@ -3,14 +3,14 @@ package ru.hh.jclient.common.balancing;
 import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 import ru.hh.jclient.common.HttpClientFactoryBuilder;
 import static ru.hh.jclient.common.JClientBase.HTTP_POST;
 import ru.hh.jclient.common.Request;
@@ -22,12 +22,6 @@ import ru.hh.jclient.common.ResponseWrapper;
 public abstract class RequestBalancer implements RequestEngine {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancer.class);
   static final int WARM_UP_DEFAULT_TIME_MILLIS = 100;
-  static final Map<String, Consumer<String>> LOG_METHOD_BY_LEVEL = Map.of(
-      "DEBUG", LOGGER::debug,
-      "INFO", LOGGER::info,
-      "WARNING", LOGGER::warn,
-      "ERROR", LOGGER::error
-  );
 
   private final RequestStrategy.RequestExecutor requestExecutor;
   private final RetryPolicy retryPolicy;
@@ -35,7 +29,7 @@ public abstract class RequestBalancer implements RequestEngine {
   private int triesLeft;
   private int requestTimeLeftMs;
   private final double timeoutMultiplier;
-  private final String balancingRequestsLogLevel;
+  private final Level balancingRequestsLogLevel;
 
   protected final Request request;
   protected final int maxTries;
@@ -54,7 +48,7 @@ public abstract class RequestBalancer implements RequestEngine {
   ) {
     this.retryPolicy = retryPolicy;
     this.timeoutMultiplier = Optional.ofNullable(timeoutMultiplier).orElse(HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
-    this.balancingRequestsLogLevel = balancingRequestsLogLevel.toUpperCase();
+    this.balancingRequestsLogLevel = Level.valueOf(balancingRequestsLogLevel.toUpperCase());
     this.request = request;
     this.requestExecutor = requestExecutor;
     this.forceIdempotence = forceIdempotence;
@@ -139,44 +133,41 @@ public abstract class RequestBalancer implements RequestEngine {
   protected abstract void onRetry();
 
   private void logResponse(Response response, long responseTimeMillis, int retriesCount, boolean doRetry) {
-    String logMessage;
-    Consumer<String> logMethod;
-
-    String size = Optional
-        .ofNullable(response.getResponseBody())
-        .map(body -> String.format(" got %d bytes", body.getBytes().length))
+    Supplier<String> sizeSupplier = () -> Optional
+        .ofNullable(response.getResponseBodyAsBytes())
+        .map(body -> String.format(" got %d bytes", body.length))
         .orElse("");
     boolean isServerError = response.getStatusCode() >= 500;
-
     if (doRetry) {
       String retry = retriesCount > 0 ? String.format(" on retry %s", retriesCount) : "";
-      logMessage = String.format(
-          "balanced_request_response: %s %s%s%s in %s millis on %s %s, will retry",
-          response.getStatusCode(),
-          response.getStatusText(),
-          size,
-          retry,
-          responseTimeMillis,
-          request.getMethod(),
-          request.getUri()
-      );
-      logMethod = isServerError ? LOGGER::warn : LOGGER::debug;
+      Level level = isServerError ? Level.WARN : Level.INFO;
+      LOGGER
+          .atLevel(level)
+          .setMessage("balanced_request_response: {} {}{}{} in {} millis on {} {}, will retry")
+          .addArgument(response::getStatusCode)
+          .addArgument(response::getStatusText)
+          .addArgument(sizeSupplier)
+          .addArgument(retry)
+          .addArgument(responseTimeMillis)
+          .addArgument(request::getMethod)
+          .addArgument(request::getUri)
+          .log();
     } else {
+      Level level = isServerError || retriesCount > 0 ? Level.WARN : balancingRequestsLogLevel;
       String msgLabel = isServerError ? "balanced_request_final_error" : "balanced_request_final_response";
-      logMessage = String.format(
-          "%s: %s %s%s in %s millis on %s %s, trace: %s",
-          msgLabel,
-          response.getStatusCode(),
-          response.getStatusText(),
-          size,
-          responseTimeMillis,
-          request.getMethod(),
-          request.getUri(),
-          getTrace()
-      );
-      logMethod = isServerError || retriesCount > 0 ? LOGGER::warn : LOG_METHOD_BY_LEVEL.get(balancingRequestsLogLevel);
+      LOGGER
+          .atLevel(level)
+          .setMessage("{}: {} {}{} in {} millis on {} {}, trace: {}")
+          .addArgument(msgLabel)
+          .addArgument(response::getStatusCode)
+          .addArgument(response::getStatusText)
+          .addArgument(sizeSupplier)
+          .addArgument(responseTimeMillis)
+          .addArgument(request::getMethod)
+          .addArgument(request::getUri)
+          .addArgument(this::getTrace)
+          .log();
     }
-    logMethod.accept(logMessage);
   }
 
   private String getTrace() {
