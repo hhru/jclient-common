@@ -14,4 +14,7 @@ public interface MetricsProvider {
   Supplier<Long> numActiveSmallAllocations();
   Supplier<Long> numActiveNormalAllocations();
   Supplier<Long> numActiveHugeAllocations();
+
+  Supplier<Long> epollTotalPendingTasks();
+  Supplier<Long> nioTotalPendingTasks();
 }

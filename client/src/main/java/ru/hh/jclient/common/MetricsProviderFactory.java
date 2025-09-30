@@ -5,6 +5,9 @@ import io.netty.buffer.ByteBufAllocatorMetric;
 import io.netty.buffer.PoolArenaMetric;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocatorMetric;
+import io.netty.channel.SingleThreadEventLoop;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import java.util.function.Supplier;
@@ -73,6 +76,44 @@ public final class MetricsProviderFactory {
             .map(a -> a.directArenas().stream())
             .map(a -> a.mapToLong(PoolArenaMetric::numActiveHugeAllocations).sum())
             .orElse(0L);
+      }
+
+      @Override
+      public Supplier<Long> epollTotalPendingTasks() {
+        return () -> {
+          var eventLoopGroup = httpClient.getConfig().getEventLoopGroup();
+          if (eventLoopGroup instanceof EpollEventLoopGroup epollEventLoopGroup) {
+            long pendingTasksTotalCount = 0;
+            for (var eventExecutor : epollEventLoopGroup) {
+              if (eventExecutor instanceof SingleThreadEventLoop singleThreadEventLoop) {
+                int pendingTasksCount = singleThreadEventLoop.pendingTasks();
+                pendingTasksTotalCount += pendingTasksCount;
+              }
+            }
+            return pendingTasksTotalCount;
+          }
+
+          return 0L;
+        };
+      }
+
+      @Override
+      public Supplier<Long> nioTotalPendingTasks() {
+        return () -> {
+          var eventLoopGroup = httpClient.getConfig().getEventLoopGroup();
+          if (eventLoopGroup instanceof NioEventLoopGroup nioEventLoopGroup) {
+            long pendingTasksTotalCount = 0;
+            for (var eventExecutor : nioEventLoopGroup) {
+              if (eventExecutor instanceof SingleThreadEventLoop singleThreadEventLoop) {
+                int pendingTasksCount = singleThreadEventLoop.pendingTasks();
+                pendingTasksTotalCount += pendingTasksCount;
+              }
+            }
+            return pendingTasksTotalCount;
+          }
+
+          return 0L;
+        };
       }
     };
   }
