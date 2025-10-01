@@ -47,7 +47,6 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       int maxTries = Optional.ofNullable(this.maxTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
       RetryPolicy externalRetryPolicy = Optional.ofNullable(retryPolicy).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getRetryPolicy);
 
-      checkExternalFlag(request);
       return new ExternalUrlRequestor(upstream, request, requestExecutor, externalRetryPolicy,
           requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
           timeoutMultiplier, balancingRequestsLogLevel, forceIdempotence, monitoring
@@ -120,15 +119,5 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   public RequestBalancerBuilder withExternalRetryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
-  }
-
-  private void checkExternalFlag(Request request) {
-    if (!request.isExternalRequest()) {
-      LOGGER.error(
-          "External call without external flag for request. " +
-          "Pleaase set RequestBuilder.setExternalRequest(true) or add upstream to configuration; Request {}",
-          request
-      );
-    }
   }
 }
