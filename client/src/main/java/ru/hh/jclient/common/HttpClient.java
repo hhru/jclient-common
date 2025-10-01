@@ -374,7 +374,7 @@ public abstract class HttpClient {
     return readOnlyReplica;
   }
 
-  boolean isExternalRequest() {
+  public boolean isExternalRequest() {
     return externalRequest;
   }
 
