@@ -180,6 +180,15 @@ public class Request {
     return sb.toString();
   }
 
+  public String toStringShort() {
+    return new StringBuilder()
+        .append("method ")
+        .append(delegate.getMethod())
+        .append("; uri ")
+        .append(delegate.getUri())
+        .toString();
+  }
+
   org.asynchttpclient.Request getDelegate() {
     return delegate;
   }

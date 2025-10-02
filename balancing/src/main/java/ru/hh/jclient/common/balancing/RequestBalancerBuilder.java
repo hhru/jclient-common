@@ -129,7 +129,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
         LOGGER.error(
             "External call without external flag for request. " +
             "Please set ru.hh.jclient.common.HttpClient.external() or add upstream to configuration; Request {}",
-            request
+            request.toStringShort()
         );
       }
     } else {
@@ -137,7 +137,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
         LOGGER.error(
             "Internal request marked as 'external. '" +
             "Please remove ru.hh.jclient.common.HttpClient.external() for that request; Request {}",
-            request
+            request.toStringShort()
         );
       }
     }
