@@ -12,6 +12,7 @@ import ru.hh.jclient.common.RequestStrategy;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
+  private static final Logger LOGGER_EXTERNAL = LoggerFactory.getLogger(RequestBalancerBuilder.class + "External");
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
@@ -126,7 +127,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   private void logExternalFlagAccuracy(boolean external, Request request) {
     if (external) {
       if (!httpClient.isExternalRequest()) {
-        LOGGER.error(
+        LOGGER_EXTERNAL.error(
             "External call without external flag for request. " +
             "Please set ru.hh.jclient.common.HttpClient.external() or add upstream to configuration; Request {}",
             request.toStringShort()
@@ -134,8 +135,8 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       }
     } else {
       if (httpClient.isExternalRequest()) {
-        LOGGER.error(
-            "Internal request marked as 'external. '" +
+        LOGGER_EXTERNAL.error(
+            "Internal request marked as 'external'. " +
             "Please remove ru.hh.jclient.common.HttpClient.external() for that request; Request {}",
             request.toStringShort()
         );

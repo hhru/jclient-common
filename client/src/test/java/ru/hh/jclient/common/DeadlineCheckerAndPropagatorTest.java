@@ -25,6 +25,7 @@ public class DeadlineCheckerAndPropagatorTest {
   private DeadlineCheckerAndPropagator injector;
   private HttpClientContextThreadLocalSupplier contextSupplier;
   private HttpClient httpClient;
+
   @BeforeEach
   public void setUp() {
     contextSupplier = new HttpClientContextThreadLocalSupplier();
