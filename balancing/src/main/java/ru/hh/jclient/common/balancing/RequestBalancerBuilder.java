@@ -12,7 +12,7 @@ import ru.hh.jclient.common.RequestStrategy;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
-  private static final Logger LOGGER_EXTERNAL = LoggerFactory.getLogger(RequestBalancerBuilder.class + "External");
+  private static final Logger LOGGER_EXTERNAL = LoggerFactory.getLogger("ru.hh.jclient.common.balancing.RequestBalancerBuilderExternal");
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
