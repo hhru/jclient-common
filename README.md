@@ -60,3 +60,5 @@ so if `requestTimeout` is sufficiently large (e.g. for slow requests) it will no
 
 ## Load balancing
 See [balancing readme](./balancing/README.md)
+
+## [Usage](./docs/usage.md)
