@@ -1,3 +1,31 @@
+-   name: 12.0.0
+    date: '2025-10-14T12:14:10.435360+03:00'
+    description: При отправке запроса значение заголовка X-Request-Id берется из traceContext'а.
+        Удален метод HttpClientContextThreadLocalSupplier.ContextBuilder#withRequestId.
+        Также из реализации HttpClientContextThreadLocalSupplier.ContextBuilder удалена
+        логика получения rid из MDC / установка rid в MDC. То есть при вызове метода
+        HttpClientContextThreadLocalSupplier#forCurrentThread rid не будет браться
+        из MDC и добавляться в заголовок запроса. В конструкторы классов HttpClientFactory
+        и HttpClientFactoryBuilder добавлен еще один аргумент - TraceContext. В методы
+        интерфейса Monitoring добавлен еще один аргумент - HttpHeaders. Удален класс
+        ResponseWrapper, вместо него добавлен RequestResponseWrapper.
+    instructions: В коде сервиса необходимо удалить добавление заголовка X-Request-Id
+        - вместо этого необходимо перед отправкой запроса где то по стеку выше вызывать
+        метод TraceContext#setTraceId или его аналоги (более подробное описание всех
+        методов, которые предоставляет TraceContext, и примеры их использования можно
+        посмотреть в javadoc). То есть не нужно больше при создании объекта HttpClientContext,
+        при вызове методов HttpClientContextThreadLocalSupplier#addContext, HttpClientContextThreadLocalSupplier.ContextBuilder#withHeaders,
+        RequestBuilder#addHeader и тд передавать заголовок X-Request-Id - он добавится
+        автоматически. Перед вызовом метода HttpClientContextThreadLocalSupplier#forCurrentThread
+        тоже должен вызываться TraceContext#setTraceId или его аналоги. Использование
+        метода HttpClientContextThreadLocalSupplier.ContextBuilder#withRequestId Необходимо
+        удалить. При создании объектов HttpClientFactory и HttpClientFactoryBuilder
+        необходимо передать в конструктор объект TraceContext. Вместо класса ResponseWrapper
+        необходимо использовать RequestResponseWrapper. В классах, имплементирующих
+        интерфейс Monitoring, необходимо поправить сигнатуру методов countRequest,
+        countRequestTime и countRetry - теперь они принимают еще один аргумент HttpHeaders.
+    compatible: false
+
 -   name: 11.0.5
     date: '2025-09-24T16:12:34.237678+03:00'
     description: Фикс избыточной конвертации при логировании длины ответа и оптимизация
