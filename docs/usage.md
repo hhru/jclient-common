@@ -1,8 +1,12 @@
-## Как делать external* вызовы через jclient?
+## Как делать external вызовы через jclient?
 
-При вызове нужно отметить флаг **ru.hh.jclient.common.HttpClient#external**; [Пример](https://forgejo.pyn.ru/hhru/hh.ru/src/tag/25.40.4/billing-webapp/src/main/java/ru/hh/payment/system/raiffeisen/client/RaiffeisenClient.java#L75)
+Jclient считает, что вызов external, если не находит нужный upstream в консуле. 
+Это возможно в двух случаях
+1. Если указан внешний url вида http(s)://serviceUrl:portб
+2. Если нужный upstream не зарегистрирован к консуле. Этот пункт актуален только для тестовой среды. 
+На продакшене установлен флаг jclient.ignoreNoServersInCurrentDC=false. При запуске сервис упадет с ошибкой если не найдет нужный upstream.  
 
-[настройка upstream-config.yml](https://wiki.hh.ru/pages/viewpage.action?pageId=322923129)
+Для корректной передачи внутренних заголовков при вызове нужно отметить флаг **ru.hh.jclient.common.HttpClient#external**; [Пример](https://forgejo.pyn.ru/hhru/hh.ru/src/tag/25.40.4/billing-webapp/src/main/java/ru/hh/payment/system/raiffeisen/client/RaiffeisenClient.java#L75)
 
-#### Пояснения
-**external вызов** - это вызов во внешнюю систему относительно HH. Осуществляется через обычный url вида http(s):\\serviceUrl:port. При external вызове не будут переданы внутренние заголовки HH
+## Настройка ретраев и таймаутов для upstream
+[wiki](https://wiki.hh.ru/pages/viewpage.action?pageId=322923129)
