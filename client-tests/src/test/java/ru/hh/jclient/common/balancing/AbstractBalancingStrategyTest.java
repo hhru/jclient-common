@@ -19,11 +19,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
+import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.hh.jclient.common.HttpClientContext;
 import ru.hh.jclient.common.HttpClientFactory;
 import ru.hh.jclient.common.HttpClientFactoryBuilder;
+import ru.hh.jclient.common.HttpHeaders;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.balancing.config.ApplicationConfig;
 import ru.hh.jclient.common.balancing.config.Host;
@@ -32,11 +34,13 @@ import ru.hh.jclient.common.util.MoreFunctionalInterfaces;
 import ru.hh.jclient.common.util.storage.SingletonStorage;
 import ru.hh.jclient.consul.TestUpstreamConfigService;
 import ru.hh.jclient.consul.TestUpstreamService;
+import ru.hh.trace.TraceContext;
 
 public abstract class AbstractBalancingStrategyTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBalancingStrategyTest.class);
   private static final Profile EMPTY_PROFILE = new Profile();
+  private static final TraceContext TRACE_CONTEXT = mock(TraceContext.class);
   protected static final String DATACENTER = "Test";
   protected static final String TEST_UPSTREAM = "test-upstream";
   protected static final JClientInfrastructureConfig infrastructureConfig = new JClientInfrastructureConfig() {
@@ -77,6 +81,7 @@ public abstract class AbstractBalancingStrategyTest {
           String upstreamName,
           String serverDatacenter,
           String serverAddress,
+          HttpHeaders requestHeaders,
           int statusCode,
           long requestTimeMillis,
           boolean isRequestFinal,
@@ -86,13 +91,15 @@ public abstract class AbstractBalancingStrategyTest {
       }
 
       @Override
-      public void countRequestTime(String upstreamName, String serverDatacenter, long requestTimeMillis) {}
+      public void countRequestTime(String upstreamName, String serverDatacenter, HttpHeaders requestHeaders, long requestTimeMillis) {
+      }
 
       @Override
       public void countRetry(
           String upstreamName,
           String serverDatacenter,
           String serverAddress,
+          HttpHeaders requestHeaders,
           int statusCode,
           int firstStatusCode,
           int triesUsed
@@ -101,7 +108,8 @@ public abstract class AbstractBalancingStrategyTest {
       }
 
       @Override
-      public void countUpdateIgnore(String upstreamName, String serverDatacenter) {}
+      public void countUpdateIgnore(String upstreamName, String serverDatacenter) {
+      }
     };
     var configStore = new ConfigStoreImpl();
     ApplicationConfig applicationConfig = new ApplicationConfig()
@@ -118,7 +126,7 @@ public abstract class AbstractBalancingStrategyTest {
     var strategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService());
     var contextSupplier = new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of()));
     return Map.entry(
-        new HttpClientFactoryBuilder(contextSupplier)
+        new HttpClientFactoryBuilder(contextSupplier, TRACE_CONTEXT)
             .withConnectTimeoutMs(100)
             .withRequestStrategy(strategy)
             .withCallbackExecutor(Runnable::run)

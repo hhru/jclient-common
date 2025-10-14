@@ -4,13 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
-import org.slf4j.MDC;
-import static ru.hh.jclient.common.HttpHeaderNames.X_REQUEST_ID;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableRunnable;
 import ru.hh.jclient.common.util.MoreFunctionalInterfaces.FailableSupplier;
 import ru.hh.jclient.common.util.storage.Storage;
@@ -112,14 +109,6 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
     private final List<Supplier<HttpClientEventListener>> eventListenerSuppliers = new ArrayList<>();
 
     private HttpClientContext previousContext;
-    private String previousRequestId;
-
-    public ContextBuilder() {
-      String requestId = MDC.get("rid");
-      if (requestId != null) {
-        this.headers.put(X_REQUEST_ID, List.of(requestId));
-      }
-    }
 
     public ContextBuilder withHeaders(Map<String, List<String>> headers) {
       this.headers.putAll(headers);
@@ -128,13 +117,6 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
 
     public ContextBuilder withQueryParams(Map<String, List<String>> queryParams) {
       this.queryParams.putAll(queryParams);
-      return this;
-    }
-
-    public ContextBuilder withRequestId(String requestId) {
-      if (requestId != null) {
-        this.headers.put(X_REQUEST_ID, List.of(requestId));
-      }
       return this;
     }
 
@@ -172,15 +154,7 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
 
     private void prepareContext() {
       previousContext = get();
-      previousRequestId = Optional
-          .ofNullable(previousContext)
-          .map(HttpClientContext::getHeaders)
-          .flatMap(RequestUtils::getRequestId)
-          .orElseGet(() -> MDC.get("rid"));
-
-      Optional<String> requestId = RequestUtils.getRequestId(headers);
       set(new HttpClientContext(headers, queryParams, eventListenerSuppliers, storagesForTransfer));
-      requestId.ifPresent(s -> MDC.put("rid", s));
     }
 
     private void resetContext() {
@@ -188,11 +162,6 @@ public class HttpClientContextThreadLocalSupplier extends ThreadLocalStorage<Htt
         clear();
       } else {
         set(previousContext);
-      }
-      if (previousRequestId == null) {
-        MDC.remove("rid");
-      } else {
-        MDC.put("rid", previousRequestId);
       }
     }
   }

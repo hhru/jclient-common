@@ -5,16 +5,17 @@ import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hh.jclient.common.HttpHeaders;
 import static ru.hh.jclient.common.HttpStatuses.BAD_GATEWAY;
 import ru.hh.jclient.common.MappedTransportErrorResponse;
 import ru.hh.jclient.common.Monitoring;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
 import ru.hh.jclient.common.RequestContext;
+import ru.hh.jclient.common.RequestResponseWrapper;
 import ru.hh.jclient.common.RequestStrategy;
 import ru.hh.jclient.common.Response;
 import ru.hh.jclient.common.ResponseConverterUtils;
-import ru.hh.jclient.common.ResponseWrapper;
 import ru.hh.jclient.common.Uri;
 import static ru.hh.jclient.common.balancing.BalancingUpstreamManager.SCHEMA_SEPARATOR;
 
@@ -86,12 +87,12 @@ public class UpstreamRequestBalancer extends RequestBalancer {
   }
 
   @Override
-  protected void onRequestReceived(ResponseWrapper wrapper, long timeToLastByteMillis) {
+  protected void onRequestReceived(RequestResponseWrapper wrapper, long timeToLastByteMillis) {
     state.releaseServer(timeToLastByteMillis, isServerError(wrapper));
   }
 
   @Override
-  protected void onResponse(ResponseWrapper wrapper, int triesUsed, boolean willFireRetry) {
+  protected void onResponse(RequestResponseWrapper wrapper, int triesUsed, boolean willFireRetry) {
     if (!state.isServerAvailable()) {
       LOGGER.warn("Monitoring won't be sent", new IllegalStateException("Got response, but server is not available"));
       return;
@@ -103,14 +104,24 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     var dcName = state.getCurrentServer().getDatacenter();
     String upstreamName = state.getUpstreamName();
     String balancingStrategyType = state.getBalancingStrategyType().getPublicName();
+    HttpHeaders requestHeaders = wrapper.getRequest().getHeaders();
 
     for (Monitoring monitoring : monitorings) {
       try {
-        monitoring.countRequest(upstreamName, dcName, serverAddress, statusCode, requestTimeMillis, isRequestFinal, balancingStrategyType);
-        monitoring.countRequestTime(upstreamName, dcName, requestTimeMillis);
+        monitoring.countRequest(
+            upstreamName,
+            dcName,
+            serverAddress,
+            requestHeaders,
+            statusCode,
+            requestTimeMillis,
+            isRequestFinal,
+            balancingStrategyType
+        );
+        monitoring.countRequestTime(upstreamName, dcName, requestHeaders, requestTimeMillis);
 
         if (isRequestFinal && triesUsed > 1) {
-          monitoring.countRetry(upstreamName, dcName, serverAddress, statusCode, trace.get(0).getResponseCode(), triesUsed);
+          monitoring.countRetry(upstreamName, dcName, serverAddress, requestHeaders, statusCode, trace.get(0).getResponseCode(), triesUsed);
         }
       } catch (Exception e) {
         LOGGER.error("Error occurred while sending metrics", e);
@@ -123,7 +134,7 @@ public class UpstreamRequestBalancer extends RequestBalancer {
     state.incrementTries();
   }
 
-  public boolean isServerError(ResponseWrapper wrapper) {
+  public boolean isServerError(RequestResponseWrapper wrapper) {
     return wrapper != null && state.getUpstreamConfig().getRetryPolicy().isServerError(wrapper.getResponse());
   }
 }

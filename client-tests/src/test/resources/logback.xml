@@ -11,4 +11,6 @@
     <root level="${rootLoggingLevel:-INFO}">
         <appender-ref ref="CONSOLE" />
     </root>
+
+    <logger name="ru.hh.jclient.common.HttpClientImpl" level="OFF"/>
 </configuration>

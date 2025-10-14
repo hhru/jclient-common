@@ -15,11 +15,13 @@ import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 import ru.hh.jclient.common.metrics.MetricsConsumer;
 import ru.hh.jclient.common.util.MDCCopy;
 import ru.hh.jclient.common.util.storage.Storage;
+import ru.hh.trace.TraceContext;
 
 public class HttpClientFactoryBuilder {
   public static final double DEFAULT_TIMEOUT_MULTIPLIER = 1;
   public static final String DEFAULT_BALANCING_REQUESTS_LOG_LEVEL = "DEBUG";
 
+  private final TraceContext traceContext;
   private DefaultAsyncHttpClientConfig.Builder configBuilder;
   private RequestStrategy<? extends RequestEngineBuilder<?>> requestStrategy = new DefaultRequestStrategy();
   private Executor callbackExecutor;
@@ -29,9 +31,10 @@ public class HttpClientFactoryBuilder {
   private String balancingRequestsLogLevel = DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
   private MetricsConsumer metricsConsumer;
 
-  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier) {
+  public HttpClientFactoryBuilder(Storage<HttpClientContext> contextSupplier, TraceContext traceContext) {
     this.configBuilder = defaultConfigBuilder();
     this.contextSupplier = contextSupplier;
+    this.traceContext = traceContext;
   }
 
   private HttpClientFactoryBuilder(HttpClientFactoryBuilder prototype) {
@@ -42,7 +45,8 @@ public class HttpClientFactoryBuilder {
         ofNullable(prototype.customHostsWithSession).map(Set::copyOf).orElse(null),
         prototype.timeoutMultiplier,
         prototype.balancingRequestsLogLevel,
-        prototype.metricsConsumer
+        prototype.metricsConsumer,
+        prototype.traceContext
     );
   }
 
@@ -54,7 +58,8 @@ public class HttpClientFactoryBuilder {
       Set<String> customHostsWithSession,
       double timeoutMultiplier,
       String balancingRequestsLogLevel,
-      MetricsConsumer metricsConsumer
+      MetricsConsumer metricsConsumer,
+      TraceContext traceContext
   ) {
     this.configBuilder = configBuilder;
     this.requestStrategy = requestStrategy;
@@ -64,6 +69,7 @@ public class HttpClientFactoryBuilder {
     this.timeoutMultiplier = timeoutMultiplier;
     this.balancingRequestsLogLevel = balancingRequestsLogLevel;
     this.metricsConsumer = metricsConsumer;
+    this.traceContext = traceContext;
   }
 
   private static DefaultAsyncHttpClientConfig.Builder defaultConfigBuilder() {
@@ -189,7 +195,8 @@ public class HttpClientFactoryBuilder {
         contextSupplier,
         ofNullable(customHostsWithSession).map(Set::copyOf).orElseGet(Set::of),
         callbackExecutor,
-        initStrategy()
+        initStrategy(),
+        traceContext
     );
     ofNullable(metricsConsumer).ifPresent(consumer -> consumer.accept(httpClientFactory.getMetricProvider()));
     return httpClientFactory;
