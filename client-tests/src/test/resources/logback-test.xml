@@ -1,0 +1,5 @@
+<configuration>
+    <root level="OFF">
+        <!-- Tests are silent by default -->
+    </root>
+</configuration>
