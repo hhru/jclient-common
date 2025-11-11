@@ -262,7 +262,7 @@ class HttpClientImpl extends HttpClient {
     RequestResponseWrapper wrapper = new RequestResponseWrapper(request, response, responseTimeMillis);
     // complete promise in a separate thread to avoid blocking caller thread
     callbackExecutor.execute(() -> {
-      try (Scope ignored = traceContext.restore(traceContextTransfer)) {
+      try (Scope ignored = traceContext.propagate(traceContextTransfer)) {
         // install context(s) in current (callback) thread so chained tasks have context to run with
         contextTransfers.perform();
         promise.complete(wrapper);
@@ -366,7 +366,7 @@ class HttpClientImpl extends HttpClient {
 
     private void completeExceptionally(Throwable t) {
       Runnable completeExceptionallyTask = () -> {
-        try (Scope ignored = traceContext.restore(traceContextTransfer)) {
+        try (Scope ignored = traceContext.propagate(traceContextTransfer)) {
           // install context(s) for current (callback) thread so chained tasks have context to run with
           contextTransfers.perform();
           promise.completeExceptionally(t);
