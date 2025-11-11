@@ -1,3 +1,9 @@
+-   name: 12.0.1
+    date: '2025-11-11T11:23:22.658519+03:00'
+    description: Обновление trace-context до 2.0.0
+    instructions: ''
+    compatible: true
+
 -   name: 12.0.0
     date: '2025-10-14T12:14:10.435360+03:00'
     description: При отправке запроса значение заголовка X-Request-Id берется из traceContext'а.
