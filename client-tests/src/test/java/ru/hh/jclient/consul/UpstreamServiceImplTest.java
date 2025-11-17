@@ -320,6 +320,7 @@ public class UpstreamServiceImplTest {
 
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setUpstreams(upstreamList)
+        .setCrossDCUpstreams(upstreamList)
         .setAllowCrossDC(true)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)

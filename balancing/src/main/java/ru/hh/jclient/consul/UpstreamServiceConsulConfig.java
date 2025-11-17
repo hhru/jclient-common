@@ -9,6 +9,7 @@ import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
 import static ru.hh.jclient.common.balancing.PropertyKeys.COMPRESSION_ENABLED_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.CROSS_DC_UPSTREAMS_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.DC_LIST_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.HEALTHY_ONLY_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
@@ -20,7 +21,8 @@ import static ru.hh.jclient.common.balancing.PropertyKeys.WATCH_SECONDS_KEY;
 import ru.hh.jclient.consul.model.ConsistencyModeConfig;
 
 public class UpstreamServiceConsulConfig {
-  private List<String> upstreams;
+  private List<String> upstreams = List.of();
+  private List<String> crossDCUpstreams = List.of();
   private boolean allowCrossDC;
   private boolean healthPassing;
   private int watchSeconds;
@@ -35,6 +37,11 @@ public class UpstreamServiceConsulConfig {
   public static UpstreamServiceConsulConfig fromPropertiesWithDefaults(Properties props) {
     var upstreams = Optional
         .ofNullable(props.getProperty(UPSTREAMS_KEY))
+        .filter(Predicate.not(String::isBlank))
+        .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
+        .orElseGet(List::of);
+    var crossDCUpstreams = Optional
+        .ofNullable(props.getProperty(CROSS_DC_UPSTREAMS_KEY))
         .filter(Predicate.not(String::isBlank))
         .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
         .orElseGet(List::of);
@@ -71,6 +78,7 @@ public class UpstreamServiceConsulConfig {
         .orElse(true);
     return new UpstreamServiceConsulConfig()
         .setUpstreams(upstreams)
+        .setCrossDCUpstreams(crossDCUpstreams)
         .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(healthyOnly)
         .setSelfNodeFilteringEnabled(selfNodeFiltering)
@@ -86,6 +94,7 @@ public class UpstreamServiceConsulConfig {
   public static UpstreamServiceConsulConfig copyOf(UpstreamServiceConsulConfig config) {
     return new UpstreamServiceConsulConfig()
         .setUpstreams(config.upstreams)
+        .setCrossDCUpstreams(config.crossDCUpstreams)
         .setAllowCrossDC(config.allowCrossDC)
         .setHealthPassing(config.healthPassing)
         .setWatchSeconds(config.watchSeconds)
@@ -102,6 +111,15 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setUpstreams(List<String> upstreams) {
     this.upstreams = upstreams;
+    return this;
+  }
+
+  public List<String> getCrossDCUpstreams() {
+    return crossDCUpstreams;
+  }
+
+  public UpstreamServiceConsulConfig setCrossDCUpstreams(List<String> crossDCUpstreams) {
+    this.crossDCUpstreams = crossDCUpstreams;
     return this;
   }
 
@@ -199,6 +217,7 @@ public class UpstreamServiceConsulConfig {
   public String toString() {
     return "UpstreamServiceConsulConfig{" +
         "upstreams=" + upstreams +
+        ", crossDCUpstreams=" + crossDCUpstreams +
         ", allowCrossDC=" + allowCrossDC +
         ", healthPassing=" + healthPassing +
         ", watchSeconds=" + watchSeconds +
@@ -207,6 +226,7 @@ public class UpstreamServiceConsulConfig {
         ", selfNodeFilteringEnabled=" + selfNodeFilteringEnabled +
         ", syncInit=" + syncInit +
         ", ignoreNoServersInCurrentDC=" + ignoreNoServersInCurrentDC +
+        ", ignoreNoServersUpstreams=" + ignoreNoServersUpstreams +
         ", httpCompressionEnabled=" + httpCompressionEnabled +
         '}';
   }

@@ -18,6 +18,8 @@ public final class PropertyKeys {
   public static final String UPSTREAM_PREFIX = "upstream";
   public static final String UPSTREAMS_PATH = "services";
   public static final String UPSTREAMS_KEY = String.join(".", JCLIENT_PREFIX, UPSTREAM_PREFIX, UPSTREAMS_PATH);
+  public static final String CROSS_DC_UPSTREAMS_PATH = "crossDCServices";
+  public static final String CROSS_DC_UPSTREAMS_KEY = String.join(".", JCLIENT_PREFIX, UPSTREAM_PREFIX, CROSS_DC_UPSTREAMS_PATH);
   public static final String DC_LIST_PATH = "DCList";
   public static final String DC_LIST_KEY = String.join(".", JCLIENT_PREFIX, UPSTREAM_PREFIX, DC_LIST_PATH);
   public static final String WATCH_SECONDS_PATH = "watchSeconds";
