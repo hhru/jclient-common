@@ -3,8 +3,6 @@ package ru.hh.jclient.common.balancing;
 public final class PropertyKeys {
 
   public static final String JCLIENT_PREFIX = "jclient";
-  public static final String ALLOW_CROSS_DC_PATH = "allowCrossDCRequests";
-  public static final String ALLOW_CROSS_DC_KEY = String.join(".", JCLIENT_PREFIX, ALLOW_CROSS_DC_PATH);
   public static final String SYNC_UPDATE_PATH = "failStartOnEmptyUpstream";
   public static final String SYNC_UPDATE_KEY = String.join(".", JCLIENT_PREFIX, SYNC_UPDATE_PATH);
   public static final String SELF_NODE_FILTERING_PATH = "selfNodeFiltering.enabled";

@@ -57,7 +57,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private final String currentServiceName;
   private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
-  private final boolean allowCrossDC;
   private final boolean healthPassing;
   private final boolean selfNodeFiltering;
   private final boolean httpCompressionEnabled;
@@ -92,7 +91,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
     this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));
-    this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
     this.watchSeconds = consulConfig.getWatchSeconds();

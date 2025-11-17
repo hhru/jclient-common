@@ -5,8 +5,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 import ru.hh.consul.option.ConsistencyMode;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
 import static ru.hh.jclient.common.balancing.PropertyKeys.COMPRESSION_ENABLED_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.CROSS_DC_UPSTREAMS_KEY;
@@ -23,7 +21,6 @@ import ru.hh.jclient.consul.model.ConsistencyModeConfig;
 public class UpstreamServiceConsulConfig {
   private List<String> upstreams = List.of();
   private List<String> crossDCUpstreams = List.of();
-  private boolean allowCrossDC;
   private boolean healthPassing;
   private int watchSeconds;
   private ConsistencyMode consistencyMode;
@@ -45,11 +42,6 @@ public class UpstreamServiceConsulConfig {
         .filter(Predicate.not(String::isBlank))
         .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
         .orElseGet(List::of);
-    boolean allowCrossDC = Optional
-        .ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY))
-        .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
-        .map(Boolean::parseBoolean)
-        .orElse(false);
     boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);
@@ -79,7 +71,6 @@ public class UpstreamServiceConsulConfig {
     return new UpstreamServiceConsulConfig()
         .setUpstreams(upstreams)
         .setCrossDCUpstreams(crossDCUpstreams)
-        .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(healthyOnly)
         .setSelfNodeFilteringEnabled(selfNodeFiltering)
         .setWatchSeconds(watchSeconds)
@@ -95,7 +86,6 @@ public class UpstreamServiceConsulConfig {
     return new UpstreamServiceConsulConfig()
         .setUpstreams(config.upstreams)
         .setCrossDCUpstreams(config.crossDCUpstreams)
-        .setAllowCrossDC(config.allowCrossDC)
         .setHealthPassing(config.healthPassing)
         .setWatchSeconds(config.watchSeconds)
         .setConsistencyMode(config.consistencyMode)
@@ -120,15 +110,6 @@ public class UpstreamServiceConsulConfig {
 
   public UpstreamServiceConsulConfig setCrossDCUpstreams(List<String> crossDCUpstreams) {
     this.crossDCUpstreams = crossDCUpstreams;
-    return this;
-  }
-
-  public boolean isAllowCrossDC() {
-    return allowCrossDC;
-  }
-
-  public UpstreamServiceConsulConfig setAllowCrossDC(boolean allowCrossDC) {
-    this.allowCrossDC = allowCrossDC;
     return this;
   }
 
@@ -218,7 +199,6 @@ public class UpstreamServiceConsulConfig {
     return "UpstreamServiceConsulConfig{" +
         "upstreams=" + upstreams +
         ", crossDCUpstreams=" + crossDCUpstreams +
-        ", allowCrossDC=" + allowCrossDC +
         ", healthPassing=" + healthPassing +
         ", watchSeconds=" + watchSeconds +
         ", consistencyMode=" + consistencyMode +
