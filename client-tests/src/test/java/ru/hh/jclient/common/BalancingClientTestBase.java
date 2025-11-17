@@ -393,23 +393,23 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
   }
 
 
-  void createHttpClientFactory(List<String> upstreamList, String datacenter, boolean allowCrossDCRequests) {
-    http = createHttpClientFactory(httpClient, datacenter, upstreamList, allowCrossDCRequests, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+  void createHttpClientFactory(List<String> upstreamList, String datacenter) {
+    http = createHttpClientFactory(httpClient, datacenter, upstreamList, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
   }
 
   void createHttpClientFactory(double multiplier) {
-    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), false, multiplier);
+    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), multiplier);
   }
 
   void createHttpClientFactory() {
-    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), false, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    http = createHttpClientFactory(httpClient, null, List.of(TEST_UPSTREAM), HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
   }
 
   void createHttpClientFactory(List<String> upstreamList) {
-    http = createHttpClientFactory(httpClient, null, upstreamList, true, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+    http = createHttpClientFactory(httpClient, null, upstreamList, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
   }
 
-  Request completeWith(int status, InvocationOnMock iom) throws Exception {
+  Request completeWith(int status, InvocationOnMock iom) {
     Response response = mock(Response.class);
 
     when(response.getStatusCode()).thenReturn(status);
@@ -437,7 +437,6 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
       AsyncHttpClient httpClient,
       String datacenter,
       List<String> upstreamList,
-      boolean allowCrossDCRequests,
       double multiplier
   ) {
     Monitoring monitoring = mock(Monitoring.class);
@@ -447,8 +446,7 @@ abstract class BalancingClientTestBase extends HttpClientTestBase {
         configStore,
         serverStore,
         Set.of(monitoring),
-        infrastructureConfig,
-        allowCrossDCRequests
+        infrastructureConfig
     );
     upstreamManager.updateUpstreams(upstreamList);
     requestingStrategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService())

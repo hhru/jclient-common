@@ -88,7 +88,7 @@ public class UpstreamTest {
     int weight = numOfRequests * tests * 2 + 1;
     List<Server> servers = List.of(new Server("a", null, weight, null));
 
-    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers, null, false);
+    Upstream upstream = new Upstream(TEST_SERVICE_NAME, configMap, servers, null);
     upstream.setStatLimit(weight);
     Server server = servers.get(0);
 
@@ -131,7 +131,7 @@ public class UpstreamTest {
   }
 
   private static Upstream createTestUpstream(String serviceName, List<Server> servers, UpstreamConfigs upstreamConfigs) {
-    return new Upstream(serviceName, upstreamConfigs, servers, null, false);
+    return new Upstream(serviceName, upstreamConfigs, servers, null);
   }
 
   private static List<Server> buildServers() {

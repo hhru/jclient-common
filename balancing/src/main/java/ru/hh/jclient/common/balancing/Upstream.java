@@ -24,7 +24,6 @@ public class Upstream {
   private final String name;
   private final String datacenter;
   private int statLimit = DEFAULT_STAT_LIMIT;
-  private final boolean allowCrossDCRequests;
   private final boolean enabled; // todo: https://jira.hh.ru/browse/HH-203739
 
   private volatile List<Server> servers;
@@ -41,10 +40,9 @@ public class Upstream {
       String name,
       UpstreamConfigs upstreamConfigs,
       List<Server> servers,
-      String datacenter,
-      boolean allowCrossDCRequests
+      String datacenter
   ) {
-    this(name, upstreamConfigs, servers, datacenter, allowCrossDCRequests, true);
+    this(name, upstreamConfigs, servers, datacenter, true);
   }
 
   Upstream(
@@ -52,12 +50,10 @@ public class Upstream {
       UpstreamConfigs upstreamConfigs,
       List<Server> servers,
       String datacenter,
-      boolean allowCrossDCRequests,
       boolean enabled
   ) {
     this.name = name;
     this.datacenter = datacenter;
-    this.allowCrossDCRequests = allowCrossDCRequests;
     this.enabled = enabled;
     this.update(upstreamConfigs, servers);
   }
@@ -72,12 +68,12 @@ public class Upstream {
       int index;
       List<Server> servers = this.servers;
       long readStamp = lock.tryOptimisticRead();
-      index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+      index = getLeastLoadedServer(servers, excludedServers, datacenter, Clock.systemDefaultZone());
       if (!lock.validate(readStamp)) {
         //fallback to lock
         readStamp = lock.readLock();
         try {
-          index = getLeastLoadedServer(servers, excludedServers, datacenter, allowCrossDCRequests, Clock.systemDefaultZone());
+          index = getLeastLoadedServer(servers, excludedServers, datacenter, Clock.systemDefaultZone());
         } finally {
           lock.unlockRead(readStamp);
         }
@@ -106,7 +102,7 @@ public class Upstream {
       List<Integer> allowedIds = new ArrayList<>();
       for (int i = 0; i < servers.size(); i++) {
         Server server = servers.get(i);
-        if (server != null && (allowCrossDCRequests || Objects.equals(datacenter, server.getDatacenter()))) {
+        if (server != null) {
           allowedIds.add(i);
           allowedServers.add(server);
         }
@@ -157,7 +153,7 @@ public class Upstream {
   }
 
   private void rescale(List<Server> servers) {
-    boolean[] rescale = {true, allowCrossDCRequests};
+    boolean[] rescale = {true, true};
     iterateServers(servers, server -> {
       int localOrRemote = Objects.equals(server.getDatacenter(), datacenter) ? 0 : 1;
       rescale[localOrRemote] &= server.needToRescale();
@@ -259,7 +255,6 @@ public class Upstream {
       "name=" + name +
       ", upstreamConfig=" + upstreamConfigs +
       ", datacenter='" + datacenter + '\'' +
-      ", allowCrossDCRequests=" + allowCrossDCRequests +
       ", servers=" + servers +
       '}';
   }

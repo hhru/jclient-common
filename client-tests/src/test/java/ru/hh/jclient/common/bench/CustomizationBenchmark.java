@@ -60,8 +60,7 @@ public class CustomizationBenchmark {
       UPSTREAM,
       ApplicationConfig.toUpstreamConfigs(new ApplicationConfig(), null),
       servers,
-      null,
-      false
+      null
   );
   private static final UpstreamManager manager = new UpstreamManager() {
 

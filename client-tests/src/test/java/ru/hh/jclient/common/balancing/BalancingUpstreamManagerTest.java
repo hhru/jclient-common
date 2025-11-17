@@ -140,8 +140,7 @@ public class BalancingUpstreamManagerTest {
         configStore,
         serverStore,
         Set.of(monitoring),
-        infrastructureConfig,
-        false
+        infrastructureConfig
     );
     balancingUpstreamManager.updateUpstreams(upstreamList);
     return balancingUpstreamManager;

@@ -79,8 +79,7 @@ public class BalancingPerformanceBenchmark {
       configStore,
       serverStore,
       Set.of(),
-      infrastructureConfig,
-      false
+      infrastructureConfig
   );
   private final AsyncHttpClient httpClient = new DefaultAsyncHttpClient();
   private HttpClientFactory factory;
