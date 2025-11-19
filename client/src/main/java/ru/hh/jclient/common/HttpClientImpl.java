@@ -9,7 +9,6 @@ import java.util.Set;
 import static java.util.Set.of;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
@@ -322,32 +321,32 @@ class HttpClientImpl extends HttpClient {
 
     @Override
     public void onThrowable(Throwable t) {
-      org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri(), deadlineContext);
-      long timeToLastByteMillis = getTimeToLastByte();
-
-      mdcCopy.doInContext(
-          () -> LOGGER.debug(
-              "HTTP_CLIENT_ERROR: client error after {} millis on {} {}: {}{}",
-              timeToLastByteMillis,
-              request.getMethod(),
-              request.getUri(),
-              t,
-              response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"
-          ));
-
-      if (response != null) {
-        proceedWithResponse(response, timeToLastByteMillis);
-        return;
-      }
-
       try {
+        org.asynchttpclient.Response response = TransportExceptionMapper.map(t, request.getUri(), deadlineContext);
+        long timeToLastByteMillis = getTimeToLastByte();
+
+        mdcCopy.doInContext(
+            () -> LOGGER.debug(
+                "HTTP_CLIENT_ERROR: client error after {} millis on {} {}: {}{}",
+                timeToLastByteMillis,
+                request.getMethod(),
+                request.getUri(),
+                t,
+                response != null ? " (mapped to " + response.getStatusCode() + "), proceeding" : ", propagating"
+            ));
+
+        if (response != null) {
+          proceedWithResponse(response, timeToLastByteMillis);
+          return;
+        }
+
         eventListeners.forEach(eventListener -> eventListener.onClientProblem(t));
         eventListeners.forEach(HttpClientEventListener::onProcessingFinished);
-      } catch (Exception e) {
-        t.addSuppressed(e);
-        throw e;
-      } finally {
         completeExceptionally(t);
+      } catch (RuntimeException e) {
+        // `e` is probably an infrastructure exception and needs more attention than `t`
+        e.addSuppressed(t);
+        completeExceptionally(e);
       }
     }
 
@@ -375,17 +374,15 @@ class HttpClientImpl extends HttpClient {
           contextTransfers.rollback();
         }
       };
+
       try {
         // complete promise in a separate thread to avoid blocking caller (AsyncHttpClient) thread
         callbackExecutor.execute(completeExceptionallyTask);
       } catch (RuntimeException e) {
-        mdcCopy.doInContext(() -> {
-          if (e instanceof RejectedExecutionException) {
-            LOGGER.warn("Failed to complete promise exceptionally in a separate thread: {}, using AsyncHttpClient thread", e.toString());
-          } else {
-            LOGGER.error("Failed to complete promise exceptionally in a separate thread: {}, using AsyncHttpClient thread", e, e);
-          }
-        });
+        mdcCopy.doInContext(() ->
+            LOGGER.error("Failed to complete promise exceptionally in a separate thread, using AsyncHttpClient thread", e)
+        );
+
         completeExceptionallyTask.run();
       }
     }

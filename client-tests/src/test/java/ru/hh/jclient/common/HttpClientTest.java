@@ -17,7 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import org.mockito.Mock;
 import static org.mockito.Mockito.mock;
@@ -532,6 +535,41 @@ public class HttpClientTest extends HttpClientTestBase {
         throw e.getCause();
       }
     });
+  }
+
+  @Test
+  public void testHttpClientErrorInErrorHandler() {
+    AsyncHttpClient httpClient = mock(AsyncHttpClient.class);
+    when(httpClient.getConfig()).thenReturn(httpClientConfig);
+    when(httpClient.executeRequest(any(org.asynchttpclient.Request.class), any(CompletionHandler.class)))
+        .then(invocation -> {
+          CompletionHandler handler = invocation.getArgument(1);
+          try {
+            handler.onThrowable(new ConnectException("Connection refused")); // TransportExceptionMapper.map() will convert this to a Response
+          } catch (Throwable ignored) {
+          }
+          return null;
+        });
+
+    http = createHttpClientBuilder(httpClient, HttpClientFactoryBuilder.DEFAULT_TIMEOUT_MULTIPLIER);
+
+    HttpClientEventListener eventListener = new HttpClientEventListener() {
+      @Override
+      public Response onResponse(Response response) {
+        throw new UnsupportedOperationException();
+      }
+    };
+    withContext(Map.of(), eventListener);
+
+    Request request = new RequestBuilder("GET").setUrl("http://localhost/empty").build();
+    CompletableFuture<?> resultFuture = http.with(request).expectNoContent().result();
+    ExecutionException executionException = assertThrows(ExecutionException.class, () ->
+        resultFuture.get(5, TimeUnit.SECONDS)
+    );
+
+    Throwable cause = executionException.getCause();
+    assertEquals(UnsupportedOperationException.class, cause.getClass());
+    assertEquals(List.of(ConnectException.class), Arrays.stream(cause.getSuppressed()).map(Object::getClass).toList());
   }
 
   @Test
