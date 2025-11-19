@@ -1,3 +1,10 @@
+-   name: 13.0.0
+    date: '2025-11-19T11:21:27.230420+03:00'
+    description: Добавлено логирование при неправильном проставлении ru.hh.jclient.common.HttpClient#external()
+    instructions: Заменить использование ru.hh.jclient.common.RequestBuilder#setExternalRequest
+        на ru.hh.jclient.common.HttpClient#external()
+    compatible: false
+
 -   name: 12.0.1
     date: '2025-11-11T11:23:22.658519+03:00'
     description: Обновление trace-context до 2.0.0
