@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static ru.hh.jclient.common.HttpHeaderNames.X_DEADLINE_TIMEOUT_MS;
 import static ru.hh.jclient.common.HttpHeaderNames.X_OUTER_TIMEOUT_MS;
 import ru.hh.jclient.common.listener.DeadlineCheckerAndPropagator;
@@ -22,11 +24,13 @@ public class DeadlineCheckerAndPropagatorTest {
 
   private DeadlineCheckerAndPropagator injector;
   private HttpClientContextThreadLocalSupplier contextSupplier;
+  private HttpClient httpClient;
 
   @BeforeEach
   public void setUp() {
     contextSupplier = new HttpClientContextThreadLocalSupplier();
     injector = new DeadlineCheckerAndPropagator(contextSupplier);
+    httpClient = mock(HttpClient.class);
   }
 
   @Test
@@ -47,7 +51,7 @@ public class DeadlineCheckerAndPropagatorTest {
     contextSupplier.forCurrentThread()
         .withHeaders(headers)
         .execute(() -> {
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
 
           // Verify header was injected with correct value
           assertEquals("500", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
@@ -74,7 +78,7 @@ public class DeadlineCheckerAndPropagatorTest {
     contextSupplier.forCurrentThread()
         .withHeaders(headers)
         .execute(() -> {
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
 
           // Verify header was injected with correct value (min of deadline and request timeout)
           int header = Integer.parseInt(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
@@ -102,7 +106,7 @@ public class DeadlineCheckerAndPropagatorTest {
     contextSupplier.forCurrentThread()
         .withHeaders(headers)
         .execute(() -> {
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
 
           // Verify header was injected with correct value (min of deadline and request timeout)
           int header = Integer.parseInt(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
@@ -130,7 +134,7 @@ public class DeadlineCheckerAndPropagatorTest {
     contextSupplier.forCurrentThread()
         .withHeaders(headers)
         .execute(() -> {
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
 
           // Verify header was injected with correct value
           assertEquals("500", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
@@ -154,7 +158,7 @@ public class DeadlineCheckerAndPropagatorTest {
         .withHeaders(new HashMap<>())
         .execute(() -> {
           // Should not throw exception when no deadline context
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
           // Verify request timeout is preserved in built Request
           assertEquals(500, requestBuilder.build().getRequestTimeout());
         });
@@ -171,7 +175,7 @@ public class DeadlineCheckerAndPropagatorTest {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // Should not throw exception when context is null
-    injector.beforeExecute(null, requestBuilder, request);
+    injector.beforeExecute(httpClient, requestBuilder, request);
     // Verify request timeout is preserved in built Request
     assertEquals(500, requestBuilder.build().getRequestTimeout());
   }
@@ -197,7 +201,7 @@ public class DeadlineCheckerAndPropagatorTest {
     // Should throw exception
     RuntimeException exception = assertThrows(
         RuntimeException.class, () -> {
-          check.beforeExecute(null, new RequestBuilder(), new TestRequest());
+          check.beforeExecute(httpClient, new RequestBuilder(), new TestRequest());
         }
     );
   }
@@ -226,7 +230,7 @@ public class DeadlineCheckerAndPropagatorTest {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // Should not throw exception
-    check.beforeExecute(null, requestBuilder, request);
+    check.beforeExecute(httpClient, requestBuilder, request);
     
     // Verify request timeout is adjusted to minimum of deadline and request timeout
     assertEquals(500, requestBuilder.build().getRequestTimeout());
@@ -252,7 +256,7 @@ public class DeadlineCheckerAndPropagatorTest {
     // Should throw exception
     RuntimeException exception = assertThrows(
         RuntimeException.class, () -> {
-          check.beforeExecute(null, new RequestBuilder(), new TestRequest());
+          check.beforeExecute(httpClient, new RequestBuilder(), new TestRequest());
         }
     );
   }
@@ -273,7 +277,7 @@ public class DeadlineCheckerAndPropagatorTest {
     DeadlineCheckerAndPropagator check = new DeadlineCheckerAndPropagator(() -> context);
 
     // Should not throw exception
-    check.beforeExecute(null, new RequestBuilder(), new TestRequest());
+    check.beforeExecute(httpClient, new RequestBuilder(), new TestRequest());
   }
 
   @Test
@@ -290,7 +294,7 @@ public class DeadlineCheckerAndPropagatorTest {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // Should not throw exception when context is null
-    check.beforeExecute(null, requestBuilder, request);
+    check.beforeExecute(httpClient, requestBuilder, request);
     
     // Verify request timeout is preserved when context supplier is null
     assertEquals(500, requestBuilder.build().getRequestTimeout());
@@ -316,7 +320,7 @@ public class DeadlineCheckerAndPropagatorTest {
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // Should not throw exception when no deadline is set
-    check.beforeExecute(null, requestBuilder, request);
+    check.beforeExecute(httpClient, requestBuilder, request);
     
     // Verify request timeout is preserved when no deadline headers
     assertEquals(500, requestBuilder.build().getRequestTimeout());
@@ -336,7 +340,7 @@ public class DeadlineCheckerAndPropagatorTest {
     // Execute with context
     contextSupplier.forCurrentThread()
         .execute(() -> {
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
 
           assertNull(contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
@@ -351,15 +355,14 @@ public class DeadlineCheckerAndPropagatorTest {
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
         .setRequestTimeout(500)
-        .setExternalRequest(true)
         .build();
-
+    when(httpClient.isExternalRequest()).thenReturn(true);
     RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // Execute with context
     contextSupplier.forCurrentThread()
         .execute(() -> {
-          injector.beforeExecute(null, requestBuilder, request);
+          injector.beforeExecute(httpClient, requestBuilder, request);
 
           assertNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));

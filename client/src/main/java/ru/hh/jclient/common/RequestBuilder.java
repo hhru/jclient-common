@@ -297,7 +297,7 @@ public class RequestBuilder {
     return this;
   }
 
-  public RequestBuilder setExternalRequest(boolean externalRequest) {
+  RequestBuilder setExternalRequest(boolean externalRequest) {
     this.externalRequest = externalRequest;
     return this;
   }

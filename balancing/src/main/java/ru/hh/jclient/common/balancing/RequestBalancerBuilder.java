@@ -12,6 +12,7 @@ import ru.hh.jclient.common.RequestStrategy;
 
 public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalancerBuilder> {
   private static final Logger LOGGER = LoggerFactory.getLogger(RequestBalancerBuilder.class);
+  private static final Logger LOGGER_EXTERNAL = LoggerFactory.getLogger("ru.hh.jclient.common.balancing.RequestBalancerBuilderExternal");
 
   private final UpstreamManager upstreamManager;
   private final HttpClient httpClient;
@@ -46,6 +47,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       int maxTimeoutTries = Optional.ofNullable(this.maxTimeoutTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTimeoutTries);
       int maxTries = Optional.ofNullable(this.maxTries).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getMaxTries);
       RetryPolicy externalRetryPolicy = Optional.ofNullable(retryPolicy).orElseGet(UpstreamConfig.DEFAULT_CONFIG::getRetryPolicy);
+      logExternalFlagAccuracy(true, request);
 
       return new ExternalUrlRequestor(upstream, request, requestExecutor, externalRetryPolicy,
           requestExecutor.getDefaultRequestTimeoutMs(), maxTimeoutTries, maxTries,
@@ -58,6 +60,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       } else {
         state = new BalancingState(upstream, profile);
       }
+      logExternalFlagAccuracy(false, request);
       return new UpstreamRequestBalancer(
           state,
           request,
@@ -119,5 +122,25 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
   public RequestBalancerBuilder withExternalRetryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
+  }
+
+  private void logExternalFlagAccuracy(boolean external, Request request) {
+    if (external) {
+      if (!httpClient.isExternalRequest()) {
+        LOGGER_EXTERNAL.error(
+            "External call without external flag for request. " +
+            "Please set ru.hh.jclient.common.HttpClient.external() or add upstream to configuration; Request {}",
+            request.toStringShort()
+        );
+      }
+    } else {
+      if (httpClient.isExternalRequest()) {
+        LOGGER_EXTERNAL.error(
+            "Internal request marked as 'external'. " +
+            "Please remove ru.hh.jclient.common.HttpClient.external() for that request; Request {}",
+            request.toStringShort()
+        );
+      }
+    }
   }
 }

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import ru.hh.jclient.common.HttpClient;
 import static ru.hh.jclient.common.HttpClientFactoryBuilder.DEFAULT_BALANCING_REQUESTS_LOG_LEVEL;
 import ru.hh.jclient.common.Request;
 import ru.hh.jclient.common.RequestBuilder;
@@ -25,7 +26,7 @@ public class RequestBalancerBuilderTest {
   public void setUp() {
     requestExecutor = mock(RequestStrategy.RequestExecutor.class);
     upstreamManager = mock(UpstreamManager.class);
-    requestBalancerBuilder = new RequestBalancerBuilder(upstreamManager, null);
+    requestBalancerBuilder = new RequestBalancerBuilder(upstreamManager, mock(HttpClient.class));
     requestBalancerBuilder.withBalancingRequestsLogLevel(DEFAULT_BALANCING_REQUESTS_LOG_LEVEL);
   }
 
