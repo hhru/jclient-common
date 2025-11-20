@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Wrapper object that contains {@link Response} object and either normal or ERROR result of conversion. It is not recommended to use this wrapper
- * outside the client code to ensure ning encapsulation.
+ * outside the client code to ensure AsyncHttpClient encapsulation.
  *
  * @param <T> type of conversion result
  * @param <E> type of ERROR conversion result

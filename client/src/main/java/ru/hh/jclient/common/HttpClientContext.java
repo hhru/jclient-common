@@ -49,7 +49,7 @@ public class HttpClientContext {
    * @param headers headers of global request. Some of them can be used by the local request.
    * @param queryParams query params of global request
    * @param eventListenerSuppliers list of suppliers of object used to gather event listener information
-   * @param storages object storages that needs to be transferred to ning threads executing requests and completable future chains
+   * @param storages object storages that need to be transferred to AsyncHttpClient threads that execute requests and completable future chains
    */
   public HttpClientContext(
       OffsetDateTime requestStart,
