@@ -1,3 +1,10 @@
+-   name: 13.0.1
+    date: '2025-11-20T18:15:14.454555+03:00'
+    description: Исправлена ошибка, из-за которой фьючи не комплитились, если в `onThrowable`
+        вылетал эксепшен.
+    instructions: ''
+    compatible: true
+
 -   name: 13.0.0
     date: '2025-11-19T11:21:27.230420+03:00'
     description: Добавлено логирование при неправильном проставлении ru.hh.jclient.common.HttpClient#external()
