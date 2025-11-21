@@ -1,3 +1,17 @@
+-   name: 14.0.0
+    date: '2025-11-21T18:35:27.646527+03:00'
+    description: Добавлена возможность конфигурировать cross dc для конкретных апстримов.
+        Для этого необходимо использовать настройку jclient.upstream.crossDCServices.
+        Настройка allowCrossDCRequests больше не обрабатывается
+    instructions: В объекте Properties, который передается в метод UpstreamServiceConsulConfig#fromPropertiesWithDefaults,
+        необходимо вместо настройки allowCrossDCRequests передавать настройку jclient.upstream.crossDCServices
+        со списком апстримов, в которые нужно ходить кросс дц. Если инстанс данного
+        класса создается с помощью конструктора, тогда список апстримов, в которые
+        нужно ходить кросс дц, необходимо передавать с помощью вызова метода setCrossDCUpstreams.
+        Также необходимо поправить места, где вызываются конструкторы классов BalancingUpstreamManager
+        и Upstream - из их сигнатуры удален параметр allowCrossDCRequests
+    compatible: false
+
 -   name: 13.0.1
     date: '2025-11-20T18:15:14.454555+03:00'
     description: Исправлена ошибка, из-за которой фьючи не комплитились, если в `onThrowable`
