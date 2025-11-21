@@ -96,7 +96,7 @@ public class BalancingClientTest extends BalancingClientTestBase {
     ApplicationConfig applicationConfig = buildTestConfig();
     when(configStore.getUpstreamConfig(TEST_UPSTREAM)).thenReturn(ApplicationConfig.toUpstreamConfigs(applicationConfig, DEFAULT));
 
-    createHttpClientFactory(List.of(TEST_UPSTREAM), currentDC, true);
+    createHttpClientFactory(List.of(TEST_UPSTREAM), currentDC);
 
     when(httpClient.executeRequest(any(Request.class), any(CompletionHandler.class)))
         .then(iom -> {
@@ -430,33 +430,9 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Test
-  public void disallowCrossDCRequests() throws Exception {
-    List<Server> servers = List.of(new Server("server1", null, 1, "DC1"), new Server("server2", null, 1, "DC2"));
-    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
-
-    createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", false);
-
-    Request[] request = new Request[1];
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          request[0] = completeWith(200, iom);
-          return null;
-        });
-
-    getTestClient().get();
-    assertHostEquals(request[0], "server1");
-
-    getTestClient().get();
-    assertHostEquals(request[0], "server1");
-
-    getTestClient().get();
-    assertHostEquals(request[0], "server1");
-  }
-
-  @Test
   public void balancedRequestMonitoring() throws Exception {
     String datacenter = "DC1";
-    createHttpClientFactory(List.of(TEST_UPSTREAM), datacenter, false);
+    createHttpClientFactory(List.of(TEST_UPSTREAM), datacenter);
     when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server1", null, 1, datacenter)));
     upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
@@ -515,39 +491,12 @@ public class BalancingClientTest extends BalancingClientTestBase {
   }
 
   @Test
-  public void failIfNoBackendAvailableInCurrentDC() {
-    createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", false);
-    when(serverStore.getServers(TEST_UPSTREAM))
-        .thenReturn(List.of(new Server("server1", null, 1, "DC2")));
-
-    assertThrows(ExecutionException.class, () -> getTestClient().get());
-  }
-
-  @Test
-  public void testAllowCrossDCRequests() throws Exception {
-    List<Server> servers = List.of(new Server("server1", null, 1, "DC1"), new Server("server2", null, 1, "DC2"));
-    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(servers);
-
-    createHttpClientFactory(List.of(TEST_UPSTREAM), "DC1", true);
-
-    Request[] request = new Request[1];
-    when(httpClient.executeRequest(isA(Request.class), isA(CompletionHandler.class)))
-        .then(iom -> {
-          request[0] = completeWith(200, iom);
-          return null;
-        });
-
-    getTestClient().get();
-    assertHostEquals(request[0], "server1");
-
-    getTestClient().get();
-    assertHostEquals(request[0], "server1");
-
-    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of(new Server("server2", null, 1, "DC2")));
+  public void failIfNoBackendAvailable() {
+    createHttpClientFactory();
+    when(serverStore.getServers(TEST_UPSTREAM)).thenReturn(List.of());
     upstreamManager.updateUpstreams(Set.of(TEST_UPSTREAM));
 
-    getTestClient().get();
-    assertHostEquals(request[0], "server2");
+    assertThrows(ExecutionException.class, () -> getTestClient().get());
   }
 
   @Test

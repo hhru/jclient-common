@@ -5,10 +5,9 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 import ru.hh.consul.option.ConsistencyMode;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_KEY;
-import static ru.hh.jclient.common.balancing.PropertyKeys.ALLOW_CROSS_DC_PATH;
 import static ru.hh.jclient.common.balancing.PropertyKeys.COMPRESSION_ENABLED_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.CONSISTENCY_MODE_KEY;
+import static ru.hh.jclient.common.balancing.PropertyKeys.CROSS_DC_UPSTREAMS_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.DC_LIST_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.HEALTHY_ONLY_KEY;
 import static ru.hh.jclient.common.balancing.PropertyKeys.IGNORE_NO_SERVERS_IN_CURRENT_DC_KEY;
@@ -20,8 +19,8 @@ import static ru.hh.jclient.common.balancing.PropertyKeys.WATCH_SECONDS_KEY;
 import ru.hh.jclient.consul.model.ConsistencyModeConfig;
 
 public class UpstreamServiceConsulConfig {
-  private List<String> upstreams;
-  private boolean allowCrossDC;
+  private List<String> upstreams = List.of();
+  private List<String> crossDCUpstreams = List.of();
   private boolean healthPassing;
   private int watchSeconds;
   private ConsistencyMode consistencyMode;
@@ -38,11 +37,11 @@ public class UpstreamServiceConsulConfig {
         .filter(Predicate.not(String::isBlank))
         .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
         .orElseGet(List::of);
-    boolean allowCrossDC = Optional
-        .ofNullable(props.getProperty(ALLOW_CROSS_DC_KEY))
-        .or(() -> Optional.ofNullable(props.getProperty(ALLOW_CROSS_DC_PATH)))
-        .map(Boolean::parseBoolean)
-        .orElse(false);
+    var crossDCUpstreams = Optional
+        .ofNullable(props.getProperty(CROSS_DC_UPSTREAMS_KEY))
+        .filter(Predicate.not(String::isBlank))
+        .map(separatedList -> List.of(separatedList.split("[,\\s]+")))
+        .orElseGet(List::of);
     boolean healthyOnly = Optional.ofNullable(props.getProperty(HEALTHY_ONLY_KEY)).map(Boolean::parseBoolean).orElse(true);
     boolean selfNodeFiltering = Optional.ofNullable(props.getProperty(SELF_NODE_FILTERING_KEY)).map(Boolean::parseBoolean).orElse(false);
     var watchSeconds = Optional.ofNullable(props.getProperty(WATCH_SECONDS_KEY)).stream().mapToInt(Integer::parseInt).findFirst().orElse(10);
@@ -71,7 +70,7 @@ public class UpstreamServiceConsulConfig {
         .orElse(true);
     return new UpstreamServiceConsulConfig()
         .setUpstreams(upstreams)
-        .setAllowCrossDC(allowCrossDC)
+        .setCrossDCUpstreams(crossDCUpstreams)
         .setHealthPassing(healthyOnly)
         .setSelfNodeFilteringEnabled(selfNodeFiltering)
         .setWatchSeconds(watchSeconds)
@@ -86,7 +85,7 @@ public class UpstreamServiceConsulConfig {
   public static UpstreamServiceConsulConfig copyOf(UpstreamServiceConsulConfig config) {
     return new UpstreamServiceConsulConfig()
         .setUpstreams(config.upstreams)
-        .setAllowCrossDC(config.allowCrossDC)
+        .setCrossDCUpstreams(config.crossDCUpstreams)
         .setHealthPassing(config.healthPassing)
         .setWatchSeconds(config.watchSeconds)
         .setConsistencyMode(config.consistencyMode)
@@ -105,12 +104,12 @@ public class UpstreamServiceConsulConfig {
     return this;
   }
 
-  public boolean isAllowCrossDC() {
-    return allowCrossDC;
+  public List<String> getCrossDCUpstreams() {
+    return crossDCUpstreams;
   }
 
-  public UpstreamServiceConsulConfig setAllowCrossDC(boolean allowCrossDC) {
-    this.allowCrossDC = allowCrossDC;
+  public UpstreamServiceConsulConfig setCrossDCUpstreams(List<String> crossDCUpstreams) {
+    this.crossDCUpstreams = crossDCUpstreams;
     return this;
   }
 
@@ -199,7 +198,7 @@ public class UpstreamServiceConsulConfig {
   public String toString() {
     return "UpstreamServiceConsulConfig{" +
         "upstreams=" + upstreams +
-        ", allowCrossDC=" + allowCrossDC +
+        ", crossDCUpstreams=" + crossDCUpstreams +
         ", healthPassing=" + healthPassing +
         ", watchSeconds=" + watchSeconds +
         ", consistencyMode=" + consistencyMode +
@@ -207,6 +206,7 @@ public class UpstreamServiceConsulConfig {
         ", selfNodeFilteringEnabled=" + selfNodeFilteringEnabled +
         ", syncInit=" + syncInit +
         ", ignoreNoServersInCurrentDC=" + ignoreNoServersInCurrentDC +
+        ", ignoreNoServersUpstreams=" + ignoreNoServersUpstreams +
         ", httpCompressionEnabled=" + httpCompressionEnabled +
         '}';
   }

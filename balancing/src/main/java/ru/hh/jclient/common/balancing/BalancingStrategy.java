@@ -17,7 +17,6 @@ final class BalancingStrategy {
       List<Server> servers,
       Set<Integer> excludedServers,
       String currentDatacenter,
-      boolean allowCrossDCRequests,
       Clock clock
   ) {
     int minIndex = -1;
@@ -31,10 +30,6 @@ final class BalancingStrategy {
       }
 
       boolean isDifferentDC = !Objects.equals(currentDatacenter, server.getDatacenter());
-
-      if (isDifferentDC && !allowCrossDCRequests) {
-        continue;
-      }
 
       float statLoad = server.getStatLoad(servers, clock);
       Weight weight = new Weight(excludedServers.contains(index), isDifferentDC, statLoad);

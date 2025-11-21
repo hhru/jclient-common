@@ -51,7 +51,7 @@ public class HttpClientFactoryBuilderTest {
     properties.put("balancingRequestsLogLevel", levelOverride);
 
     JClientInfrastructureConfig infrastructureConfig = mock(JClientInfrastructureConfig.class);
-    UpstreamManager upstreamManager = new BalancingUpstreamManager(null, null, Set.of(), infrastructureConfig, false);
+    UpstreamManager upstreamManager = new BalancingUpstreamManager(null, null, Set.of(), infrastructureConfig);
     HttpClientFactoryBuilder httpClientFactoryBuilder = new HttpClientFactoryBuilder(
         new SingletonStorage<>(() -> new HttpClientContext(Map.of(), Map.of(), List.of())),
         traceContext

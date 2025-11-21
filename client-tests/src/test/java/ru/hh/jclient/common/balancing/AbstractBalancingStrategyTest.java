@@ -119,8 +119,7 @@ public abstract class AbstractBalancingStrategyTest {
         configStore,
         serverStore,
         Set.of(tracking),
-        infrastructureConfig,
-        false
+        infrastructureConfig
     );
     upstreamManager.updateUpstreams(Set.of(upstreamName));
     var strategy = new BalancingRequestStrategy(upstreamManager, new TestUpstreamService(), new TestUpstreamConfigService());

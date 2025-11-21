@@ -341,8 +341,7 @@ public class BalancingWorkloadModelTest {
     private BalancingUpstreamManager buildBalancingUpstreamManager(String currentDc, ConfigStoreImpl configStore) {
       return new BalancingUpstreamManager(
           configStore, serverStore,
-          Set.of(), buildInfraConfig("test", currentDc),
-          false
+          Set.of(), buildInfraConfig("test", currentDc)
       );
     }
 

@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toMap;
 import java.util.stream.Stream;
@@ -48,6 +49,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private final Collection<Consumer<Collection<String>>> callbacks;
 
   private final Set<String> upstreamList;
+  private final Set<String> crossDCUpstreamList;
   private final List<String> datacenterList;
   private final Map<String, String> lowercasedDataCenters;
   private final String currentDC;
@@ -55,7 +57,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   private final String currentServiceName;
   private final ConsistencyMode consistencyMode;
   private final int watchSeconds;
-  private final boolean allowCrossDC;
   private final boolean healthPassing;
   private final boolean selfNodeFiltering;
   private final boolean httpCompressionEnabled;
@@ -74,9 +75,8 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
   ) {
     LOGGER.info("config: {}", consulConfig);
     this.upstreamList = Set.copyOf(consulConfig.getUpstreams());
-    if (this.upstreamList.isEmpty()) {
-      throw new IllegalArgumentException("UpstreamList can't be empty");
-    }
+    this.crossDCUpstreamList = Set.copyOf(consulConfig.getCrossDCUpstreams());
+    validatedUpstreams(upstreamList, crossDCUpstreamList);
     if (consulConfig.getDatacenterList() == null || consulConfig.getDatacenterList().isEmpty()) {
       throw new IllegalArgumentException("DatacenterList can't be empty");
     }
@@ -91,7 +91,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     this.healthClient = consulClient.healthClient();
     this.datacenterList = consulConfig.getDatacenterList();
     this.lowercasedDataCenters = datacenterList.stream().collect(toMap(String::toLowerCase, Function.identity()));
-    this.allowCrossDC = consulConfig.isAllowCrossDC();
     this.healthPassing = consulConfig.isHealthPassing();
     this.selfNodeFiltering = consulConfig.isSelfNodeFilteringEnabled();
     this.watchSeconds = consulConfig.getWatchSeconds();
@@ -113,12 +112,12 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     } else {
       this.initialIndexes = Map.of();
     }
-    upstreamList.forEach(this::subscribeToUpstream);
+    subscribeToUpstreams();
   }
 
   private void syncUpdateUpstreams() {
     for (String serviceName : upstreamList) {
-      if (allowCrossDC) {
+      if (crossDCUpstreamList.contains(serviceName)) {
         ExecutorService executorService = Executors.newFixedThreadPool(datacenterList.size());
         var tasks = datacenterList
             .stream()
@@ -152,13 +151,15 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
     updateUpstreams(state, serviceName, dataCenter);
   }
 
-  private void subscribeToUpstream(String upstreamName) {
-    if (allowCrossDC) {
-      for (String dataCenter : datacenterList) {
-        initializeCache(upstreamName, dataCenter);
+  private void subscribeToUpstreams() {
+    for (String upstreamName : upstreamList) {
+      if (crossDCUpstreamList.contains(upstreamName)) {
+        for (String dataCenter : datacenterList) {
+          initializeCache(upstreamName, dataCenter);
+        }
+      } else {
+        initializeCache(upstreamName, currentDC);
       }
-    } else {
-      initializeCache(upstreamName, currentDC);
     }
   }
 
@@ -266,6 +267,21 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
         LOGGER.isDebugEnabled() ? updatedServers : updatedServers.size(),
         LOGGER.isDebugEnabled() ? serverToRemoveByAddress.values() : serverToRemoveByAddress.values().size()
     );
+  }
+
+  private void validatedUpstreams(Collection<String> upstreamList, Collection<String> crossDCUpstreamList) {
+    if (upstreamList.isEmpty()) {
+      throw new IllegalArgumentException("UpstreamList can't be empty");
+    }
+    List<String> notExistedUpstreams = crossDCUpstreamList
+        .stream()
+        .filter(Predicate.not(upstreamList::contains))
+        .toList();
+    if (!notExistedUpstreams.isEmpty()) {
+      throw new IllegalArgumentException(
+          "CrossDCUpstreamList contains upstreams that are not existed in upstreamList: %s".formatted(notExistedUpstreams)
+      );
+    }
   }
 
   private boolean notSameNode(String nodeName) {

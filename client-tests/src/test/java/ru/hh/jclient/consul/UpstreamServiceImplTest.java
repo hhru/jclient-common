@@ -58,7 +58,6 @@ public class UpstreamServiceImplTest {
   private UpstreamManager upstreamManager = mock(UpstreamManager.class);
   static Consul consulClient = mock(Consul.class);
   static int watchSeconds = 7;
-  static boolean allowCrossDC = false;
 
   private ServerStore serverStore = new ServerStoreImpl();
   private static final JClientInfrastructureConfig infrastructureConfig = new JClientInfrastructureConfig() {
@@ -178,7 +177,6 @@ public class UpstreamServiceImplTest {
     int port1 = 124;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setUpstreams(upstreamList)
-        .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)
         .setDatacenterList(datacenterList)
@@ -203,7 +201,6 @@ public class UpstreamServiceImplTest {
     int port2 = 126;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setUpstreams(upstreamList)
-        .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(true)
         .setDatacenterList(datacenterList)
@@ -259,7 +256,6 @@ public class UpstreamServiceImplTest {
     int port2 = 126;
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setUpstreams(upstreamList)
-        .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)
         .setDatacenterList(datacenterList)
@@ -282,7 +278,6 @@ public class UpstreamServiceImplTest {
 
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setUpstreams(upstreamList)
-        .setAllowCrossDC(allowCrossDC)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)
         .setDatacenterList(datacenterList)
@@ -320,7 +315,7 @@ public class UpstreamServiceImplTest {
 
     UpstreamServiceConsulConfig consulConfig = new UpstreamServiceConsulConfig()
         .setUpstreams(upstreamList)
-        .setAllowCrossDC(true)
+        .setCrossDCUpstreams(upstreamList)
         .setHealthPassing(false)
         .setSelfNodeFilteringEnabled(false)
         .setDatacenterList(List.of(DATA_CENTER, "notCurrentDc"))

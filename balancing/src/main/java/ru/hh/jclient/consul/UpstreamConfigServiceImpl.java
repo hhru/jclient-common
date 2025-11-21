@@ -53,7 +53,7 @@ public class UpstreamConfigServiceImpl implements AutoCloseable, UpstreamConfigS
       Collection<Consumer<Collection<String>>> upstreamUpdateCallbacks
   ) {
     this.upstreamList = Set.copyOf(config.getUpstreams());
-    if (this.upstreamList == null || this.upstreamList.isEmpty()) {
+    if (this.upstreamList.isEmpty()) {
       throw new IllegalArgumentException("UpstreamList can't be empty");
     }
     this.callbacks = Stream
