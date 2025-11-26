@@ -41,11 +41,13 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
           //нужно брать значение таймаута до checkAndThrowDeadline, чтобы не получить нулевой таймаут после проверки
           long deadlineContextTimeLeft = deadlineContext.getTimeLeft();
           deadlineContext.checkAndThrowDeadline();
-          if (!httpClient.isExternalRequest() && requestBuilder.isDeadlineEnabled()) {
+          if (requestBuilder.isDeadlineEnabled()) {
             // Use the minimum of request timeout and deadline timeLeft
             long timeLeft = getTimeLeft(deadlineContextTimeLeft, request);
             requestBuilder.setRequestTimeout((int) timeLeft);
-            setHeaders(String.valueOf(timeLeft), String.valueOf(timeLeft), request);
+            if (!httpClient.isExternalRequest()) {
+              setHeaders(String.valueOf(timeLeft), String.valueOf(timeLeft), request);
+            }
           }
         });
   }

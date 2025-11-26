@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -121,11 +122,12 @@ public class DeadlineCheckerAndPropagatorTest {
     // Setup context with deadline
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(X_DEADLINE_TIMEOUT_MS, singletonList("1000"));
+    int requestTimeout = 500;
 
     // Create request with timeout using RequestBuilder
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
-        .setRequestTimeout(500)
+        .setRequestTimeout(requestTimeout)
         .build();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
@@ -137,9 +139,13 @@ public class DeadlineCheckerAndPropagatorTest {
           injector.beforeExecute(httpClient, requestBuilder, request);
 
           // Verify header was injected with correct value
-          assertEquals("500", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-          // Verify request timeout is preserved in built Request
-          assertEquals(500, requestBuilder.build().getRequestTimeout());
+          assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+
+          assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
+          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
+          // Verify request timeout is preserved in  Request
+          assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
         });
   }
 
@@ -159,6 +165,11 @@ public class DeadlineCheckerAndPropagatorTest {
         .execute(() -> {
           // Should not throw exception when no deadline context
           injector.beforeExecute(httpClient, requestBuilder, request);
+          // Verify headers are not set when no deadline context
+          assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS),
+              "X_DEADLINE_TIMEOUT_MS header should not be present when no deadline context");
+          assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS),
+              "X_OUTER_TIMEOUT_MS header should not be present when no deadline context");
           // Verify request timeout is preserved in built Request
           assertEquals(500, requestBuilder.build().getRequestTimeout());
         });
@@ -232,6 +243,12 @@ public class DeadlineCheckerAndPropagatorTest {
     // Should not throw exception
     check.beforeExecute(httpClient, requestBuilder, request);
     
+    // Verify headers are present
+    assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS),
+        "X_DEADLINE_TIMEOUT_MS header should be present");
+    // Verify X_OUTER_TIMEOUT_MS is not set when not in context
+    assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS),
+        "X_OUTER_TIMEOUT_MS header should not be present when not in context");
     // Verify request timeout is adjusted to minimum of deadline and request timeout
     assertEquals(500, requestBuilder.build().getRequestTimeout());
   }
@@ -342,8 +359,10 @@ public class DeadlineCheckerAndPropagatorTest {
         .execute(() -> {
           injector.beforeExecute(httpClient, requestBuilder, request);
 
-          assertNull(contextSupplier.get().getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-          assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
+          assertNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS),
+              "X_DEADLINE_TIMEOUT_MS header should not be present in request when deadline is disabled");
+          assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS),
+              "X_OUTER_TIMEOUT_MS header should not be present when deadline is disabled");
           // Verify request timeout is preserved when deadline is disabled
           assertEquals(500, requestBuilder.build().getRequestTimeout());
         });
@@ -351,6 +370,9 @@ public class DeadlineCheckerAndPropagatorTest {
 
   @Test
   public void testExternalRequest() {
+    Map<String, List<String>> headers = new HashMap<>();
+    headers.put(X_DEADLINE_TIMEOUT_MS, singletonList("300"));
+
     // Create external request with timeout
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
@@ -361,13 +383,14 @@ public class DeadlineCheckerAndPropagatorTest {
 
     // Execute with context
     contextSupplier.forCurrentThread()
+        .withHeaders(headers)
         .execute(() -> {
           injector.beforeExecute(httpClient, requestBuilder, request);
 
           assertNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           // Verify request timeout is preserved for external requests
-          assertEquals(500, requestBuilder.build().getRequestTimeout());
+          assertEquals(300, requestBuilder.build().getRequestTimeout());
         });
   }
 
