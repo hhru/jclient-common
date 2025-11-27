@@ -1,3 +1,9 @@
+-   name: 14.0.1
+    date: '2025-11-27T12:55:42.690555+03:00'
+    description: Обновление trace-context до 2.0.1
+    instructions: ''
+    compatible: true
+
 -   name: 14.0.0
     date: '2025-11-21T18:35:27.646527+03:00'
     description: Добавлена возможность конфигурировать cross dc для конкретных апстримов.
