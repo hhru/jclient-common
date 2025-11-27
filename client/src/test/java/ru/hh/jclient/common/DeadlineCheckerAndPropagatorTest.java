@@ -163,14 +163,9 @@ public class DeadlineCheckerAndPropagatorTest {
     contextSupplier.forCurrentThread()
         .withHeaders(new HashMap<>())
         .execute(() -> {
-          // Should not throw exception when no deadline context
           injector.beforeExecute(httpClient, requestBuilder, request);
-          // Verify headers are not set when no deadline context
-          assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS),
-              "X_DEADLINE_TIMEOUT_MS header should not be present when no deadline context");
-          assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS),
-              "X_OUTER_TIMEOUT_MS header should not be present when no deadline context");
-          // Verify request timeout is preserved in built Request
+          assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(500, requestBuilder.build().getRequestTimeout());
         });
   }
@@ -244,12 +239,8 @@ public class DeadlineCheckerAndPropagatorTest {
     check.beforeExecute(httpClient, requestBuilder, request);
     
     // Verify headers are present
-    assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS),
-        "X_DEADLINE_TIMEOUT_MS header should be present");
-    // Verify X_OUTER_TIMEOUT_MS is not set when not in context
-    assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS),
-        "X_OUTER_TIMEOUT_MS header should not be present when not in context");
-    // Verify request timeout is adjusted to minimum of deadline and request timeout
+    assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+    assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
     assertEquals(500, requestBuilder.build().getRequestTimeout());
   }
 
