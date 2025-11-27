@@ -56,7 +56,6 @@ public class DeadlineCheckerAndPropagatorTest {
 
           // Verify header was injected with correct value
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-          // Verify request timeout is preserved in built Request
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
         });
@@ -149,7 +148,6 @@ public class DeadlineCheckerAndPropagatorTest {
 
           assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          //Verify request timeout is adjusted to minimum of deadline and request timeout
           assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
         });
   }
@@ -385,7 +383,6 @@ public class DeadlineCheckerAndPropagatorTest {
 
           assertNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          // Verify request timeout is preserved for external requests
           assertEquals(300, requestBuilder.build().getRequestTimeout());
         });
   }
