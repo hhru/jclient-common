@@ -46,7 +46,7 @@ public class DeadlineCheckerAndPropagator implements HttpClientEventListener {
             long timeLeft = getTimeLeft(deadlineContextTimeLeft, request);
             requestBuilder.setRequestTimeout((int) timeLeft);
             if (!httpClient.isExternalRequest()) {
-              setHeaders(String.valueOf(timeLeft), String.valueOf(timeLeft), request);
+              setHeaders(String.valueOf(timeLeft), String.valueOf(request.getRequestTimeout()), request);
             }
           }
         });

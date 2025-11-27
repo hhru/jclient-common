@@ -39,11 +39,11 @@ public class DeadlineCheckerAndPropagatorTest {
     // Setup context with deadline
     Map<String, List<String>> headers = new HashMap<>();
     headers.put(X_DEADLINE_TIMEOUT_MS, singletonList("1000"));
-
+    int requestTimeout = 500;
     // Create request with timeout
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
-        .setRequestTimeout(500)
+        .setRequestTimeout(requestTimeout)
         .build();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
@@ -55,22 +55,25 @@ public class DeadlineCheckerAndPropagatorTest {
           injector.beforeExecute(httpClient, requestBuilder, request);
 
           // Verify header was injected with correct value
-          assertEquals("500", request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           // Verify request timeout is preserved in built Request
-          assertEquals(500, requestBuilder.build().getRequestTimeout());
+          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
+          assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
         });
   }
 
   @Test
   public void testChooseDeadlineHeader() {
     // Setup context with deadline
+    int requestTimeout = 200;
+    int deadlineTimeout = 100;
     Map<String, List<String>> headers = new HashMap<>();
-    headers.put(X_DEADLINE_TIMEOUT_MS, singletonList("100"));
+    headers.put(X_DEADLINE_TIMEOUT_MS, singletonList(String.valueOf(deadlineTimeout)));
 
     // Create request with timeout
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
-        .setRequestTimeout(200)
+        .setRequestTimeout(requestTimeout)
         .build();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
@@ -83,9 +86,10 @@ public class DeadlineCheckerAndPropagatorTest {
 
           // Verify header was injected with correct value (min of deadline and request timeout)
           int header = Integer.parseInt(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-          assertTrue(header > 10 && header <= 100);
+          assertTrue(header > 10 && header <= deadlineTimeout);
+          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           // Verify request timeout is adjusted to minimum of deadline and request timeout
-          assertEquals(100, requestBuilder.build().getRequestTimeout());
+          assertEquals(deadlineTimeout, requestBuilder.build().getRequestTimeout());
         });
   }
 
@@ -113,6 +117,7 @@ public class DeadlineCheckerAndPropagatorTest {
           int header = Integer.parseInt(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertTrue(header > 10 && header <= 100);
           // Verify request timeout is adjusted to minimum of deadline and request timeout
+          assertEquals(String.valueOf(200), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(100, requestBuilder.build().getRequestTimeout());
         });
   }
@@ -144,7 +149,7 @@ public class DeadlineCheckerAndPropagatorTest {
 
           assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          // Verify request timeout is preserved in  Request
+          //Verify request timeout is adjusted to minimum of deadline and request timeout
           assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
         });
   }
@@ -262,7 +267,7 @@ public class DeadlineCheckerAndPropagatorTest {
     DeadlineCheckerAndPropagator check = new DeadlineCheckerAndPropagator(() -> context);
 
     // Should throw exception
-    RuntimeException exception = assertThrows(
+    assertThrows(
         RuntimeException.class, () -> {
           check.beforeExecute(httpClient, new RequestBuilder(), new TestRequest());
         }
