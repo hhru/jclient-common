@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -57,7 +58,9 @@ public class DeadlineCheckerAndPropagatorTest {
           // Verify header was injected with correct value
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
+          Request requestBuilded = requestBuilder.build();
+          assertEquals(requestTimeout, requestBuilded.getRequestTimeout());
+          assertTrue(requestBuilded.isDeadlineEnabled());
         });
   }
 
@@ -357,8 +360,10 @@ public class DeadlineCheckerAndPropagatorTest {
               "X_DEADLINE_TIMEOUT_MS header should not be present in request when deadline is disabled");
           assertNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS),
               "X_OUTER_TIMEOUT_MS header should not be present when deadline is disabled");
-          // Verify request timeout is preserved when deadline is disabled
-          assertEquals(500, requestBuilder.build().getRequestTimeout());
+
+          Request requestBuilded = requestBuilder.build();
+          assertEquals(500, requestBuilded.getRequestTimeout());
+          assertFalse(requestBuilded.isDeadlineEnabled());
         });
   }
 
@@ -390,7 +395,7 @@ public class DeadlineCheckerAndPropagatorTest {
   // Simple test classes to avoid mocking
   private static class TestRequest extends Request {
     public TestRequest() {
-      super(new org.asynchttpclient.RequestBuilder("GET").setUrl("http://localhost/test").build(), false);
+      super(new org.asynchttpclient.RequestBuilder("GET").setUrl("http://localhost/test").build(), false, true);
     }
   }
 }
