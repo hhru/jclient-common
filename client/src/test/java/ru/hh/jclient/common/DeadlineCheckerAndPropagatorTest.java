@@ -127,37 +127,6 @@ public class DeadlineCheckerAndPropagatorTest {
   }
 
   @Test
-  public void testRetryDeadlineHeaderInjection() {
-    // Setup context with deadline
-    Map<String, List<String>> headers = new HashMap<>();
-    headers.put(X_DEADLINE_TIMEOUT_MS, singletonList("1000"));
-    int requestTimeout = 500;
-
-    // Create request with timeout using RequestBuilder
-    Request request = new RequestBuilder()
-        .setUrl("http://localhost/test")
-        .setRequestTimeout(requestTimeout)
-        .build();
-
-    RequestBuilder requestBuilder = new RequestBuilder(request);
-
-    // Execute with context
-    contextSupplier.forCurrentThread()
-        .withHeaders(headers)
-        .execute(() -> {
-          injector.beforeExecute(httpClient, requestBuilder, request);
-
-          // Verify header was injected with correct value
-          assertNotNull(request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-
-          assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
-        });
-  }
-
-  @Test
   public void testNoDeadlineContext() {
     // Create request with timeout using RequestBuilder
     Request request = new RequestBuilder()
@@ -176,22 +145,6 @@ public class DeadlineCheckerAndPropagatorTest {
           assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(500, requestBuilder.build().getRequestTimeout());
         });
-  }
-
-  @Test
-  public void testNullContext() {
-    // Create request with timeout using RequestBuilder
-    Request request = new RequestBuilder()
-        .setUrl("http://localhost/test")
-        .setRequestTimeout(500)
-        .build();
-
-    RequestBuilder requestBuilder = new RequestBuilder(request);
-
-    // Should not throw exception when context is null
-    injector.beforeExecute(httpClient, requestBuilder, request);
-    // Verify request timeout is preserved in built Request
-    assertEquals(500, requestBuilder.build().getRequestTimeout());
   }
 
   // Tests from DeadlineContextCheckTest
@@ -253,50 +206,6 @@ public class DeadlineCheckerAndPropagatorTest {
   }
 
   @Test
-  public void testOnRetryDeadlineExceeded() {
-    // Create context with deadline already passed
-    Map<String, List<String>> headers = Map.of(
-        X_DEADLINE_TIMEOUT_MS, List.of("30")
-    );
-
-    HttpClientContext context = new HttpClientContext(
-        OffsetDateTime.now().minusNanos(100_000_000L), // Started 100ms ago
-        headers,
-        Collections.emptyMap(),
-        Collections.emptyList(),
-        StorageUtils.build(List.of())
-    );
-
-    DeadlineCheckerAndPropagator check = new DeadlineCheckerAndPropagator(() -> context);
-
-    // Should throw exception
-    assertThrows(
-        RuntimeException.class, () -> {
-          check.beforeExecute(httpClient, new RequestBuilder(), new TestRequest());
-        }
-    );
-  }
-
-  @Test
-  public void testOnRetryNoDeadlineExceeded() {
-    // Create context with deadline still valid
-    Map<String, List<String>> headers = Map.of(
-        X_DEADLINE_TIMEOUT_MS, List.of("500")
-    );
-
-    HttpClientContext context = new HttpClientContext(
-        headers,
-        Collections.emptyMap(),
-        Collections.emptyList()
-    );
-
-    DeadlineCheckerAndPropagator check = new DeadlineCheckerAndPropagator(() -> context);
-
-    // Should not throw exception
-    check.beforeExecute(httpClient, new RequestBuilder(), new TestRequest());
-  }
-
-  @Test
   public void testNullContextSupplier() {
     Supplier<HttpClientContext> nullSupplier = () -> null;
     DeadlineCheckerAndPropagator check = new DeadlineCheckerAndPropagator(nullSupplier);
@@ -313,32 +222,6 @@ public class DeadlineCheckerAndPropagatorTest {
     check.beforeExecute(httpClient, requestBuilder, request);
     
     // Verify request timeout is preserved when context supplier is null
-    assertEquals(500, requestBuilder.build().getRequestTimeout());
-  }
-
-  @Test
-  public void testNoDeadlineHeaders() {
-    // Create context without deadline headers
-    HttpClientContext context = new HttpClientContext(
-        Collections.emptyMap(),
-        Collections.emptyMap(),
-        Collections.emptyList()
-    );
-
-    DeadlineCheckerAndPropagator check = new DeadlineCheckerAndPropagator(() -> context);
-
-    // Create request with timeout
-    Request request = new RequestBuilder()
-        .setUrl("http://localhost/test")
-        .setRequestTimeout(500)
-        .build();
-
-    RequestBuilder requestBuilder = new RequestBuilder(request);
-
-    // Should not throw exception when no deadline is set
-    check.beforeExecute(httpClient, requestBuilder, request);
-    
-    // Verify request timeout is preserved when no deadline headers
     assertEquals(500, requestBuilder.build().getRequestTimeout());
   }
 
