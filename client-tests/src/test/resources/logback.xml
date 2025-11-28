@@ -12,5 +12,5 @@
         <appender-ref ref="CONSOLE" />
     </root>
 
-    <logger name="ru.hh.jclient.common.HttpClientImpl" level="OFF"/>
+    <logger name="ru.hh.jclient.common.HttpClientImpl.TraceContext" level="OFF"/>
 </configuration>
