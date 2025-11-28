@@ -153,8 +153,7 @@ public class DeadlineCheckerAndPropagatorTest {
 
           assertNotNull(request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-          int requestTimeoutLeft = requestBuilder.build().getRequestTimeout();
-          assertTrue(requestTimeoutLeft > 10 && requestTimeoutLeft <= requestTimeout);
+          assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
         });
   }
 
