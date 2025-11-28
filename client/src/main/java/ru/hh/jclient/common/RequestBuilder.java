@@ -41,15 +41,11 @@ public class RequestBuilder {
   }
 
   public RequestBuilder(Request prototype) {
-    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), false, false);
-    externalRequest = prototype.isExternalRequest();
-    deadlineEnabled = prototype.isDeadlineEnabled();
+    this(prototype, false, false);
   }
 
   public RequestBuilder(Request prototype, boolean disableUrlEncoding) {
-    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), disableUrlEncoding, false);
-    externalRequest = prototype.isExternalRequest();
-    deadlineEnabled = prototype.isDeadlineEnabled();
+    this(prototype, disableUrlEncoding, false);
   }
 
   public RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {

@@ -91,7 +91,8 @@ public class DeadlineCheckerAndPropagatorTest {
           assertTrue(header > 10 && header <= deadlineTimeout);
           assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
           // Verify request timeout is adjusted to minimum of deadline and request timeout
-          assertEquals(deadlineTimeout, requestBuilder.build().getRequestTimeout());
+          int requestTimeoutLeft = requestBuilder.build().getRequestTimeout();
+          assertTrue(requestTimeoutLeft > 10 && requestTimeoutLeft <= deadlineTimeout);
         });
   }
 
@@ -346,10 +347,10 @@ public class DeadlineCheckerAndPropagatorTest {
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
         .setRequestTimeout(500)
+        .setDeadlineEnabled(false)
         .build();
 
-    RequestBuilder requestBuilder = new RequestBuilder(request)
-        .setDeadlineEnabled(false);
+    RequestBuilder requestBuilder = new RequestBuilder(request);
 
     // Execute with context
     contextSupplier.forCurrentThread()
