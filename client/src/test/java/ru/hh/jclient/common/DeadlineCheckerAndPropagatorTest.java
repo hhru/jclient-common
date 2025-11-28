@@ -179,7 +179,7 @@ public class DeadlineCheckerAndPropagatorTest {
   @Test
   public void testOnRequestNoDeadlineExceeded() {
     // Create context with deadline still valid
-    int deadlineTimeout = 235;
+    int requestTimeout = 235;
 
     Map<String, List<String>> headers = Map.of(
         X_DEADLINE_TIMEOUT_MS, List.of("1000")
@@ -196,7 +196,7 @@ public class DeadlineCheckerAndPropagatorTest {
     // Create request with timeout
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
-        .setRequestTimeout(deadlineTimeout)
+        .setRequestTimeout(requestTimeout)
         .build();
 
     RequestBuilder requestBuilder = new RequestBuilder(request);
@@ -205,9 +205,9 @@ public class DeadlineCheckerAndPropagatorTest {
     check.beforeExecute(httpClient, requestBuilder, request);
     
     // Verify headers are present
-    assertEquals(String.valueOf(deadlineTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
-    assertEquals(String.valueOf(deadlineTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
-    assertEquals(deadlineTimeout, requestBuilder.build().getRequestTimeout());
+    assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_DEADLINE_TIMEOUT_MS));
+    assertEquals(String.valueOf(requestTimeout), request.getHeaders().get(X_OUTER_TIMEOUT_MS));
+    assertEquals(requestTimeout, requestBuilder.build().getRequestTimeout());
   }
 
   @Test
