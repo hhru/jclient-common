@@ -232,6 +232,10 @@ public class DeadlineCheckerAndPropagatorTest {
 
   @Test
   public void testDeadlineDisabled() {
+    Map<String, List<String>> headers = Map.of(
+        X_DEADLINE_TIMEOUT_MS, List.of("50")
+    );
+
     // Create request with timeout and disabled deadline
     Request request = new RequestBuilder()
         .setUrl("http://localhost/test")
@@ -243,6 +247,7 @@ public class DeadlineCheckerAndPropagatorTest {
 
     // Execute with context
     contextSupplier.forCurrentThread()
+        .withHeaders(headers)
         .execute(() -> {
           injector.beforeExecute(httpClient, requestBuilder, request);
 
