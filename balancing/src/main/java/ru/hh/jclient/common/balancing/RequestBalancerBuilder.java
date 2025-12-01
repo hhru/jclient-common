@@ -135,11 +135,7 @@ public class RequestBalancerBuilder implements RequestEngineBuilder<RequestBalan
       }
     } else {
       if (httpClient.isExternalRequest()) {
-        LOGGER_EXTERNAL.error(
-            "Internal request marked as 'external'. " +
-            "Please remove ru.hh.jclient.common.HttpClient.external() for that request; Request {}",
-            request.toStringShort()
-        );
+        LOGGER_EXTERNAL.warn("Internal request marked as 'external'. Request {}", request.toStringShort());
       }
     }
   }
