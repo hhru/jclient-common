@@ -41,15 +41,17 @@ public class RequestBuilder {
   }
 
   public RequestBuilder(Request prototype) {
-    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), false, false);
+    this(prototype, false, false);
   }
 
   public RequestBuilder(Request prototype, boolean disableUrlEncoding) {
-    delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), disableUrlEncoding, false);
+    this(prototype, disableUrlEncoding, false);
   }
 
   public RequestBuilder(Request prototype, boolean disableUrlEncoding, boolean validateHeaders) {
     delegate = new org.asynchttpclient.RequestBuilder(prototype.getDelegate(), disableUrlEncoding, validateHeaders);
+    externalRequest = prototype.isExternalRequest();
+    deadlineEnabled = prototype.isDeadlineEnabled();
   }
 
   public RequestBuilder setCookies(Collection<Cookie> cookies) {
@@ -160,7 +162,7 @@ public class RequestBuilder {
   }
 
   public Request build() {
-    return new Request(delegate.build(), externalRequest);
+    return new Request(delegate.build(), externalRequest, deadlineEnabled);
   }
 
   @Deprecated
