@@ -10,7 +10,7 @@
     <artifactId>jclient-common-parent</artifactId>
     <packaging>pom</packaging>
     <name>jclient-common-parent</name>
-    <version>14.0.1-SNAPSHOT</version>
+    <version>14.0.0.boot-3.5-alpha1</version>
 
     <modules>
         <module>client</module>
@@ -180,6 +180,6 @@
     <scm>
         <connection>scm:git:git@github.com:hhru/jclient-common.git</connection>
         <developerConnection>scm:git:git@github.com:hhru/jclient-common.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>14.0.0.boot-3.5-alpha1</tag>
     </scm>
 </project>
