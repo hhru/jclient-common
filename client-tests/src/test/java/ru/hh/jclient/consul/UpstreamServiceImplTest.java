@@ -23,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import ru.hh.consul.Consul;
 import ru.hh.consul.HealthClient;
-import ru.hh.consul.cache.ImmutableServiceHealthKey;
 import ru.hh.consul.cache.ServiceHealthKey;
 import ru.hh.consul.config.ClientConfig;
 import ru.hh.consul.model.ConsulResponse;
@@ -47,6 +46,7 @@ import ru.hh.jclient.common.balancing.ServerStore;
 import ru.hh.jclient.common.balancing.ServerStoreImpl;
 import ru.hh.jclient.common.balancing.UpstreamManager;
 
+@SuppressWarnings("resource")
 public class UpstreamServiceImplTest {
   UpstreamServiceImpl upstreamService;
   static String SERVICE_NAME = "upstream1";
@@ -113,8 +113,8 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth2 = buildServiceHealth(address2, port2, DATA_CENTER, NODE_NAME, weight, true);
 
     Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
-    upstreams.put(buildKey(address1), serviceHealth);
-    upstreams.put(buildKey(address2), serviceHealth2);
+    upstreams.put(buildKey(serviceHealth), serviceHealth);
+    upstreams.put(buildKey(serviceHealth2), serviceHealth2);
 
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
@@ -149,15 +149,15 @@ public class UpstreamServiceImplTest {
     ServiceHealth serviceHealth3 = buildServiceHealth(address3, port3, DATA_CENTER, NODE_NAME, weight, true);
 
     Map<ServiceHealthKey, ServiceHealth> upstreams = new HashMap<>();
-    upstreams.put(buildKey(address1), serviceHealth);
-    upstreams.put(buildKey(address2), serviceHealth2);
+    upstreams.put(buildKey(serviceHealth), serviceHealth);
+    upstreams.put(buildKey(serviceHealth2), serviceHealth2);
 
     upstreamService.updateUpstreams(upstreams, SERVICE_NAME, DATA_CENTER);
 
     List<Server> servers = serverStore.getServers(SERVICE_NAME);
     assertEquals(2, servers.size());
 
-    upstreamService.updateUpstreams(Map.of(buildKey(address3), serviceHealth3), SERVICE_NAME, DATA_CENTER);
+    upstreamService.updateUpstreams(Map.of(buildKey(serviceHealth3), serviceHealth3), SERVICE_NAME, DATA_CENTER);
     List<Server> updatedServers = serverStore.getServers(SERVICE_NAME);
 
     assertEquals(1, updatedServers.size());
@@ -231,7 +231,7 @@ public class UpstreamServiceImplTest {
             dc -> addresses
                 .stream()
                 .map(s -> buildServiceHealth(s, port, dc, NODE_NAME, weight, true))
-                .collect(Collectors.toMap(s -> buildKey(s.getService().getAddress()), Function.identity()))
+                .collect(Collectors.toMap(this::buildKey, Function.identity()))
         )
         .map(
             dc -> CompletableFuture.runAsync(
@@ -359,8 +359,8 @@ public class UpstreamServiceImplTest {
         .build();
   }
 
-  private ServiceHealthKey buildKey(String address) {
-    return ImmutableServiceHealthKey.builder().serviceId("serviceid").host(address).port(156).build();
+  private ServiceHealthKey buildKey(ServiceHealth serviceHealth) {
+    return ServiceHealthKey.fromServiceHealth(serviceHealth);
   }
 
   private ServiceWeights buildWeight(int weight) {
@@ -371,7 +371,7 @@ public class UpstreamServiceImplTest {
     return ImmutableService
         .builder()
         .address(address)
-        .id("id1")
+        .id("id-" + address + "-" + port)
         .service(SERVICE_NAME)
         .port(port)
         .weights(serviceWeights)
