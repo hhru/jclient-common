@@ -1,3 +1,9 @@
+-   name: 14.0.4
+    date: '2025-12-18T18:26:48.561727+03:00'
+    description: Обновление версии consul-client.
+    instructions: ''
+    compatible: true
+
 -   name: 14.0.3
     date: '2025-12-01T13:24:13.031334+03:00'
     description: Уровень логирования исправлен на warn при проверке external флага
