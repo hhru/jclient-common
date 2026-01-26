@@ -2,6 +2,8 @@ package ru.hh.jclient.errors;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import ru.hh.jclient.common.EmptyOrErrorWithStatus;
 import ru.hh.jclient.common.EmptyWithStatus;
 import ru.hh.jclient.common.ResultOrErrorWithStatus;
@@ -149,7 +151,7 @@ public class MoreErrors {
   }
 
   /**
-   * Block until future complestes and get the result.
+   * Block until future completes and get the result.
    *
    * If waiting for result was interrupted, set the interrupted flag and rethrow it wrapped in {@link RuntimeException}.
    * If future completed exceptionally with {@link RuntimeException} - rethrow it.
@@ -170,6 +172,33 @@ public class MoreErrors {
         throw (RuntimeException) cause;
       }
       throw new RuntimeException("Completable future completed exceptionally", cause);
+    }
+  }
+
+  /**
+   * Waited block until future completes and get the result.
+   *
+   * If waiting for result was interrupted, set the interrupted flag and rethrow it wrapped in {@link RuntimeException}.
+   * If future completed exceptionally with {@link RuntimeException} - rethrow it.
+   * If future completed with checked exception, wrap it in {@link RuntimeException} and rethrow it too.
+   *
+   * @param future future to get the result from
+   * @return result or throw RuntimeException
+   */
+  public static <T> T waitedGetOrThrow(CompletableFuture<T> future, long timeout, TimeUnit unit) {
+    try {
+      return future.get(timeout, unit);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted while waiting for completable future to complete", e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof RuntimeException) {
+        throw (RuntimeException) cause;
+      }
+      throw new RuntimeException("Completable future completed exceptionally", cause);
+    } catch (TimeoutException e) {
+      throw new RuntimeException("Failed to wait " + timeout + " " + unit + " for the future", e);
     }
   }
 
