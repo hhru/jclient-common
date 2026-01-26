@@ -1,3 +1,10 @@
+-   name: 14.1.0
+    date: '2026-01-26T14:45:49.194165+03:00'
+    description: опция jclient.useNativeTransport + дополнительные метрики asynchttpclient-а
+        + добавление waitedGetOrThrow для фьюч
+    instructions: ''
+    compatible: true
+
 -   name: 14.0.4
     date: '2025-12-18T18:26:48.561727+03:00'
     description: Обновление версии consul-client.
