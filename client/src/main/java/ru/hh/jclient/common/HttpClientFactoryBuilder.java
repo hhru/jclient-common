@@ -114,6 +114,9 @@ public class HttpClientFactoryBuilder {
     ofNullable(properties.getProperty(ConfigKeys.KEEP_ALIVE))
         .map(Boolean::parseBoolean)
         .ifPresent(target.configBuilder::setKeepAlive);
+    ofNullable(properties.getProperty(ConfigKeys.USE_NATIVE_TRANSPORT))
+        .map(Boolean::parseBoolean)
+        .ifPresent(target.configBuilder::setUseNativeTransport);
     ofNullable(properties.getProperty(ConfigKeys.IO_THREADS_COUNT))
         .map(Integer::parseInt)
         .ifPresent(target.configBuilder::setIoThreadsCount);
@@ -287,6 +290,7 @@ public class HttpClientFactoryBuilder {
 
     public static final String ACCEPT_ANY_CERTIFICATE = "acceptAnyCertificate";
     public static final String KEEP_ALIVE = "keepAlive";
+    public static final String USE_NATIVE_TRANSPORT = "useNativeTransport";
     public static final String IO_THREADS_COUNT = "ioThreadsCount";
   }
 }

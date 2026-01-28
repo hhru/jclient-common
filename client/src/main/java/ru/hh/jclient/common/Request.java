@@ -14,10 +14,12 @@ public class Request {
 
   private final org.asynchttpclient.Request delegate;
   private final boolean externalRequest;
+  private final boolean deadlineEnabled;
 
-  Request(org.asynchttpclient.Request request, boolean isExternal) {
+  Request(org.asynchttpclient.Request request, boolean isExternal, boolean deadlineEnabled) {
     this.delegate = request;
     this.externalRequest = isExternal;
+    this.deadlineEnabled = deadlineEnabled;
   }
 
   /**
@@ -191,5 +193,9 @@ public class Request {
 
   org.asynchttpclient.Request getDelegate() {
     return delegate;
+  }
+
+  public boolean isDeadlineEnabled() {
+    return deadlineEnabled;
   }
 }

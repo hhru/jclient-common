@@ -1,3 +1,36 @@
+-   name: 14.1.0
+    date: '2026-01-26T14:45:49.194165+03:00'
+    description: опция jclient.useNativeTransport + дополнительные метрики asynchttpclient-а
+        + добавление waitedGetOrThrow для фьюч
+    instructions: ''
+    compatible: true
+
+-   name: 14.0.4
+    date: '2025-12-18T18:26:48.561727+03:00'
+    description: Обновление версии consul-client.
+    instructions: ''
+    compatible: true
+
+-   name: 14.0.3
+    date: '2025-12-01T13:24:13.031334+03:00'
+    description: Уровень логирования исправлен на warn при проверке external флага
+        для внутренних апстримов
+    instructions: ''
+    compatible: true
+
+-   name: 14.0.2
+    date: '2025-12-01T12:33:03.673270+03:00'
+    description: Для external запросов включена проверка дедлайнов. Исправлена ошибка
+        проставления таймаута
+    instructions: ''
+    compatible: true
+
+-   name: 14.0.1
+    date: '2025-11-27T12:55:42.690555+03:00'
+    description: Обновление trace-context до 2.0.1
+    instructions: ''
+    compatible: true
+
 -   name: 14.0.0
     date: '2025-11-21T18:35:27.646527+03:00'
     description: Добавлена возможность конфигурировать cross dc для конкретных апстримов.

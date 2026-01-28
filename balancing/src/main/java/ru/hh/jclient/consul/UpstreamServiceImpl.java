@@ -246,7 +246,7 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
 
       Service service = serviceHealth.getService();
 
-      String address = Server.addressFromHostPort(getAddress(serviceHealth), service.getPort());
+      String address = Server.addressFromHostPort(serviceHealth.getActualServiceAddress(), service.getPort());
       String nodeDatacenter = serviceHealth.getNode().getDatacenter().map(this::restoreOriginalDataCenterName).orElse(null);
       int serverWeight = service.getWeights().orElse(defaultWeight).getPassing();
 
@@ -303,15 +303,6 @@ public class UpstreamServiceImpl implements AutoCloseable, UpstreamService {
         .stream()
         .filter(server -> datacenter.equals(server.getDatacenter()))
         .collect(Collectors.toSet());
-  }
-
-  private static String getAddress(ServiceHealth serviceHealth) {
-    String address = serviceHealth.getService().getAddress();
-    if (!StringUtils.isBlank(address)) {
-      return address;
-    }
-
-    return serviceHealth.getNode().getAddress();
   }
 
   ServerStore getUpstreamStore() {
